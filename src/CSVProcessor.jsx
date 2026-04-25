@@ -220,9 +220,9 @@ const CSVProcessor = () => {
     }))
   }, [filteredData])
 
-  const stats = useMemo(() => {
+  const projectStats = useMemo(() => {
     const pMap = new Map()
-    data.forEach(r => {
+    filteredData.forEach(r => {
       if (!pMap.has(r.project)) pMap.set(r.project, { tasks: new Set(), logs: 0, totalTime1: 0, totalTime2: 0 })
       const p = pMap.get(r.project)
       p.tasks.add(r.taskName)
@@ -236,15 +236,38 @@ const CSVProcessor = () => {
         uniqueTasks: v.tasks.size, 
         totalLogs: v.logs,
         totalTime1: formatDuration(v.totalTime1),
-        totalTime2: formatDuration(v.totalTime2)
+        totalTime2: formatDuration(v.totalTime2),
+        rawTime1: v.totalTime1
       }))
-      .sort((a, b) => b.uniqueTasks - a.uniqueTasks)
-  }, [data])
+      .sort((a, b) => b.rawTime1 - a.rawTime1)
+  }, [filteredData])
+
+  const userStats = useMemo(() => {
+    const uMap = new Map()
+    filteredData.forEach(r => {
+      if (!uMap.has(r.createdBy)) uMap.set(r.createdBy, { projects: new Set(), logs: 0, totalTime1: 0, totalTime2: 0 })
+      const u = uMap.get(r.createdBy)
+      u.projects.add(r.project)
+      u.logs++
+      u.totalTime1 += r.time1
+      u.totalTime2 += r.time2
+    })
+    return Array.from(uMap.entries())
+      .map(([name, v]) => ({ 
+        name, 
+        uniqueProjects: v.projects.size, 
+        totalLogs: v.logs,
+        totalTime1: formatDuration(v.totalTime1),
+        totalTime2: formatDuration(v.totalTime2),
+        rawTime1: v.totalTime1
+      }))
+      .sort((a, b) => b.rawTime1 - a.rawTime1)
+  }, [filteredData])
 
   const chartData = {
-    labels: stats.slice(0, 10).map(s => s.name),
+    labels: projectStats.slice(0, 10).map(s => s.name),
     datasets: [{
-      data: stats.slice(0, 10).map(s => s.uniqueTasks),
+      data: projectStats.slice(0, 10).map(s => s.rawTime1 / 3600000), // hours
       backgroundColor: PALETTE,
       borderColor: 'rgba(255,255,255,0.1)',
       borderWidth: 2,
@@ -253,12 +276,12 @@ const CSVProcessor = () => {
   }
 
   const barChartData = {
-    labels: stats.slice(0, 15).map(s => s.name),
+    labels: userStats.slice(0, 10).map(s => s.name.split('@')[0]),
     datasets: [{
-      label: 'Unique Tasks',
-      data: stats.slice(0, 15).map(s => s.uniqueTasks),
-      backgroundColor: stats.slice(0, 15).map((_, i) => PALETTE[i % PALETTE.length] + 'dd'),
-      borderColor: stats.slice(0, 15).map((_, i) => PALETTE[i % PALETTE.length]),
+      label: 'Hours Worked (Time 1)',
+      data: userStats.slice(0, 10).map(s => s.rawTime1 / 3600000),
+      backgroundColor: userStats.slice(0, 10).map((_, i) => PALETTE[i % PALETTE.length] + 'dd'),
+      borderColor: userStats.slice(0, 10).map((_, i) => PALETTE[i % PALETTE.length]),
       borderWidth: 2,
       borderRadius: 8,
     }]
@@ -313,240 +336,257 @@ const CSVProcessor = () => {
             </div>
           </div>
 
-          {view === 'detail' && (
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-              {/* Sidebar Filters */}
-              <aside className="w-full lg:w-80 glass-panel border-white/5 shadow-2xl p-6 sticky top-8">
-                <div className="space-y-8">
-                  <div className="space-y-4">
-                    <label className="text-xs font-black text-indigo-400 uppercase tracking-widest">Filter Type</label>
-                    <select 
-                      className="input bg-slate-950/50 border-white/10 text-sm font-bold h-12"
-                      value={filters.field}
-                      onChange={e => setFilters({ field: e.target.value, values: [] })}
-                    >
-                      <option value="project">PROJECT</option>
-                      <option value="task">TASK NAME</option>
-                      <option value="user">CREATE BY</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-4">
-                    <label className="text-xs font-black text-emerald-400 uppercase tracking-widest flex justify-between">
-                      Select Values
-                      <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded-full">{filters.values.length}</span>
-                    </label>
-                    <div className="max-h-[400px] overflow-auto p-2 bg-slate-950/50 border border-white/10 rounded-2xl custom-scrollbar space-y-1">
-                      {uniqueFilterValues.map(v => (
-                        <label key={v} className={`flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-2.5 rounded-xl transition-all ${filters.values.includes(v) ? 'bg-indigo-500/10' : ''}`}>
-                          <input 
-                            type="checkbox" 
-                            checked={filters.values.includes(v)}
-                            onChange={() => toggleFilterValue(v)}
-                            className="w-5 h-5 rounded-lg border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500 transition-all"
-                          />
-                          <span className={`text-[13px] leading-tight ${filters.values.includes(v) ? 'text-indigo-300 font-bold' : 'text-slate-400'}`}>
-                            {v}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => setFilters({ field: filters.field, values: [] })}
-                    className="btn btn-secondary w-full py-4 text-xs font-bold uppercase tracking-widest"
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            {/* Sidebar Filters - Shared for all views */}
+            <aside className="w-full lg:w-80 glass-panel border-white/5 shadow-2xl p-6 sticky top-8 z-20">
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <label className="text-xs font-black text-indigo-400 uppercase tracking-widest">Filter Type</label>
+                  <select 
+                    className="input bg-slate-950/50 border-white/10 text-sm font-bold h-12"
+                    value={filters.field}
+                    onChange={e => setFilters({ field: e.target.value, values: [] })}
                   >
-                    Clear All
-                  </button>
+                    <option value="project">PROJECT</option>
+                    <option value="task">TASK NAME</option>
+                    <option value="user">CREATE BY</option>
+                  </select>
                 </div>
-              </aside>
 
-              {/* Main Content Table */}
-              <div className="flex-1 w-full glass-panel overflow-hidden border-white/5 shadow-2xl">
-                <div className="max-h-[800px] overflow-auto custom-scrollbar">
-                  <table className="w-full text-left">
-                    <thead className="sticky top-0 bg-slate-900/90 backdrop-blur-xl z-10">
-                      <tr className="text-slate-500 font-black uppercase text-[11px] tracking-[0.25em] border-b border-white/5 whitespace-nowrap">
-                        <th className="p-6">Project</th>
-                        <th className="p-6">Task Name</th>
-                        <th className="p-6">Create By</th>
-                        <th className="p-6">DAY</th>
-                        <th className="p-6">Created At</th>
-                        <th className="p-6">Date Start</th>
-                        <th className="p-6">Date Checked</th>
-                        <th className="p-6 text-emerald-400">Total Time 1</th>
-                        <th className="p-6 text-indigo-400">Total Time 2</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.03]">
-                      {filteredData.slice(0, 300).map((r, i) => (
-                        <tr key={i} className="hover:bg-white/[0.04] transition-all group border-l-2 border-transparent hover:border-indigo-500">
-                          <td className="p-6">
-                            <span className="text-indigo-400 font-bold text-base tracking-tight group-hover:text-indigo-300">{r.project}</span>
-                          </td>
-                          <td className="p-6 font-semibold text-slate-200 text-sm">{r.taskName}</td>
-                          <td className="p-6 text-slate-400 text-xs font-mono">{r.createdBy}</td>
-                          <td className="p-6 text-slate-300 font-bold text-sm">{r.day}</td>
-                          <td className="p-6 text-slate-400 text-sm">{formatTime(r.createdAt)}</td>
-                          <td className="p-6 text-slate-400 text-sm">{formatTime(r.dateStart)}</td>
-                          <td className="p-6 text-slate-200 font-bold text-sm">{formatTime(r.dateChecked)}</td>
-                          <td className="p-6 text-emerald-400 font-black text-sm">{r.time1Str}</td>
-                          <td className="p-6 text-indigo-400 font-black text-sm">{r.time2Str}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {view === 'pivot' && (
-            <div className="space-y-4">
-              <div className="flex gap-2 p-1 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/5 w-fit">
-                <button 
-                  onClick={() => setPivotMetric('time1')}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time1' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
-                >
-                  TOTAL TIME 1
-                </button>
-                <button 
-                  onClick={() => setPivotMetric('time2')}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time2' ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
-                >
-                  TOTAL TIME 2
-                </button>
-              </div>
-              <div className="glass-panel overflow-auto max-h-[700px] border-white/5 shadow-2xl custom-scrollbar">
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-2xl z-10 shadow-lg">
-                    <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] border-b border-white/10">
-                      <th className="p-6 min-w-[150px]">Project</th>
-                      <th className="p-6 min-w-[200px]">Task</th>
-                      <th className="p-6">Create By</th>
-                      {['T2','T3','T4','T5','T6'].map(d => <th key={d} className="p-6 text-center">{d}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/[0.05]">
-                    {pivotData.map((r, i) => (
-                      <tr key={i} className="hover:bg-white/[0.04] transition-all group">
-                        <td className="p-6 font-bold text-indigo-400">{r.project}</td>
-                        <td className="p-6 font-medium text-slate-200">{r.taskName}</td>
-                        <td className="p-6 text-[11px] text-slate-500 font-mono group-hover:text-slate-400">{r.createdBy}</td>
-                        {['T2','T3','T4','T5','T6'].map(d => (
-                          <td key={d} className="p-6 text-center">
-                            <div className="flex flex-col gap-1.5 items-center">
-                              {(r.days[d] || []).map((t, idx) => (
-                                <span key={idx} className={`${pivotMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'} px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
-                                  {pivotMetric === 'time1' ? t.time1Str : t.time2Str}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                        ))}
-                      </tr>
+                <div className="space-y-4">
+                  <label className="text-xs font-black text-emerald-400 uppercase tracking-widest flex justify-between">
+                    Select Values
+                    <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded-full">{filters.values.length}</span>
+                  </label>
+                  <div className="max-h-[400px] overflow-auto p-2 bg-slate-950/50 border border-white/10 rounded-2xl custom-scrollbar space-y-1">
+                    {uniqueFilterValues.map(v => (
+                      <label key={v} className={`flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-2.5 rounded-xl transition-all ${filters.values.includes(v) ? 'bg-indigo-500/10' : ''}`}>
+                        <input 
+                          type="checkbox" 
+                          checked={filters.values.includes(v)}
+                          onChange={() => toggleFilterValue(v)}
+                          className="w-5 h-5 rounded-lg border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500 transition-all"
+                        />
+                        <span className={`text-[13px] leading-tight ${filters.values.includes(v) ? 'text-indigo-300 font-bold' : 'text-slate-400'}`}>
+                          {v}
+                        </span>
+                      </label>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {view === 'analytics' && (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 flex flex-col items-center bg-slate-900/60 border-white/5">
-                  <h3 className="font-bold text-slate-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
-                    <span className="w-4 h-4 bg-indigo-500 rounded flex items-center justify-center text-[10px] text-white">1</span>
-                    Tasks per Project (Pie)
-                  </h3>
-                  <div className="w-full h-[350px] relative">
-                    <Doughnut 
-                      data={chartData} 
-                      options={{ 
-                        maintainAspectRatio: false, 
-                        cutout: '75%', 
-                        plugins: { 
-                          legend: { display: false } 
-                        } 
-                      }} 
-                    />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-3xl font-black text-white">{stats.length}</span>
-                      <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Projects</span>
-                    </div>
                   </div>
-                </motion.div>
-                
-                <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5">
-                  <h3 className="font-bold text-slate-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
-                    <span className="w-4 h-4 bg-emerald-500 rounded flex items-center justify-center text-[10px] text-white">2</span>
-                    Tasks per Project (Bar)
-                  </h3>
-                  <div className="w-full h-[350px]">
-                    <Bar 
-                      data={barChartData} 
-                      options={{ 
-                        maintainAspectRatio: false, 
-                        plugins: { legend: { display: false } },
-                        scales: {
-                          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { weight: 'bold' } } },
-                          x: { grid: { display: false }, ticks: { color: '#64748b', font: { weight: 'bold', size: 10 } } }
-                        }
-                      }} 
-                    />
-                  </div>
-                </motion.div>
-              </div>
-
-              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5 overflow-hidden">
-                <h3 className="font-bold text-slate-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
-                  <span className="w-4 h-4 bg-indigo-500 rounded flex items-center justify-center text-[10px] text-white">3</span>
-                  Project Breakdown
-                </h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-white/5">
-                        <th className="pb-4 pr-4">#</th>
-                        <th className="pb-4 pr-4">Project</th>
-                        <th className="pb-4 pr-4 text-center">Tasks</th>
-                        <th className="pb-4 pr-4 text-center text-emerald-400">Total Time 1</th>
-                        <th className="pb-4 pr-4 text-center text-indigo-400">Total Time 2</th>
-                        <th className="pb-4 text-right">Share (%)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.03]">
-                      {stats.map((s, i) => {
-                        const totalUnique = stats.reduce((acc, curr) => acc + curr.uniqueTasks, 0)
-                        const pct = ((s.uniqueTasks / totalUnique) * 100).toFixed(1)
-                        return (
-                          <tr key={s.name} className="group hover:bg-white/[0.02] transition-colors">
-                            <td className="py-4 text-slate-500 font-mono text-xs">{i + 1}</td>
-                            <td className="py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full shadow-lg" style={{ background: PALETTE[i % PALETTE.length], boxShadow: `0 0 10px ${PALETTE[i % PALETTE.length]}44` }} />
-                                <span className="font-bold text-slate-200">{s.name}</span>
-                              </div>
-                            </td>
-                            <td className="py-4 text-center">
-                              <span className="text-indigo-400 font-black text-lg">{s.uniqueTasks}</span>
-                            </td>
-                            <td className="py-4 text-center text-emerald-400 font-bold">{s.totalTime1}</td>
-                            <td className="py-4 text-center text-indigo-400 font-bold">{s.totalTime2}</td>
-                            <td className="py-4 text-right">
-                              <span className="text-slate-500 text-xs font-bold">{pct}%</span>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
                 </div>
-              </motion.div>
+
+                <button 
+                  onClick={() => setFilters({ field: filters.field, values: [] })}
+                  className="btn btn-secondary w-full py-4 text-xs font-bold uppercase tracking-widest"
+                >
+                  Clear All
+                </button>
+              </div>
+            </aside>
+
+            <div className="flex-1 w-full space-y-8">
+              {view === 'detail' && (
+                <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
+                  <div className="max-h-[800px] overflow-auto custom-scrollbar">
+                    <table className="w-full text-left">
+                      <thead className="sticky top-0 bg-slate-900/90 backdrop-blur-xl z-10">
+                        <tr className="text-slate-500 font-black uppercase text-[11px] tracking-[0.25em] border-b border-white/5 whitespace-nowrap">
+                          <th className="p-6">Project</th>
+                          <th className="p-6">Task Name</th>
+                          <th className="p-6">Create By</th>
+                          <th className="p-6">DAY</th>
+                          <th className="p-6">Created At</th>
+                          <th className="p-6">Date Start</th>
+                          <th className="p-6">Date Checked</th>
+                          <th className="p-6 text-emerald-400">Total Time 1</th>
+                          <th className="p-6 text-indigo-400">Total Time 2</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/[0.03]">
+                        {filteredData.slice(0, 300).map((r, i) => (
+                          <tr key={i} className="hover:bg-white/[0.04] transition-all group border-l-2 border-transparent hover:border-indigo-500">
+                            <td className="p-6">
+                              <span className="text-indigo-400 font-bold text-base tracking-tight group-hover:text-indigo-300">{r.project}</span>
+                            </td>
+                            <td className="p-6 font-semibold text-slate-200 text-sm">{r.taskName}</td>
+                            <td className="p-6 text-slate-400 text-xs font-mono">{r.createdBy}</td>
+                            <td className="p-6 text-slate-300 font-bold text-sm">{r.day}</td>
+                            <td className="p-6 text-slate-400 text-sm">{formatTime(r.createdAt)}</td>
+                            <td className="p-6 text-slate-400 text-sm">{formatTime(r.dateStart)}</td>
+                            <td className="p-6 text-slate-200 font-bold text-sm">{formatTime(r.dateChecked)}</td>
+                            <td className="p-6 text-emerald-400 font-black text-sm">{r.time1Str}</td>
+                            <td className="p-6 text-indigo-400 font-black text-sm">{r.time2Str}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {view === 'pivot' && (
+                <div className="space-y-4">
+                  <div className="flex gap-2 p-1 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/5 w-fit">
+                    <button 
+                      onClick={() => setPivotMetric('time1')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time1' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                      TOTAL TIME 1
+                    </button>
+                    <button 
+                      onClick={() => setPivotMetric('time2')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time2' ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                      TOTAL TIME 2
+                    </button>
+                  </div>
+                  <div className="glass-panel overflow-auto max-h-[700px] border-white/5 shadow-2xl custom-scrollbar">
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-2xl z-10 shadow-lg">
+                        <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] border-b border-white/10">
+                          <th className="p-6 min-w-[150px]">Project</th>
+                          <th className="p-6 min-w-[200px]">Task</th>
+                          <th className="p-6">Create By</th>
+                          {['T2','T3','T4','T5','T6'].map(d => <th key={d} className="p-6 text-center">{d}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/[0.05]">
+                        {pivotData.map((r, i) => (
+                          <tr key={i} className="hover:bg-white/[0.04] transition-all group">
+                            <td className="p-6 font-bold text-indigo-400">{r.project}</td>
+                            <td className="p-6 font-medium text-slate-200">{r.taskName}</td>
+                            <td className="p-6 text-[11px] text-slate-500 font-mono group-hover:text-slate-400">{r.createdBy}</td>
+                            {['T2','T3','T4','T5','T6'].map(d => (
+                              <td key={d} className="p-6 text-center">
+                                <div className="flex flex-col gap-1.5 items-center">
+                                  {(r.days[d] || []).map((t, idx) => (
+                                    <span key={idx} className={`${pivotMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'} px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
+                                      {pivotMetric === 'time1' ? t.time1Str : t.time2Str}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {view === 'analytics' && (
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 flex flex-col items-center bg-slate-900/60 border-white/5">
+                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
+                        <span className="w-4 h-4 bg-indigo-500 rounded flex items-center justify-center text-[10px] text-white">1</span>
+                        Project Time Distribution (Time 1)
+                      </h3>
+                      <div className="w-full h-[350px] relative">
+                        <Doughnut 
+                          data={chartData} 
+                          options={{ 
+                            maintainAspectRatio: false, 
+                            cutout: '75%', 
+                            plugins: { 
+                              legend: { display: false } 
+                            } 
+                          }} 
+                        />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <span className="text-3xl font-black text-white">{projectStats.length}</span>
+                          <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Projects</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                    
+                    <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5">
+                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
+                        <span className="w-4 h-4 bg-emerald-500 rounded flex items-center justify-center text-[10px] text-white">2</span>
+                        User Workload (Time 1)
+                      </h3>
+                      <div className="w-full h-[350px]">
+                        <Bar 
+                          data={barChartData} 
+                          options={{ 
+                            maintainAspectRatio: false, 
+                            plugins: { legend: { display: false } },
+                            scales: {
+                              y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { weight: 'bold' } } },
+                              x: { grid: { display: false }, ticks: { color: '#64748b', font: { weight: 'bold', size: 10 } } }
+                            }
+                          }} 
+                        />
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    {/* Project Summary */}
+                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5 overflow-hidden">
+                      <h3 className="font-bold text-indigo-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
+                        <TableIcon size={14} />
+                        Summary by Project
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="text-slate-500 font-bold uppercase tracking-widest border-b border-white/5">
+                              <th className="pb-4">Project</th>
+                              <th className="pb-4 text-center">Tasks</th>
+                              <th className="pb-4 text-center text-emerald-400">Time 1</th>
+                              <th className="pb-4 text-center text-indigo-400">Time 2</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/[0.03]">
+                            {projectStats.map((s, i) => (
+                              <tr key={s.name} className="group hover:bg-white/[0.02]">
+                                <td className="py-4 font-bold text-slate-200">{s.name}</td>
+                                <td className="py-4 text-center text-indigo-400 font-black">{s.uniqueTasks}</td>
+                                <td className="py-4 text-center text-emerald-400">{s.totalTime1}</td>
+                                <td className="py-4 text-center text-indigo-400">{s.totalTime2}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </motion.div>
+
+                    {/* User Summary */}
+                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5 overflow-hidden">
+                      <h3 className="font-bold text-emerald-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
+                        <Search size={14} />
+                        Summary by Created By
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="text-slate-500 font-bold uppercase tracking-widest border-b border-white/5">
+                              <th className="pb-4">User</th>
+                              <th className="pb-4 text-center">Projects</th>
+                              <th className="pb-4 text-center text-emerald-400">Time 1</th>
+                              <th className="pb-4 text-center text-indigo-400">Time 2</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/[0.03]">
+                            {userStats.map((s, i) => (
+                              <tr key={s.name} className="group hover:bg-white/[0.02]">
+                                <td className="py-4 font-bold text-slate-200 text-[10px] font-mono">{s.name}</td>
+                                <td className="py-4 text-center text-emerald-400 font-black">{s.uniqueProjects}</td>
+                                <td className="py-4 text-center text-emerald-400">{s.totalTime1}</td>
+                                <td className="py-4 text-center text-indigo-400">{s.totalTime2}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </motion.div>
       )}
     </div>
