@@ -13,22 +13,42 @@ const PALETTE = ['#818cf8', '#10b981', '#f59e0b', '#3b82f6', '#f43f5e', '#8b5cf6
 const CSVProcessor = () => {
   const [data, setData] = useState([])
   const [view, setView] = useState('detail')
-  const [filters, setFilters] = useState({ project: '', task: '', user: '' })
+  const [filters, setFilters] = useState({ field: 'project', values: [] })
   const [fileName, setFileName] = useState('')
   const [pivotMetric, setPivotMetric] = useState('time1') // 'time1' or 'time2'
 
-  const processDate = (dateStr) => {
-    if (!dateStr) return null;
-    const str = dateStr.toString().trim();
+  const processDate = (val) => {
+    if (!val) return null;
+    
+    // If it's already a Date object (from XLSX)
+    if (val instanceof Date) {
+      return new Date(val.getTime() + 7 * 3600000);
+    }
+
+    let str = val.toString().trim();
     if (str.startsWith('0001')) return null;
+
     try {
-      let s = dateStr.toString().trim().replace(' ', 'T');
-      if (!s.includes('Z') && !s.match(/[+-]\d{2}:\d{2}$/)) s += 'Z';
-      const date = new Date(s);
+      // Standardize to ISO-like format
+      let s = str.replace(' ', 'T');
+      
+      // Try parsing directly first
+      let date = new Date(s);
+      
+      // If direct parsing fails, try adding 'Z' (only if no timezone info exists)
+      if (isNaN(date.getTime())) {
+        if (!s.includes('Z') && !s.match(/[+-]\d{2}/)) {
+          date = new Date(s + 'Z');
+        }
+      }
+      
       if (isNaN(date.getTime())) return null;
-      // Convert to GMT+7 (assuming input is GMT+0)
+      
+      // Adjust to GMT+7 (assuming input is UTC/GMT+0)
       return new Date(date.getTime() + 7 * 3600000);
-    } catch (e) { return null; }
+    } catch (e) { 
+      return null; 
+    }
   }
 
   const formatTime = (date) => {
@@ -117,12 +137,35 @@ const CSVProcessor = () => {
 
 
   const filteredData = useMemo(() => {
-    return data.filter(r => 
-      r.project.toLowerCase().includes(filters.project.toLowerCase()) &&
-      r.taskName.toLowerCase().includes(filters.task.toLowerCase()) &&
-      r.createdBy.toLowerCase().includes(filters.user.toLowerCase())
-    )
+    if (filters.values.length === 0) return data;
+    const selectedSet = new Set(filters.values.map(v => v.toLowerCase()));
+    return data.filter(r => {
+      let rowVal = '';
+      if (filters.field === 'project') rowVal = r.project;
+      else if (filters.field === 'task') rowVal = r.taskName;
+      else if (filters.field === 'user') rowVal = r.createdBy;
+      return selectedSet.has(rowVal.toLowerCase());
+    })
   }, [data, filters])
+
+  const uniqueFilterValues = useMemo(() => {
+    const vals = new Set();
+    data.forEach(r => {
+      if (filters.field === 'project') vals.add(r.project);
+      else if (filters.field === 'task') vals.add(r.taskName);
+      else if (filters.field === 'user') vals.add(r.createdBy);
+    });
+    return Array.from(vals).sort();
+  }, [data, filters.field])
+
+  const toggleFilterValue = (val) => {
+    setFilters(prev => {
+      const nextValues = prev.values.includes(val)
+        ? prev.values.filter(v => v !== val)
+        : [...prev.values, val];
+      return { ...prev, values: nextValues };
+    });
+  }
 
   const pivotData = useMemo(() => {
     const map = new Map()
@@ -245,36 +288,44 @@ const CSVProcessor = () => {
 
           {view === 'detail' && (
             <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
-              <div className="p-6 bg-white/[0.02] border-b border-white/5 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] text-indigo-400">Filter Project</label>
-                  <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
-                    <input 
-                      className="input pl-10 border-white/10 bg-slate-950/50" placeholder="Search project name..."
-                      value={filters.project} onChange={e => setFilters({...filters, project: e.target.value})}
-                    />
+              <div className="p-6 bg-white/[0.02] border-b border-white/5 flex flex-col md:flex-row gap-6 items-start">
+                <div className="space-y-2 w-full md:w-[250px]">
+                  <label className="text-[10px] text-indigo-400">Filter Type</label>
+                  <select 
+                    className="input bg-slate-950/50 border-white/10"
+                    value={filters.field}
+                    onChange={e => setFilters({ field: e.target.value, values: [] })}
+                  >
+                    <option value="project">PROJECT</option>
+                    <option value="task">TASK NAME</option>
+                    <option value="user">CREATE BY</option>
+                  </select>
+                </div>
+                <div className="space-y-2 flex-1 w-full">
+                  <label className="text-[10px] text-emerald-400">Select Values ({filters.values.length} selected)</label>
+                  <div className="max-h-[120px] overflow-auto p-3 bg-slate-950/50 border border-white/10 rounded-xl custom-scrollbar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {uniqueFilterValues.map(v => (
+                      <label key={v} className="flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-1.5 rounded-lg transition-colors">
+                        <input 
+                          type="checkbox" 
+                          checked={filters.values.includes(v)}
+                          onChange={() => toggleFilterValue(v)}
+                          className="w-4 h-4 rounded border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 transition-all"
+                        />
+                        <span className={`text-xs truncate ${filters.values.includes(v) ? 'text-indigo-400 font-bold' : 'text-slate-400'}`}>
+                          {v}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] text-emerald-400">Filter Task</label>
-                  <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
-                    <input 
-                      className="input pl-10 border-white/10 bg-slate-950/50" placeholder="Search task details..."
-                      value={filters.task} onChange={e => setFilters({...filters, task: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] text-amber-400">Filter User</label>
-                  <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
-                    <input 
-                      className="input pl-10 border-white/10 bg-slate-950/50" placeholder="Search user email..."
-                      value={filters.user} onChange={e => setFilters({...filters, user: e.target.value})}
-                    />
-                  </div>
+                <div className="pt-6">
+                  <button 
+                    onClick={() => setFilters({ field: filters.field, values: [] })}
+                    className="btn btn-secondary h-[42px] px-6 whitespace-nowrap"
+                  >
+                    Clear Selection
+                  </button>
                 </div>
               </div>
               <div className="max-h-[600px] overflow-auto custom-scrollbar">
