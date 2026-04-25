@@ -218,7 +218,7 @@ function App() {
           </div>
         </div>
 
-        <div className="flex bg-slate-900/40 backdrop-blur-2xl p-1.5 rounded-2xl border border-white/5 shadow-2xl">
+        <div className="flex gap-2 bg-slate-900/40 backdrop-blur-2xl p-1.5 rounded-2xl border border-white/5 shadow-2xl">
           <button 
             onClick={() => setActiveTab('report')}
             className={`flex items-center gap-3 px-8 py-3 rounded-xl text-sm font-bold transition-all duration-500 ${

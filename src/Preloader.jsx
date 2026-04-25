@@ -71,9 +71,9 @@ const Preloader = ({ onLoadingComplete }) => {
         {/* Text Area */}
         <div className="mt-24 flex flex-col items-center gap-4">
           <motion.h2 
-            className="text-2xl font-black text-white tracking-[0.3em] italic"
+            className="text-2xl font-black text-white tracking-[0.3em]"
           >
-            RINCOVITCH <span className="text-indigo-400">SYSTEM</span>
+            RINCOVITCH
           </motion.h2>
           
           <div className="flex flex-col items-center gap-2">
