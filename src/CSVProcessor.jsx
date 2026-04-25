@@ -20,7 +20,7 @@ const CSVProcessor = () => {
   const processDate = (val) => {
     if (!val) return null;
     
-    // If it's already a Date object (from XLSX)
+    // If it's already a Date object
     if (val instanceof Date) {
       return new Date(val.getTime() + 7 * 3600000);
     }
@@ -29,34 +29,34 @@ const CSVProcessor = () => {
     if (str.startsWith('0001')) return null;
 
     try {
-      // Standardize to ISO-like format
+      // 1. Clean up space and timezone
       let s = str.replace(' ', 'T');
+      if (s.match(/[+-]\d{2}$/)) s += ':00';
       
-      // Fix timezone suffix if it's like +00 or +07 (missing :00)
-      // JS Date often requires +HH:mm format
-      if (s.match(/[+-]\d{2}$/)) {
-        s += ':00';
-      }
-      
-      // Try parsing directly first
+      // 2. Try parsing
       let date = new Date(s);
       
-      // If direct parsing fails, try adding 'Z' (only if no timezone info exists)
+      // 3. Fallback: Add Z if no timezone info
       if (isNaN(date.getTime())) {
         if (!s.includes('Z') && !s.match(/[+-]\d{2}/)) {
           date = new Date(s + 'Z');
         }
       }
-
-      // Fallback: try removing fractional seconds if still invalid
+      
+      // 4. Fallback: Remove fractional seconds (picky browsers)
       if (isNaN(date.getTime())) {
         let sNoMs = s.replace(/\.\d+(?=[+-Z]|$)/, '');
         date = new Date(sNoMs);
       }
       
+      if (isNaN(date.getTime())) {
+        // Last resort: try very basic parse
+        date = new Date(str);
+      }
+
       if (isNaN(date.getTime())) return null;
       
-      // Adjust to GMT+7 (assuming input is UTC/GMT+0)
+      // Add 7 hours to convert GMT+0 to GMT+7 display values
       return new Date(date.getTime() + 7 * 3600000);
     } catch (e) { 
       return null; 
@@ -65,12 +65,17 @@ const CSVProcessor = () => {
 
   const formatTime = (date) => {
     if (!date) return '-';
-    return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`;
+    const h = String(date.getUTCHours()).padStart(2, '0');
+    const m = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
   }
 
   const formatDate = (date) => {
     if (!date) return '-';
-    return date.toISOString().split('T')[0];
+    const y = date.getUTCFullYear();
+    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(date.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   const getDurationMs = (start, end) => {
