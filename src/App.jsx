@@ -121,17 +121,76 @@ function App() {
     setReportData(reportData.map(r => r.id === id ? { ...r, status } : r))
   }
 
-  const exportExcel = () => {
+  const exportExcel = async () => {
     if (reportData.length === 0) return
-    const headers = ['PROJECT', 'TASK', 'STATUS', ...DAYS_OF_WEEK.map((d, i) => `${d} (${weekDates[i]})`)]
+    
+    // Create header row with dates
+    const headers = ['PROJECT', 'TASK DETAILS', 'STATUS', ...DAYS_OF_WEEK.map((d, i) => `${d.toUpperCase()} (${weekDates[i]})`)]
+    
+    // Create data rows
     const rows = reportData.map(r => [
-      r.project, r.task, r.status, r.days.Monday, r.days.Tuesday, r.days.Wednesday, r.days.Thursday, r.days.Friday
+      r.project, 
+      r.task, 
+      r.status, 
+      r.days.Monday || '-', 
+      r.days.Tuesday || '-', 
+      r.days.Wednesday || '-', 
+      r.days.Thursday || '-', 
+      r.days.Friday || '-'
     ])
+
+    // Create workbook and worksheet
     const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-    ws['!cols'] = [{ wch: 20 }, { wch: 40 }, { wch: 12 }, ...Array(5).fill({ wch: 15 })]
+    
+    // Add a title row
+    const titleRow = [['RINCOVITCH WEEKLY REPORT - ' + weekDates[0] + ' to ' + weekDates[4]]]
+    const ws = XLSX.utils.aoa_to_sheet([...titleRow, [], headers, ...rows])
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 20 }, // Project
+      { wch: 50 }, // Task Details
+      { wch: 12 }, // Status
+      { wch: 18 }, // Monday
+      { wch: 18 }, // Tuesday
+      { wch: 18 }, // Wednesday
+      { wch: 18 }, // Thursday
+      { wch: 18 }  // Friday
+    ]
+
+    // Merge title cells
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } } // Merge title across all columns
+    ]
+
     XLSX.utils.book_append_sheet(wb, ws, 'Weekly Report')
-    XLSX.writeFile(wb, `Weekly_Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
+    
+    const fileName = `Rincovitch_Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
+
+    // Advanced "Save As" if supported by browser (Chrome, Edge, etc.)
+    if ('showSaveFilePicker' in window) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: fileName,
+          types: [{
+            description: 'Excel Files',
+            accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] },
+          }],
+        })
+        const writable = await handle.createWritable()
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+        await writable.write(excelBuffer)
+        await writable.close()
+      } catch (err) {
+        // Fallback to standard download if user cancels or error occurs
+        if (err.name !== 'AbortError') {
+          XLSX.writeFile(wb, fileName)
+        }
+      }
+    } else {
+      // Fallback for browsers that don't support showSaveFilePicker
+      XLSX.writeFile(wb, fileName)
+    }
   }
 
   return (

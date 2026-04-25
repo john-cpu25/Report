@@ -166,7 +166,7 @@ const WeeklyReport = ({
                 <div className="space-y-1">
                   <label>Report Date</label>
                   <input 
-                    type="date" className="input bg-slate-950/40 border-white/10 text-[10px] p-2"
+                    type="date" className="input bg-slate-950/40 border-white/10 text-xs p-2.5 min-h-[42px] appearance-none"
                     value={selectedDate}
                     onChange={e => setSelectedDate(e.target.value)}
                   />
@@ -174,7 +174,7 @@ const WeeklyReport = ({
                 <div className="space-y-1">
                   <label>Day</label>
                   <input 
-                    type="text" className="input bg-slate-950/40 border-white/10 text-[10px] font-black p-2 opacity-50 cursor-not-allowed"
+                    type="text" className="input bg-slate-950/40 border-white/10 text-xs font-black p-2.5 min-h-[42px] opacity-60 cursor-not-allowed uppercase tracking-wider"
                     value={formData.day}
                     readOnly
                   />
