@@ -8,11 +8,13 @@ import CSVProcessor from './CSVProcessor'
 import projectsData from './data/projects.json'
 import CelestialBackground from './CelestialBackground'
 import RincovitchLogo from './RincovitchLogo'
+import Preloader from './Preloader'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
 function App() {
   const [activeTab, setActiveTab] = useState('report')
+  const [isLoading, setIsLoading] = useState(true)
   const [reportData, setReportData] = useState([])
   const [customProjects, setCustomProjects] = useState([])
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -194,9 +196,18 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8 selection:bg-indigo-500/30">
-      <CelestialBackground />
-      <header className="max-w-[1800px] w-[95%] mx-auto mb-12 flex flex-col lg:flex-row justify-between items-center gap-8">
+    <AnimatePresence mode="wait">
+      {isLoading ? (
+        <Preloader key="preloader" onLoadingComplete={() => setIsLoading(false)} />
+      ) : (
+        <motion.div 
+          key="main-content"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="min-h-screen p-4 md:p-8 selection:bg-indigo-500/30"
+        >
+          <CelestialBackground />
+          <header className="max-w-[1800px] w-[95%] mx-auto mb-12 flex flex-col lg:flex-row justify-between items-center gap-8">
         <div className="flex items-center gap-4 group">
           <div className="p-2.5 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-300">
             <RincovitchLogo size={32} />
@@ -266,7 +277,9 @@ function App() {
       <footer className="max-w-[1800px] w-[95%] mx-auto mt-12 pt-8 border-t border-white/10 text-center text-white/30 text-xs">
         <p>&copy; 2026 Rincovitch - Weekly Report System - Vietnam</p>
       </footer>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
