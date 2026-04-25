@@ -25,16 +25,16 @@ const WeeklyReport = ({
 
   return (
     <div className="space-y-12">
-      <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <main className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 2xl:grid-cols-12 gap-6 items-start">
         {/* Sidebar Form */}
-        <aside className="lg:col-span-3">
-          <div className="glass-panel p-8 sticky top-8 border-white/5 shadow-2xl">
-            <div className="flex items-center gap-3 mb-8">
+        <aside className="lg:col-span-12 xl:col-span-3 2xl:col-span-2">
+          <div className="glass-panel p-6 sticky top-8 border-white/5 shadow-2xl">
+            <div className="flex items-center gap-3 mb-6">
               <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-              <h2 className="text-xl font-black text-white tracking-tight uppercase italic">Entry Form</h2>
+              <h2 className="text-lg font-black text-white tracking-tight uppercase italic">Entry Form</h2>
             </div>
             
-            <form onSubmit={handleAddTask} className="space-y-6">
+            <form onSubmit={handleAddTask} className="space-y-4">
               <div className="space-y-2">
                 <label>Project Name</label>
                 <input 
@@ -55,11 +55,11 @@ const WeeklyReport = ({
               </div>
               <div className="space-y-3">
                 <label>Standard Workflow</label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {['REO BTM', 'REO TOP', 'REO SHEAR', 'PT', 'BACK'].map(t => (
-                    <label key={t} className="flex items-center gap-2.5 cursor-pointer group">
+                    <label key={t} className="flex items-center gap-2 cursor-pointer group">
                       <input 
-                        type="checkbox" className="w-5 h-5 rounded-lg border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer"
+                        type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500"
                         checked={formData.tasks.includes(t)}
                         onChange={e => {
                           const newTasks = e.target.checked 
@@ -68,7 +68,7 @@ const WeeklyReport = ({
                           setFormData({...formData, tasks: newTasks})
                         }}
                       />
-                      <span className="text-[11px] font-bold text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider">{t}</span>
+                      <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-200 uppercase">{t}</span>
                     </label>
                   ))}
                 </div>
@@ -83,18 +83,18 @@ const WeeklyReport = ({
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label>Report Date</label>
                   <input 
-                    type="date" className="input bg-slate-950/40 border-white/10 text-[11px]"
+                    type="date" className="input bg-slate-950/40 border-white/10 text-[10px] p-2"
                     value={selectedDate}
                     onChange={e => setSelectedDate(e.target.value)}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label>Day</label>
                   <select 
-                    className="input bg-slate-950/40 border-white/10 text-xs font-bold"
+                    className="input bg-slate-950/40 border-white/10 text-[10px] font-bold p-2"
                     value={formData.day}
                     onChange={e => setFormData({...formData, day: e.target.value})}
                   >
@@ -104,27 +104,27 @@ const WeeklyReport = ({
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label>Current Status</label>
+                <div className="space-y-1">
+                  <label>Status</label>
                   <select 
-                    className="input bg-slate-950/40 border-white/10 text-xs font-bold"
+                    className="input bg-slate-950/40 border-white/10 text-[10px] font-bold p-2"
                     value={formData.status}
                     onChange={e => setFormData({...formData, status: e.target.value})}
                   >
                     {['DONE', 'PENDING', 'TMR', 'WIP'].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label>ETA Time</label>
                   <input 
-                    type="time" className="input bg-slate-950/40 border-white/10 font-bold"
+                    type="time" className="input bg-slate-950/40 border-white/10 font-bold p-2"
                     value={formData.eta}
                     onChange={e => setFormData({...formData, eta: e.target.value})}
                   />
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-primary w-full mt-6 py-4 text-sm tracking-widest shadow-xl shadow-indigo-500/20">
+              <button type="submit" className="btn btn-primary w-full mt-4 py-3 text-xs tracking-widest shadow-xl">
                 SUBMIT TO LOG
               </button>
             </form>
@@ -132,7 +132,7 @@ const WeeklyReport = ({
         </aside>
 
         {/* Main Table */}
-        <div className="lg:col-span-6 space-y-6">
+        <div className="lg:col-span-12 xl:col-span-6 2xl:col-span-7 space-y-6">
           <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
@@ -216,7 +216,7 @@ const WeeklyReport = ({
         </div>
 
         {/* Right Sidebar - Statistics */}
-        <aside className="lg:col-span-3 space-y-6">
+        <aside className="lg:col-span-12 xl:col-span-3 2xl:col-span-3 space-y-6">
           <div className="glass-panel p-8 border-white/5 shadow-2xl">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
