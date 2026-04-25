@@ -22,13 +22,12 @@ const CSVProcessor = () => {
     
     // If it's already a Date object
     if (val instanceof Date) {
-      return new Date(val.getTime() + 7 * 3600000);
+      return val;
     }
 
     // If it's a number (Excel serial date)
     if (typeof val === 'number') {
-      const date = new Date((val - 25569) * 86400 * 1000);
-      return new Date(date.getTime() + 7 * 3600000);
+      return new Date((val - 25569) * 86400 * 1000);
     }
 
     let str = val.toString().trim();
@@ -36,8 +35,7 @@ const CSVProcessor = () => {
     // If string is just a 5-digit number (Excel serial date as string)
     if (/^\d{5}(\.\d+)?$/.test(str)) {
       const num = parseFloat(str);
-      const date = new Date((num - 25569) * 86400 * 1000);
-      return new Date(date.getTime() + 7 * 3600000);
+      return new Date((num - 25569) * 86400 * 1000);
     }
     if (str.startsWith('0001')) return null;
 
@@ -69,8 +67,7 @@ const CSVProcessor = () => {
 
       if (isNaN(date.getTime())) return null;
       
-      // Add 7 hours to convert GMT+0 to GMT+7 display values
-      return new Date(date.getTime() + 7 * 3600000);
+      return date;
     } catch (e) { 
       return null; 
     }
@@ -317,80 +314,90 @@ const CSVProcessor = () => {
           </div>
 
           {view === 'detail' && (
-            <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
-              <div className="p-6 bg-white/[0.02] border-b border-white/5 flex flex-col md:flex-row gap-6 items-start">
-                <div className="space-y-2 w-full md:w-[250px]">
-                  <label className="text-[10px] text-indigo-400">Filter Type</label>
-                  <select 
-                    className="input bg-slate-950/50 border-white/10"
-                    value={filters.field}
-                    onChange={e => setFilters({ field: e.target.value, values: [] })}
-                  >
-                    <option value="project">PROJECT</option>
-                    <option value="task">TASK NAME</option>
-                    <option value="user">CREATE BY</option>
-                  </select>
-                </div>
-                <div className="space-y-2 flex-1 w-full">
-                  <label className="text-[10px] text-emerald-400">Select Values ({filters.values.length} selected)</label>
-                  <div className="max-h-[120px] overflow-auto p-3 bg-slate-950/50 border border-white/10 rounded-xl custom-scrollbar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {uniqueFilterValues.map(v => (
-                      <label key={v} className="flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-1.5 rounded-lg transition-colors">
-                        <input 
-                          type="checkbox" 
-                          checked={filters.values.includes(v)}
-                          onChange={() => toggleFilterValue(v)}
-                          className="w-4 h-4 rounded border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 transition-all"
-                        />
-                        <span className={`text-xs truncate ${filters.values.includes(v) ? 'text-indigo-400 font-bold' : 'text-slate-400'}`}>
-                          {v}
-                        </span>
-                      </label>
-                    ))}
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              {/* Sidebar Filters */}
+              <aside className="w-full lg:w-80 glass-panel border-white/5 shadow-2xl p-6 sticky top-8">
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <label className="text-xs font-black text-indigo-400 uppercase tracking-widest">Filter Type</label>
+                    <select 
+                      className="input bg-slate-950/50 border-white/10 text-sm font-bold h-12"
+                      value={filters.field}
+                      onChange={e => setFilters({ field: e.target.value, values: [] })}
+                    >
+                      <option value="project">PROJECT</option>
+                      <option value="task">TASK NAME</option>
+                      <option value="user">CREATE BY</option>
+                    </select>
                   </div>
-                </div>
-                <div className="pt-6">
+
+                  <div className="space-y-4">
+                    <label className="text-xs font-black text-emerald-400 uppercase tracking-widest flex justify-between">
+                      Select Values
+                      <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded-full">{filters.values.length}</span>
+                    </label>
+                    <div className="max-h-[400px] overflow-auto p-2 bg-slate-950/50 border border-white/10 rounded-2xl custom-scrollbar space-y-1">
+                      {uniqueFilterValues.map(v => (
+                        <label key={v} className={`flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-2.5 rounded-xl transition-all ${filters.values.includes(v) ? 'bg-indigo-500/10' : ''}`}>
+                          <input 
+                            type="checkbox" 
+                            checked={filters.values.includes(v)}
+                            onChange={() => toggleFilterValue(v)}
+                            className="w-5 h-5 rounded-lg border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500 transition-all"
+                          />
+                          <span className={`text-[13px] leading-tight ${filters.values.includes(v) ? 'text-indigo-300 font-bold' : 'text-slate-400'}`}>
+                            {v}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
                   <button 
                     onClick={() => setFilters({ field: filters.field, values: [] })}
-                    className="btn btn-secondary h-[42px] px-6 whitespace-nowrap"
+                    className="btn btn-secondary w-full py-4 text-xs font-bold uppercase tracking-widest"
                   >
-                    Clear Selection
+                    Clear All
                   </button>
                 </div>
-              </div>
-              <div className="max-h-[600px] overflow-auto custom-scrollbar">
-                <table className="w-full text-left text-sm">
-                  <thead className="sticky top-0 bg-slate-900/90 backdrop-blur-xl z-10">
-                    <tr className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.2em] border-b border-white/5 whitespace-nowrap">
-                      <th className="p-4">Project</th>
-                      <th className="p-4">Task Name</th>
-                      <th className="p-4">Create By</th>
-                      <th className="p-4">DAY</th>
-                      <th className="p-4">Created At</th>
-                      <th className="p-4">Date Start</th>
-                      <th className="p-4">Date Checked</th>
-                      <th className="p-4 text-emerald-400">Total Time 1</th>
-                      <th className="p-4 text-indigo-400">Total Time 2</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/[0.03]">
-                    {filteredData.slice(0, 300).map((r, i) => (
-                      <tr key={i} className="hover:bg-white/[0.03] transition-colors group">
-                        <td className="p-4">
-                          <span className="text-indigo-400 font-bold tracking-tight group-hover:text-indigo-300 transition-colors">{r.project}</span>
-                        </td>
-                        <td className="p-4 font-medium text-slate-200">{r.taskName}</td>
-                        <td className="p-4 text-slate-400 text-[11px] font-mono">{r.createdBy}</td>
-                        <td className="p-4 text-slate-400 font-bold">{r.day}</td>
-                        <td className="p-4 text-slate-500 text-[11px]">{formatTime(r.createdAt)}</td>
-                        <td className="p-4 text-slate-500 text-[11px]">{formatTime(r.dateStart)}</td>
-                        <td className="p-4 text-slate-500 text-[11px] font-bold">{formatTime(r.dateChecked)}</td>
-                        <td className="p-4 text-emerald-400 font-black text-xs">{r.time1Str}</td>
-                        <td className="p-4 text-indigo-400 font-black text-xs">{r.time2Str}</td>
+              </aside>
+
+              {/* Main Content Table */}
+              <div className="flex-1 w-full glass-panel overflow-hidden border-white/5 shadow-2xl">
+                <div className="max-h-[800px] overflow-auto custom-scrollbar">
+                  <table className="w-full text-left">
+                    <thead className="sticky top-0 bg-slate-900/90 backdrop-blur-xl z-10">
+                      <tr className="text-slate-500 font-black uppercase text-[11px] tracking-[0.25em] border-b border-white/5 whitespace-nowrap">
+                        <th className="p-6">Project</th>
+                        <th className="p-6">Task Name</th>
+                        <th className="p-6">Create By</th>
+                        <th className="p-6">DAY</th>
+                        <th className="p-6">Created At</th>
+                        <th className="p-6">Date Start</th>
+                        <th className="p-6">Date Checked</th>
+                        <th className="p-6 text-emerald-400">Total Time 1</th>
+                        <th className="p-6 text-indigo-400">Total Time 2</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.03]">
+                      {filteredData.slice(0, 300).map((r, i) => (
+                        <tr key={i} className="hover:bg-white/[0.04] transition-all group border-l-2 border-transparent hover:border-indigo-500">
+                          <td className="p-6">
+                            <span className="text-indigo-400 font-bold text-base tracking-tight group-hover:text-indigo-300">{r.project}</span>
+                          </td>
+                          <td className="p-6 font-semibold text-slate-200 text-sm">{r.taskName}</td>
+                          <td className="p-6 text-slate-400 text-xs font-mono">{r.createdBy}</td>
+                          <td className="p-6 text-slate-300 font-bold text-sm">{r.day}</td>
+                          <td className="p-6 text-slate-400 text-sm">{formatTime(r.createdAt)}</td>
+                          <td className="p-6 text-slate-400 text-sm">{formatTime(r.dateStart)}</td>
+                          <td className="p-6 text-slate-200 font-bold text-sm">{formatTime(r.dateChecked)}</td>
+                          <td className="p-6 text-emerald-400 font-black text-sm">{r.time1Str}</td>
+                          <td className="p-6 text-indigo-400 font-black text-sm">{r.time2Str}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
