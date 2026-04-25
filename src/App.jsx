@@ -226,7 +226,7 @@ function App() {
             }`}
           >
             <CalendarDays size={20} strokeWidth={2.5} />
-            <span>Weekly Report</span>
+            <span>Planner</span>
           </button>
           <button 
             onClick={() => setActiveTab('processor')}
@@ -235,7 +235,7 @@ function App() {
             }`}
           >
             <FileBarChart size={20} strokeWidth={2.5} />
-            <span>Data Processor</span>
+            <span>Data Analyst</span>
           </button>
         </div>
 
