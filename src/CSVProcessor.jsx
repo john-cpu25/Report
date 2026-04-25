@@ -15,6 +15,43 @@ const CSVProcessor = () => {
   const [view, setView] = useState('detail')
   const [filters, setFilters] = useState({ project: '', task: '', user: '' })
   const [fileName, setFileName] = useState('')
+  const [pivotMetric, setPivotMetric] = useState('time1') // 'time1' or 'time2'
+
+  const processDate = (dateStr) => {
+    if (!dateStr || dateStr.startsWith('0001')) return null;
+    try {
+      let s = dateStr.toString().trim().replace(' ', 'T');
+      if (!s.includes('Z') && !s.match(/[+-]\d{2}:\d{2}$/)) s += 'Z';
+      const date = new Date(s);
+      if (isNaN(date.getTime())) return null;
+      // Convert to GMT+7 (assuming input is GMT+0)
+      return new Date(date.getTime() + 7 * 3600000);
+    } catch (e) { return null; }
+  }
+
+  const formatTime = (date) => {
+    if (!date) return '-';
+    return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`;
+  }
+
+  const formatDate = (date) => {
+    if (!date) return '-';
+    return date.toISOString().split('T')[0];
+  }
+
+  const getDurationMs = (start, end) => {
+    if (!start || !end) return 0;
+    const diff = end.getTime() - start.getTime();
+    return diff > 0 ? diff : 0;
+  }
+
+  const formatDuration = (ms) => {
+    if (!ms) return '-';
+    const totalMinutes = Math.floor(ms / 60000);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    return `${h}h ${m}m`;
+  }
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0]
@@ -34,40 +71,39 @@ const CSVProcessor = () => {
 
   const processRawData = (raw) => {
     const processed = raw.map(row => {
-      const createdAt = row['created_at'] || row['Created At'] || ''
+      const createdAtStr = row['created_at'] || row['Created At'] || ''
+      const dateStartStr = row['date_start'] || row['Date Start'] || ''
+      const dateCheckedStr = row['date_checked'] || row['Date Checked'] || ''
       const rawName = row['name'] || row['Name'] || ''
       const createdBy = row['create_by'] || row['Created By'] || ''
       
-      const adjusted = adjustTimezone(createdAt)
+      const createdAt = processDate(createdAtStr)
+      const dateStart = processDate(dateStartStr)
+      const dateChecked = processDate(dateCheckedStr)
+      
+      const time1 = getDurationMs(createdAt, dateChecked)
+      const time2 = getDurationMs(dateStart, dateChecked)
+      
       const parts = rawName.toString().split(':')
       
       return {
         project: parts[0]?.trim() || '-',
         taskName: parts[1]?.trim() || '-',
         createdBy: createdBy || '-',
-        day: adjusted.day,
-        time: adjusted.time,
-        dateObj: adjusted.dateObj
+        day: formatDate(createdAt),
+        createdAt,
+        dateStart,
+        dateChecked,
+        time1,
+        time2,
+        time1Str: formatDuration(time1),
+        time2Str: formatDuration(time2),
+        dateObj: createdAt
       }
     })
     setData(processed)
   }
 
-  const adjustTimezone = (dateStr) => {
-    if (!dateStr) return { day: '-', time: '-' }
-    try {
-      let s = dateStr.toString().trim().replace(' ', 'T')
-      if (!s.includes('Z') && !s.match(/[+-]\d{2}:\d{2}$/)) s += 'Z'
-      const date = new Date(s)
-      if (isNaN(date.getTime())) return { day: dateStr, time: '-' }
-      const local = new Date(date.getTime() + 7 * 3600000)
-      return {
-        day: local.toISOString().split('T')[0],
-        time: `${String(local.getUTCHours()).padStart(2, '0')}:${String(local.getUTCMinutes()).padStart(2, '0')}`,
-        dateObj: local
-      }
-    } catch (e) { return { day: dateStr, time: '-' } }
-  }
 
   const filteredData = useMemo(() => {
     return data.filter(r => 
@@ -89,7 +125,12 @@ const CSVProcessor = () => {
       const dow = DOW_MAP[row.dateObj?.getUTCDay()]
       if (dow) {
         if (!entry.days[dow]) entry.days[dow] = []
-        entry.days[dow].push(row.time)
+        entry.days[dow].push({
+          time1: row.time1,
+          time2: row.time2,
+          time1Str: row.time1Str,
+          time2Str: row.time2Str
+        })
       }
     })
     return Array.from(map.values()).map(r => ({
@@ -101,13 +142,21 @@ const CSVProcessor = () => {
   const stats = useMemo(() => {
     const pMap = new Map()
     data.forEach(r => {
-      if (!pMap.has(r.project)) pMap.set(r.project, { tasks: new Set(), logs: 0 })
+      if (!pMap.has(r.project)) pMap.set(r.project, { tasks: new Set(), logs: 0, totalTime1: 0, totalTime2: 0 })
       const p = pMap.get(r.project)
       p.tasks.add(r.taskName)
       p.logs++
+      p.totalTime1 += r.time1
+      p.totalTime2 += r.time2
     })
     return Array.from(pMap.entries())
-      .map(([name, v]) => ({ name, uniqueTasks: v.tasks.size, totalLogs: v.logs }))
+      .map(([name, v]) => ({ 
+        name, 
+        uniqueTasks: v.tasks.size, 
+        totalLogs: v.logs,
+        totalTime1: formatDuration(v.totalTime1),
+        totalTime2: formatDuration(v.totalTime2)
+      }))
       .sort((a, b) => b.uniqueTasks - a.uniqueTasks)
   }, [data])
 
@@ -187,7 +236,7 @@ const CSVProcessor = () => {
             <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
               <div className="p-6 bg-white/[0.02] border-b border-white/5 grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px]">Filter Project</label>
+                  <label className="text-[10px] text-indigo-400">Filter Project</label>
                   <div className="relative">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
                     <input 
@@ -197,7 +246,7 @@ const CSVProcessor = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px]">Filter Task</label>
+                  <label className="text-[10px] text-emerald-400">Filter Task</label>
                   <div className="relative">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
                     <input 
@@ -207,7 +256,7 @@ const CSVProcessor = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px]">Filter User</label>
+                  <label className="text-[10px] text-amber-400">Filter User</label>
                   <div className="relative">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
                     <input 
@@ -220,24 +269,32 @@ const CSVProcessor = () => {
               <div className="max-h-[600px] overflow-auto custom-scrollbar">
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 bg-slate-900/90 backdrop-blur-xl z-10">
-                    <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] border-b border-white/5">
-                      <th className="p-6">Project</th>
-                      <th className="p-6">Task Name</th>
-                      <th className="p-6">Create By</th>
-                      <th className="p-6">Day</th>
-                      <th className="p-6 text-right">Time</th>
+                    <tr className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.2em] border-b border-white/5 whitespace-nowrap">
+                      <th className="p-4">Project</th>
+                      <th className="p-4">Task Name</th>
+                      <th className="p-4">Create By</th>
+                      <th className="p-4">DAY</th>
+                      <th className="p-4">Created At</th>
+                      <th className="p-4">Date Start</th>
+                      <th className="p-4">Date Checked</th>
+                      <th className="p-4 text-emerald-400">Total Time 1</th>
+                      <th className="p-4 text-indigo-400">Total Time 2</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.03]">
                     {filteredData.slice(0, 300).map((r, i) => (
                       <tr key={i} className="hover:bg-white/[0.03] transition-colors group">
-                        <td className="p-6">
+                        <td className="p-4">
                           <span className="text-indigo-400 font-bold tracking-tight group-hover:text-indigo-300 transition-colors">{r.project}</span>
                         </td>
-                        <td className="p-6 font-medium text-slate-200">{r.taskName}</td>
-                        <td className="p-6 text-slate-400 text-xs font-mono">{r.createdBy}</td>
-                        <td className="p-6 text-slate-400">{r.day}</td>
-                        <td className="p-6 text-right font-bold text-slate-200">{r.time}</td>
+                        <td className="p-4 font-medium text-slate-200">{r.taskName}</td>
+                        <td className="p-4 text-slate-400 text-[11px] font-mono">{r.createdBy}</td>
+                        <td className="p-4 text-slate-400 font-bold">{r.day}</td>
+                        <td className="p-4 text-slate-500 text-[11px]">{formatTime(r.createdAt)}</td>
+                        <td className="p-4 text-slate-500 text-[11px]">{formatTime(r.dateStart)}</td>
+                        <td className="p-4 text-slate-500 text-[11px] font-bold">{formatTime(r.dateChecked)}</td>
+                        <td className="p-4 text-emerald-400 font-black text-xs">{r.time1Str}</td>
+                        <td className="p-4 text-indigo-400 font-black text-xs">{r.time2Str}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -247,37 +304,53 @@ const CSVProcessor = () => {
           )}
 
           {view === 'pivot' && (
-            <div className="glass-panel overflow-auto max-h-[700px] border-white/5 shadow-2xl custom-scrollbar">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-2xl z-10 shadow-lg">
-                  <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] border-b border-white/10">
-                    <th className="p-6 min-w-[150px]">Project</th>
-                    <th className="p-6 min-w-[200px]">Task</th>
-                    <th className="p-6">Create By</th>
-                    {['T2','T3','T4','T5','T6'].map(d => <th key={d} className="p-6 text-center">{d}</th>)}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.05]">
-                  {pivotData.map((r, i) => (
-                    <tr key={i} className="hover:bg-white/[0.04] transition-all group">
-                      <td className="p-6 font-bold text-indigo-400">{r.project}</td>
-                      <td className="p-6 font-medium text-slate-200">{r.taskName}</td>
-                      <td className="p-6 text-[11px] text-slate-500 font-mono group-hover:text-slate-400">{r.createdBy}</td>
-                      {['T2','T3','T4','T5','T6'].map(d => (
-                        <td key={d} className="p-6 text-center">
-                          <div className="flex flex-col gap-1.5 items-center">
-                            {(r.days[d] || []).map((t, idx) => (
-                              <span key={idx} className="bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-md text-[11px] font-bold border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
-                                {t}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                      ))}
+            <div className="space-y-4">
+              <div className="flex gap-2 p-1 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/5 w-fit">
+                <button 
+                  onClick={() => setPivotMetric('time1')}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time1' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                  TOTAL TIME 1
+                </button>
+                <button 
+                  onClick={() => setPivotMetric('time2')}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time2' ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                  TOTAL TIME 2
+                </button>
+              </div>
+              <div className="glass-panel overflow-auto max-h-[700px] border-white/5 shadow-2xl custom-scrollbar">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-2xl z-10 shadow-lg">
+                    <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] border-b border-white/10">
+                      <th className="p-6 min-w-[150px]">Project</th>
+                      <th className="p-6 min-w-[200px]">Task</th>
+                      <th className="p-6">Create By</th>
+                      {['T2','T3','T4','T5','T6'].map(d => <th key={d} className="p-6 text-center">{d}</th>)}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.05]">
+                    {pivotData.map((r, i) => (
+                      <tr key={i} className="hover:bg-white/[0.04] transition-all group">
+                        <td className="p-6 font-bold text-indigo-400">{r.project}</td>
+                        <td className="p-6 font-medium text-slate-200">{r.taskName}</td>
+                        <td className="p-6 text-[11px] text-slate-500 font-mono group-hover:text-slate-400">{r.createdBy}</td>
+                        {['T2','T3','T4','T5','T6'].map(d => (
+                          <td key={d} className="p-6 text-center">
+                            <div className="flex flex-col gap-1.5 items-center">
+                              {(r.days[d] || []).map((t, idx) => (
+                                <span key={idx} className={`${pivotMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'} px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
+                                  {pivotMetric === 'time1' ? t.time1Str : t.time2Str}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -339,8 +412,9 @@ const CSVProcessor = () => {
                       <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-white/5">
                         <th className="pb-4 pr-4">#</th>
                         <th className="pb-4 pr-4">Project</th>
-                        <th className="pb-4 pr-4 text-center">Unique Tasks</th>
-                        <th className="pb-4 pr-4 text-center">Total Logs</th>
+                        <th className="pb-4 pr-4 text-center">Tasks</th>
+                        <th className="pb-4 pr-4 text-center text-emerald-400">Total Time 1</th>
+                        <th className="pb-4 pr-4 text-center text-indigo-400">Total Time 2</th>
                         <th className="pb-4 text-right">Share (%)</th>
                       </tr>
                     </thead>
@@ -360,7 +434,8 @@ const CSVProcessor = () => {
                             <td className="py-4 text-center">
                               <span className="text-indigo-400 font-black text-lg">{s.uniqueTasks}</span>
                             </td>
-                            <td className="py-4 text-center text-slate-400 font-medium">{s.totalLogs}</td>
+                            <td className="py-4 text-center text-emerald-400 font-bold">{s.totalTime1}</td>
+                            <td className="py-4 text-center text-indigo-400 font-bold">{s.totalTime2}</td>
                             <td className="py-4 text-right">
                               <span className="text-slate-500 text-xs font-bold">{pct}%</span>
                             </td>
