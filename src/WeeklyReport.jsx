@@ -1,5 +1,5 @@
 import React from 'react'
-import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet } from 'lucide-react'
+import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet, Layout } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const DAYS_OF_WEEK = ['T2', 'T3', 'T4', 'T5', 'T6']
