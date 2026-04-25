@@ -115,7 +115,7 @@ function App() {
 
   return (
     <div className="min-h-screen p-4 md:p-8 selection:bg-indigo-500/30">
-      <header className="max-w-7xl mx-auto mb-12 flex flex-col md:flex-row justify-between items-center gap-8">
+      <header className="max-w-[1600px] mx-auto mb-12 flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="flex items-center gap-4 group">
           <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl text-white shadow-2xl shadow-indigo-500/40 group-hover:rotate-6 transition-transform duration-300">
             <Layout size={28} strokeWidth={2.5} />
@@ -157,7 +157,7 @@ function App() {
         )}
       </header>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -181,7 +181,7 @@ function App() {
         </AnimatePresence>
       </div>
       
-      <footer className="max-w-7xl mx-auto mt-12 pt-8 border-t border-white/10 text-center text-white/30 text-xs">
+      <footer className="max-w-[1600px] mx-auto mt-12 pt-8 border-t border-white/10 text-center text-white/30 text-xs">
         <p>&copy; 2026 Rincovitch - Weekly Report System - Vietnam</p>
       </footer>
     </div>
