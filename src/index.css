@@ -25,7 +25,7 @@
 }
 
 body {
-  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  font-family: 'Roboto', 'Inter', system-ui, sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-main);
   line-height: 1.6;
