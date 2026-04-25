@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import * as XLSX from 'xlsx'
 import { Upload, FileText, BarChart3, Table as TableIcon, Download, Search } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import AtomicAnimation from './AtomicAnimation'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
 
@@ -381,6 +382,7 @@ const CSVProcessor = () => {
                 >
                   Clear All
                 </button>
+                <AtomicAnimation />
               </div>
             </aside>
 

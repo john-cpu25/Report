@@ -1,6 +1,7 @@
 import React from 'react'
 import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet, Layout } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import WorkflowAnimation from './WorkflowAnimation'
 import projectsData from './data/projects.json'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -345,6 +346,7 @@ const WeeklyReport = ({
                 </div>
               ))}
             </div>
+            <WorkflowAnimation />
           </div>
         </aside>
       </main>
