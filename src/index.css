@@ -38,6 +38,19 @@ body {
   min-height: 100vh;
 }
 
+@media (min-width: 1920px) {
+  html { font-size: 18px; } /* Scale up 12.5% on 1080p ultrawides and 24" */
+}
+
+@media (min-width: 2560px) {
+  html { font-size: 21px; } /* Scale up 31% on 2K displays (27") */
+}
+
+@media (min-width: 3840px) {
+  html { font-size: 28px; } /* Scale up 75% on 4K displays */
+}
+
+
 .glass-panel {
   background: var(--glass-bg);
   backdrop-filter: blur(16px);

@@ -207,7 +207,7 @@ function App() {
           className="min-h-screen p-4 md:p-8 selection:bg-indigo-500/30"
         >
           <CelestialBackground />
-          <header className="max-w-[1800px] w-[95%] mx-auto mb-12 flex flex-col lg:flex-row justify-between items-center gap-8">
+          <header className="max-w-[2560px] w-[98%] 2xl:w-[95%] mx-auto mb-12 flex flex-col lg:flex-row justify-between items-center gap-8">
         <div className="flex items-center gap-4 group">
           <div className="p-2.5 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-300">
             <RincovitchLogo size={32} />
@@ -249,7 +249,7 @@ function App() {
         )}
       </header>
 
-      <div className="max-w-[1800px] w-[95%] mx-auto">
+      <div className="max-w-[2560px] w-[98%] 2xl:w-[95%] mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -274,7 +274,7 @@ function App() {
         </AnimatePresence>
       </div>
       
-      <footer className="max-w-[1800px] w-[95%] mx-auto mt-12 pt-8 border-t border-white/10 text-center text-white/30 text-xs">
+      <footer className="max-w-[2560px] w-[98%] 2xl:w-[95%] mx-auto mt-12 pt-8 border-t border-white/10 text-center text-white/30 text-xs">
         <p>&copy; 2026 Rincovitch - Weekly Report System - Vietnam</p>
       </footer>
         </motion.div>
