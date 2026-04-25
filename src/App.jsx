@@ -12,7 +12,31 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 function App() {
   const [activeTab, setActiveTab] = useState('report')
   const [reportData, setReportData] = useState([])
+  const [customProjects, setCustomProjects] = useState([])
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  
+  // Load data
+  useEffect(() => {
+    const savedLogs = localStorage.getItem('weeklyReportData')
+    const savedProjects = localStorage.getItem('customProjects')
+    if (savedLogs) setReportData(JSON.parse(savedLogs))
+    if (savedProjects) setCustomProjects(JSON.parse(savedProjects))
+  }, [])
+
+  // Save data
+  useEffect(() => {
+    localStorage.setItem('weeklyReportData', JSON.stringify(reportData))
+  }, [reportData])
+
+  useEffect(() => {
+    localStorage.setItem('customProjects', JSON.stringify(customProjects))
+  }, [customProjects])
+
+  const addCustomProject = (name) => {
+    if (!name || customProjects.includes(name) || projectsData.includes(name)) return
+    setCustomProjects(prev => [...prev, name])
+  }
+
   const [formData, setFormData] = useState({
     project: '',
     level: '',
@@ -33,23 +57,6 @@ function App() {
       console.error('Invalid date')
     }
   }, [selectedDate])
-
-  // Load data
-  useEffect(() => {
-    const saved = localStorage.getItem('weeklyReportData')
-    if (saved) {
-      try {
-        setReportData(JSON.parse(saved))
-      } catch (e) {
-        console.error('Failed to parse data', e)
-      }
-    }
-  }, [])
-
-  // Save data
-  useEffect(() => {
-    localStorage.setItem('weeklyReportData', JSON.stringify(reportData))
-  }, [reportData])
 
   // Calculate week dates
   const weekDates = useMemo(() => {
@@ -185,6 +192,7 @@ function App() {
                 weekDates={weekDates} formData={formData} setFormData={setFormData}
                 handleAddTask={handleAddTask} deleteRow={deleteRow} moveRow={moveRow}
                 updateStatus={updateStatus}
+                customProjects={customProjects} addCustomProject={addCustomProject}
               />
             ) : (
               <CSVProcessor />

@@ -7,8 +7,16 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
 const WeeklyReport = ({ 
   reportData, setReportData, selectedDate, setSelectedDate, weekDates, 
-  formData, setFormData, handleAddTask, deleteRow, moveRow, updateStatus 
+  formData, setFormData, handleAddTask, deleteRow, moveRow, updateStatus,
+  customProjects, addCustomProject
 }) => {
+  const [newProjectName, setNewProjectName] = React.useState('')
+  const [showAddProject, setShowAddProject] = React.useState(false)
+
+  const allProjects = React.useMemo(() => {
+    return [...projectsData, ...customProjects].sort()
+  }, [customProjects])
+
   const stats = React.useMemo(() => {
     const totalTasks = reportData.length
     const doneTasks = reportData.filter(r => r.status === 'DONE').length
@@ -25,7 +33,7 @@ const WeeklyReport = ({
   }, [reportData])
 
   const WORKFLOW_ITEMS = [
-    { col1: ['REO BTM', 'REO TOP', 'REO SHEAR', 'PT'], col2: ['PT&REO', 'BACKDRAFTING', 'BACK'] }
+    { col1: ['REO BTM', 'REO TOP', 'REO SHEAR', 'PT'], col2: ['PT&REO', 'BACKDRAFTING'] }
   ]
 
   return (
@@ -34,10 +42,53 @@ const WeeklyReport = ({
         {/* Sidebar Form */}
         <aside className="lg:col-span-12 xl:col-span-3 2xl:col-span-2">
           <div className="glass-panel p-6 sticky top-8 border-white/5 shadow-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-              <h2 className="text-lg font-black text-white tracking-tight uppercase italic">Entry Form</h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase italic">Entry Form</h2>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowAddProject(!showAddProject)}
+                className="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg text-indigo-400 transition-all"
+                title="Add New Project"
+              >
+                <Plus size={18} />
+              </button>
             </div>
+            
+            {showAddProject && (
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                className="mb-6 p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/10 space-y-3"
+              >
+                <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Add New Project</p>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    className="input bg-slate-950/60 text-[11px] h-9" 
+                    placeholder="Project Name..."
+                    value={newProjectName}
+                    onChange={e => setNewProjectName(e.target.value.toUpperCase())}
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      if (newProjectName) {
+                        addCustomProject(newProjectName)
+                        setFormData({...formData, project: newProjectName})
+                        setNewProjectName('')
+                        setShowAddProject(false)
+                      }
+                    }}
+                    className="px-3 bg-indigo-500 rounded-lg text-white font-bold text-xs"
+                  >
+                    ADD
+                  </button>
+                </div>
+              </motion.div>
+            )}
             
             <form onSubmit={handleAddTask} className="space-y-4">
               <div className="space-y-2">
@@ -49,7 +100,7 @@ const WeeklyReport = ({
                   required
                 >
                   <option value="" disabled>Select Project...</option>
-                  {projectsData.map(p => <option key={p} value={p}>{p}</option>)}
+                  {allProjects.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div className="space-y-2">
@@ -67,9 +118,9 @@ const WeeklyReport = ({
                   {/* Column 1 */}
                   <div className="space-y-2.5">
                     {WORKFLOW_ITEMS[0].col1.map(t => (
-                      <label key={t} className="flex items-center gap-2.5 cursor-pointer group">
+                      <label key={t} className="flex items-center gap-2.5 cursor-pointer group py-0.5">
                         <input 
-                          type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer"
+                          type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer shrink-0"
                           checked={formData.tasks.includes(t)}
                           onChange={e => {
                             const newTasks = e.target.checked 
@@ -78,16 +129,16 @@ const WeeklyReport = ({
                             setFormData({...formData, tasks: newTasks})
                           }}
                         />
-                        <span className="text-[10px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider">{t}</span>
+                        <span className="text-[10px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider leading-none">{t}</span>
                       </label>
                     ))}
                   </div>
                   {/* Column 2 */}
                   <div className="space-y-2.5">
                     {WORKFLOW_ITEMS[0].col2.map(t => (
-                      <label key={t} className="flex items-center gap-2.5 cursor-pointer group">
+                      <label key={t} className="flex items-center gap-2.5 cursor-pointer group py-0.5">
                         <input 
-                          type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer"
+                          type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer shrink-0"
                           checked={formData.tasks.includes(t)}
                           onChange={e => {
                             const newTasks = e.target.checked 
@@ -96,7 +147,7 @@ const WeeklyReport = ({
                             setFormData({...formData, tasks: newTasks})
                           }}
                         />
-                        <span className="text-[10px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider">{t}</span>
+                        <span className="text-[10px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider leading-none">{t}</span>
                       </label>
                     ))}
                   </div>
