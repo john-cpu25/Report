@@ -44,6 +44,7 @@ function App() {
   const [formData, setFormData] = useState({
     project: '',
     level: '',
+    team: 'STR MODELING TEAM',
     tasks: [],
     note: '',
     day: format(new Date(), 'EEEE'),
@@ -78,7 +79,7 @@ function App() {
     if (formData.note) taskName += ` ${formData.note}`
 
     const existingIndex = reportData.findIndex(
-      (r) => r.project === formData.project && r.task === taskName
+      (r) => r.project === formData.project && r.task === taskName && r.team === formData.team
     )
 
     if (existingIndex > -1) {
@@ -92,6 +93,7 @@ function App() {
         {
           id: Date.now(),
           project: formData.project,
+          team: formData.team,
           task: taskName,
           status: formData.status,
           days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '', ...{ [formData.day]: formData.eta } }
@@ -239,14 +241,7 @@ function App() {
           </button>
         </div>
 
-        {activeTab === 'report' ? (
-          <button onClick={exportExcel} className="btn btn-primary px-8 py-4 shadow-2xl shadow-indigo-500/20">
-            <Download size={20} strokeWidth={2.5} />
-            <span>Export Final XLSX</span>
-          </button>
-        ) : (
-          <div className="w-[180px] hidden md:block"></div>
-        )}
+        <div className="w-[180px] hidden md:block"></div>
       </header>
 
       <div className="max-w-[2560px] w-[98%] 2xl:w-[95%] mx-auto">
@@ -266,6 +261,7 @@ function App() {
                 handleAddTask={handleAddTask} deleteRow={deleteRow} moveRow={moveRow}
                 updateStatus={updateStatus}
                 customProjects={customProjects} addCustomProject={addCustomProject}
+                exportExcel={exportExcel}
               />
             ) : (
               <CSVProcessor />

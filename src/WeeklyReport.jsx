@@ -9,33 +9,58 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 const WeeklyReport = ({ 
   reportData, setReportData, selectedDate, setSelectedDate, weekDates, 
   formData, setFormData, handleAddTask, deleteRow, moveRow, updateStatus,
-  customProjects, addCustomProject
+  customProjects, addCustomProject, exportExcel
 }) => {
   const [newProjectName, setNewProjectName] = React.useState('')
   const [showAddProject, setShowAddProject] = React.useState(false)
+  const [sortConfig, setSortConfig] = React.useState({ key: 'project', direction: 'asc' })
 
   const allProjects = React.useMemo(() => {
     return [...projectsData, ...customProjects].sort()
   }, [customProjects])
 
+  const filteredReportData = React.useMemo(() => {
+    let result = reportData.filter(r => r.team === formData.team)
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        let aVal = a[sortConfig.key] || ''
+        let bVal = b[sortConfig.key] || ''
+        if (typeof aVal === 'string') aVal = aVal.toLowerCase()
+        if (typeof bVal === 'string') bVal = bVal.toLowerCase()
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1
+        return 0
+      })
+    }
+    return result
+  }, [reportData, formData.team, sortConfig])
+
+  const handleSort = (key) => {
+    let direction = 'asc'
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc'
+    }
+    setSortConfig({ key, direction })
+  }
+
   const stats = React.useMemo(() => {
-    const totalTasks = reportData.length
-    const doneTasks = reportData.filter(r => r.status === 'DONE').length
-    const uniqueProjects = new Set(reportData.map(r => r.project)).size
+    const totalTasks = filteredReportData.length
+    const doneTasks = filteredReportData.filter(r => r.status === 'DONE').length
+    const uniqueProjects = new Set(filteredReportData.map(r => r.project)).size
     const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
     
     // Day distribution
     const dayCounts = DAYS_OF_WEEK.reduce((acc, d) => {
-      acc[d] = reportData.filter(r => r.days[d]).length
+      acc[d] = filteredReportData.filter(r => r.days[d]).length
       return acc
     }, {})
 
     return { totalTasks, doneTasks, uniqueProjects, completionRate, dayCounts }
-  }, [reportData])
+  }, [filteredReportData])
 
-  const WORKFLOW_ITEMS = [
-    { col1: ['REO BTM', 'REO TOP', 'REO SHEAR', 'PT'], col2: ['PT&REO', 'BACKDRAFTING'] }
-  ]
+  const STR_WORKFLOW = { col1: ['BACKDRAFTING'], col2: ['MARKUP'] }
+  const PT_WORKFLOW = { col1: ['REO BTM', 'REO TOP', 'REO SHEAR', 'PT'], col2: ['PT&REO', 'BACKDRAFTING'] }
+  const currentWorkflow = formData.team === 'STR MODELING TEAM' ? STR_WORKFLOW : PT_WORKFLOW;
 
   return (
     <div className="space-y-12">
@@ -107,7 +132,7 @@ const WeeklyReport = ({
               <div className="space-y-2">
                 <label>Floor / Level</label>
                 <input 
-                  type="number" className="input bg-slate-950/40 border-white/10" placeholder="e.g. 1, 12..."
+                  type="text" className="input bg-slate-950/40 border-white/10" placeholder="e.g. 1, 12, P1..."
                   value={formData.level}
                   onChange={e => setFormData({...formData, level: e.target.value})}
                   required
@@ -115,10 +140,28 @@ const WeeklyReport = ({
               </div>
               <div className="space-y-3">
                 <label>Standard Workflow</label>
+                <div className="flex items-center gap-6 mb-2">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input type="radio" name="team" 
+                      className="w-4 h-4 border-white/20 text-indigo-500 bg-slate-900 focus:ring-indigo-500"
+                      checked={formData.team === 'STR MODELING TEAM'}
+                      onChange={() => setFormData({...formData, team: 'STR MODELING TEAM', tasks: []})}
+                    />
+                    <span className="text-[10px] font-black text-slate-300 group-hover:text-white transition-colors">STR MODELING TEAM</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input type="radio" name="team" 
+                      className="w-4 h-4 border-white/20 text-indigo-500 bg-slate-900 focus:ring-indigo-500"
+                      checked={formData.team === 'PT & REO TEAM'}
+                      onChange={() => setFormData({...formData, team: 'PT & REO TEAM', tasks: []})}
+                    />
+                    <span className="text-[10px] font-black text-slate-300 group-hover:text-white transition-colors">PT & REO TEAM</span>
+                  </label>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   {/* Column 1 */}
                   <div className="space-y-2.5">
-                    {WORKFLOW_ITEMS[0].col1.map(t => (
+                    {currentWorkflow.col1.map(t => (
                       <label key={t} className="flex items-center gap-2.5 cursor-pointer group py-0.5">
                         <input 
                           type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer shrink-0"
@@ -136,7 +179,7 @@ const WeeklyReport = ({
                   </div>
                   {/* Column 2 */}
                   <div className="space-y-2.5">
-                    {WORKFLOW_ITEMS[0].col2.map(t => (
+                    {currentWorkflow.col2.map(t => (
                       <label key={t} className="flex items-center gap-2.5 cursor-pointer group py-0.5">
                         <input 
                           type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer shrink-0"
@@ -206,20 +249,60 @@ const WeeklyReport = ({
               <button type="submit" className="btn btn-primary w-full mt-4 py-3 text-xs tracking-widest shadow-xl">
                 SUBMIT TO LOG
               </button>
+              <button type="button" onClick={exportExcel} className="btn w-full mt-2 py-3 text-xs tracking-widest shadow-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white flex justify-center items-center gap-2 border border-indigo-500/20 transition-all">
+                <FileSpreadsheet size={16} />
+                EXPORT FINAL XLSX
+              </button>
             </form>
           </div>
         </aside>
 
         {/* Main Table */}
-        <div className="lg:col-span-12 xl:col-span-6 2xl:col-span-7 space-y-6">
+        <div className="lg:col-span-12 xl:col-span-6 2xl:col-span-7 space-y-4">
+          <div className="flex gap-4 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 w-fit">
+            <button 
+              onClick={() => setFormData({...formData, team: 'STR MODELING TEAM'})}
+              className={`px-6 py-2.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${formData.team === 'STR MODELING TEAM' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+            >
+              STR MODELING TEAM
+            </button>
+            <button 
+              onClick={() => setFormData({...formData, team: 'PT & REO TEAM'})}
+              className={`px-6 py-2.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${formData.team === 'PT & REO TEAM' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+            >
+              PT & REO TEAM
+            </button>
+          </div>
+
           <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-white/[0.03] text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 border-b border-white/5">
-                    <th className="p-6">Project</th>
-                    <th className="p-6">Task Details</th>
-                    <th className="p-6">Status</th>
+                    <th className="p-6 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('project')}>
+                      <div className="flex items-center gap-2">
+                        Project
+                        <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
+                          {sortConfig.key === 'project' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover:opacity-50"/>}
+                        </div>
+                      </div>
+                    </th>
+                    <th className="p-6 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('task')}>
+                      <div className="flex items-center gap-2">
+                        Task Details
+                        <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
+                          {sortConfig.key === 'task' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover:opacity-50"/>}
+                        </div>
+                      </div>
+                    </th>
+                    <th className="p-6 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('status')}>
+                      <div className="flex items-center gap-2">
+                        Status
+                        <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
+                          {sortConfig.key === 'status' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover:opacity-50"/>}
+                        </div>
+                      </div>
+                    </th>
                     {DAYS_OF_WEEK.map((d, i) => (
                       <th key={d} className="p-6 text-center">
                         <div className="flex flex-col gap-1">
@@ -233,7 +316,7 @@ const WeeklyReport = ({
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
                   <AnimatePresence>
-                    {reportData.map((row, idx) => (
+                    {filteredReportData.map((row, idx) => (
                       <motion.tr 
                         key={row.id}
                         initial={{ opacity: 0, x: 10 }}
@@ -278,7 +361,7 @@ const WeeklyReport = ({
                       </motion.tr>
                     ))}
                   </AnimatePresence>
-                  {reportData.length === 0 && (
+                  {filteredReportData.length === 0 && (
                     <tr>
                       <td colSpan={9} className="p-24 text-center">
                         <div className="flex flex-col items-center gap-6 opacity-20 grayscale hover:grayscale-0 transition-all duration-700">
@@ -363,8 +446,8 @@ const WeeklyReport = ({
           </div>
           
           <div className="flex flex-wrap gap-4">
-            {Array.from(new Set(reportData.map(r => r.project))).map((proj, i) => {
-              const count = reportData.filter(r => r.project === proj).length
+            {Array.from(new Set(filteredReportData.map(r => r.project))).map((proj, i) => {
+              const count = filteredReportData.filter(r => r.project === proj).length
               return (
                 <div key={proj} className="px-6 py-4 bg-slate-900/50 rounded-2xl border border-white/5 flex flex-col gap-1 hover:border-indigo-500/30 transition-all group">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{proj}</span>
@@ -372,7 +455,7 @@ const WeeklyReport = ({
                 </div>
               )
             })}
-            {reportData.length === 0 && <p className="text-slate-500 text-sm italic py-4">No data available for distribution analysis.</p>}
+            {filteredReportData.length === 0 && <p className="text-slate-500 text-sm italic py-4">No data available for distribution analysis.</p>}
           </div>
         </div>
 
