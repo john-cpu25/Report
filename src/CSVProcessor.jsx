@@ -32,6 +32,12 @@ const CSVProcessor = () => {
       // Standardize to ISO-like format
       let s = str.replace(' ', 'T');
       
+      // Fix timezone suffix if it's like +00 or +07 (missing :00)
+      // JS Date often requires +HH:mm format
+      if (s.match(/[+-]\d{2}$/)) {
+        s += ':00';
+      }
+      
       // Try parsing directly first
       let date = new Date(s);
       
@@ -40,6 +46,12 @@ const CSVProcessor = () => {
         if (!s.includes('Z') && !s.match(/[+-]\d{2}/)) {
           date = new Date(s + 'Z');
         }
+      }
+
+      // Fallback: try removing fractional seconds if still invalid
+      if (isNaN(date.getTime())) {
+        let sNoMs = s.replace(/\.\d+(?=[+-Z]|$)/, '');
+        date = new Date(sNoMs);
       }
       
       if (isNaN(date.getTime())) return null;
