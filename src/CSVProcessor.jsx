@@ -18,7 +18,9 @@ const CSVProcessor = () => {
   const [pivotMetric, setPivotMetric] = useState('time1') // 'time1' or 'time2'
 
   const processDate = (dateStr) => {
-    if (!dateStr || dateStr.startsWith('0001')) return null;
+    if (!dateStr) return null;
+    const str = dateStr.toString().trim();
+    if (str.startsWith('0001')) return null;
     try {
       let s = dateStr.toString().trim().replace(' ', 'T');
       if (!s.includes('Z') && !s.match(/[+-]\d{2}:\d{2}$/)) s += 'Z';
@@ -70,38 +72,47 @@ const CSVProcessor = () => {
   }
 
   const processRawData = (raw) => {
-    const processed = raw.map(row => {
-      const createdAtStr = row['created_at'] || row['Created At'] || ''
-      const dateStartStr = row['date_start'] || row['Date Start'] || ''
-      const dateCheckedStr = row['date_checked'] || row['Date Checked'] || ''
-      const rawName = row['name'] || row['Name'] || ''
-      const createdBy = row['create_by'] || row['Created By'] || ''
-      
-      const createdAt = processDate(createdAtStr)
-      const dateStart = processDate(dateStartStr)
-      const dateChecked = processDate(dateCheckedStr)
-      
-      const time1 = getDurationMs(createdAt, dateChecked)
-      const time2 = getDurationMs(dateStart, dateChecked)
-      
-      const parts = rawName.toString().split(':')
-      
-      return {
-        project: parts[0]?.trim() || '-',
-        taskName: parts[1]?.trim() || '-',
-        createdBy: createdBy || '-',
-        day: formatDate(createdAt),
-        createdAt,
-        dateStart,
-        dateChecked,
-        time1,
-        time2,
-        time1Str: formatDuration(time1),
-        time2Str: formatDuration(time2),
-        dateObj: createdAt
-      }
-    })
-    setData(processed)
+    try {
+      const processed = raw.map((row, idx) => {
+        try {
+          const createdAtStr = row['created_at'] || row['Created At'] || ''
+          const dateStartStr = row['date_start'] || row['Date Start'] || ''
+          const dateCheckedStr = row['date_checked'] || row['Date Checked'] || ''
+          const rawName = row['name'] || row['Name'] || ''
+          const createdBy = row['create_by'] || row['Created By'] || ''
+          
+          const createdAt = processDate(createdAtStr)
+          const dateStart = processDate(dateStartStr)
+          const dateChecked = processDate(dateCheckedStr)
+          
+          const time1 = getDurationMs(createdAt, dateChecked)
+          const time2 = getDurationMs(dateStart, dateChecked)
+          
+          const parts = rawName.toString().split(':')
+          
+          return {
+            project: parts[0]?.trim() || '-',
+            taskName: parts[1]?.trim() || '-',
+            createdBy: createdBy || '-',
+            day: formatDate(createdAt),
+            createdAt,
+            dateStart,
+            dateChecked,
+            time1,
+            time2,
+            time1Str: formatDuration(time1),
+            time2Str: formatDuration(time2),
+            dateObj: createdAt
+          }
+        } catch (err) {
+          console.error(`Error processing row ${idx}:`, err, row)
+          return null
+        }
+      }).filter(Boolean)
+      setData(processed)
+    } catch (err) {
+      console.error('Critical error in processRawData:', err)
+    }
   }
 
 
