@@ -382,7 +382,7 @@ const CSVProcessor = () => {
                 >
                   Clear All
                 </button>
-                <AtomicAnimation />
+                <AtomicAnimation filters={filters} />
               </div>
             </aside>
 

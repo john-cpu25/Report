@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 
-const AtomicAnimation = () => {
+const AtomicAnimation = ({ filters }) => {
   const tasks = [
     { id: 1, size: 8, color: '#3b82f6', orbit: 35, duration: 3, delay: 0 },
     { id: 2, size: 6, color: '#10b981', orbit: 35, duration: 4, delay: -1 },
@@ -10,6 +10,12 @@ const AtomicAnimation = () => {
     { id: 5, size: 9, color: '#8b5cf6', orbit: 75, duration: 7, delay: 0 },
     { id: 6, size: 5, color: '#06b6d4', orbit: 75, duration: 8, delay: -4 },
   ]
+
+  let centerText = "CREATE\nBY"
+  if (filters?.field === 'user' && filters?.values?.length > 0) {
+    const firstName = filters.values[0].split('.')[0]
+    centerText = firstName
+  }
 
   return (
     <div className="w-full mt-6">
@@ -26,12 +32,15 @@ const AtomicAnimation = () => {
 
         {/* Center: Created By */}
         <motion.div 
+          key={centerText}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 20 }}
           className="absolute z-10 w-12 h-12 rounded-full bg-slate-800 border-2 border-rose-500 flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.4)]"
         >
-          <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest text-center leading-tight">Create<br/>By</span>
+          <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest text-center leading-tight whitespace-pre-line">
+            {centerText}
+          </span>
         </motion.div>
 
         {/* Orbiting Tasks */}
