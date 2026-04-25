@@ -25,7 +25,20 @@ const CSVProcessor = () => {
       return new Date(val.getTime() + 7 * 3600000);
     }
 
+    // If it's a number (Excel serial date)
+    if (typeof val === 'number') {
+      const date = new Date((val - 25569) * 86400 * 1000);
+      return new Date(date.getTime() + 7 * 3600000);
+    }
+
     let str = val.toString().trim();
+    
+    // If string is just a 5-digit number (Excel serial date as string)
+    if (/^\d{5}(\.\d+)?$/.test(str)) {
+      const num = parseFloat(str);
+      const date = new Date((num - 25569) * 86400 * 1000);
+      return new Date(date.getTime() + 7 * 3600000);
+    }
     if (str.startsWith('0001')) return null;
 
     try {
