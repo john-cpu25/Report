@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import WeeklyReport from './WeeklyReport'
 import CSVProcessor from './CSVProcessor'
 import projectsData from './data/projects.json'
+import CelestialBackground from './CelestialBackground'
+import RincovitchLogo from './RincovitchLogo'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
@@ -134,14 +136,15 @@ function App() {
 
   return (
     <div className="min-h-screen p-4 md:p-8 selection:bg-indigo-500/30">
+      <CelestialBackground />
       <header className="max-w-[1800px] w-[95%] mx-auto mb-12 flex flex-col lg:flex-row justify-between items-center gap-8">
         <div className="flex items-center gap-4 group">
-          <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl text-white shadow-2xl shadow-indigo-500/40 group-hover:rotate-6 transition-transform duration-300">
-            <Layout size={28} strokeWidth={2.5} />
+          <div className="p-2.5 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-300">
+            <RincovitchLogo size={32} />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white tracking-tight">ANTI REPORT</h1>
-            <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.4em]">Intelligence System v2.1</p>
+            <h1 className="text-2xl font-black text-white tracking-tight">RINCOVITCH <span className="text-indigo-400">REPORT</span></h1>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.4em]">Intelligence System v2.1</p>
           </div>
         </div>
 
