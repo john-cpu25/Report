@@ -1,8 +1,9 @@
 import React from 'react'
 import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet, Layout } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import projectsData from './data/projects.json'
 
-const DAYS_OF_WEEK = ['T2', 'T3', 'T4', 'T5', 'T6']
+const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
 const WeeklyReport = ({ 
   reportData, setReportData, selectedDate, setSelectedDate, weekDates, 
@@ -23,6 +24,10 @@ const WeeklyReport = ({
     return { totalTasks, doneTasks, uniqueProjects, completionRate, dayCounts }
   }, [reportData])
 
+  const WORKFLOW_ITEMS = [
+    { col1: ['REO BTM', 'REO TOP', 'REO SHEAR', 'PT'], col2: ['PT&REO', 'BACKDRAFTING', 'BACK'] }
+  ]
+
   return (
     <div className="space-y-12">
       <main className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 2xl:grid-cols-12 gap-6 items-start">
@@ -37,17 +42,20 @@ const WeeklyReport = ({
             <form onSubmit={handleAddTask} className="space-y-4">
               <div className="space-y-2">
                 <label>Project Name</label>
-                <input 
-                  type="text" className="input bg-slate-950/40 border-white/10" placeholder="e.g. MORAY, LEEDS..."
+                <select 
+                  className="input bg-slate-950/40 border-white/10 text-xs font-bold"
                   value={formData.project}
                   onChange={e => setFormData({...formData, project: e.target.value})}
                   required
-                />
+                >
+                  <option value="" disabled>Select Project...</option>
+                  {projectsData.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
               </div>
               <div className="space-y-2">
                 <label>Floor / Level</label>
                 <input 
-                  type="text" className="input bg-slate-950/40 border-white/10" placeholder="e.g. L1, L12-24..."
+                  type="number" className="input bg-slate-950/40 border-white/10" placeholder="e.g. 1, 12..."
                   value={formData.level}
                   onChange={e => setFormData({...formData, level: e.target.value})}
                   required
@@ -55,22 +63,43 @@ const WeeklyReport = ({
               </div>
               <div className="space-y-3">
                 <label>Standard Workflow</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {['REO BTM', 'REO TOP', 'REO SHEAR', 'PT', 'BACK'].map(t => (
-                    <label key={t} className="flex items-center gap-2 cursor-pointer group">
-                      <input 
-                        type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500"
-                        checked={formData.tasks.includes(t)}
-                        onChange={e => {
-                          const newTasks = e.target.checked 
-                            ? [...formData.tasks, t]
-                            : formData.tasks.filter(x => x !== t)
-                          setFormData({...formData, tasks: newTasks})
-                        }}
-                      />
-                      <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-200 uppercase">{t}</span>
-                    </label>
-                  ))}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Column 1 */}
+                  <div className="space-y-2.5">
+                    {WORKFLOW_ITEMS[0].col1.map(t => (
+                      <label key={t} className="flex items-center gap-2.5 cursor-pointer group">
+                        <input 
+                          type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer"
+                          checked={formData.tasks.includes(t)}
+                          onChange={e => {
+                            const newTasks = e.target.checked 
+                              ? [...formData.tasks, t]
+                              : formData.tasks.filter(x => x !== t)
+                            setFormData({...formData, tasks: newTasks})
+                          }}
+                        />
+                        <span className="text-[10px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider">{t}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {/* Column 2 */}
+                  <div className="space-y-2.5">
+                    {WORKFLOW_ITEMS[0].col2.map(t => (
+                      <label key={t} className="flex items-center gap-2.5 cursor-pointer group">
+                        <input 
+                          type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer"
+                          checked={formData.tasks.includes(t)}
+                          onChange={e => {
+                            const newTasks = e.target.checked 
+                              ? [...formData.tasks, t]
+                              : formData.tasks.filter(x => x !== t)
+                            setFormData({...formData, tasks: newTasks})
+                          }}
+                        />
+                        <span className="text-[10px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider">{t}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">
@@ -93,13 +122,11 @@ const WeeklyReport = ({
                 </div>
                 <div className="space-y-1">
                   <label>Day</label>
-                  <select 
-                    className="input bg-slate-950/40 border-white/10 text-[10px] font-bold p-2"
+                  <input 
+                    type="text" className="input bg-slate-950/40 border-white/10 text-[10px] font-black p-2 opacity-50 cursor-not-allowed"
                     value={formData.day}
-                    onChange={e => setFormData({...formData, day: e.target.value})}
-                  >
-                    {DAYS_OF_WEEK.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
+                    readOnly
+                  />
                 </div>
               </div>
 
@@ -111,7 +138,7 @@ const WeeklyReport = ({
                     value={formData.status}
                     onChange={e => setFormData({...formData, status: e.target.value})}
                   >
-                    {['DONE', 'PENDING', 'TMR', 'WIP'].map(s => <option key={s} value={s}>{s}</option>)}
+                    {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT'].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -174,12 +201,14 @@ const WeeklyReport = ({
                               row.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5' :
                               row.status === 'PENDING' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-slate-500/5' :
                               row.status === 'TMR' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20 shadow-orange-500/5' :
+                              row.status === 'URGENT' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-rose-500/5' :
+                              row.status === 'PLANING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-amber-500/5' :
                               'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-indigo-500/5'
                             }`}
                             value={row.status}
                             onChange={(e) => updateStatus(row.id, e.target.value)}
                           >
-                            {['DONE', 'PENDING', 'TMR', 'WIP'].map(s => <option key={s} value={s}>{s}</option>)}
+                            {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT'].map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </td>
                         {DAYS_OF_WEEK.map(d => (

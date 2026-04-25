@@ -5,8 +5,9 @@ import * as XLSX from 'xlsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import WeeklyReport from './WeeklyReport'
 import CSVProcessor from './CSVProcessor'
+import projectsData from './data/projects.json'
 
-const DAYS_OF_WEEK = ['T2', 'T3', 'T4', 'T5', 'T6']
+const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
 function App() {
   const [activeTab, setActiveTab] = useState('report')
@@ -17,10 +18,21 @@ function App() {
     level: '',
     tasks: [],
     note: '',
-    day: 'T2',
-    status: 'DONE',
+    day: format(new Date(), 'EEEE'),
+    status: 'WIP',
     eta: ''
   })
+
+  // Auto-update day when date changes
+  useEffect(() => {
+    try {
+      const date = parseISO(selectedDate)
+      const dayName = format(date, 'EEEE')
+      setFormData(prev => ({ ...prev, day: dayName }))
+    } catch (e) {
+      console.error('Invalid date')
+    }
+  }, [selectedDate])
 
   // Load data
   useEffect(() => {
@@ -71,7 +83,7 @@ function App() {
           project: formData.project,
           task: taskName,
           status: formData.status,
-          days: { T2: '', T3: '', T4: '', T5: '', T6: '', ...{ [formData.day]: formData.eta } }
+          days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '', ...{ [formData.day]: formData.eta } }
         }
       ])
     }
@@ -104,7 +116,7 @@ function App() {
     if (reportData.length === 0) return
     const headers = ['PROJECT', 'TASK', 'STATUS', ...DAYS_OF_WEEK.map((d, i) => `${d} (${weekDates[i]})`)]
     const rows = reportData.map(r => [
-      r.project, r.task, r.status, r.days.T2, r.days.T3, r.days.T4, r.days.T5, r.days.T6
+      r.project, r.task, r.status, r.days.Monday, r.days.Tuesday, r.days.Wednesday, r.days.Thursday, r.days.Friday
     ])
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
