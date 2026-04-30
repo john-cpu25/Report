@@ -44,12 +44,14 @@ function App() {
   const [formData, setFormData] = useState({
     project: '',
     level: '',
+    showLevel: true,
     team: 'STR MODELING TEAM',
     tasks: [],
     note: '',
     day: format(new Date(), 'EEEE'),
     status: 'WIP',
-    eta: ''
+    eta: '',
+    etaMode: '' // '', '12:30', '17:30', 'CUSTOM', 'OVERTIME'
   })
 
   // Auto-update day when date changes
@@ -72,11 +74,20 @@ function App() {
 
   const handleAddTask = (e) => {
     e.preventDefault()
-    if (!formData.project || !formData.level) return
+    if (!formData.project) return
+    if (formData.showLevel && !formData.level) return
 
-    let taskName = `LEVEL ${formData.level}`
-    if (formData.tasks.length > 0) taskName += ` ${formData.tasks.join(' ')}`
-    if (formData.note) taskName += ` ${formData.note}`
+    let taskName = ''
+    if (formData.showLevel && formData.level) {
+      taskName = `LEVEL ${formData.level}`
+    }
+    if (formData.tasks.length > 0) {
+      taskName += (taskName ? ' ' : '') + formData.tasks.join(' ')
+    }
+    if (formData.note) {
+      taskName += (taskName ? ' ' : '') + formData.note
+    }
+    if (!taskName) taskName = '(no detail)'
 
     const existingIndex = reportData.findIndex(
       (r) => r.project === formData.project && r.task === taskName && r.team === formData.team
@@ -113,12 +124,20 @@ function App() {
 
   const deleteRow = (id) => setReportData(reportData.filter(r => r.id !== id))
   
-  const moveRow = (idx, dir) => {
+  const moveRow = (id, dir) => {
+    const idx = reportData.findIndex(r => r.id === id)
+    if (idx === -1) return
     const ni = idx + dir
     if (ni < 0 || ni >= reportData.length) return
     const newData = [...reportData]
     ;[newData[idx], newData[ni]] = [newData[ni], newData[idx]]
     setReportData(newData)
+  }
+
+  const updateDayTime = (id, day, value) => {
+    setReportData(reportData.map(r => 
+      r.id === id ? { ...r, days: { ...r.days, [day]: value } } : r
+    ))
   }
 
   const updateStatus = (id, status) => {
@@ -259,7 +278,7 @@ function App() {
                 selectedDate={selectedDate} setSelectedDate={setSelectedDate}
                 weekDates={weekDates} formData={formData} setFormData={setFormData}
                 handleAddTask={handleAddTask} deleteRow={deleteRow} moveRow={moveRow}
-                updateStatus={updateStatus}
+                updateStatus={updateStatus} updateDayTime={updateDayTime}
                 customProjects={customProjects} addCustomProject={addCustomProject}
                 exportExcel={exportExcel}
               />

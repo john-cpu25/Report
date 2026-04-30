@@ -9,11 +9,12 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 const WeeklyReport = ({ 
   reportData, setReportData, selectedDate, setSelectedDate, weekDates, 
   formData, setFormData, handleAddTask, deleteRow, moveRow, updateStatus,
-  customProjects, addCustomProject, exportExcel
+  updateDayTime, customProjects, addCustomProject, exportExcel
 }) => {
   const [newProjectName, setNewProjectName] = React.useState('')
   const [showAddProject, setShowAddProject] = React.useState(false)
   const [sortConfig, setSortConfig] = React.useState({ key: 'project', direction: 'asc' })
+  const [editingCell, setEditingCell] = React.useState(null) // { id, day }
 
   const allProjects = React.useMemo(() => {
     return [...projectsData, ...customProjects].sort()
@@ -58,9 +59,32 @@ const WeeklyReport = ({
     return { totalTasks, doneTasks, uniqueProjects, completionRate, dayCounts }
   }, [filteredReportData])
 
-  const STR_WORKFLOW = { col1: ['BACKDRAFTING'], col2: ['MARKUP'] }
-  const PT_WORKFLOW = { col1: ['REO BTM', 'REO TOP', 'REO SHEAR', 'PT'], col2: ['PT&REO', 'BACKDRAFTING'] }
+  const STR_WORKFLOW = { col1: ['BACKDRAFTING', 'GA PLAN', 'LOADING PLAN', 'SITE RETENTION', 'ELEVATION WALL'], col2: ['MARKUP', 'SECTION', 'ISSUE', 'FOUNDATION'] }
+  const PT_WORKFLOW = { col1: ['REO BTM', 'REO TOP', 'REO SHEAR', 'PT', 'REO'], col2: ['PT&REO', 'BACKDRAFTING', 'SECTION', 'ISSUE'] }
   const currentWorkflow = formData.team === 'STR MODELING TEAM' ? STR_WORKFLOW : PT_WORKFLOW;
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'DONE': return { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }
+      case 'PENDING': return { text: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' }
+      case 'TMR': return { text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' }
+      case 'URGENT': return { text: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' }
+      case 'PLANING': return { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' }
+      default: return { text: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' } // WIP
+    }
+  }
+
+  const handleEtaMode = (mode) => {
+    if (mode === '12:30') {
+      setFormData({...formData, etaMode: '12:30', eta: '12:30'})
+    } else if (mode === '17:30') {
+      setFormData({...formData, etaMode: '17:30', eta: '17:30'})
+    } else if (mode === 'CUSTOM') {
+      setFormData({...formData, etaMode: 'CUSTOM', eta: ''})
+    } else if (mode === 'OVERTIME') {
+      setFormData({...formData, etaMode: 'OVERTIME', eta: '18:00'})
+    }
+  }
 
   return (
     <div className="space-y-12">
@@ -130,13 +154,26 @@ const WeeklyReport = ({
                 </select>
               </div>
               <div className="space-y-2">
-                <label>Floor / Level</label>
-                <input 
-                  type="text" className="input bg-slate-950/40 border-white/10" placeholder="e.g. 1, 12, P1..."
-                  value={formData.level}
-                  onChange={e => setFormData({...formData, level: e.target.value})}
-                  required
-                />
+                <div className="flex items-center justify-between">
+                  <label>Floor / Level</label>
+                  <label className="flex items-center gap-2 cursor-pointer !mb-0">
+                    <input 
+                      type="checkbox" 
+                      className="w-3.5 h-3.5 rounded border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
+                      checked={formData.showLevel}
+                      onChange={e => setFormData({...formData, showLevel: e.target.checked, level: e.target.checked ? formData.level : ''})}
+                    />
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Show</span>
+                  </label>
+                </div>
+                {formData.showLevel && (
+                  <input 
+                    type="text" className="input bg-slate-950/40 border-white/10" placeholder="e.g. 1, 12, P1..."
+                    value={formData.level}
+                    onChange={e => setFormData({...formData, level: e.target.value})}
+                    required={formData.showLevel}
+                  />
+                )}
               </div>
               <div className="space-y-3">
                 <label>Standard Workflow</label>
@@ -238,11 +275,40 @@ const WeeklyReport = ({
                 </div>
                 <div className="space-y-1">
                   <label>ETA Time</label>
-                  <input 
-                    type="time" className="input bg-slate-950/40 border-white/10 font-bold p-2"
-                    value={formData.eta}
-                    onChange={e => setFormData({...formData, eta: e.target.value})}
-                  />
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { mode: '12:30', label: '12:30 PM' },
+                      { mode: '17:30', label: '17:30 PM' },
+                      { mode: 'CUSTOM', label: 'CUSTOM' },
+                      { mode: 'OVERTIME', label: 'OVERTIME' },
+                    ].map(opt => (
+                      <button
+                        key={opt.mode}
+                        type="button"
+                        onClick={() => handleEtaMode(opt.mode)}
+                        className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border ${
+                          formData.etaMode === opt.mode
+                            ? opt.mode === 'OVERTIME' 
+                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/30 shadow-lg shadow-rose-500/10'
+                              : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-lg shadow-indigo-500/10'
+                            : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-white/15 hover:text-slate-300'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  {(formData.etaMode === 'CUSTOM' || formData.etaMode === 'OVERTIME') && (
+                    <input 
+                      type="time" 
+                      className={`input bg-slate-950/40 border-white/10 font-bold p-2 mt-1.5 text-xs ${
+                        formData.etaMode === 'OVERTIME' ? 'border-rose-500/20 text-rose-300' : ''
+                      }`}
+                      value={formData.eta}
+                      min={formData.etaMode === 'OVERTIME' ? '18:00' : undefined}
+                      onChange={e => setFormData({...formData, eta: e.target.value})}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -346,15 +412,49 @@ const WeeklyReport = ({
                             {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT'].map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </td>
-                        {DAYS_OF_WEEK.map(d => (
-                          <td key={d} className="p-6 text-center">
-                            <span className="text-xs font-black text-slate-300 tracking-tight group-hover:text-white transition-colors">{row.days[d] || '—'}</span>
-                          </td>
-                        ))}
-                        <td className="p-6">
+                        {DAYS_OF_WEEK.map(d => {
+                          const colors = getStatusColor(row.status)
+                          const isEditing = editingCell && editingCell.id === row.id && editingCell.day === d
+                          return (
+                            <td key={d} className="p-4 text-center">
+                              {isEditing ? (
+                                <input
+                                  type="time"
+                                  className="input bg-slate-950/80 border-indigo-500/30 text-xs font-bold p-1.5 w-24 mx-auto text-center"
+                                  defaultValue={row.days[d] || ''}
+                                  autoFocus
+                                  onBlur={(e) => {
+                                    updateDayTime(row.id, d, e.target.value)
+                                    setEditingCell(null)
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      updateDayTime(row.id, d, e.target.value)
+                                      setEditingCell(null)
+                                    }
+                                    if (e.key === 'Escape') setEditingCell(null)
+                                  }}
+                                />
+                              ) : (
+                                <span 
+                                  className={`text-xs font-black tracking-tight cursor-pointer px-2.5 py-1 rounded-md transition-all hover:ring-1 hover:ring-white/20 ${
+                                    row.days[d] 
+                                      ? `${colors.text} ${colors.bg} ${colors.border} border` 
+                                      : 'text-slate-600 hover:text-slate-400'
+                                  }`}
+                                  onClick={() => setEditingCell({ id: row.id, day: d })}
+                                  title="Click to edit"
+                                >
+                                  {row.days[d] || '—'}
+                                </span>
+                              )}
+                            </td>
+                          )
+                        })}
+                        <td className="p-4">
                           <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
-                            <button onClick={() => moveRow(idx, -1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowUp size={14} strokeWidth={3} /></button>
-                            <button onClick={() => moveRow(idx, 1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowDown size={14} strokeWidth={3} /></button>
+                            <button onClick={() => moveRow(row.id, -1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowUp size={14} strokeWidth={3} /></button>
+                            <button onClick={() => moveRow(row.id, 1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowDown size={14} strokeWidth={3} /></button>
                             <button onClick={() => deleteRow(row.id)} className="p-2 bg-rose-500/5 hover:bg-rose-500/20 rounded-lg text-rose-500/50 hover:text-rose-500 transition-all"><Trash2 size={14} strokeWidth={3} /></button>
                           </div>
                         </td>
