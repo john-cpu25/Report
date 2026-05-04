@@ -3,6 +3,7 @@ import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet, Layout } from 'lucid
 import { motion, AnimatePresence } from 'framer-motion'
 import WorkflowAnimation from './WorkflowAnimation'
 import projectsData from './data/projects.json'
+import KamehamehaAnimation from './KamehamehaAnimation'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
@@ -60,14 +61,14 @@ const WeeklyReport = ({
   }, [filteredReportData])
 
   const STR_WORKFLOW = { 
-    col1: ['BACKDRAFTING', 'GA PLAN', 'LOADING PLAN', 'SITE RETENTION'], 
-    col2: ['ELEVATION WALL', 'MARKUP', 'SECTION'], 
+    col1: ['BACK DRAF', 'GA PLAN', 'LP PLAN', 'SITE RETENTION'], 
+    col2: ['ELE WALL', 'MARKUP', 'SECTION'], 
     col3: ['ISSUE', 'FOUNDATION', 'FULL SET'] 
   }
   const PT_WORKFLOW = { 
     col1: ['REO BTM', 'REO TOP', 'REO SHEAR'], 
     col2: ['PT', 'REO', 'PT&REO'], 
-    col3: ['BACKDRAFTING', 'SECTION', 'ISSUE'] 
+    col3: ['BACK DRAF', 'SECTION', 'ISSUE'] 
   }
   const MTO_WORKFLOW = { 
     col1: ['NEW', 'BACK'], 
@@ -585,8 +586,10 @@ const WeeklyReport = ({
 
       {/* Bottom Dashboard / Project Distribution */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
-        <div className="glass-panel p-8 border-white/5 shadow-2xl lg:col-span-9">
-          <div className="flex items-center justify-between mb-8">
+        <div className="glass-panel p-8 border-white/5 shadow-2xl lg:col-span-9 relative overflow-hidden">
+          <KamehamehaAnimation />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-6 bg-orange-500 rounded-full"></div>
               <h2 className="text-xl font-black text-white tracking-tight uppercase italic">Workforce Distribution</h2>
@@ -607,6 +610,7 @@ const WeeklyReport = ({
             {filteredReportData.length === 0 && <p className="text-slate-500 text-sm italic py-4">No data available for distribution analysis.</p>}
           </div>
         </div>
+      </div>
 
         <div className="glass-panel p-8 border-white/5 shadow-2xl bg-indigo-500/5 overflow-hidden relative group lg:col-span-3">
           <div className="relative z-10">
