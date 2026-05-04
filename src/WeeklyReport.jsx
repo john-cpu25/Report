@@ -59,9 +59,26 @@ const WeeklyReport = ({
     return { totalTasks, doneTasks, uniqueProjects, completionRate, dayCounts }
   }, [filteredReportData])
 
-  const STR_WORKFLOW = { col1: ['BACKDRAFTING', 'GA PLAN', 'LOADING PLAN', 'SITE RETENTION', 'ELEVATION WALL'], col2: ['MARKUP', 'SECTION', 'ISSUE', 'FOUNDATION'] }
-  const PT_WORKFLOW = { col1: ['REO BTM', 'REO TOP', 'REO SHEAR', 'PT', 'REO'], col2: ['PT&REO', 'BACKDRAFTING', 'SECTION', 'ISSUE'] }
-  const currentWorkflow = formData.team === 'STR MODELING TEAM' ? STR_WORKFLOW : PT_WORKFLOW;
+  const STR_WORKFLOW = { 
+    col1: ['BACKDRAFTING', 'GA PLAN', 'LOADING PLAN', 'SITE RETENTION'], 
+    col2: ['ELEVATION WALL', 'MARKUP', 'SECTION'], 
+    col3: ['ISSUE', 'FOUNDATION', 'FULL SET'] 
+  }
+  const PT_WORKFLOW = { 
+    col1: ['REO BTM', 'REO TOP', 'REO SHEAR'], 
+    col2: ['PT', 'REO', 'PT&REO'], 
+    col3: ['BACKDRAFTING', 'SECTION', 'ISSUE'] 
+  }
+  const MTO_WORKFLOW = { 
+    col1: ['NEW', 'BACK'], 
+    col2: [], 
+    col3: [] 
+  }
+  
+  const currentWorkflow = 
+    formData.team === 'STR MODELING TEAM' ? STR_WORKFLOW : 
+    formData.team === 'PT & REO TEAM' ? PT_WORKFLOW : 
+    MTO_WORKFLOW;
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -177,7 +194,7 @@ const WeeklyReport = ({
               </div>
               <div className="space-y-3">
                 <label>Standard Workflow</label>
-                <div className="flex items-center gap-6 mb-2">
+                <div className="flex flex-wrap items-center gap-4 mb-2">
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <input type="radio" name="team" 
                       className="w-4 h-4 border-white/20 text-indigo-500 bg-slate-900 focus:ring-indigo-500"
@@ -194,12 +211,20 @@ const WeeklyReport = ({
                     />
                     <span className="text-[10px] font-black text-slate-300 group-hover:text-white transition-colors">PT & REO TEAM</span>
                   </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input type="radio" name="team" 
+                      className="w-4 h-4 border-white/20 text-indigo-500 bg-slate-900 focus:ring-indigo-500"
+                      checked={formData.team === 'MTO TEAM'}
+                      onChange={() => setFormData({...formData, team: 'MTO TEAM', tasks: []})}
+                    />
+                    <span className="text-[10px] font-black text-slate-300 group-hover:text-white transition-colors">MTO TEAM</span>
+                  </label>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-3">
                   {/* Column 1 */}
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     {currentWorkflow.col1.map(t => (
-                      <label key={t} className="flex items-center gap-2.5 cursor-pointer group py-0.5">
+                      <label key={t} className="flex items-center gap-2 cursor-pointer group py-0.5">
                         <input 
                           type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer shrink-0"
                           checked={formData.tasks.includes(t)}
@@ -210,14 +235,14 @@ const WeeklyReport = ({
                             setFormData({...formData, tasks: newTasks})
                           }}
                         />
-                        <span className="text-[10px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider leading-none">{t}</span>
+                        <span className="text-[9px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider leading-none">{t}</span>
                       </label>
                     ))}
                   </div>
                   {/* Column 2 */}
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     {currentWorkflow.col2.map(t => (
-                      <label key={t} className="flex items-center gap-2.5 cursor-pointer group py-0.5">
+                      <label key={t} className="flex items-center gap-2 cursor-pointer group py-0.5">
                         <input 
                           type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer shrink-0"
                           checked={formData.tasks.includes(t)}
@@ -228,7 +253,25 @@ const WeeklyReport = ({
                             setFormData({...formData, tasks: newTasks})
                           }}
                         />
-                        <span className="text-[10px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider leading-none">{t}</span>
+                        <span className="text-[9px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider leading-none">{t}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {/* Column 3 */}
+                  <div className="space-y-2">
+                    {currentWorkflow.col3.map(t => (
+                      <label key={t} className="flex items-center gap-2 cursor-pointer group py-0.5">
+                        <input 
+                          type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer shrink-0"
+                          checked={formData.tasks.includes(t)}
+                          onChange={e => {
+                            const newTasks = e.target.checked 
+                              ? [...formData.tasks, t]
+                              : formData.tasks.filter(x => x !== t)
+                            setFormData({...formData, tasks: newTasks})
+                          }}
+                        />
+                        <span className="text-[9px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider leading-none">{t}</span>
                       </label>
                     ))}
                   </div>
@@ -337,6 +380,12 @@ const WeeklyReport = ({
               className={`px-6 py-2.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${formData.team === 'PT & REO TEAM' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
             >
               PT & REO TEAM
+            </button>
+            <button 
+              onClick={() => setFormData({...formData, team: 'MTO TEAM'})}
+              className={`px-6 py-2.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${formData.team === 'MTO TEAM' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+            >
+              MTO TEAM
             </button>
           </div>
 
