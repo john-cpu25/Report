@@ -4,13 +4,41 @@ import { motion, AnimatePresence } from 'framer-motion'
 import WorkflowAnimation from './WorkflowAnimation'
 import projectsData from './data/projects.json'
 import KamehamehaAnimation from './KamehamehaAnimation'
+import {
+  Chart as ChartJS,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js'
+import { Doughnut, Bar } from 'react-chartjs-2'
+
+ChartJS.register(
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+)
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
 const WeeklyReport = ({ 
   reportData, setReportData, selectedDate, setSelectedDate, weekDates, 
   formData, setFormData, handleAddTask, deleteRow, moveRow, updateStatus,
-  updateDayTime, customProjects, addCustomProject, exportExcel
+  updateDayTime, customProjects, addCustomProject, exportExcel,
+  isSidebarOpen, setIsSidebarOpen
 }) => {
   const [newProjectName, setNewProjectName] = React.useState('')
   const [showAddProject, setShowAddProject] = React.useState(false)
@@ -57,7 +85,17 @@ const WeeklyReport = ({
       return acc
     }, {})
 
-    return { totalTasks, doneTasks, uniqueProjects, completionRate, dayCounts }
+    const statusCounts = filteredReportData.reduce((acc, r) => {
+      acc[r.status] = (acc[r.status] || 0) + 1
+      return acc
+    }, {})
+
+    const projectCounts = filteredReportData.reduce((acc, r) => {
+      acc[r.project] = (acc[r.project] || 0) + 1
+      return acc
+    }, {})
+
+    return { totalTasks, doneTasks, uniqueProjects, completionRate, dayCounts, statusCounts, projectCounts }
   }, [filteredReportData])
 
   const STR_WORKFLOW = { 
@@ -105,11 +143,32 @@ const WeeklyReport = ({
   }
 
   return (
-    <div className="space-y-12">
+    <div className="relative">
+      {/* Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40"
+          />
+        )}
+      </AnimatePresence>
+
       <main className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 2xl:grid-cols-12 gap-6 items-start">
         {/* Sidebar Form */}
-        <aside className="lg:col-span-12 xl:col-span-3 2xl:col-span-2">
-          <div className="glass-panel p-6 sticky top-8 border-white/5 shadow-2xl">
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <motion.aside 
+              initial={{ x: -400, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -400, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed left-0 top-0 h-screen w-[320px] z-50 p-6 overflow-y-auto custom-scrollbar"
+            >
+              <div className="glass-panel p-6 border-white/10 shadow-2xl bg-slate-900/90 backdrop-blur-2xl h-full">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
@@ -158,7 +217,7 @@ const WeeklyReport = ({
               </motion.div>
             )}
             
-            <form onSubmit={handleAddTask} className="space-y-4">
+            <form onSubmit={(e) => { handleAddTask(e); setIsSidebarOpen(false); }} className="space-y-4">
               <div className="space-y-2">
                 <label>Project Name</label>
                 <select 
@@ -364,11 +423,13 @@ const WeeklyReport = ({
                 EXPORT FINAL XLSX
               </button>
             </form>
-          </div>
-        </aside>
+            </div>
+          </motion.aside>
+        )}
+        </AnimatePresence>
 
         {/* Main Table */}
-        <div className="lg:col-span-12 xl:col-span-6 2xl:col-span-7 space-y-4">
+        <div className="lg:col-span-12 xl:col-span-9 2xl:col-span-9 space-y-4">
           <div className="flex gap-4 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 w-fit">
             <button 
               onClick={() => setFormData({...formData, team: 'STR MODELING TEAM'})}
@@ -531,38 +592,103 @@ const WeeklyReport = ({
 
         {/* Right Sidebar - Statistics */}
         <aside className="lg:col-span-12 xl:col-span-3 2xl:col-span-3 space-y-6">
-          <div className="glass-panel p-8 border-white/5 shadow-2xl">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
-              <h2 className="text-xl font-black text-white tracking-tight uppercase italic">Live Stats</h2>
+          <div className="glass-panel p-6 border-white/5 shadow-2xl bg-slate-900/30">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+              <h2 className="text-lg font-black text-white tracking-tight uppercase italic">Data Intelligence</h2>
             </div>
             
-            <div className="grid grid-cols-1 gap-4">
-              <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Tasks</p>
-                <p className="text-4xl font-black text-white italic">{stats.totalTasks}</p>
-              </div>
-              <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Unique Projects</p>
-                <p className="text-4xl font-black text-indigo-400 italic">{stats.uniqueProjects}</p>
-              </div>
-              <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5">
-                <div className="flex justify-between items-end mb-2">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Completion</p>
-                  <p className="text-2xl font-black text-emerald-400 italic">{stats.completionRate}%</p>
+            <div className="space-y-8">
+              {/* Status Doughnut */}
+              <div className="h-[220px] relative flex items-center justify-center">
+                <Doughnut 
+                  data={{
+                    labels: Object.keys(stats.statusCounts),
+                    datasets: [{
+                      data: Object.values(stats.statusCounts),
+                      backgroundColor: [
+                        'rgba(16, 185, 129, 0.6)', // DONE
+                        'rgba(100, 116, 139, 0.6)', // PENDING
+                        'rgba(249, 115, 22, 0.6)', // TMR
+                        'rgba(244, 63, 94, 0.6)',  // URGENT
+                        'rgba(251, 191, 36, 0.6)', // PLANING
+                        'rgba(99, 102, 241, 0.6)',  // WIP
+                      ],
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      borderWidth: 2,
+                      hoverOffset: 10
+                    }]
+                  }}
+                  options={{
+                    plugins: { 
+                      legend: { display: false },
+                      tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleFont: { size: 10, weight: 'bold' },
+                        bodyFont: { size: 10 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1
+                      }
+                    },
+                    maintainAspectRatio: false,
+                    cutout: '75%'
+                  }}
+                />
+                <div className="absolute flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tasks</span>
+                  <span className="text-3xl font-black text-white italic">{stats.totalTasks}</span>
                 </div>
-                <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${stats.completionRate}%` }}
-                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/[0.03] p-4 rounded-xl border border-white/5">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Projects</p>
+                  <p className="text-xl font-black text-indigo-400 italic">{stats.uniqueProjects}</p>
+                </div>
+                <div className="bg-white/[0.03] p-4 rounded-xl border border-white/5">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Done</p>
+                  <p className="text-xl font-black text-emerald-400 italic">{stats.doneTasks}</p>
+                </div>
+              </div>
+
+              {/* Project Bar Chart */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Project Load</p>
+                <div className="h-[150px]">
+                  <Bar 
+                    data={{
+                      labels: Object.keys(stats.projectCounts).map(k => k.length > 8 ? k.substring(0, 8) + '...' : k),
+                      datasets: [{
+                        label: 'Tasks',
+                        data: Object.values(stats.projectCounts),
+                        backgroundColor: 'rgba(99, 102, 241, 0.4)',
+                        borderColor: '#6366f1',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                      }]
+                    }}
+                    options={{
+                      indexAxis: 'y',
+                      plugins: { legend: { display: false } },
+                      maintainAspectRatio: false,
+                      scales: {
+                        x: { display: false, grid: { display: false } },
+                        y: { 
+                          grid: { display: false },
+                          ticks: { color: '#64748b', font: { size: 9, weight: 'bold' } }
+                        }
+                      }
+                    }}
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="glass-panel p-8 border-white/5 shadow-2xl">
+          <div className="glass-panel p-6 border-white/5 shadow-2xl">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Daily Activity</h3>
             <div className="space-y-4">
               {DAYS_OF_WEEK.map(d => (

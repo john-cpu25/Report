@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { format, startOfWeek, addDays, parseISO } from 'date-fns'
-import { Download, Layout, FileBarChart, CalendarDays } from 'lucide-react'
+import { Download, Layout, FileBarChart, CalendarDays, Menu, X } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import WeeklyReport from './WeeklyReport'
@@ -18,6 +18,7 @@ function App() {
   const [reportData, setReportData] = useState([])
   const [customProjects, setCustomProjects] = useState([])
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   
   // Load data
   useEffect(() => {
@@ -229,14 +230,19 @@ function App() {
         >
           <CelestialBackground />
           <header className="max-w-[2560px] w-[98%] 2xl:w-[95%] mx-auto mb-12 flex flex-col lg:flex-row justify-between items-center gap-8">
-        <div className="flex items-center gap-4 group">
-          <div className="p-2.5 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-300">
-            <RincovitchLogo size={32} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-white tracking-tight">RINCOVITCH <span className="text-indigo-400">REPORT</span></h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.4em]">Intelligence System v2.1</p>
-          </div>
+        <div className="flex items-center gap-6 group">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="flex items-center gap-4 p-2 rounded-2xl hover:bg-white/5 transition-all active:scale-95 text-left group"
+          >
+            <div className={`p-2.5 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl transition-all duration-500 ${isSidebarOpen ? 'ring-2 ring-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-indigo-500/10' : 'group-hover:scale-110'}`}>
+              <RincovitchLogo size={32} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white tracking-tight">RINCOVITCH <span className="text-indigo-400">REPORT</span></h1>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.4em]">Intelligence System v2.1</p>
+            </div>
+          </button>
         </div>
 
         <div className="flex gap-2 bg-slate-900/40 backdrop-blur-2xl p-1.5 rounded-2xl border border-white/5 shadow-2xl">
@@ -280,7 +286,8 @@ function App() {
                 handleAddTask={handleAddTask} deleteRow={deleteRow} moveRow={moveRow}
                 updateStatus={updateStatus} updateDayTime={updateDayTime}
                 customProjects={customProjects} addCustomProject={addCustomProject}
-                exportExcel={exportExcel}
+                exportExcel={exportExcel} isSidebarOpen={isSidebarOpen}
+                setIsSidebarOpen={setIsSidebarOpen}
               />
             ) : (
               <CSVProcessor />
