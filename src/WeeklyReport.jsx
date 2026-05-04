@@ -254,31 +254,32 @@ const WeeklyReport = ({
               </div>
               <div className="space-y-3">
                 <label>Standard Workflow</label>
-                <div className="flex flex-wrap items-center gap-4 mb-2">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="radio" name="team" 
-                      className="w-4 h-4 border-white/20 text-indigo-500 bg-slate-900 focus:ring-indigo-500"
-                      checked={formData.team === 'STR MODELING TEAM'}
-                      onChange={() => setFormData({...formData, team: 'STR MODELING TEAM', tasks: []})}
-                    />
-                    <span className="text-[10px] font-black text-slate-300 group-hover:text-white transition-colors">STR MODELING TEAM</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="radio" name="team" 
-                      className="w-4 h-4 border-white/20 text-indigo-500 bg-slate-900 focus:ring-indigo-500"
-                      checked={formData.team === 'PT & REO TEAM'}
-                      onChange={() => setFormData({...formData, team: 'PT & REO TEAM', tasks: []})}
-                    />
-                    <span className="text-[10px] font-black text-slate-300 group-hover:text-white transition-colors">PT & REO TEAM</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="radio" name="team" 
-                      className="w-4 h-4 border-white/20 text-indigo-500 bg-slate-900 focus:ring-indigo-500"
-                      checked={formData.team === 'MTO TEAM'}
-                      onChange={() => setFormData({...formData, team: 'MTO TEAM', tasks: []})}
-                    />
-                    <span className="text-[10px] font-black text-slate-300 group-hover:text-white transition-colors">MTO TEAM</span>
-                  </label>
+                <div className="flex items-center justify-center gap-6 mb-4">
+                  {[
+                    { id: 'STR MODELING TEAM', img: '/Report/assets/logos/str.png', color: 'indigo' },
+                    { id: 'PT & REO TEAM', img: '/Report/assets/logos/pt.png', color: 'orange' },
+                    { id: 'MTO TEAM', img: '/Report/assets/logos/mto.png', color: 'violet' }
+                  ].map(team => (
+                    <button
+                      key={team.id}
+                      type="button"
+                      onClick={() => setFormData({...formData, team: team.id, tasks: []})}
+                      className={`p-1 rounded-xl transition-all duration-500 relative group/team ${
+                        formData.team === team.id 
+                          ? `ring-2 ring-${team.color}-500 bg-${team.color}-500/10 shadow-lg shadow-${team.color}-500/20 scale-110 z-10` 
+                          : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:bg-white/5'
+                      }`}
+                      title={team.id}
+                    >
+                      <img src={team.img} alt={team.id} className="w-8 h-8 rounded-lg object-contain shadow-xl" />
+                      {formData.team === team.id && (
+                        <motion.div 
+                          layoutId="team-indicator-sidebar"
+                          className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-${team.color}-500 shadow-[0_0_8px_#6366f1]`}
+                        />
+                      )}
+                    </button>
+                  ))}
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {/* Column 1 */}
@@ -430,25 +431,31 @@ const WeeklyReport = ({
 
         {/* Main Table */}
         <div className="lg:col-span-12 xl:col-span-9 2xl:col-span-9 space-y-4">
-          <div className="flex gap-4 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 w-fit">
-            <button 
-              onClick={() => setFormData({...formData, team: 'STR MODELING TEAM'})}
-              className={`px-6 py-2.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${formData.team === 'STR MODELING TEAM' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
-            >
-              STR MODELING TEAM
-            </button>
-            <button 
-              onClick={() => setFormData({...formData, team: 'PT & REO TEAM'})}
-              className={`px-6 py-2.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${formData.team === 'PT & REO TEAM' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
-            >
-              PT & REO TEAM
-            </button>
-            <button 
-              onClick={() => setFormData({...formData, team: 'MTO TEAM'})}
-              className={`px-6 py-2.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${formData.team === 'MTO TEAM' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
-            >
-              MTO TEAM
-            </button>
+          <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-2xl border border-white/5 w-fit">
+            {[
+              { id: 'STR MODELING TEAM', img: '/Report/assets/logos/str.png', color: 'indigo' },
+              { id: 'PT & REO TEAM', img: '/Report/assets/logos/pt.png', color: 'orange' },
+              { id: 'MTO TEAM', img: '/Report/assets/logos/mto.png', color: 'violet' }
+            ].map(team => (
+              <button 
+                key={`filter-${team.id}`}
+                onClick={() => setFormData({...formData, team: team.id})}
+                className={`p-1 rounded-xl transition-all duration-500 relative group/btn ${
+                  formData.team === team.id 
+                    ? `ring-2 ring-${team.color}-500 bg-${team.color}-500/10 shadow-lg shadow-${team.color}-500/20 scale-110 z-10` 
+                    : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:bg-white/5 hover:scale-105'
+                }`}
+                title={team.id}
+              >
+                <img src={team.img} alt={team.id} className="w-8 h-8 rounded-lg object-contain shadow-xl" />
+                {formData.team === team.id && (
+                  <motion.div 
+                    layoutId="team-indicator-main"
+                    className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-${team.color}-500 shadow-[0_0_12px_#6366f1]`}
+                  />
+                )}
+              </button>
+            ))}
           </div>
 
           <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
