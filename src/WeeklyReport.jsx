@@ -584,8 +584,8 @@ const WeeklyReport = ({
       </main>
 
       {/* Bottom Dashboard / Project Distribution */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-12">
-        <div className="glass-panel p-8 border-white/5 shadow-2xl md:col-span-2">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
+        <div className="glass-panel p-8 border-white/5 shadow-2xl lg:col-span-9">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-6 bg-orange-500 rounded-full"></div>
@@ -608,7 +608,7 @@ const WeeklyReport = ({
           </div>
         </div>
 
-        <div className="glass-panel p-8 border-white/5 shadow-2xl bg-indigo-500/5 overflow-hidden relative group">
+        <div className="glass-panel p-8 border-white/5 shadow-2xl bg-indigo-500/5 overflow-hidden relative group lg:col-span-3">
           <div className="relative z-10">
             <h3 className="text-lg font-black text-white uppercase italic mb-4">System Update</h3>
             <p className="text-sm text-slate-400 leading-relaxed mb-6">
