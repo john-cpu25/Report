@@ -290,7 +290,10 @@ function App() {
                 setIsSidebarOpen={setIsSidebarOpen}
               />
             ) : (
-              <CSVProcessor />
+              <CSVProcessor 
+                isSidebarOpen={isSidebarOpen}
+                setIsSidebarOpen={setIsSidebarOpen}
+              />
             )}
           </motion.div>
         </AnimatePresence>

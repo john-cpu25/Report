@@ -11,12 +11,12 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 const DOW_MAP = { 1: 'T2', 2: 'T3', 3: 'T4', 4: 'T5', 5: 'T6' }
 const PALETTE = ['#818cf8', '#10b981', '#f59e0b', '#3b82f6', '#f43f5e', '#8b5cf6', '#14b8a6', '#f97316', '#06b6d4', '#84cc16']
 
-const CSVProcessor = () => {
+const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const [data, setData] = useState([])
   const [view, setView] = useState('detail')
   const [filters, setFilters] = useState({ field: 'project', values: [] })
   const [fileName, setFileName] = useState('')
-  const [pivotMetric, setPivotMetric] = useState('time1') // 'time1' or 'time2'
+  const [pivotMetric, setPivotMetric] = useState('time1') // 'time1', 'time2' or 'time3'
 
   const processDate = (val) => {
     if (!val) return null;
@@ -89,14 +89,32 @@ const CSVProcessor = () => {
     return `${y}-${m}-${d}`;
   }
 
-  const getDurationMs = (start, end) => {
-    if (!start || !end) return 0;
-    const diff = end.getTime() - start.getTime();
-    return diff > 0 ? diff : 0;
+  const getEffectiveDuration = (start, end) => {
+    if (!start || !end || end <= start) return 0;
+    
+    let duration = end.getTime() - start.getTime();
+    
+    // Lunch break range for the day
+    // Note: Using UTC methods because processDate seems to keep times as parsed
+    const lunchStart = new Date(start);
+    lunchStart.setUTCHours(12, 30, 0, 0);
+    
+    const lunchEnd = new Date(start);
+    lunchEnd.setUTCHours(13, 30, 0, 0);
+    
+    // Overlap calculation
+    const overlapStart = Math.max(start.getTime(), lunchStart.getTime());
+    const overlapEnd = Math.min(end.getTime(), lunchEnd.getTime());
+    
+    if (overlapEnd > overlapStart) {
+      duration -= (overlapEnd - overlapStart);
+    }
+    
+    return duration > 0 ? duration : 0;
   }
 
   const formatDuration = (ms) => {
-    if (!ms) return '-';
+    if (!ms || ms <= 0) return '-';
     const totalMinutes = Math.floor(ms / 60000);
     const h = Math.floor(totalMinutes / 60);
     const m = totalMinutes % 60;
@@ -125,16 +143,25 @@ const CSVProcessor = () => {
         try {
           const createdAtStr = row['created_at'] || row['Created At'] || ''
           const dateStartStr = row['date_start'] || row['Date Start'] || ''
+          const dateEndStr = row['date_end'] || row['Date End'] || ''
+          const dateCompleteStr = row['date_complete'] || row['Date Complete'] || ''
           const dateCheckedStr = row['date_checked'] || row['Date Checked'] || ''
+          
           const rawName = row['name'] || row['Name'] || ''
           const createdBy = row['create_by'] || row['Created By'] || ''
           
           const createdAt = processDate(createdAtStr)
           const dateStart = processDate(dateStartStr)
+          const dateEnd = processDate(dateEndStr)
+          const dateComplete = processDate(dateCompleteStr)
           const dateChecked = processDate(dateCheckedStr)
           
-          const time1 = getDurationMs(createdAt, dateChecked)
-          const time2 = getDurationMs(dateStart, dateChecked)
+          // TIME 1 = date_end - date_start
+          // TIME 2 = date_complete - date_start
+          // TIME 3 = date_checked - date_start
+          const time1 = getEffectiveDuration(dateStart, dateEnd)
+          const time2 = getEffectiveDuration(dateStart, dateComplete)
+          const time3 = getEffectiveDuration(dateStart, dateChecked)
           
           const parts = rawName.toString().split(':')
           
@@ -142,15 +169,19 @@ const CSVProcessor = () => {
             project: parts[0]?.trim() || '-',
             taskName: parts[1]?.trim() || '-',
             createdBy: createdBy || '-',
-            day: formatDate(createdAt),
+            day: formatDate(createdAt || dateStart),
             createdAt,
             dateStart,
+            dateEnd,
+            dateComplete,
             dateChecked,
             time1,
             time2,
+            time3,
             time1Str: formatDuration(time1),
             time2Str: formatDuration(time2),
-            dateObj: createdAt
+            time3Str: formatDuration(time3),
+            dateObj: createdAt || dateStart
           }
         } catch (err) {
           console.error(`Error processing row ${idx}:`, err, row)
@@ -210,8 +241,10 @@ const CSVProcessor = () => {
         entry.days[dow].push({
           time1: row.time1,
           time2: row.time2,
+          time3: row.time3,
           time1Str: row.time1Str,
-          time2Str: row.time2Str
+          time2Str: row.time2Str,
+          time3Str: row.time3Str
         })
       }
     })
@@ -224,12 +257,13 @@ const CSVProcessor = () => {
   const projectStats = useMemo(() => {
     const pMap = new Map()
     filteredData.forEach(r => {
-      if (!pMap.has(r.project)) pMap.set(r.project, { tasks: new Set(), logs: 0, totalTime1: 0, totalTime2: 0 })
+      if (!pMap.has(r.project)) pMap.set(r.project, { tasks: new Set(), logs: 0, totalTime1: 0, totalTime2: 0, totalTime3: 0 })
       const p = pMap.get(r.project)
       p.tasks.add(r.taskName)
       p.logs++
       p.totalTime1 += r.time1
       p.totalTime2 += r.time2
+      p.totalTime3 += r.time3
     })
     return Array.from(pMap.entries())
       .map(([name, v]) => ({ 
@@ -238,6 +272,7 @@ const CSVProcessor = () => {
         totalLogs: v.logs,
         totalTime1: formatDuration(v.totalTime1),
         totalTime2: formatDuration(v.totalTime2),
+        totalTime3: formatDuration(v.totalTime3),
         rawTime1: v.totalTime1
       }))
       .sort((a, b) => b.rawTime1 - a.rawTime1)
@@ -246,12 +281,13 @@ const CSVProcessor = () => {
   const userStats = useMemo(() => {
     const uMap = new Map()
     filteredData.forEach(r => {
-      if (!uMap.has(r.createdBy)) uMap.set(r.createdBy, { projects: new Set(), logs: 0, totalTime1: 0, totalTime2: 0 })
+      if (!uMap.has(r.createdBy)) uMap.set(r.createdBy, { projects: new Set(), logs: 0, totalTime1: 0, totalTime2: 0, totalTime3: 0 })
       const u = uMap.get(r.createdBy)
       u.projects.add(r.project)
       u.logs++
       u.totalTime1 += r.time1
       u.totalTime2 += r.time2
+      u.totalTime3 += r.time3
     })
     return Array.from(uMap.entries())
       .map(([name, v]) => ({ 
@@ -260,6 +296,7 @@ const CSVProcessor = () => {
         totalLogs: v.logs,
         totalTime1: formatDuration(v.totalTime1),
         totalTime2: formatDuration(v.totalTime2),
+        totalTime3: formatDuration(v.totalTime3),
         rawTime1: v.totalTime1
       }))
       .sort((a, b) => b.rawTime1 - a.rawTime1)
@@ -338,53 +375,82 @@ const CSVProcessor = () => {
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8 items-start">
-            {/* Sidebar Filters - Shared for all views */}
-            <aside className="w-full lg:w-80 glass-panel border-white/5 shadow-2xl p-6 sticky top-8 z-20">
-              <div className="space-y-8">
-                <div className="space-y-4">
-                  <label className="text-xs font-black text-indigo-400 uppercase tracking-widest">Filter Type</label>
-                  <select 
-                    className="input bg-slate-950/50 border-white/10 text-sm font-bold h-12"
-                    value={filters.field}
-                    onChange={e => setFilters({ field: e.target.value, values: [] })}
+            {/* Sidebar Toggle Overlay */}
+            <AnimatePresence>
+              {isSidebarOpen && (
+                <>
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40"
+                  />
+                  <motion.aside 
+                    initial={{ x: -400, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -400, opacity: 0 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    className="fixed left-0 top-0 h-screen w-[320px] z-50 p-6 overflow-y-auto custom-scrollbar"
                   >
-                    <option value="project">PROJECT</option>
-                    <option value="task">TASK NAME</option>
-                    <option value="user">CREATE BY</option>
-                  </select>
-                </div>
+                    <div className="glass-panel p-6 border-white/10 shadow-2xl bg-slate-900/90 backdrop-blur-2xl h-full">
+                      <div className="space-y-8">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+                          <h2 className="text-lg font-black text-white tracking-tight uppercase italic">Filter Engine</h2>
+                        </div>
 
-                <div className="space-y-4">
-                  <label className="text-xs font-black text-emerald-400 uppercase tracking-widest flex justify-between">
-                    Select Values
-                    <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded-full">{filters.values.length}</span>
-                  </label>
-                  <div className="max-h-[400px] overflow-auto p-2 bg-slate-950/50 border border-white/10 rounded-2xl custom-scrollbar space-y-1">
-                    {uniqueFilterValues.map(v => (
-                      <label key={v} className={`flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-2.5 rounded-xl transition-all ${filters.values.includes(v) ? 'bg-indigo-500/10' : ''}`}>
-                        <input 
-                          type="checkbox" 
-                          checked={filters.values.includes(v)}
-                          onChange={() => toggleFilterValue(v)}
-                          className="w-5 h-5 rounded-lg border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500 transition-all"
-                        />
-                        <span className={`text-[13px] leading-tight ${filters.values.includes(v) ? 'text-indigo-300 font-bold' : 'text-slate-400'}`}>
-                          {v}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                        <div className="space-y-4">
+                          <label className="text-xs font-black text-indigo-400 uppercase tracking-widest">Filter Type</label>
+                          <select 
+                            className="input bg-slate-950/50 border-white/10 text-sm font-bold h-12"
+                            value={filters.field}
+                            onChange={e => setFilters({ field: e.target.value, values: [] })}
+                          >
+                            <option value="project">PROJECT</option>
+                            <option value="task">TASK NAME</option>
+                            <option value="user">CREATE BY</option>
+                          </select>
+                        </div>
 
-                <button 
-                  onClick={() => setFilters({ field: filters.field, values: [] })}
-                  className="btn btn-secondary w-full py-4 text-xs font-bold uppercase tracking-widest"
-                >
-                  Clear All
-                </button>
-                <AtomicAnimation filters={filters} />
-              </div>
-            </aside>
+                        <div className="space-y-4">
+                          <label className="text-xs font-black text-emerald-400 uppercase tracking-widest flex justify-between">
+                            Select Values
+                            <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded-full">{filters.values.length}</span>
+                          </label>
+                          <div className="max-h-[350px] overflow-auto p-2 bg-slate-950/50 border border-white/10 rounded-2xl custom-scrollbar space-y-1">
+                            {uniqueFilterValues.map(v => (
+                              <label key={v} className={`flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-2.5 rounded-xl transition-all ${filters.values.includes(v) ? 'bg-indigo-500/10' : ''}`}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={filters.values.includes(v)}
+                                  onChange={() => toggleFilterValue(v)}
+                                  className="w-5 h-5 rounded-lg border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500 transition-all"
+                                />
+                                <span className={`text-[13px] leading-tight ${filters.values.includes(v) ? 'text-indigo-300 font-bold' : 'text-slate-400'}`}>
+                                  {v}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        <button 
+                          onClick={() => setFilters({ field: filters.field, values: [] })}
+                          className="btn btn-secondary w-full py-4 text-xs font-bold uppercase tracking-widest border-white/10"
+                        >
+                          Clear All
+                        </button>
+                        
+                        <div className="pt-4 border-t border-white/5">
+                          <AtomicAnimation filters={filters} />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.aside>
+                </>
+              )}
+            </AnimatePresence>
 
             <div className="flex-1 w-full space-y-8">
               {view === 'detail' && (
@@ -395,13 +461,15 @@ const CSVProcessor = () => {
                         <tr className="text-slate-500 font-black uppercase text-[11px] tracking-[0.25em] border-b border-white/5 whitespace-nowrap">
                           <th className="p-6">Project</th>
                           <th className="p-6">Task Name</th>
-                          <th className="p-6">Create By</th>
-                          <th className="p-6">DAY</th>
-                          <th className="p-6">Created At</th>
-                          <th className="p-6">Date Start</th>
-                          <th className="p-6">Date Checked</th>
-                          <th className="p-6 text-emerald-400">Total Time 1</th>
-                          <th className="p-6 text-indigo-400">Total Time 2</th>
+                          <th className="p-6">User</th>
+                          <th className="p-6">Day</th>
+                          <th className="p-6">Start</th>
+                          <th className="p-6">End</th>
+                          <th className="p-6">Done</th>
+                          <th className="p-6">Checked</th>
+                          <th className="p-6 text-emerald-400">Time 1</th>
+                          <th className="p-6 text-indigo-400">Time 2</th>
+                          <th className="p-6 text-violet-400">Time 3</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.03]">
@@ -411,13 +479,15 @@ const CSVProcessor = () => {
                               <span className="text-indigo-400 font-bold text-base tracking-tight group-hover:text-indigo-300">{r.project}</span>
                             </td>
                             <td className="p-6 font-semibold text-slate-200 text-sm">{r.taskName}</td>
-                            <td className="p-6 text-slate-400 text-xs font-mono">{r.createdBy}</td>
-                            <td className="p-6 text-slate-300 font-bold text-sm">{r.day}</td>
-                            <td className="p-6 text-slate-400 text-sm">{formatTime(r.createdAt)}</td>
+                            <td className="p-6 text-slate-400 text-xs font-mono">{r.createdBy?.split('@')[0]}</td>
+                            <td className="p-6 text-slate-300 font-bold text-sm whitespace-nowrap">{r.day}</td>
                             <td className="p-6 text-slate-400 text-sm">{formatTime(r.dateStart)}</td>
-                            <td className="p-6 text-slate-200 font-bold text-sm">{formatTime(r.dateChecked)}</td>
+                            <td className="p-6 text-slate-400 text-sm">{formatTime(r.dateEnd)}</td>
+                            <td className="p-6 text-slate-400 text-sm">{formatTime(r.dateComplete)}</td>
+                            <td className="p-6 text-slate-400 text-sm font-bold text-white">{formatTime(r.dateChecked)}</td>
                             <td className="p-6 text-emerald-400 font-black text-sm">{r.time1Str}</td>
                             <td className="p-6 text-indigo-400 font-black text-sm">{r.time2Str}</td>
+                            <td className="p-6 text-violet-400 font-black text-sm">{r.time3Str}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -433,13 +503,19 @@ const CSVProcessor = () => {
                       onClick={() => setPivotMetric('time1')}
                       className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time1' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                      TOTAL TIME 1
+                      TIME 1
                     </button>
                     <button 
                       onClick={() => setPivotMetric('time2')}
                       className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time2' ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                      TOTAL TIME 2
+                      TIME 2
+                    </button>
+                    <button 
+                      onClick={() => setPivotMetric('time3')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time3' ? 'bg-violet-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                      TIME 3
                     </button>
                   </div>
                   <div className="glass-panel overflow-auto max-h-[700px] border-white/5 shadow-2xl custom-scrollbar">
@@ -462,8 +538,12 @@ const CSVProcessor = () => {
                               <td key={d} className="p-6 text-center">
                                 <div className="flex flex-col gap-1.5 items-center">
                                   {(r.days[d] || []).map((t, idx) => (
-                                    <span key={idx} className={`${pivotMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'} px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
-                                      {pivotMetric === 'time1' ? t.time1Str : t.time2Str}
+                                    <span key={idx} className={`${
+                                      pivotMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                                      pivotMetric === 'time2' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                                      'bg-violet-500/10 text-violet-400 border-violet-500/20'
+                                    } px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
+                                      {pivotMetric === 'time1' ? t.time1Str : pivotMetric === 'time2' ? t.time2Str : t.time3Str}
                                     </span>
                                   ))}
                                 </div>
@@ -539,6 +619,7 @@ const CSVProcessor = () => {
                               <th className="pb-4 text-center">Tasks</th>
                               <th className="pb-4 text-center text-emerald-400">Time 1</th>
                               <th className="pb-4 text-center text-indigo-400">Time 2</th>
+                              <th className="pb-4 text-center text-violet-400">Time 3</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-white/[0.03]">
@@ -546,8 +627,9 @@ const CSVProcessor = () => {
                               <tr key={s.name} className="group hover:bg-white/[0.02]">
                                 <td className="py-4 font-bold text-slate-200">{s.name}</td>
                                 <td className="py-4 text-center text-indigo-400 font-black">{s.uniqueTasks}</td>
-                                <td className="py-4 text-center text-emerald-400">{s.totalTime1}</td>
-                                <td className="py-4 text-center text-indigo-400">{s.totalTime2}</td>
+                                <td className="py-4 text-center text-emerald-400 font-bold">{s.totalTime1}</td>
+                                <td className="py-4 text-center text-indigo-400 font-bold">{s.totalTime2}</td>
+                                <td className="py-4 text-center text-violet-400 font-bold">{s.totalTime3}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -569,6 +651,7 @@ const CSVProcessor = () => {
                               <th className="pb-4 text-center">Projects</th>
                               <th className="pb-4 text-center text-emerald-400">Time 1</th>
                               <th className="pb-4 text-center text-indigo-400">Time 2</th>
+                              <th className="pb-4 text-center text-violet-400">Time 3</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-white/[0.03]">
@@ -576,8 +659,9 @@ const CSVProcessor = () => {
                               <tr key={s.name} className="group hover:bg-white/[0.02]">
                                 <td className="py-4 font-bold text-slate-200 text-[10px] font-mono">{s.name}</td>
                                 <td className="py-4 text-center text-emerald-400 font-black">{s.uniqueProjects}</td>
-                                <td className="py-4 text-center text-emerald-400">{s.totalTime1}</td>
-                                <td className="py-4 text-center text-indigo-400">{s.totalTime2}</td>
+                                <td className="py-4 text-center text-emerald-400 font-bold">{s.totalTime1}</td>
+                                <td className="py-4 text-center text-indigo-400 font-bold">{s.totalTime2}</td>
+                                <td className="py-4 text-center text-violet-400 font-bold">{s.totalTime3}</td>
                               </tr>
                             ))}
                           </tbody>
