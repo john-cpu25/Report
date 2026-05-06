@@ -18,7 +18,7 @@ export const generateTasks = (input) => {
     team,
     day,
     eta,
-    status = "Planning"
+    status = "PLANNING"
   } = input;
 
   // 1. Parse rawLines

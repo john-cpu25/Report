@@ -24,7 +24,14 @@ function App() {
   useEffect(() => {
     const savedLogs = localStorage.getItem('weeklyReportData')
     const savedProjects = localStorage.getItem('customProjects')
-    if (savedLogs) setReportData(JSON.parse(savedLogs))
+    if (savedLogs) {
+      const logs = JSON.parse(savedLogs)
+      // Migration: Convert PLANING to PLANNING
+      const migratedLogs = logs.map(log => 
+        log.status === 'PLANING' ? { ...log, status: 'PLANNING' } : log
+      )
+      setReportData(migratedLogs)
+    }
     if (savedProjects) setCustomProjects(JSON.parse(savedProjects))
   }, [])
 

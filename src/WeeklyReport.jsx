@@ -36,6 +36,7 @@ ChartJS.register(
   Filler
 )
 
+const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 const ALL_STATUSES = ['WIP', 'DONE', 'PENDING', 'TMR', 'PLANNING', 'URGENT', 'HIGH PRIORITY', 'ISSUE']
 
 const WeeklyReport = ({ 
@@ -1404,7 +1405,7 @@ const WeeklyReport = ({
                             team: formData.team,
                             day: formData.day,
                             eta: formData.eta,
-                            status: "Planning"
+                            status: "PLANNING"
                           });
                           if (tasks.length > 0) {
                             handleAddTask(null, tasks, { isDirectBatch: true });
