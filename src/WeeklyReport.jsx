@@ -5,6 +5,9 @@ import WorkflowAnimation from './WorkflowAnimation'
 import projectsData from './data/projects.json'
 import KamehamehaAnimation from './KamehamehaAnimation'
 import { generateTasks, validateTaskInput } from './utils/taskEngine'
+import MarkupCell from './components/MarkupCell'
+import MarkupDateInput from './components/MarkupDateInput'
+import MarkupTimeInput from './components/MarkupTimeInput'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -34,17 +37,19 @@ ChartJS.register(
 )
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-
 const WeeklyReport = ({ 
   reportData, setReportData, selectedDate, setSelectedDate, weekDates, 
   formData, setFormData, handleAddTask, deleteRow, moveRow, updateStatus,
-  updateDayTime, customProjects, addCustomProject, exportExcel,
+  updateDayTime, updateMarkup, bulkUpdateMarkup, customProjects, addCustomProject, exportExcel,
   isSidebarOpen, setIsSidebarOpen
 }) => {
   const [newProjectName, setNewProjectName] = React.useState('')
   const [showAddProject, setShowAddProject] = React.useState(false)
   const [sortConfig, setSortConfig] = React.useState({ key: 'project', direction: 'asc' })
   const [editingCell, setEditingCell] = React.useState(null) // { id, day }
+  const [editingMarkup, setEditingMarkup] = React.useState(null) // { id }
+  const [selectedRows, setSelectedRows] = React.useState(new Set())
+  const [bulkMarkup, setBulkMarkup] = React.useState({ date: null, time: null })
   const [showBatchModal, setShowBatchModal] = React.useState(false)
   const [batchTasksText, setBatchTasksText] = React.useState('')
   const [batchProjects, setBatchProjects] = React.useState([])
@@ -86,8 +91,22 @@ const WeeklyReport = ({
         
         let aVal = a[sortConfig.key] || ''
         let bVal = b[sortConfig.key] || ''
-        if (typeof aVal === 'string') aVal = aVal.toLowerCase()
-        if (typeof bVal === 'string') bVal = bVal.toLowerCase()
+
+        // Special handling for markupTime sorting
+        if (sortConfig.key === 'markupTime') {
+          const getTimestamp = (r) => {
+            if (!r.markupDate && !r.markupTime) return 0;
+            const date = r.markupDate || '1970-01-01';
+            const time = r.markupTime || '00:00';
+            return new Date(`${date}T${time}`).getTime();
+          };
+          aVal = getTimestamp(a);
+          bVal = getTimestamp(b);
+        } else {
+          if (typeof aVal === 'string') aVal = aVal.toLowerCase()
+          if (typeof bVal === 'string') bVal = bVal.toLowerCase()
+        }
+
         if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1
         if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1
         return 0
@@ -558,6 +577,20 @@ const WeeklyReport = ({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-white/[0.03] text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 border-b border-white/5">
+                    <th className="p-6 w-12">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
+                        checked={selectedRows.size === filteredReportData.length && filteredReportData.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRows(new Set(filteredReportData.map(r => r.id)))
+                          } else {
+                            setSelectedRows(new Set())
+                          }
+                        }}
+                      />
+                    </th>
                     <th className="p-6 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('project')}>
                       <div className="flex items-center gap-2">
                         Project
@@ -571,6 +604,14 @@ const WeeklyReport = ({
                         Task Details
                         <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
                           {sortConfig.key === 'task' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover:opacity-50"/>}
+                        </div>
+                      </div>
+                    </th>
+                    <th className="p-6 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('markupTime')}>
+                      <div className="flex items-center gap-2">
+                        Markup Time
+                        <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
+                          {sortConfig.key === 'markupTime' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover:opacity-50"/>}
                         </div>
                       </div>
                     </th>
@@ -656,10 +697,37 @@ const WeeklyReport = ({
                                 className="hover:bg-white/[0.02] transition-all group border-b border-white/[0.04]"
                               >
                                 <td className="p-6">
+                                  <input 
+                                    type="checkbox" 
+                                    className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
+                                    checked={selectedRows.has(row.id)}
+                                    onChange={(e) => {
+                                      const next = new Set(selectedRows)
+                                      if (e.target.checked) next.add(row.id)
+                                      else next.delete(row.id)
+                                      setSelectedRows(next)
+                                    }}
+                                  />
+                                </td>
+                                <td className="p-6">
                                   <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase italic">{row.project}</span>
                                 </td>
                                 <td className="p-6">
                                   <div className="text-sm font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
+                                </td>
+                                <td className="p-4">
+                                  <MarkupCell 
+                                    id={row.id}
+                                    markupDate={row.markupDate}
+                                    markupTime={row.markupTime}
+                                    isEditing={editingMarkup === row.id}
+                                    onStartEdit={() => setEditingMarkup(row.id)}
+                                    onCancelEdit={() => setEditingMarkup(null)}
+                                    onSave={(id, data) => {
+                                      updateMarkup(id, data);
+                                      setEditingMarkup(null);
+                                    }}
+                                  />
                                 </td>
                                 <td className="p-6">
                                   <select 
@@ -740,10 +808,37 @@ const WeeklyReport = ({
                           className="hover:bg-white/[0.02] transition-all group"
                         >
                           <td className="p-6">
+                            <input 
+                              type="checkbox" 
+                              className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
+                              checked={selectedRows.has(row.id)}
+                              onChange={(e) => {
+                                const next = new Set(selectedRows)
+                                if (e.target.checked) next.add(row.id)
+                                else next.delete(row.id)
+                                setSelectedRows(next)
+                              }}
+                            />
+                          </td>
+                          <td className="p-6">
                             <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase italic">{row.project}</span>
                           </td>
                           <td className="p-6">
                             <div className="text-sm font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
+                          </td>
+                          <td className="p-4">
+                            <MarkupCell 
+                              id={row.id}
+                              markupDate={row.markupDate}
+                              markupTime={row.markupTime}
+                              isEditing={editingMarkup === row.id}
+                              onStartEdit={() => setEditingMarkup(row.id)}
+                              onCancelEdit={() => setEditingMarkup(null)}
+                              onSave={(id, data) => {
+                                updateMarkup(id, data);
+                                setEditingMarkup(null);
+                              }}
+                            />
                           </td>
                           <td className="p-6">
                             <select 
@@ -1289,6 +1384,64 @@ const WeeklyReport = ({
             </div>
           )
         }
+      </AnimatePresence>
+
+      {/* Bulk Edit Bar */}
+      <AnimatePresence>
+        {selectedRows.size > 0 && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[80] w-[90%] max-w-2xl"
+          >
+            <div className="glass-panel p-4 bg-indigo-500/10 backdrop-blur-2xl border-indigo-500/20 shadow-[0_0_50px_rgba(99,102,241,0.2)] flex items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-indigo-500 text-white p-2 rounded-xl shadow-lg shadow-indigo-500/20">
+                  <Layout size={20} />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-white uppercase tracking-widest leading-none">{selectedRows.size} Rows Selected</p>
+                  <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter mt-1">Bulk Action Mode</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 flex-grow max-w-sm">
+                <div className="w-1/2">
+                  <MarkupDateInput 
+                    value={bulkMarkup.date} 
+                    onChange={(val) => setBulkMarkup(prev => ({ ...prev, date: val }))}
+                  />
+                </div>
+                <div className="w-1/2">
+                  <MarkupTimeInput 
+                    value={bulkMarkup.time} 
+                    onChange={(val) => setBulkMarkup(prev => ({ ...prev, time: val }))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    bulkUpdateMarkup(Array.from(selectedRows), bulkMarkup);
+                    setSelectedRows(new Set());
+                    setBulkMarkup({ date: null, time: null });
+                  }}
+                  className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+                >
+                  APPLY
+                </button>
+                <button 
+                  onClick={() => setSelectedRows(new Set())}
+                  className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl transition-all"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   )

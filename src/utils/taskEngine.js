@@ -71,6 +71,8 @@ export const generateTasks = (input) => {
             createdAt: timestamp,
             // UI specific fields for current app compatibility
             task: fullTaskString,
+            markupDate: null,
+            markupTime: null,
             days: { 
               Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '', 
               ...{ [day]: eta } 

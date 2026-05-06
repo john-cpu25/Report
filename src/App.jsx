@@ -143,6 +143,8 @@ function App() {
             team: formData.team,
             task: taskName,
             status: formData.status,
+            markupDate: null,
+            markupTime: null,
             days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '', ...{ [formData.day]: formData.eta } }
           })
           dataChanged = true
@@ -187,6 +189,18 @@ function App() {
 
   const updateStatus = (id, status) => {
     setReportData(reportData.map(r => r.id === id ? { ...r, status } : r))
+  }
+
+  const updateMarkup = (id, { date, time }) => {
+    setReportData(reportData.map(r => 
+      r.id === id ? { ...r, markupDate: date, markupTime: time } : r
+    ))
+  }
+
+  const bulkUpdateMarkup = (ids, { date, time }) => {
+    setReportData(reportData.map(r => 
+      ids.includes(r.id) ? { ...r, markupDate: date, markupTime: time } : r
+    ))
   }
 
   const exportExcel = async () => {
@@ -341,6 +355,7 @@ function App() {
                 weekDates={weekDates} formData={formData} setFormData={setFormData}
                 handleAddTask={handleAddTask} deleteRow={deleteRow} moveRow={moveRow}
                 updateStatus={updateStatus} updateDayTime={updateDayTime}
+                updateMarkup={updateMarkup} bulkUpdateMarkup={bulkUpdateMarkup}
                 customProjects={customProjects} addCustomProject={addCustomProject}
                 exportExcel={exportExcel} isSidebarOpen={isSidebarOpen}
                 setIsSidebarOpen={setIsSidebarOpen}
