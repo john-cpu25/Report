@@ -183,7 +183,7 @@ const WeeklyReport = ({
   }
   const PT_WORKFLOW = { 
     col1: ['REO BTM', 'REO TOP', 'REO SHEAR'], 
-    col2: ['PT', 'REO', 'PT&REO'], 
+    col2: ['PT', 'REO', 'PT&REO', 'TYPICAL'], 
     col3: ['BACK DRAF', 'SECTION', 'ISSUE'] 
   }
   const MTO_WORKFLOW = { 
