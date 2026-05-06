@@ -36,7 +36,8 @@ ChartJS.register(
   Filler
 )
 
-const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+const ALL_STATUSES = ['WIP', 'DONE', 'PENDING', 'TMR', 'PLANNING', 'URGENT', 'HIGH PRIORITY', 'ISSUE']
+
 const WeeklyReport = ({ 
   reportData, setReportData, selectedDate, setSelectedDate, weekDates, 
   formData, setFormData, handleAddTask, deleteRow, moveRow, updateStatus,
@@ -58,6 +59,8 @@ const WeeklyReport = ({
   const [batchWorkflows, setBatchWorkflows] = React.useState([])
   const [collapsedProjects, setCollapsedProjects] = React.useState({}) // { [projectName]: boolean }
   const [focusedProject, setFocusedProject] = React.useState(null)
+  const [visibleStatuses, setVisibleStatuses] = React.useState(ALL_STATUSES)
+  const [showStatusFilter, setShowStatusFilter] = React.useState(false)
 
   // Derived state for Batch Engine (Transformation Layer)
   const batchValidation = React.useMemo(() => {
@@ -75,7 +78,7 @@ const WeeklyReport = ({
   }, [customProjects])
 
   const filteredReportData = React.useMemo(() => {
-    let result = reportData.filter(r => r.team === formData.team)
+    let result = reportData.filter(r => r.team === formData.team && visibleStatuses.includes(r.status))
     
     // Apply focused project filter if active
     if (focusedProject) {
@@ -113,7 +116,7 @@ const WeeklyReport = ({
       })
     }
     return result
-  }, [reportData, formData.team, sortConfig, formData.showProjectGroups, focusedProject])
+  }, [reportData, formData.team, sortConfig, formData.showProjectGroups, focusedProject, visibleStatuses])
 
   const groupedData = React.useMemo(() => {
     return filteredReportData.reduce((acc, task) => {
@@ -199,7 +202,7 @@ const WeeklyReport = ({
       case 'PENDING': return { text: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' }
       case 'TMR': return { text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' }
       case 'URGENT': return { text: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' }
-      case 'PLANING': return { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' }
+      case 'PLANNING': return { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' }
       case 'HIGH PRIORITY': return { text: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' }
       case 'ISSUE': return { text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }
       default: return { text: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' } // WIP
@@ -452,7 +455,7 @@ const WeeklyReport = ({
                     value={formData.status}
                     onChange={e => setFormData({...formData, status: e.target.value})}
                   >
-                    {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
+                    {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANNING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -615,11 +618,118 @@ const WeeklyReport = ({
                         </div>
                       </div>
                     </th>
-                    <th className="p-6 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('status')}>
-                      <div className="flex items-center gap-2">
-                        Status
-                        <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
-                          {sortConfig.key === 'status' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover:opacity-50"/>}
+                    <th className="p-6 relative">
+                      <div className="flex items-center justify-between gap-2">
+                        <div 
+                          className="flex items-center gap-2 cursor-pointer hover:text-slate-300 transition-colors group/header"
+                          onClick={() => handleSort('status')}
+                        >
+                          Status
+                          <div className="text-slate-600 group-hover/header:text-slate-400 transition-colors">
+                            {sortConfig.key === 'status' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover/header:opacity-50"/>}
+                          </div>
+                        </div>
+                        
+                        {/* Status Filter Trigger */}
+                        <div className="relative">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowStatusFilter(!showStatusFilter);
+                            }}
+                            className={`p-1.5 rounded-md transition-all ${
+                              visibleStatuses.length < ALL_STATUSES.length 
+                                ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]' 
+                                : 'text-slate-600 hover:text-slate-400 hover:bg-white/5'
+                            }`}
+                            title="Filter Statuses"
+                          >
+                            <Filter size={14} fill={visibleStatuses.length < ALL_STATUSES.length ? "currentColor" : "none"} />
+                          </button>
+
+                          <AnimatePresence>
+                            {showStatusFilter && (
+                              <>
+                                {/* Click-away overlay */}
+                                <div 
+                                  className="fixed inset-0 z-[60]" 
+                                  onClick={() => setShowStatusFilter(false)}
+                                />
+                                <motion.div
+                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  className="absolute right-0 top-full mt-2 w-56 z-[70] glass-panel bg-slate-900/95 backdrop-blur-xl border-white/10 shadow-2xl p-2"
+                                >
+                                  <div className="p-2 border-b border-white/5 mb-2 flex items-center justify-between">
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Filter Status</span>
+                                    <div className="flex gap-2">
+                                      <button 
+                                        onClick={() => setVisibleStatuses(ALL_STATUSES)}
+                                        className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest"
+                                      >
+                                        All
+                                      </button>
+                                      <button 
+                                        onClick={() => setVisibleStatuses([])}
+                                        className="text-[9px] font-black text-slate-500 hover:text-slate-400 uppercase tracking-widest"
+                                      >
+                                        None
+                                      </button>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-1 max-h-[300px] overflow-y-auto custom-scrollbar p-1">
+                                    {ALL_STATUSES.map(s => {
+                                      const isSelected = visibleStatuses.includes(s);
+                                      const colors = getStatusColor(s);
+                                      return (
+                                        <label 
+                                          key={s} 
+                                          className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all ${
+                                            isSelected ? 'bg-white/5' : 'hover:bg-white/[0.02]'
+                                          }`}
+                                        >
+                                          <div className="relative flex items-center">
+                                            <input 
+                                              type="checkbox" 
+                                              className="peer hidden"
+                                              checked={isSelected}
+                                              onChange={() => {
+                                                if (isSelected) {
+                                                  setVisibleStatuses(visibleStatuses.filter(x => x !== s));
+                                                } else {
+                                                  setVisibleStatuses([...visibleStatuses, s]);
+                                                }
+                                              }}
+                                            />
+                                            <div className={`w-4 h-4 rounded border border-white/20 transition-all flex items-center justify-center ${
+                                              isSelected ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : 'bg-slate-950'
+                                            }`}>
+                                              {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                                            </div>
+                                          </div>
+                                          <span className={`text-[10px] font-black uppercase tracking-wider ${isSelected ? 'text-white' : 'text-slate-500'}`}>
+                                            {s}
+                                          </span>
+                                          <div className={`ml-auto w-2 h-2 rounded-full ${colors.bg.replace('/10', '')} shadow-[0_0_5px_currentColor]`} />
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                  
+                                  <div className="mt-2 p-2 border-t border-white/5 flex justify-end">
+                                    <button 
+                                      onClick={() => setShowStatusFilter(false)}
+                                      className="px-3 py-1.5 bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest rounded-md hover:bg-indigo-600 transition-all"
+                                    >
+                                      Apply Filter
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              </>
+                            )}
+                          </AnimatePresence>
                         </div>
                       </div>
                     </th>
@@ -736,7 +846,7 @@ const WeeklyReport = ({
                                       row.status === 'PENDING' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-slate-500/5' :
                                       row.status === 'TMR' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20 shadow-orange-500/5' :
                                       row.status === 'URGENT' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-rose-500/5' :
-                                      row.status === 'PLANING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-amber-500/5' :
+                                      row.status === 'PLANNING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-amber-500/5' :
                                       row.status === 'HIGH PRIORITY' ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-violet-500/5' :
                                       row.status === 'ISSUE' ? 'bg-red-500/10 text-red-400 border border-red-500/20 shadow-red-500/5' :
                                       'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-indigo-500/5'
@@ -744,7 +854,7 @@ const WeeklyReport = ({
                                     value={row.status}
                                     onChange={(e) => updateStatus(row.id, e.target.value)}
                                   >
-                                    {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
+                                    {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANNING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
                                   </select>
                                 </td>
                                 {DAYS_OF_WEEK.map(d => {
@@ -847,7 +957,7 @@ const WeeklyReport = ({
                                 row.status === 'PENDING' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-slate-500/5' :
                                 row.status === 'TMR' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20 shadow-orange-500/5' :
                                 row.status === 'URGENT' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-rose-500/5' :
-                                row.status === 'PLANING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-amber-500/5' :
+                                row.status === 'PLANNING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-amber-500/5' :
                                 row.status === 'HIGH PRIORITY' ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-violet-500/5' :
                                 row.status === 'ISSUE' ? 'bg-red-500/10 text-red-400 border border-red-500/20 shadow-red-500/5' :
                                 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-indigo-500/5'
@@ -855,7 +965,7 @@ const WeeklyReport = ({
                               value={row.status}
                               onChange={(e) => updateStatus(row.id, e.target.value)}
                             >
-                              {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
+                               {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANNING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                           </td>
                           {DAYS_OF_WEEK.map(d => {
@@ -947,7 +1057,7 @@ const WeeklyReport = ({
                         'rgba(100, 116, 139, 0.6)', // PENDING
                         'rgba(249, 115, 22, 0.6)', // TMR
                         'rgba(244, 63, 94, 0.6)',  // URGENT
-                        'rgba(251, 191, 36, 0.6)', // PLANING
+                        'rgba(251, 191, 36, 0.6)', // PLANNING
                         'rgba(139, 92, 246, 0.6)', // HIGH PRIORITY
                         'rgba(239, 68, 68, 0.6)',  // ISSUE
                         'rgba(99, 102, 241, 0.6)',  // WIP
