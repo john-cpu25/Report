@@ -291,10 +291,10 @@ function App() {
           key="main-content"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="min-h-screen p-4 md:p-8 selection:bg-indigo-500/30"
+          className="min-h-screen selection:bg-indigo-500/30"
         >
           <CelestialBackground />
-          <header className="max-w-[2560px] w-[98%] 2xl:w-[95%] mx-auto mb-12 flex flex-col lg:flex-row justify-between items-center gap-8">
+          <header className="max-w-[2000px] w-full mx-auto px-4 md:px-8 2xl:px-12 mb-12 flex flex-col lg:flex-row justify-between items-center gap-8">
         <div className="flex items-center gap-6 group">
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -346,7 +346,7 @@ function App() {
         <div className="w-[180px] hidden md:block"></div>
       </header>
 
-      <div className="max-w-[2560px] w-[98%] 2xl:w-[95%] mx-auto">
+      <div className="max-w-[2000px] w-full mx-auto px-4 md:px-8 2xl:px-12 pb-12">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
