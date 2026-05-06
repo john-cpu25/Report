@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { format, startOfWeek, addDays, parseISO } from 'date-fns'
-import { Download, Layout, FileBarChart, CalendarDays, Menu, X } from 'lucide-react'
+import { Download, Layout, FileBarChart, CalendarDays, Menu, X, Filter } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import WeeklyReport from './WeeklyReport'
@@ -52,7 +52,8 @@ function App() {
     day: format(new Date(), 'EEEE'),
     status: 'WIP',
     eta: '',
-    etaMode: '' // '', '12:30', '17:30', 'CUSTOM', 'OVERTIME'
+    etaMode: '', // '', '12:30', '17:30', 'CUSTOM', 'OVERTIME'
+    showProjectGroups: true
   })
 
   // Auto-update day when date changes
@@ -73,54 +74,97 @@ function App() {
     return DAYS_OF_WEEK.map((_, i) => format(addDays(monday, i), 'dd/MM/yyyy'))
   }, [selectedDate])
 
-  const handleAddTask = (e) => {
-    e.preventDefault()
-    if (!formData.project) return
-    if (formData.showLevel && !formData.level) return
+  const handleAddTask = (e, batchTasks = null, batchOverrides = null) => {
+    if (e) e.preventDefault()
+    
+    const targetProject = batchOverrides?.project || formData.project
+    if (!targetProject) return
+    
+    const tasksToAdd = batchTasks || (formData.tasks.length > 0 ? [formData.tasks.join(' ')] : [''])
 
-    let taskName = ''
-    if (formData.showLevel && formData.level) {
-      taskName = `LEVEL ${formData.level}`
-    }
-    if (formData.tasks.length > 0) {
-      taskName += (taskName ? ' ' : '') + formData.tasks.join(' ')
-    }
-    if (formData.note) {
-      taskName += (taskName ? ' ' : '') + formData.note
-    }
-    if (!taskName) taskName = '(no detail)'
+    const newReportData = [...reportData]
+    let dataChanged = false
 
-    const existingIndex = reportData.findIndex(
-      (r) => r.project === formData.project && r.task === taskName && r.team === formData.team
-    )
+    if (batchOverrides?.isDirectBatch) {
+      // Direct injection from Batch Engine
+      batchTasks.forEach(taskObj => {
+        // Map projectId to project for consistency with existing state
+        const taskWithProject = { ...taskObj, project: taskObj.projectId };
+        delete taskWithProject.projectId;
+        
+        const existingIndex = newReportData.findIndex(
+          (r) => r.project === taskWithProject.project && r.task === taskWithProject.task && r.team === taskWithProject.team
+        )
 
-    if (existingIndex > -1) {
-      const newData = [...reportData]
-      newData[existingIndex].days[formData.day] = formData.eta
-      newData[existingIndex].status = formData.status
-      setReportData(newData)
-    } else {
-      setReportData([
-        ...reportData,
-        {
-          id: Date.now(),
-          project: formData.project,
-          team: formData.team,
-          task: taskName,
-          status: formData.status,
-          days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '', ...{ [formData.day]: formData.eta } }
+        if (existingIndex > -1) {
+          Object.assign(newReportData[existingIndex], taskWithProject);
+        } else {
+          newReportData.push(taskWithProject);
         }
-      ])
+      });
+      dataChanged = true;
+    } else {
+      const tasksToAdd = batchTasks || (formData.tasks.length > 0 ? [formData.tasks.join(' ')] : [''])
+
+      tasksToAdd.forEach(taskText => {
+        // For batch overrides, level is already baked into the override
+        const useBatchLevel = batchOverrides !== null
+        const levelEnabled = useBatchLevel ? !!batchOverrides.level : formData.showLevel
+        const levelValue = useBatchLevel ? batchOverrides.level : formData.level
+
+        if (!useBatchLevel && levelEnabled && !levelValue) return
+
+        let taskName = ''
+        if (levelEnabled && levelValue) {
+          taskName = `LEVEL ${levelValue}`
+        }
+        
+        if (taskText) {
+          taskName += (taskName ? ' ' : '') + taskText
+        }
+
+        if (!useBatchLevel && formData.note) {
+          taskName += (taskName ? ' ' : '') + formData.note
+        }
+        if (!taskName) taskName = '(no detail)'
+
+        const existingIndex = newReportData.findIndex(
+          (r) => r.project === targetProject && r.task === taskName && r.team === formData.team
+        )
+
+        if (existingIndex > -1) {
+          newReportData[existingIndex].days[formData.day] = formData.eta
+          newReportData[existingIndex].status = formData.status
+          dataChanged = true
+        } else {
+          newReportData.push({
+            id: Date.now() + Math.random(),
+            project: targetProject,
+            team: formData.team,
+            task: taskName,
+            status: formData.status,
+            days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '', ...{ [formData.day]: formData.eta } }
+          })
+          dataChanged = true
+        }
+      })
     }
 
-    setFormData(prev => ({
-      ...prev,
-      project: '',
-      level: '',
-      tasks: [],
-      note: '',
-      eta: ''
-    }))
+    if (dataChanged) {
+      setReportData(newReportData)
+    }
+
+    // Only reset sidebar form if not a batch override call
+    if (!batchOverrides) {
+      setFormData(prev => ({
+        ...prev,
+        project: '',
+        level: '',
+        tasks: [],
+        note: '',
+        eta: ''
+      }))
+    }
   }
 
   const deleteRow = (id) => setReportData(reportData.filter(r => r.id !== id))
@@ -242,6 +286,18 @@ function App() {
               <h1 className="text-2xl font-black text-white tracking-tight">RINCOVITCH <span className="text-indigo-400">REPORT</span></h1>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.4em]">Intelligence System v2.1</p>
             </div>
+          </button>
+          <button 
+            onClick={() => setFormData(prev => ({ ...prev, showProjectGroups: !prev.showProjectGroups }))}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all duration-300 ${
+              formData.showProjectGroups 
+                ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
+                : 'bg-slate-900/50 border-white/10 text-slate-500 hover:text-slate-300'
+            }`}
+            title="Toggle Project Grouping"
+          >
+            <Filter size={18} className={formData.showProjectGroups ? 'opacity-100' : 'opacity-70'} />
+            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Header Mode</span>
           </button>
         </div>
 

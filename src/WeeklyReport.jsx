@@ -1,9 +1,10 @@
 import React from 'react'
-import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet, Layout } from 'lucide-react'
+import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet, Layout, X, Filter } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import WorkflowAnimation from './WorkflowAnimation'
 import projectsData from './data/projects.json'
 import KamehamehaAnimation from './KamehamehaAnimation'
+import { generateTasks, validateTaskInput } from './utils/taskEngine'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -44,6 +45,25 @@ const WeeklyReport = ({
   const [showAddProject, setShowAddProject] = React.useState(false)
   const [sortConfig, setSortConfig] = React.useState({ key: 'project', direction: 'asc' })
   const [editingCell, setEditingCell] = React.useState(null) // { id, day }
+  const [showBatchModal, setShowBatchModal] = React.useState(false)
+  const [batchTasksText, setBatchTasksText] = React.useState('')
+  const [batchProjects, setBatchProjects] = React.useState([])
+  const [batchLevelsText, setBatchLevelsText] = React.useState('')
+  const [batchLevelEnabled, setBatchLevelEnabled] = React.useState(false)
+  const [batchWorkflows, setBatchWorkflows] = React.useState([])
+  const [collapsedProjects, setCollapsedProjects] = React.useState({}) // { [projectName]: boolean }
+  const [focusedProject, setFocusedProject] = React.useState(null)
+
+  // Derived state for Batch Engine (Transformation Layer)
+  const batchValidation = React.useMemo(() => {
+    return validateTaskInput({
+      projectIds: batchProjects,
+      levels: batchLevelsText.split(',').map(l => l.trim()).filter(l => l !== ""),
+      levelEnabled: batchLevelEnabled,
+      workflows: batchWorkflows,
+      rawLines: batchTasksText
+    });
+  }, [batchProjects, batchLevelsText, batchLevelEnabled, batchWorkflows, batchTasksText]);
 
   const allProjects = React.useMemo(() => {
     return [...projectsData, ...customProjects].sort()
@@ -51,8 +71,19 @@ const WeeklyReport = ({
 
   const filteredReportData = React.useMemo(() => {
     let result = reportData.filter(r => r.team === formData.team)
-    if (sortConfig.key) {
+    
+    // Apply focused project filter if active
+    if (focusedProject) {
+      result = result.filter(r => r.project === focusedProject)
+    }
+
+    if (sortConfig.key || formData.showProjectGroups) {
       result.sort((a, b) => {
+        // If grouping is enabled, project is always the primary sort
+        if (formData.showProjectGroups && a.project !== b.project) {
+          return a.project < b.project ? -1 : 1
+        }
+        
         let aVal = a[sortConfig.key] || ''
         let bVal = b[sortConfig.key] || ''
         if (typeof aVal === 'string') aVal = aVal.toLowerCase()
@@ -63,7 +94,31 @@ const WeeklyReport = ({
       })
     }
     return result
-  }, [reportData, formData.team, sortConfig])
+  }, [reportData, formData.team, sortConfig, formData.showProjectGroups, focusedProject])
+
+  const groupedData = React.useMemo(() => {
+    return filteredReportData.reduce((acc, task) => {
+      if (!acc[task.project]) acc[task.project] = []
+      acc[task.project].push(task)
+      return acc
+    }, {})
+  }, [filteredReportData])
+
+  const toggleCollapse = (projectName) => {
+    setCollapsedProjects(prev => ({
+      ...prev,
+      [projectName]: !prev[projectName]
+    }))
+  }
+
+  const expandAll = () => setCollapsedProjects({})
+  const collapseAll = () => {
+    const all = Object.keys(groupedData).reduce((acc, p) => {
+      acc[p] = true
+      return acc
+    }, {})
+    setCollapsedProjects(all)
+  }
 
   const handleSort = (key) => {
     let direction = 'asc'
@@ -126,6 +181,8 @@ const WeeklyReport = ({
       case 'TMR': return { text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' }
       case 'URGENT': return { text: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' }
       case 'PLANING': return { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' }
+      case 'HIGH PRIORITY': return { text: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' }
+      case 'ISSUE': return { text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }
       default: return { text: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' } // WIP
     }
   }
@@ -158,6 +215,8 @@ const WeeklyReport = ({
       </AnimatePresence>
 
       <main className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 2xl:grid-cols-12 gap-6 items-start">
+
+
         {/* Sidebar Form */}
         <AnimatePresence>
           {isSidebarOpen && (
@@ -374,15 +433,15 @@ const WeeklyReport = ({
                     value={formData.status}
                     onChange={e => setFormData({...formData, status: e.target.value})}
                   >
-                    {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT'].map(s => <option key={s} value={s}>{s}</option>)}
+                    {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label>ETA Time</label>
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
-                      { mode: '12:30', label: '12:30 PM' },
-                      { mode: '17:30', label: '17:30 PM' },
+                      { mode: '12:30', label: 'MORNING' },
+                      { mode: '17:30', label: 'AFTERNOON' },
                       { mode: 'CUSTOM', label: 'CUSTOM' },
                       { mode: 'OVERTIME', label: 'OVERTIME' },
                     ].map(opt => (
@@ -423,6 +482,14 @@ const WeeklyReport = ({
                 <FileSpreadsheet size={16} />
                 EXPORT FINAL XLSX
               </button>
+              <button 
+                type="button" 
+                onClick={() => setShowBatchModal(true)} 
+                className="btn w-full mt-2 py-3 text-xs tracking-widest shadow-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 hover:text-white flex justify-center items-center gap-2 border border-orange-500/20 transition-all"
+              >
+                <Layout size={16} />
+                BATCH ADD TASKS
+              </button>
             </form>
             </div>
           </motion.aside>
@@ -431,31 +498,59 @@ const WeeklyReport = ({
 
         {/* Main Table */}
         <div className="lg:col-span-12 xl:col-span-9 2xl:col-span-9 space-y-4">
-          <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-2xl border border-white/5 w-fit">
-            {[
-              { id: 'STR MODELING TEAM', img: '/Report/assets/logos/str.png', color: 'indigo' },
-              { id: 'PT & REO TEAM', img: '/Report/assets/logos/pt.png', color: 'orange' },
-              { id: 'MTO TEAM', img: '/Report/assets/logos/mto.png', color: 'violet' }
-            ].map(team => (
-              <button 
-                key={`filter-${team.id}`}
-                onClick={() => setFormData({...formData, team: team.id})}
-                className={`p-1 rounded-xl transition-all duration-500 relative group/btn ${
-                  formData.team === team.id 
-                    ? `ring-2 ring-${team.color}-500 bg-${team.color}-500/10 shadow-lg shadow-${team.color}-500/20 scale-110 z-10` 
-                    : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:bg-white/5 hover:scale-105'
-                }`}
-                title={team.id}
-              >
-                <img src={team.img} alt={team.id} className="w-8 h-8 rounded-lg object-contain shadow-xl" />
-                {formData.team === team.id && (
-                  <motion.div 
-                    layoutId="team-indicator-main"
-                    className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-${team.color}-500 shadow-[0_0_12px_#6366f1]`}
-                  />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-2xl border border-white/5 w-fit">
+              {[
+                { id: 'STR MODELING TEAM', img: '/Report/assets/logos/str.png', color: 'indigo' },
+                { id: 'PT & REO TEAM', img: '/Report/assets/logos/pt.png', color: 'orange' },
+                { id: 'MTO TEAM', img: '/Report/assets/logos/mto.png', color: 'violet' }
+              ].map(team => (
+                <button 
+                  key={`filter-${team.id}`}
+                  onClick={() => setFormData({...formData, team: team.id})}
+                  className={`p-1 rounded-xl transition-all duration-500 relative group/btn ${
+                    formData.team === team.id 
+                      ? `ring-2 ring-${team.color}-500 bg-${team.color}-500/10 shadow-lg shadow-${team.color}-500/20 scale-110 z-10` 
+                      : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:bg-white/5 hover:scale-105'
+                  }`}
+                  title={team.id}
+                >
+                  <img src={team.img} alt={team.id} className="w-8 h-8 rounded-lg object-contain shadow-xl" />
+                  {formData.team === team.id && (
+                    <motion.div 
+                      layoutId="team-indicator-main"
+                      className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-${team.color}-500 shadow-[0_0_12px_#6366f1]`}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {formData.showProjectGroups && (
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={expandAll}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/5 transition-all"
+                >
+                  Expand All
+                </button>
+                <button 
+                  onClick={collapseAll}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/5 transition-all"
+                >
+                  Collapse All
+                </button>
+                {focusedProject && (
+                  <button 
+                    onClick={() => setFocusedProject(null)}
+                    className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl text-[10px] font-black text-rose-400 uppercase tracking-widest border border-rose-500/20 transition-all flex items-center gap-2"
+                  >
+                    <X size={14} />
+                    Reset Focus
+                  </button>
                 )}
-              </button>
-            ))}
+              </div>
+            )}
           </div>
 
           <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
@@ -500,84 +595,223 @@ const WeeklyReport = ({
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
                   <AnimatePresence>
-                    {filteredReportData.map((row, idx) => (
-                      <motion.tr 
-                        key={row.id}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        className="hover:bg-white/[0.02] transition-all group"
-                      >
-                        <td className="p-6">
-                          <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase italic">{row.project}</span>
-                        </td>
-                        <td className="p-6">
-                          <div className="text-sm font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
-                        </td>
-                        <td className="p-6">
-                          <select 
-                            className={`text-[10px] font-black py-1.5 px-3 rounded-lg border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${
-                              row.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5' :
-                              row.status === 'PENDING' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-slate-500/5' :
-                              row.status === 'TMR' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20 shadow-orange-500/5' :
-                              row.status === 'URGENT' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-rose-500/5' :
-                              row.status === 'PLANING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-amber-500/5' :
-                              'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-indigo-500/5'
-                            }`}
-                            value={row.status}
-                            onChange={(e) => updateStatus(row.id, e.target.value)}
-                          >
-                            {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT'].map(s => <option key={s} value={s}>{s}</option>)}
-                          </select>
-                        </td>
-                        {DAYS_OF_WEEK.map(d => {
-                          const colors = getStatusColor(row.status)
-                          const isEditing = editingCell && editingCell.id === row.id && editingCell.day === d
-                          return (
-                            <td key={d} className="p-4 text-center">
-                              {isEditing ? (
-                                <input
-                                  type="time"
-                                  className="input bg-slate-950/80 border-indigo-500/30 text-xs font-bold p-1.5 w-24 mx-auto text-center"
-                                  defaultValue={row.days[d] || ''}
-                                  autoFocus
-                                  onBlur={(e) => {
-                                    updateDayTime(row.id, d, e.target.value)
-                                    setEditingCell(null)
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
+                    {formData.showProjectGroups ? (
+                      Object.entries(groupedData).map(([projectName, tasks]) => {
+                        const isCollapsed = collapsedProjects[projectName]
+                        return (
+                          <React.Fragment key={projectName}>
+                            {/* Project Header Row */}
+                            <tr 
+                              className={`sticky top-0 z-20 bg-slate-900/90 backdrop-blur-md border-y-2 border-indigo-500/20 cursor-pointer group/header hover:bg-indigo-500/5 transition-all ${focusedProject === projectName ? 'ring-1 ring-indigo-500 ring-inset' : ''}`}
+                              onClick={() => toggleCollapse(projectName)}
+                            >
+                              <td colSpan={9} className="p-0">
+                                <div className="flex items-center justify-between px-6 py-4">
+                                  <div className="flex items-center gap-4">
+                                    <motion.div 
+                                      animate={{ rotate: isCollapsed ? 0 : 90 }}
+                                      className="text-indigo-400"
+                                    >
+                                      <ArrowDown size={14} strokeWidth={3} />
+                                    </motion.div>
+                                    <div className="w-2 h-6 bg-indigo-500 rounded-full shadow-[0_0_15px_#6366f1]"></div>
+                                    <div>
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-sm font-black text-white uppercase tracking-[0.3em] italic leading-none">{projectName}</span>
+                                        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-[9px] font-black rounded-md uppercase tracking-widest border border-indigo-500/30">
+                                          {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
+                                        </span>
+                                      </div>
+                                      <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mt-1 opacity-60">Project Milestone Group</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setFocusedProject(focusedProject === projectName ? null : projectName)
+                                      }}
+                                      className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border ${
+                                        focusedProject === projectName 
+                                          ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20' 
+                                          : 'bg-white/5 text-slate-400 border-white/5 hover:border-indigo-500/30 hover:text-indigo-400'
+                                      }`}
+                                    >
+                                      {focusedProject === projectName ? 'Exit Focus' : 'Focus Project'}
+                                    </button>
+                                    <div className="h-[1px] w-16 bg-gradient-to-r from-indigo-500/50 to-transparent"></div>
+                                    <Filter size={14} className={`transition-colors ${isCollapsed ? 'text-slate-600' : 'text-indigo-400'}`} />
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                            
+                            {/* Task Rows */}
+                            {!isCollapsed && tasks.map((row) => (
+                              <motion.tr 
+                                key={row.id}
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="hover:bg-white/[0.02] transition-all group border-b border-white/[0.04]"
+                              >
+                                <td className="p-6">
+                                  <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase italic">{row.project}</span>
+                                </td>
+                                <td className="p-6">
+                                  <div className="text-sm font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
+                                </td>
+                                <td className="p-6">
+                                  <select 
+                                    className={`text-[10px] font-black py-1.5 px-3 rounded-lg border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${
+                                      row.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5' :
+                                      row.status === 'PENDING' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-slate-500/5' :
+                                      row.status === 'TMR' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20 shadow-orange-500/5' :
+                                      row.status === 'URGENT' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-rose-500/5' :
+                                      row.status === 'PLANING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-amber-500/5' :
+                                      row.status === 'HIGH PRIORITY' ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-violet-500/5' :
+                                      row.status === 'ISSUE' ? 'bg-red-500/10 text-red-400 border border-red-500/20 shadow-red-500/5' :
+                                      'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-indigo-500/5'
+                                    }`}
+                                    value={row.status}
+                                    onChange={(e) => updateStatus(row.id, e.target.value)}
+                                  >
+                                    {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
+                                  </select>
+                                </td>
+                                {DAYS_OF_WEEK.map(d => {
+                                  const colors = getStatusColor(row.status)
+                                  const isEditing = editingCell && editingCell.id === row.id && editingCell.day === d
+                                  return (
+                                    <td key={d} className="p-4 text-center">
+                                      {isEditing ? (
+                                        <input
+                                          type="time"
+                                          className="input bg-slate-950/80 border-indigo-500/30 text-xs font-bold p-1.5 w-24 mx-auto text-center"
+                                          defaultValue={row.days[d] || ''}
+                                          autoFocus
+                                          onBlur={(e) => {
+                                            updateDayTime(row.id, d, e.target.value)
+                                            setEditingCell(null)
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              updateDayTime(row.id, d, e.target.value)
+                                              setEditingCell(null)
+                                            }
+                                            if (e.key === 'Escape') setEditingCell(null)
+                                          }}
+                                        />
+                                      ) : (
+                                        <span 
+                                          className={`text-xs font-black tracking-tight cursor-pointer px-2.5 py-1 rounded-md transition-all hover:ring-1 hover:ring-white/20 ${
+                                            row.days[d] 
+                                              ? `${colors.text} ${colors.bg} ${colors.border} border` 
+                                              : 'text-slate-600 hover:text-slate-400'
+                                          }`}
+                                          onClick={() => setEditingCell({ id: row.id, day: d })}
+                                          title="Click to edit"
+                                        >
+                                          {row.days[d] || '—'}
+                                        </span>
+                                      )}
+                                    </td>
+                                  )
+                                })}
+                                <td className="p-4">
+                                  <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
+                                    <button onClick={() => moveRow(row.id, -1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowUp size={14} strokeWidth={3} /></button>
+                                    <button onClick={() => moveRow(row.id, 1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowDown size={14} strokeWidth={3} /></button>
+                                    <button onClick={() => deleteRow(row.id)} className="p-2 bg-rose-500/5 hover:bg-rose-500/20 rounded-lg text-rose-500/50 hover:text-rose-500 transition-all"><Trash2 size={14} strokeWidth={3} /></button>
+                                  </div>
+                                </td>
+                              </motion.tr>
+                            ))}
+                          </React.Fragment>
+                        )
+                      })
+                    ) : (
+                      filteredReportData.map((row) => (
+                        <motion.tr 
+                          key={row.id}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          className="hover:bg-white/[0.02] transition-all group"
+                        >
+                          <td className="p-6">
+                            <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase italic">{row.project}</span>
+                          </td>
+                          <td className="p-6">
+                            <div className="text-sm font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
+                          </td>
+                          <td className="p-6">
+                            <select 
+                              className={`text-[10px] font-black py-1.5 px-3 rounded-lg border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${
+                                row.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5' :
+                                row.status === 'PENDING' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-slate-500/5' :
+                                row.status === 'TMR' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20 shadow-orange-500/5' :
+                                row.status === 'URGENT' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-rose-500/5' :
+                                row.status === 'PLANING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-amber-500/5' :
+                                row.status === 'HIGH PRIORITY' ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-violet-500/5' :
+                                row.status === 'ISSUE' ? 'bg-red-500/10 text-red-400 border border-red-500/20 shadow-red-500/5' :
+                                'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-indigo-500/5'
+                              }`}
+                              value={row.status}
+                              onChange={(e) => updateStatus(row.id, e.target.value)}
+                            >
+                              {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </td>
+                          {DAYS_OF_WEEK.map(d => {
+                            const colors = getStatusColor(row.status)
+                            const isEditing = editingCell && editingCell.id === row.id && editingCell.day === d
+                            return (
+                              <td key={d} className="p-4 text-center">
+                                {isEditing ? (
+                                  <input
+                                    type="time"
+                                    className="input bg-slate-950/80 border-indigo-500/30 text-xs font-bold p-1.5 w-24 mx-auto text-center"
+                                    defaultValue={row.days[d] || ''}
+                                    autoFocus
+                                    onBlur={(e) => {
                                       updateDayTime(row.id, d, e.target.value)
                                       setEditingCell(null)
-                                    }
-                                    if (e.key === 'Escape') setEditingCell(null)
-                                  }}
-                                />
-                              ) : (
-                                <span 
-                                  className={`text-xs font-black tracking-tight cursor-pointer px-2.5 py-1 rounded-md transition-all hover:ring-1 hover:ring-white/20 ${
-                                    row.days[d] 
-                                      ? `${colors.text} ${colors.bg} ${colors.border} border` 
-                                      : 'text-slate-600 hover:text-slate-400'
-                                  }`}
-                                  onClick={() => setEditingCell({ id: row.id, day: d })}
-                                  title="Click to edit"
-                                >
-                                  {row.days[d] || '—'}
-                                </span>
-                              )}
-                            </td>
-                          )
-                        })}
-                        <td className="p-4">
-                          <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
-                            <button onClick={() => moveRow(row.id, -1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowUp size={14} strokeWidth={3} /></button>
-                            <button onClick={() => moveRow(row.id, 1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowDown size={14} strokeWidth={3} /></button>
-                            <button onClick={() => deleteRow(row.id)} className="p-2 bg-rose-500/5 hover:bg-rose-500/20 rounded-lg text-rose-500/50 hover:text-rose-500 transition-all"><Trash2 size={14} strokeWidth={3} /></button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))}
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        updateDayTime(row.id, d, e.target.value)
+                                        setEditingCell(null)
+                                      }
+                                      if (e.key === 'Escape') setEditingCell(null)
+                                    }}
+                                  />
+                                ) : (
+                                  <span 
+                                    className={`text-xs font-black tracking-tight cursor-pointer px-2.5 py-1 rounded-md transition-all hover:ring-1 hover:ring-white/20 ${
+                                      row.days[d] 
+                                        ? `${colors.text} ${colors.bg} ${colors.border} border` 
+                                        : 'text-slate-600 hover:text-slate-400'
+                                    }`}
+                                    onClick={() => setEditingCell({ id: row.id, day: d })}
+                                    title="Click to edit"
+                                  >
+                                    {row.days[d] || '—'}
+                                  </span>
+                                )}
+                              </td>
+                            )
+                          })}
+                          <td className="p-4">
+                            <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
+                              <button onClick={() => moveRow(row.id, -1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowUp size={14} strokeWidth={3} /></button>
+                              <button onClick={() => moveRow(row.id, 1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowDown size={14} strokeWidth={3} /></button>
+                              <button onClick={() => deleteRow(row.id)} className="p-2 bg-rose-500/5 hover:bg-rose-500/20 rounded-lg text-rose-500/50 hover:text-rose-500 transition-all"><Trash2 size={14} strokeWidth={3} /></button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
                   </AnimatePresence>
                   {filteredReportData.length === 0 && (
                     <tr>
@@ -619,6 +853,8 @@ const WeeklyReport = ({
                         'rgba(249, 115, 22, 0.6)', // TMR
                         'rgba(244, 63, 94, 0.6)',  // URGENT
                         'rgba(251, 191, 36, 0.6)', // PLANING
+                        'rgba(139, 92, 246, 0.6)', // HIGH PRIORITY
+                        'rgba(239, 68, 68, 0.6)',  // ISSUE
                         'rgba(99, 102, 241, 0.6)',  // WIP
                       ],
                       borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -766,6 +1002,294 @@ const WeeklyReport = ({
           </div>
         </div>
       </section>
+
+      {/* Batch Add Modal */}
+      <AnimatePresence>
+        {showBatchModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowBatchModal(false)}
+                className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="relative w-full max-w-3xl glass-panel p-8 border-white/10 shadow-2xl bg-slate-900 overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
+              >
+                <div className="absolute -right-12 -top-12 p-24 opacity-[0.03] pointer-events-none">
+                  <Layout size={240} />
+                </div>
+
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6 relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-orange-500/10 rounded-2xl text-orange-400 border border-orange-500/20">
+                      <Layout size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Batch Add Tasks</h2>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Power Tool — Create multiple rows instantly</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowBatchModal(false)}
+                    className="p-2 hover:bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="space-y-5 relative z-10">
+                  {/* Row 1: Projects (Multi-select) */}
+                  <div className="space-y-3 p-4 bg-white/[0.03] rounded-2xl border border-white/5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Projects</p>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          type="button"
+                          onClick={() => setBatchProjects([...allProjects])}
+                          className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-indigo-500/20 transition-all"
+                        >
+                          All
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => setBatchProjects([])}
+                          className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-white/5 transition-all"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar p-1">
+                      {allProjects.map(p => {
+                        const isSelected = batchProjects.includes(p)
+                        return (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => {
+                              setBatchProjects(prev => 
+                                isSelected ? prev.filter(x => x !== p) : [...prev, p]
+                              )
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border ${
+                              isSelected
+                                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                                : 'bg-slate-950/40 text-slate-600 border-white/5 hover:text-slate-400'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Row 2: Levels */}
+                  <div className="space-y-2 p-4 bg-white/[0.03] rounded-2xl border border-white/5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Level / Floor (Multi-input)</p>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="w-3.5 h-3.5 rounded border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
+                          checked={batchLevelEnabled}
+                          onChange={e => { setBatchLevelEnabled(e.target.checked); if (!e.target.checked) setBatchLevelsText('') }}
+                        />
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Enable Multi-Level</span>
+                      </label>
+                    </div>
+                    {batchLevelEnabled ? (
+                      <div className="space-y-2">
+                        <input 
+                          type="text" className="input bg-slate-950/60 border-white/10 w-full text-xs" 
+                          placeholder="Separate levels by comma: 1, 2, 3, Roof, B1..."
+                          value={batchLevelsText}
+                          onChange={e => setBatchLevelsText(e.target.value)}
+                        />
+                        <p className="text-[9px] text-slate-500 italic">Example: 1, 2, 5, 10, Roof</p>
+                      </div>
+                    ) : (
+                      <div className="input bg-slate-950/30 border-white/5 text-slate-600 cursor-not-allowed flex items-center text-xs">Level Disabled (Tasks will be created with no level)</div>
+                    )}
+                  </div>
+
+                  {/* Workflow Selection */}
+                  <div className="space-y-3 p-4 bg-white/[0.03] rounded-2xl border border-white/5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Standard Workflow</p>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          type="button"
+                          onClick={() => setBatchWorkflows([...currentWorkflow.col1, ...currentWorkflow.col2, ...currentWorkflow.col3])}
+                          className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-indigo-500/20 transition-all"
+                        >
+                          Select All
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => setBatchWorkflows([])}
+                          className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-white/5 transition-all"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {[...currentWorkflow.col1, ...currentWorkflow.col2, ...currentWorkflow.col3].map(wf => {
+                        const isSelected = batchWorkflows.includes(wf)
+                        return (
+                          <button
+                            key={wf}
+                            type="button"
+                            onClick={() => {
+                              setBatchWorkflows(prev => 
+                                isSelected ? prev.filter(x => x !== wf) : [...prev, wf]
+                              )
+                            }}
+                            className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
+                              isSelected
+                                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/30'
+                                : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-white/15 hover:text-slate-300'
+                            }`}
+                          >
+                            {wf}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {batchWorkflows.length > 0 && (
+                      <p className="text-[9px] text-indigo-400/60 font-bold italic">
+                        Each task line × {batchWorkflows.length} workflow{batchWorkflows.length > 1 ? 's' : ''} = cross-product generation
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Task Input */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Task Details (One per line)</label>
+                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest italic border ${
+                        batchValidation.totalTasks > 0 
+                          ? 'text-orange-400 bg-orange-500/10 border-orange-500/20'
+                          : 'text-slate-600 bg-white/5 border-white/5'
+                      }`}>
+                        {batchValidation.totalTasks} task{batchValidation.totalTasks !== 1 ? 's' : ''} will be created
+                      </span>
+                    </div>
+                    <textarea 
+                      className="w-full h-40 bg-slate-950/60 border border-white/10 rounded-2xl p-6 text-sm font-medium text-slate-200 placeholder:text-slate-700 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all custom-scrollbar outline-none"
+                      placeholder={'E.g.\nREO BTM ALL\nREO TOP ALL\nSHEAR REO\nCORE WALL REO'}
+                      value={batchTasksText}
+                      onChange={(e) => setBatchTasksText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && batchValidation.isValid) {
+                          e.preventDefault()
+                          const tasks = generateTasks({
+                            projectIds: batchProjects,
+                            levelEnabled: batchLevelEnabled,
+                            levels: batchLevelsText.split(',').map(l => l.trim()).filter(l => l !== ""),
+                            workflows: batchWorkflows,
+                            rawLines: batchTasksText,
+                            team: formData.team,
+                            day: formData.day,
+                            eta: formData.eta,
+                            status: "Planning"
+                          });
+                          if (tasks.length > 0) {
+                            handleAddTask(null, tasks, { isDirectBatch: true });
+                            setBatchTasksText('')
+                            setBatchWorkflows([])
+                            setShowBatchModal(false)
+                          }
+                        }
+                      }}
+                    />
+                    <p className="text-[10px] text-slate-500 italic px-2 flex justify-between">
+                      <span>Note: Each line × selected workflows = individual task entries.</span>
+                      <span className="text-indigo-400/50">Ctrl + Enter to deploy</span>
+                    </p>
+                  </div>
+
+                  {/* Preview */}
+                  {batchValidation.isValid && (
+                    <div className="space-y-2 p-4 bg-white/[0.02] rounded-2xl border border-white/5 max-h-32 overflow-y-auto custom-scrollbar">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Preview (first 10 generated tasks)</p>
+                      {(() => {
+                        const lines = batchTasksText.split('\n').filter(t => t.trim())
+                        const effectiveLines = lines.length > 0 ? lines.slice(0, 3) : [""]
+                        const levels = batchLevelsText.split(',').map(l => l.trim()).filter(l => l !== "").slice(0, 1)
+                        const effectiveLevels = batchLevelEnabled ? (levels.length > 0 ? levels : []) : [null]
+
+                        return batchProjects.slice(0, 1).flatMap(proj => 
+                          effectiveLevels.flatMap(level =>
+                            effectiveLines.flatMap(line => 
+                              batchWorkflows.map(wf => ({ proj, level, task: `${line.trim()} ${wf}`.trim() }))
+                            )
+                          )
+                        ).slice(0, 10).map((item, i) => (
+                          <div key={i} className="text-[11px] text-slate-400 font-mono py-0.5 flex items-center gap-2">
+                            <span className="text-indigo-500/40 text-[9px]">{String(i+1).padStart(2, '0')}</span>
+                            <span className="text-indigo-300/80">{item.proj}</span>
+                            <span className="text-slate-600">›</span>
+                            {batchLevelEnabled && item.level && <><span className="text-violet-400">L{item.level}</span><span className="text-slate-600">›</span></>}
+                            <span className="text-slate-200">{item.task || '(no detail)'}</span>
+                          </div>
+                        ))
+                      })()}
+                      {batchValidation.totalTasks > 10 && <p className="text-[9px] text-slate-600 italic">...and {batchValidation.totalTasks - 10} more</p>}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-4 pt-2">
+                    <button 
+                      onClick={() => setShowBatchModal(false)}
+                      className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black text-xs tracking-[0.2em] rounded-2xl transition-all border border-white/5"
+                    >
+                      CANCEL
+                    </button>
+                    <button 
+                      disabled={!batchValidation.isValid}
+                      onClick={() => {
+                        const tasks = generateTasks({
+                          projectIds: batchProjects,
+                          levelEnabled: batchLevelEnabled,
+                          levels: batchLevelsText.split(',').map(l => l.trim()).filter(l => l !== ""),
+                          workflows: batchWorkflows,
+                          rawLines: batchTasksText,
+                          team: formData.team,
+                          day: formData.day,
+                          eta: formData.eta,
+                          status: "Planning"
+                        });
+                        if (tasks.length > 0) {
+                          handleAddTask(null, tasks, { isDirectBatch: true });
+                          setBatchTasksText('')
+                          setBatchWorkflows([])
+                          setShowBatchModal(false)
+                        }
+                      }}
+                      className={`flex-[2] px-12 py-4 font-black text-xs tracking-[0.2em] rounded-2xl transition-all shadow-xl ${
+                        !batchValidation.isValid
+                          ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/20'
+                      }`}
+                    >
+                      DEPLOY {batchValidation.totalTasks} TASK{batchValidation.totalTasks !== 1 ? 'S' : ''}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )
+        }
+      </AnimatePresence>
     </div>
   )
 }
