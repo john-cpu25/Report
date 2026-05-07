@@ -26,6 +26,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const [analyticsMode, setAnalyticsMode] = useState('leader') // 'leader' | 'user'
   const [analyticsGranularity, setAnalyticsGranularity] = useState('month') // 'week' | 'month' | 'year'
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTeam, setSelectedTeam] = useState('ALL')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [selectedMetric, setSelectedMetric] = useState('time1') // 'time1' | 'time2' | 'time3'
   const [columnFilters, setColumnFilters] = useState({ project: '', taskName: '', user: '' })
@@ -47,17 +48,22 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
     try {
       const [tasksRes, usersRes] = await Promise.all([
         supabase.from('NMK_Task').select('*').order('created_at', { ascending: false }).limit(2000),
-        supabase.from('NMK_User').select('id, name, email')
+        supabase.from('NMK_User').select('id, name, email, team, location')
       ])
       if (tasksRes.error) throw tasksRes.error
       if (usersRes.error) throw usersRes.error
 
       // Build user lookup map (index by both id and email for robustness)
       const uMap = {}
+      const uTeamMap = {}
       usersRes.data.forEach(u => {
         const name = u.name || u.email || u.id
         uMap[u.id] = name
-        if (u.email) uMap[u.email] = name
+        uTeamMap[u.id] = u.team || '-'
+        if (u.email) {
+          uMap[u.email] = name
+          uTeamMap[u.email] = u.team || '-'
+        }
       })
       setUserMap(uMap)
 
@@ -84,7 +90,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
           time1Str: formatDuration(time1),
           time2Str: formatDuration(time2),
           time3Str: formatDuration(time3),
-          dateObj: createdAt || dateStart
+          dateObj: createdAt || dateStart,
+          team: uTeamMap[row.create_by] || '-'
         }
       }).filter(r => r.project !== '-')
       setData(leaderProcessed)
@@ -111,7 +118,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
           time1, time2,
           time1Str: formatDuration(time1),
           time2Str: formatDuration(time2),
-          dateObj: createdAt
+          dateObj: createdAt,
+          team: uTeamMap[row.user_id] || '-'
         }
       }).filter(r => r.project !== '-')
       setUserData(userProcessed)
@@ -282,6 +290,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
         const q = searchQuery.toLowerCase()
         if (!r.project.toLowerCase().includes(q) && !r.taskName.toLowerCase().includes(q) && !r.createdBy.toLowerCase().includes(q)) return false
       }
+      if (selectedTeam !== 'ALL' && r.team !== selectedTeam) return false
       if (columnFilters.project && !r.project.toLowerCase().includes(columnFilters.project.toLowerCase())) return false
       if (columnFilters.taskName && !r.taskName.toLowerCase().includes(columnFilters.taskName.toLowerCase())) return false
       if (columnFilters.user && !r.createdBy.toLowerCase().includes(columnFilters.user.toLowerCase())) return false
@@ -307,6 +316,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
         const q = searchQuery.toLowerCase()
         if (!r.project.toLowerCase().includes(q) && !r.taskName.toLowerCase().includes(q) && !r.userName.toLowerCase().includes(q)) return false
       }
+      if (selectedTeam !== 'ALL' && r.team !== selectedTeam) return false
       if (columnFilters.project && !r.project.toLowerCase().includes(columnFilters.project.toLowerCase())) return false
       if (columnFilters.taskName && !r.taskName.toLowerCase().includes(columnFilters.taskName.toLowerCase())) return false
       if (columnFilters.user && !r.userName.toLowerCase().includes(columnFilters.user.toLowerCase())) return false
@@ -369,6 +379,13 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
       tasks: Array.from(tasks).sort(),
       users: Array.from(users).sort()
     };
+  }, [data, userData])
+
+  const teamOptions = useMemo(() => {
+    const teams = new Set();
+    data.forEach(r => { if (r.team && r.team !== '-') teams.add(r.team) });
+    userData.forEach(r => { if (r.team && r.team !== '-') teams.add(r.team) });
+    return ['ALL', ...Array.from(teams).sort()];
   }, [data, userData])
 
   const pivotData = useMemo(() => {
@@ -595,19 +612,26 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
               ))}
             </div>
 
-          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="relative flex-grow max-w-2xl">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <div className="relative flex-grow max-w-2xl group">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
                 <input 
                   type="text" 
-                  placeholder="Smart Sea - Global Intelligence Search..." 
-                  className="w-full bg-slate-900/40 border border-white/5 rounded-2xl py-4 pl-14 pr-6 text-base font-bold text-white focus:border-indigo-500/50 focus:bg-slate-900/60 transition-all outline-none shadow-2xl placeholder:text-slate-600"
+                  placeholder="Search Data Intelligence..." 
+                  className="w-full bg-slate-900/40 border border-white/5 rounded-2xl py-4 pl-14 pr-32 text-base font-bold text-white focus:border-indigo-500/50 focus:bg-slate-900/60 transition-all outline-none shadow-2xl placeholder:text-slate-600"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <div className="px-2 py-1 bg-indigo-500/10 rounded text-[9px] font-black text-indigo-400 border border-indigo-500/20 uppercase tracking-widest">Global</div>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                  <select 
+                    className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-1.5 text-[10px] font-black text-indigo-400 outline-none cursor-pointer hover:bg-indigo-500/20 transition-all uppercase tracking-widest"
+                    value={selectedTeam}
+                    onChange={e => setSelectedTeam(e.target.value)}
+                  >
+                    {teamOptions.map(t => <option key={t} value={t}>{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
+                  </select>
+                  <div className="px-3 py-1.5 bg-white/5 rounded-xl text-[10px] font-black text-slate-400 border border-white/10 uppercase tracking-widest">Global</div>
                 </div>
               </div>
 
@@ -615,95 +639,179 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 <button
                   onClick={fetchSupabaseData}
                   disabled={isLoading}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
+                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border ${
                     isLoading 
                       ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20 cursor-wait' 
-                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/10'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/10 active:scale-95'
                   }`}
                 >
                   <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
                   {isLoading ? 'Loading...' : 'Reload'}
                 </button>
-                <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-900/40 px-4 py-2.5 rounded-xl border border-white/5">
-                  <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live</span>
-                  <span className="w-px h-3 bg-white/10"></span>
-                  <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> {data.length} Records</span>
+                <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-900/40 px-5 py-3 rounded-2xl border border-white/5 shadow-xl">
+                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]"></span> Live</span>
+                  <span className="w-px h-4 bg-white/10"></span>
+                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1]"></span> {data.length} Records</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/5">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 bg-slate-900/50 border border-white/5 rounded-xl px-3 py-1.5 shadow-inner">
-                  <div className="flex items-center gap-2 border-r border-white/10 pr-3">
-                    <Calendar size={14} className="text-slate-500" />
-                    <input 
-                      type="month" 
-                      className="bg-transparent text-[11px] font-black text-indigo-400 outline-none [color-scheme:dark] cursor-pointer uppercase"
-                      onChange={e => {
-                        if (!e.target.value) return;
-                        const [y, m] = e.target.value.split('-').map(Number);
-                        const start = new Date(y, m - 1, 1);
-                        const end = new Date(y, m, 0);
-                        
-                        const formatYMD = (d) => {
-                          const year = d.getFullYear();
-                          const month = String(d.getMonth() + 1).padStart(2, '0');
-                          const day = String(d.getDate()).padStart(2, '0');
-                          return `${year}-${month}-${day}`;
-                        };
-                        
-                        setDateRange({ start: formatYMD(start), end: formatYMD(end) });
-                      }}
-                    />
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/5">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 bg-slate-800/80 border border-indigo-500/20 rounded-2xl px-4 py-2 shadow-2xl backdrop-blur-xl group focus-within:border-indigo-500/50 transition-all">
+                    <div className="flex items-center gap-3 border-r border-white/10 pr-4">
+                      <Calendar size={16} className="text-indigo-400" />
+                      <input 
+                        type="month" 
+                        id="month-picker"
+                        className="bg-transparent text-[11px] font-black text-indigo-400 outline-none [color-scheme:dark] cursor-pointer uppercase tracking-wider"
+                        onChange={e => {
+                          if (!e.target.value) return;
+                          const [y, m] = e.target.value.split('-').map(Number);
+                          const start = new Date(y, m - 1, 1);
+                          const end = new Date(y, m, 0);
+                          
+                          const formatYMD = (d) => {
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            return `${year}-${month}-${day}`;
+                          };
+                          
+                          setDateRange({ start: formatYMD(start), end: formatYMD(end) });
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 pl-2">
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mb-0.5">Start Date</span>
+                        <input 
+                          type="date" 
+                          className="bg-transparent text-[11px] font-black text-white outline-none [color-scheme:dark] cursor-pointer hover:text-indigo-400 transition-colors"
+                          value={dateRange.start}
+                          onChange={e => setDateRange(prev => ({...prev, start: e.target.value}))}
+                        />
+                      </div>
+                      <div className="h-6 w-px bg-white/5 mx-1" />
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mb-0.5">End Date</span>
+                        <input 
+                          type="date" 
+                          className="bg-transparent text-[11px] font-black text-white outline-none [color-scheme:dark] cursor-pointer hover:text-indigo-400 transition-colors"
+                          value={dateRange.end}
+                          onChange={e => setDateRange(prev => ({...prev, end: e.target.value}))}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 pl-1">
-                    <input 
-                      type="date" 
-                      className="bg-transparent text-[10px] font-bold text-slate-300 outline-none [color-scheme:dark] cursor-pointer"
-                      value={dateRange.start}
-                      onChange={e => setDateRange(prev => ({...prev, start: e.target.value}))}
-                    />
-                    <span className="text-slate-700 text-[10px]">TO</span>
-                    <input 
-                      type="date" 
-                      className="bg-transparent text-[10px] font-bold text-slate-300 outline-none [color-scheme:dark] cursor-pointer"
-                      value={dateRange.end}
-                      onChange={e => setDateRange(prev => ({...prev, end: e.target.value}))}
-                    />
+                  
+                  <div className="flex items-center gap-1 p-1 bg-slate-900/50 rounded-2xl border border-white/5 shadow-xl">
+                    {[
+                      { label: 'Week', start: () => {
+                        const d = new Date();
+                        d.setDate(d.getDate() - d.getDay() + 1);
+                        return d.toISOString().split('T')[0];
+                      }},
+                      { label: 'Month', start: () => {
+                        const d = new Date();
+                        return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+                      }},
+                      { label: 'Year', start: () => {
+                        const d = new Date();
+                        return new Date(d.getFullYear(), 0, 1).toISOString().split('T')[0];
+                      }}
+                    ].map(p => {
+                      const isActive = false; // Add logic if needed
+                      return (
+                        <button 
+                          key={p.label}
+                          onClick={() => {
+                            const start = p.start();
+                            const end = new Date().toISOString().split('T')[0];
+                            setDateRange({ start, end });
+                            
+                            // Update month picker if it's a month preset
+                            if (p.label === 'Month') {
+                              const monthInput = document.getElementById('month-picker');
+                              if (monthInput) monthInput.value = start.substring(0, 7);
+                            }
+                          }}
+                          className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white hover:bg-white/10 hover:shadow-lg transition-all active:scale-95"
+                        >
+                          {p.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-1 p-1 bg-slate-900/50 rounded-xl border border-white/5">
-                  {[
-                    { label: 'Week', start: () => {
-                      const d = new Date();
-                      d.setDate(d.getDate() - d.getDay() + 1);
-                      return d.toISOString().split('T')[0];
-                    }},
-                    { label: 'Month', start: () => {
-                      const d = new Date();
-                      return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
-                    }},
-                    { label: 'Year', start: () => {
-                      const d = new Date();
-                      return new Date(d.getFullYear(), 0, 1).toISOString().split('T')[0];
-                    }}
-                  ].map(p => (
-                    <button 
-                      key={p.label}
-                      onClick={() => setDateRange({ start: p.start(), end: new Date().toISOString().split('T')[0] })}
-                      className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white hover:bg-white/5 transition-all"
-                    >
-                      {p.label}
-                    </button>
-                  ))}
+
+                <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-900/40 px-5 py-2.5 rounded-2xl border border-white/5 shadow-xl">
+                  <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span> {projectStats.length} Projects</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-900/40 px-4 py-2 rounded-full border border-white/5">
-                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {projectStats.length} Projects</span>
-              </div>
+              {/* Week Selector Section (Visible when month is picked) */}
+              {(() => {
+                const monthVal = document.getElementById('month-picker')?.value;
+                if (!monthVal) return null;
+                
+                const [y, m] = monthVal.split('-').map(Number);
+                const firstDay = new Date(y, m - 1, 1);
+                const lastDay = new Date(y, m, 0);
+                
+                // Simplified week generation without date-fns for now to ensure compatibility
+                const weeks = [];
+                let current = new Date(firstDay);
+                // Move to first Monday
+                while(current.getDay() !== 1) current.setDate(current.getDate() - 1);
+                
+                while(current <= lastDay || (current.getMonth() === m - 1)) {
+                  const start = new Date(current);
+                  const end = new Date(current);
+                  end.setDate(end.getDate() + 6);
+                  
+                  // Only include weeks that overlap with the selected month
+                  if (start <= lastDay && end >= firstDay) {
+                    weeks.push({ start, end });
+                  }
+                  current.setDate(current.getDate() + 7);
+                  if (current > lastDay && current.getMonth() !== m - 1) break;
+                }
+
+                return (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-wrap items-center gap-3 p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10"
+                  >
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mr-2">Select Week:</span>
+                    {weeks.map((w, i) => {
+                      const startStr = w.start.toISOString().split('T')[0];
+                      const endStr = w.end.toISOString().split('T')[0];
+                      const isActive = dateRange.start === startStr && dateRange.end === endStr;
+                      
+                      // Calculate week of year (simple)
+                      const firstJan = new Date(w.start.getFullYear(), 0, 1);
+                      const weekNum = Math.ceil((((w.start.getTime() - firstJan.getTime()) / 86400000) + firstJan.getDay() + 1) / 7);
+
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setDateRange({ start: startStr, end: endStr })}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                            isActive
+                              ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
+                              : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-indigo-500/30 hover:text-indigo-300'
+                          }`}
+                        >
+                          W{weekNum} <span className="opacity-40 ml-1 font-bold">({w.start.getDate()}/{w.start.getMonth()+1} - {w.end.getDate()}/{w.end.getMonth()+1})</span>
+                        </button>
+                      );
+                    })}
+                  </motion.div>
+                );
+              })()}
             </div>
           </div>
           </div>

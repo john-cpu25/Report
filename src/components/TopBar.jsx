@@ -7,7 +7,8 @@ const TopBar = ({
   onAddTask,
   showProjectGroups, 
   onToggleProjectGroups,
-  isSidebarCollapsed 
+  isSidebarCollapsed,
+  activeTab
 }) => {
   return (
     <header className="h-20 bg-slate-950/20 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6 sticky top-0 z-30">
@@ -33,15 +34,17 @@ const TopBar = ({
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Search - Desktop only */}
-        <div className="hidden md:flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl px-4 py-2 w-64 group focus-within:border-indigo-500/50 transition-all">
-          <Search size={16} className="text-slate-500 group-focus-within:text-indigo-400" />
-          <input 
-            type="text" 
-            placeholder="Search projects..." 
-            className="bg-transparent border-none focus:ring-0 text-xs font-bold text-slate-300 placeholder:text-slate-600 w-full"
-          />
-        </div>
+        {/* Search - Desktop only - Hidden when in Data Analyst */}
+        {activeTab !== 'processor' && (
+          <div className="hidden md:flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl px-4 py-2 w-64 group focus-within:border-indigo-500/50 transition-all">
+            <Search size={16} className="text-slate-500 group-focus-within:text-indigo-400" />
+            <input 
+              type="text" 
+              placeholder="Search..." 
+              className="bg-transparent border-none focus:ring-0 text-xs font-bold text-slate-300 placeholder:text-slate-600 w-full"
+            />
+          </div>
+        )}
 
         <button 
           onClick={onToggleProjectGroups}

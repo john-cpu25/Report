@@ -1,13 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Trash2, Plus, Clock, Award, Info, AlertCircle, Users, User } from 'lucide-react';
+import { Calendar, Trash2, Plus, Clock, Award, Info, AlertCircle, Users, User, LayoutGrid, List, Landmark } from 'lucide-react';
 import { format, differenceInYears, parseISO, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
 import EnergyBar from './EnergyBar';
 import { supabase } from '../supabaseClient';
 
+const VN_HOLIDAYS_2026 = [
+  { date: '2026-01-01', note: 'New Year Day' },
+  { date: '2026-02-16', note: 'Lunar New Year (Tet)' },
+  { date: '2026-02-17', note: 'Lunar New Year (Tet)' },
+  { date: '2026-02-18', note: 'Lunar New Year (Tet)' },
+  { date: '2026-02-19', note: 'Lunar New Year (Tet)' },
+  { date: '2026-02-20', note: 'Lunar New Year (Tet)' },
+  { date: '2026-03-27', note: 'Hung Kings Commemoration' },
+  { date: '2026-04-30', note: 'Liberation Day' },
+  { date: '2026-05-01', note: 'International Workers Day' },
+  { date: '2026-09-02', note: 'National Day' },
+  { date: '2026-09-03', note: 'National Day Holiday' }
+];
+
 const AnnualLeave = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('ADMIN');
+  const [selectedTeam, setSelectedTeam] = useState('ALL');
+  const [viewMode, setViewMode] = useState('individual'); // 'individual' | 'summary'
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
   // Settings & Data State (indexed by selectedUser)
@@ -20,14 +36,16 @@ const AnnualLeave = () => {
     note: ''
   });
 
-  // Fetch Users from Supabase (to support "all users")
+  // Fetch Users from Supabase
   useEffect(() => {
     const fetchUsers = async () => {
       setIsLoadingUsers(true);
       try {
-        const { data, error } = await supabase.from('NMK_User').select('id, name, email');
+        const { data, error } = await supabase.from('NMK_User').select('id, name, email, team, location');
         if (error) throw error;
-        setUsers(data || []);
+        // Filter only Vietnam users
+        const vnUsers = (data || []).filter(u => u.location?.toUpperCase() === 'VIETNAM' || !u.location);
+        setUsers(vnUsers);
       } catch (err) {
         console.error('Failed to fetch users:', err);
       } finally {
@@ -36,6 +54,18 @@ const AnnualLeave = () => {
     };
     fetchUsers();
   }, []);
+
+  // Filtered users by team
+  const filteredUsersByTeam = useMemo(() => {
+    if (selectedTeam === 'ALL') return users;
+    return users.filter(u => u.team === selectedTeam);
+  }, [users, selectedTeam]);
+
+  const teamOptions = useMemo(() => {
+    const teams = new Set();
+    users.forEach(u => { if (u.team) teams.add(u.team) });
+    return ['ALL', ...Array.from(teams).sort()];
+  }, [users]);
 
   // Load User Data when selectedUser changes
   useEffect(() => {
@@ -76,7 +106,9 @@ const AnnualLeave = () => {
   }, [leaveEntries]);
 
   const usedDays = useMemo(() => {
-    return currentYearEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
+    return currentYearEntries
+      .filter(e => e.type !== 'HOLIDAY')
+      .reduce((sum, entry) => sum + Number(entry.amount), 0);
   }, [currentYearEntries]);
 
   const handleAddLeave = (e) => {
@@ -86,6 +118,7 @@ const AnnualLeave = () => {
     const newEntry = {
       id: Date.now(),
       ...formData,
+      type: 'LEAVE',
       createdAt: new Date().toISOString()
     };
 
@@ -93,256 +126,425 @@ const AnnualLeave = () => {
     setFormData({ ...formData, note: '' }); 
   };
 
+  const handleInsertHolidays = () => {
+    const holidayEntries = VN_HOLIDAYS_2026.map(h => ({
+      id: `holiday-${h.date}`,
+      date: h.date,
+      amount: 0,
+      note: h.note,
+      type: 'HOLIDAY',
+      createdAt: new Date().toISOString()
+    }));
+
+    // Avoid duplicates
+    const existingDates = new Set(leaveEntries.map(e => e.date));
+    const newHolidays = holidayEntries.filter(h => !existingDates.has(h.date));
+    
+    setLeaveEntries([...newHolidays, ...leaveEntries]);
+  };
+
   const deleteEntry = (id) => {
     setLeaveEntries(leaveEntries.filter(e => e.id !== id));
   };
 
+  // Summary Data for all users in the filtered list
+  const summaryData = useMemo(() => {
+    return filteredUsersByTeam.map(u => {
+      const uName = u.name || u.email;
+      const uStart = localStorage.getItem(`leaveStartDate_${uName}`) || format(new Date(), 'yyyy-MM-dd');
+      const uEntries = JSON.parse(localStorage.getItem(`leaveEntries_${uName}`) || '[]');
+      
+      const uSeniority = differenceInYears(new Date(), parseISO(uStart)) || 0;
+      const uAllowance = uSeniority >= 1 ? 15 : 12;
+      
+      const start = startOfYear(new Date());
+      const end = endOfYear(new Date());
+      const uUsed = uEntries
+        .filter(e => {
+          const d = parseISO(e.date);
+          return isWithinInterval(d, { start, end }) && e.type !== 'HOLIDAY';
+        })
+        .reduce((sum, entry) => sum + Number(entry.amount), 0);
+
+      return {
+        id: u.id,
+        name: uName,
+        team: u.team || '-',
+        seniority: uSeniority,
+        allowance: uAllowance,
+        used: uUsed,
+        remaining: uAllowance - uUsed
+      };
+    }).sort((a, b) => b.used - a.used);
+  }, [filteredUsersByTeam]);
+
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      {/* User Selector Header */}
-      <div className="glass-panel p-4 border-white/5 bg-slate-900/40 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            <Users size={24} />
-          </div>
-          <div>
-            <h2 className="text-sm font-black text-white uppercase italic tracking-widest">User Intelligence</h2>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">Select account to view/edit leave data</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="relative group">
-            <select 
-              className="appearance-none bg-slate-950 border border-white/10 rounded-xl px-10 py-3 text-xs font-black text-indigo-400 focus:border-indigo-500 transition-all outline-none cursor-pointer pr-12 min-w-[200px]"
-              value={selectedUser}
-              onChange={e => setSelectedUser(e.target.value)}
-            >
-              <option value="ADMIN">SYSTEM ADMIN</option>
-              {users.map(u => (
-                <option key={u.id} value={u.name || u.email}>{u.name || u.email}</option>
-              ))}
-            </select>
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 group-hover:text-indigo-400 transition-colors">
-              <Plus size={14} className="rotate-45" />
-            </div>
-          </div>
-          
-          <div className="flex flex-col items-end">
-            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Connected
-            </span>
-            <span className="text-[10px] font-bold text-slate-500">{users.length + 1} ACCOUNTS</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row gap-6 items-start">
-        <div className="flex-grow space-y-2">
+    <div className="max-w-7xl mx-auto space-y-8 pb-12">
+      {/* Control Header */}
+      <div className="glass-panel p-4 border-white/5 bg-slate-900/40 flex flex-wrap items-center justify-between gap-6">
+        <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-8 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
-            <h1 className="text-3xl font-black italic text-white uppercase tracking-tight">
-              {selectedUser.split(' ')[0]}'s <span className="text-indigo-400">Leave</span>
-            </h1>
-          </div>
-          <p className="text-slate-500 font-bold text-xs uppercase tracking-[0.2em] ml-5">Energy & Wellness Intelligence</p>
-        </div>
-
-        <div className="glass-panel p-4 flex items-center gap-6 border-white/5 bg-slate-900/40">
-          <div className="space-y-1">
-            <label className="!mb-0 text-[9px]">Work Start Date</label>
-            <input 
-              type="date" 
-              className="bg-transparent border-none text-indigo-400 font-black text-sm p-0 focus:ring-0 cursor-pointer"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="w-[1px] h-10 bg-white/5" />
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <Award size={20} />
+            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              <Landmark size={20} />
             </div>
             <div>
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Seniority</p>
-              <p className="text-lg font-black text-white italic">{seniority} {seniority === 1 ? 'YEAR' : 'YEARS'}</p>
+              <h2 className="text-xs font-black text-white uppercase italic tracking-widest">VN Annual Leave</h2>
+              <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Management Dashboard</p>
             </div>
           </div>
+
+          <div className="h-10 w-px bg-white/5" />
+
+          <div className="flex items-center gap-2 p-1 bg-slate-950/50 rounded-xl border border-white/5">
+            <button 
+              onClick={() => setViewMode('individual')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'individual' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <User size={14} /> Individual
+            </button>
+            <button 
+              onClick={() => setViewMode('summary')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <LayoutGrid size={14} /> Team Summary
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 bg-slate-950/50 px-4 py-2.5 rounded-xl border border-white/5">
+            <Users size={14} className="text-slate-500" />
+            <select 
+              className="bg-transparent text-[11px] font-black text-indigo-400 outline-none cursor-pointer uppercase"
+              value={selectedTeam}
+              onChange={e => setSelectedTeam(e.target.value)}
+            >
+              {teamOptions.map(t => <option key={t} value={t}>{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
+            </select>
+          </div>
+
+          {viewMode === 'individual' && (
+            <div className="flex items-center gap-3 bg-slate-950/50 px-4 py-2.5 rounded-xl border border-white/5">
+              <User size={14} className="text-slate-500" />
+              <select 
+                className="bg-transparent text-[11px] font-black text-white outline-none cursor-pointer min-w-[150px]"
+                value={selectedUser}
+                onChange={e => setSelectedUser(e.target.value)}
+              >
+                <option value="ADMIN">SYSTEM ADMIN</option>
+                {filteredUsersByTeam.map(u => (
+                  <option key={u.id} value={u.name || u.email}>{u.name || u.email}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Stats & Animation */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="glass-panel p-6 border-white/10 bg-gradient-to-br from-slate-900/80 to-indigo-950/20">
-            <EnergyBar used={usedDays} total={totalAllowance} />
-          </div>
-
-          <div className="glass-panel p-5 border-indigo-500/10 bg-indigo-500/5 space-y-4">
-            <div className="flex items-center gap-2 text-indigo-400">
-              <Info size={16} />
-              <h4 className="text-[10px] font-black uppercase tracking-widest">Policy Overview</h4>
+      {viewMode === 'summary' ? (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+          <div className="flex justify-between items-end">
+            <div>
+              <h2 className="text-2xl font-black text-white uppercase italic italic tracking-tight">Team <span className="text-indigo-400">Overview</span></h2>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Aggregate leave statistics for Vietnam operations</p>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-              Based on the seniority of <span className="text-indigo-300 font-bold">{seniority} years</span>, 
-              this user is entitled to <span className="text-indigo-300 font-bold">{totalAllowance} days</span> of annual leave per year.
-            </p>
-            <div className="p-3 rounded-xl bg-slate-950/40 border border-white/5 flex items-start gap-3">
-              <AlertCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider leading-normal">
-                Seniority {'>'} 1 year grants 15 days. Currently {totalAllowance} days allowance.
-              </p>
+            <div className="flex gap-4">
+              <div className="bg-slate-900/40 p-4 rounded-2xl border border-white/5 text-center min-w-[120px]">
+                <p className="text-[10px] font-black text-slate-500 uppercase mb-1">Total Users</p>
+                <p className="text-xl font-black text-white italic">{summaryData.length}</p>
+              </div>
+              <div className="bg-indigo-500/10 p-4 rounded-2xl border border-indigo-500/20 text-center min-w-[120px]">
+                <p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Avg Used</p>
+                <p className="text-xl font-black text-white italic">
+                  {summaryData.length ? (summaryData.reduce((s, u) => s + u.used, 0) / summaryData.length).toFixed(1) : 0}D
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Column: Form & History */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Entry Form */}
-          <div className="glass-panel p-6 border-white/10">
-            <div className="flex items-center gap-3 mb-6">
-              <Clock className="text-indigo-400" size={18} />
-              <h3 className="text-sm font-black text-white uppercase italic tracking-widest">Book Leave Request</h3>
+          <div className="glass-panel overflow-hidden border-white/5 bg-slate-900/20 backdrop-blur-xl">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-white/[0.03] text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-white/10">
+                  <th className="px-8 py-5">User Intelligence</th>
+                  <th className="px-8 py-5">Team</th>
+                  <th className="px-8 py-5 text-center">Seniority</th>
+                  <th className="px-8 py-5 text-center">Allowance</th>
+                  <th className="px-8 py-5 text-center">Used</th>
+                  <th className="px-8 py-5 text-center">Remaining</th>
+                  <th className="px-8 py-5 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.03]">
+                {summaryData.map(u => (
+                  <tr key={u.id} className="group hover:bg-white/[0.02] transition-all cursor-pointer" onClick={() => { setSelectedUser(u.name); setViewMode('individual'); }}>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400 font-black border border-white/5 group-hover:scale-110 transition-transform">
+                          {u.name[0]}
+                        </div>
+                        <div className="font-black text-slate-200 group-hover:text-white transition-colors">{u.name}</div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className="px-3 py-1.5 rounded-lg bg-slate-950/60 border border-white/5 text-[9px] font-black text-slate-500 uppercase tracking-widest">{u.team}</span>
+                    </td>
+                    <td className="px-8 py-6 text-center text-xs font-bold text-slate-400">{u.seniority} Yrs</td>
+                    <td className="px-8 py-6 text-center">
+                      <span className="text-sm font-black text-indigo-400">{u.allowance}</span>
+                    </td>
+                    <td className="px-8 py-6 text-center">
+                      <span className="text-sm font-black text-emerald-400">{u.used}</span>
+                    </td>
+                    <td className="px-8 py-6 text-center">
+                      <span className={`text-sm font-black ${u.remaining < 3 ? 'text-rose-400' : 'text-white'}`}>{u.remaining}</span>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden ml-auto">
+                        <div 
+                          className="h-full bg-indigo-500 shadow-[0_0_8px_#6366f1]" 
+                          style={{ width: `${Math.min(100, (u.used / u.allowance) * 100)}%` }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row gap-6 items-start">
+            <div className="flex-grow space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-8 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+                <h1 className="text-3xl font-black italic text-white uppercase tracking-tight">
+                  {selectedUser.split(' ')[0]}'s <span className="text-indigo-400">Leave</span>
+                </h1>
+              </div>
+              <p className="text-slate-500 font-bold text-xs uppercase tracking-[0.2em] ml-5">Energy & Wellness Intelligence</p>
             </div>
 
-            <form onSubmit={handleAddLeave} className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <div className="md:col-span-4 space-y-2">
-                <label>Leave Date</label>
-                <div className="relative">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={handleInsertHolidays}
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all active:scale-95"
+              >
+                <Landmark size={14} /> Insert VN Holidays
+              </button>
+              
+              <div className="glass-panel p-4 flex items-center gap-6 border-white/5 bg-slate-900/40">
+                <div className="space-y-1">
+                  <label className="!mb-0 text-[9px] font-black text-slate-500 uppercase">Work Start</label>
                   <input 
                     type="date" 
-                    className="input pl-10"
-                    value={formData.date}
-                    onChange={e => setFormData({ ...formData, date: e.target.value })}
-                    required
+                    className="bg-transparent border-none text-indigo-400 font-black text-sm p-0 focus:ring-0 cursor-pointer"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
                   />
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                 </div>
-              </div>
-
-              <div className="md:col-span-3 space-y-2">
-                <label>Duration</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { val: 1, label: 'Full Day' },
-                    { val: 0.5, label: '1/2 Day' }
-                  ].map(opt => (
-                    <button
-                      key={opt.val}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, amount: opt.val })}
-                      className={`px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
-                        formData.amount === opt.val
-                          ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
-                          : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-white/10'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="md:col-span-3 space-y-2">
-                <label>Reason / Note</label>
-                <input 
-                  type="text" 
-                  className="input" 
-                  placeholder="Optional note..." 
-                  value={formData.note}
-                  onChange={e => setFormData({ ...formData, note: e.target.value })}
-                />
-              </div>
-
-              <div className="md:col-span-2 flex items-end">
-                <button type="submit" className="btn btn-primary w-full h-[42px] gap-2">
-                  <Plus size={16} />
-                  ADD
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* History Log */}
-          <div className="glass-panel overflow-hidden border-white/5">
-            <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
-              <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Leave History {new Date().getFullYear()}</h3>
-              <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">
-                {currentYearEntries.length} Entries
-              </span>
-            </div>
-            
-            <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-              {currentYearEntries.length === 0 ? (
-                <div className="p-12 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center mx-auto text-slate-700">
-                    <Calendar size={32} />
+                <div className="w-[1px] h-10 bg-white/5" />
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    <Award size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">No Leave Records</p>
-                    <p className="text-[10px] text-slate-600 font-medium mt-1 uppercase tracking-wider">Lịch sử nghỉ phép của {selectedUser} sẽ hiển thị ở đây.</p>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Seniority</p>
+                    <p className="text-lg font-black text-white italic">{seniority} {seniority === 1 ? 'YEAR' : 'YEARS'}</p>
                   </div>
                 </div>
-              ) : (
-                <table className="w-full text-left border-collapse">
-                  <thead className="bg-white/[0.01] text-[9px] font-black uppercase tracking-widest text-slate-600 border-b border-white/5">
-                    <tr>
-                      <th className="px-6 py-3">Date</th>
-                      <th className="px-6 py-3 text-center">Amount</th>
-                      <th className="px-6 py-3">Note</th>
-                      <th className="px-6 py-3 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/[0.02]">
-                    <AnimatePresence initial={false}>
-                      {currentYearEntries.map(entry => (
-                        <motion.tr 
-                          key={entry.id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 10 }}
-                          className="group hover:bg-white/[0.02] transition-colors"
-                        >
-                          <td className="px-6 py-4">
-                            <span className="text-xs font-black text-slate-300 italic">
-                              {format(parseISO(entry.date), 'EEEE, MMM dd, yyyy')}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border ${
-                              entry.amount === 1 
-                                ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' 
-                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                            }`}>
-                              {entry.amount === 1 ? '1.0 DAY' : '0.5 DAY'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-[11px] font-medium text-slate-500 group-hover:text-slate-400 transition-colors">
-                              {entry.note || '—'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <button 
-                              onClick={() => deleteEntry(entry.id)}
-                              className="p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </td>
-                        </motion.tr>
-                      ))}
-                    </AnimatePresence>
-                  </tbody>
-                </table>
-              )}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column: Stats & Animation */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="glass-panel p-6 border-white/10 bg-gradient-to-br from-slate-900/80 to-indigo-950/20">
+                <EnergyBar used={usedDays} total={totalAllowance} />
+              </div>
+
+              <div className="glass-panel p-5 border-indigo-500/10 bg-indigo-500/5 space-y-4">
+                <div className="flex items-center gap-2 text-indigo-400">
+                  <Info size={16} />
+                  <h4 className="text-[10px] font-black uppercase tracking-widest">Policy Overview</h4>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                  Hợp đồng lao động tại <span className="text-indigo-300 font-bold">Việt Nam</span>. 
+                  Dựa trên thâm niên <span className="text-indigo-300 font-bold">{seniority} năm</span>, 
+                  bạn được hưởng quỹ nghỉ phép <span className="text-indigo-300 font-bold">{totalAllowance} ngày</span>/năm.
+                </p>
+                <div className="p-3 rounded-xl bg-slate-950/40 border border-white/5 flex items-start gap-3">
+                  <AlertCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider leading-normal">
+                    {totalAllowance === 15 ? 'Đã đạt mức tối đa 15 ngày phép/năm.' : 'Làm việc trên 1 năm sẽ được tăng lên 15 ngày.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Form & History */}
+            <div className="lg:col-span-8 space-y-6">
+              {/* Entry Form */}
+              <div className="glass-panel p-6 border-white/10">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <Clock className="text-indigo-400" size={18} />
+                    <h3 className="text-sm font-black text-white uppercase italic tracking-widest">Book Leave Request</h3>
+                  </div>
+                  <div className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[9px] font-black text-indigo-400 uppercase tracking-widest">
+                    Create Entry
+                  </div>
+                </div>
+
+                <form onSubmit={handleAddLeave} className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                  <div className="md:col-span-4 space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Leave Date</label>
+                    <div className="relative">
+                      <input 
+                        type="date" 
+                        className="input pl-10 h-12 bg-slate-950/50"
+                        value={formData.date}
+                        onChange={e => setFormData({ ...formData, date: e.target.value })}
+                        required
+                      />
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-3 space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Duration</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { val: 1, label: 'Full Day' },
+                        { val: 0.5, label: '1/2 Day' }
+                      ].map(opt => (
+                        <button
+                          key={opt.val}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, amount: opt.val })}
+                          className={`h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                            formData.amount === opt.val
+                              ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
+                              : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-white/10'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-3 space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Reason / Note</label>
+                    <input 
+                      type="text" 
+                      className="input h-12 bg-slate-950/50" 
+                      placeholder="Optional note..." 
+                      value={formData.note}
+                      onChange={e => setFormData({ ...formData, note: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2 flex items-end">
+                    <button type="submit" className="btn btn-primary w-full h-12 gap-2 shadow-lg shadow-indigo-500/20">
+                      <Plus size={16} />
+                      ADD
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* History Log */}
+              <div className="glass-panel overflow-hidden border-white/5 bg-slate-900/20">
+                <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <List className="text-slate-500" size={14} />
+                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Leave History {new Date().getFullYear()}</h3>
+                  </div>
+                  <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-500/20">
+                    {currentYearEntries.length} Records Found
+                  </span>
+                </div>
+                
+                <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
+                  {currentYearEntries.length === 0 ? (
+                    <div className="p-16 text-center space-y-4">
+                      <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-white/5 flex items-center justify-center mx-auto text-slate-800">
+                        <Calendar size={40} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-500 uppercase tracking-widest">No Leave Records</p>
+                        <p className="text-[10px] text-slate-600 font-bold mt-1 uppercase tracking-wider">Lịch sử nghỉ phép sẽ hiển thị ở đây.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-white/[0.01] text-[9px] font-black uppercase tracking-widest text-slate-600 border-b border-white/5 sticky top-0 z-10 backdrop-blur-md">
+                        <tr>
+                          <th className="px-6 py-4">Date</th>
+                          <th className="px-6 py-4 text-center">Amount</th>
+                          <th className="px-6 py-4">Note / Type</th>
+                          <th className="px-6 py-4 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/[0.02]">
+                        <AnimatePresence initial={false}>
+                          {currentYearEntries.map(entry => (
+                            <motion.tr 
+                              key={entry.id}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 10 }}
+                              className={`group hover:bg-white/[0.02] transition-colors ${entry.type === 'HOLIDAY' ? 'bg-amber-500/[0.02]' : ''}`}
+                            >
+                              <td className="px-6 py-4">
+                                <span className="text-xs font-black text-slate-300 italic">
+                                  {format(parseISO(entry.date), 'EEEE, MMM dd, yyyy')}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                {entry.type === 'HOLIDAY' ? (
+                                  <span className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                    HOLIDAY
+                                  </span>
+                                ) : (
+                                  <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                                    entry.amount === 1 
+                                      ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' 
+                                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                  }`}>
+                                    {entry.amount === 1 ? '1.0 DAY' : '0.5 DAY'}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`text-[11px] font-bold ${entry.type === 'HOLIDAY' ? 'text-amber-400/70' : 'text-slate-500'} group-hover:text-slate-300 transition-colors uppercase tracking-tight`}>
+                                  {entry.note || '—'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <button 
+                                  onClick={() => deleteEntry(entry.id)}
+                                  className="p-2 text-slate-700 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all active:scale-90"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </td>
+                            </motion.tr>
+                          ))}
+                        </AnimatePresence>
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };
