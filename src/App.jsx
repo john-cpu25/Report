@@ -1,19 +1,43 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { format, startOfWeek, addDays, parseISO } from 'date-fns'
-import { Download, Layout, FileBarChart, CalendarDays, Menu, X, Filter } from 'lucide-react'
+import { Layout } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import WeeklyReport from './WeeklyReport'
 import CSVProcessor from './CSVProcessor'
 import projectsData from './data/projects.json'
 import CelestialBackground from './CelestialBackground'
-import RincovitchLogo from './RincovitchLogo'
 import Preloader from './Preloader'
+import Sidebar from './components/Sidebar'
+import TopBar from './components/TopBar'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
 function App() {
   const [activeTab, setActiveTab] = useState('report')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed')
+    return saved !== null ? JSON.parse(saved) : false
+  })
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed))
+  }, [sidebarCollapsed])
+
+  // Auto-collapse sidebar on smaller screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1280) {
+        setSidebarCollapsed(true)
+      } else {
+        setSidebarCollapsed(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    handleResize() // Run on mount
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
   const [isLoading, setIsLoading] = useState(true)
   const [reportData, setReportData] = useState([])
   const [customProjects, setCustomProjects] = useState([])
@@ -287,100 +311,88 @@ function App() {
       {isLoading ? (
         <Preloader key="preloader" onLoadingComplete={() => setIsLoading(false)} />
       ) : (
-        <motion.div 
-          key="main-content"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="min-h-screen selection:bg-indigo-500/30"
-        >
+        <div className="min-h-screen bg-transparent text-white selection:bg-indigo-500/30 overflow-x-hidden relative">
           <CelestialBackground />
-          <header className="max-w-[2000px] w-full mx-auto px-4 md:px-8 2xl:px-12 mb-12 flex flex-col lg:flex-row justify-between items-center gap-8">
-        <div className="flex items-center gap-6 group">
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="flex items-center gap-4 p-2 rounded-2xl hover:bg-white/5 transition-all active:scale-95 text-left group"
-          >
-            <div className={`p-2.5 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl transition-all duration-500 ${isSidebarOpen ? 'ring-2 ring-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-indigo-500/10' : 'group-hover:scale-110'}`}>
-              <RincovitchLogo size={32} />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black text-white tracking-tight">RINCOVITCH <span className="text-indigo-400">REPORT</span></h1>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.4em]">Intelligence System v2.1</p>
-            </div>
-          </button>
-          <button 
-            onClick={() => setFormData(prev => ({ ...prev, showProjectGroups: !prev.showProjectGroups }))}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all duration-300 ${
-              formData.showProjectGroups 
-                ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-                : 'bg-slate-900/50 border-white/10 text-slate-500 hover:text-slate-300'
-            }`}
-            title="Toggle Project Grouping"
-          >
-            <Filter size={18} className={formData.showProjectGroups ? 'opacity-100' : 'opacity-70'} />
-            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Header Mode</span>
-          </button>
-        </div>
+          
+          <Sidebar 
+            collapsed={sidebarCollapsed} 
+            setCollapsed={setSidebarCollapsed}
+            mobileOpen={mobileSidebarOpen}
+            setMobileOpen={setMobileSidebarOpen}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
 
-        <div className="flex gap-2 bg-slate-900/40 backdrop-blur-2xl p-1.5 rounded-2xl border border-white/5 shadow-2xl">
-          <button 
-            onClick={() => setActiveTab('report')}
-            className={`flex items-center gap-3 px-8 py-3 rounded-xl text-sm font-bold transition-all duration-500 ${
-              activeTab === 'report' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 scale-105' : 'text-slate-500 hover:text-slate-300'
-            }`}
+          <motion.div 
+            layout
+            initial={false}
+            animate={{ 
+              marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 
+                ? (sidebarCollapsed ? 72 : 260) 
+                : 0 
+            }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="min-h-screen flex flex-col"
           >
-            <CalendarDays size={20} strokeWidth={2.5} />
-            <span>Planner</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('processor')}
-            className={`flex items-center gap-3 px-8 py-3 rounded-xl text-sm font-bold transition-all duration-500 ${
-              activeTab === 'processor' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 scale-105' : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            <FileBarChart size={20} strokeWidth={2.5} />
-            <span>Data Analyst</span>
-          </button>
-        </div>
+            <TopBar 
+              onMenuClick={() => {
+                if (window.innerWidth < 1024) {
+                  setMobileSidebarOpen(true)
+                } else {
+                  setSidebarCollapsed(!sidebarCollapsed)
+                }
+              }}
+              onAddTask={() => setIsSidebarOpen(!isSidebarOpen)}
+              showProjectGroups={formData.showProjectGroups}
+              onToggleProjectGroups={() => setFormData(prev => ({ ...prev, showProjectGroups: !prev.showProjectGroups }))}
+              isSidebarCollapsed={sidebarCollapsed}
+            />
 
-        <div className="w-[180px] hidden md:block"></div>
-      </header>
+            <main className="flex-grow p-4 md:p-6 lg:p-8">
+              <div className="w-full">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                  >
+                    {activeTab === 'report' ? (
+                      <WeeklyReport 
+                        reportData={reportData} setReportData={setReportData}
+                        selectedDate={selectedDate} setSelectedDate={setSelectedDate}
+                        weekDates={weekDates} formData={formData} setFormData={setFormData}
+                        handleAddTask={handleAddTask} deleteRow={deleteRow} moveRow={moveRow}
+                        updateStatus={updateStatus} updateDayTime={updateDayTime}
+                        updateMarkup={updateMarkup} bulkUpdateMarkup={bulkUpdateMarkup}
+                        customProjects={customProjects} addCustomProject={addCustomProject}
+                        exportExcel={exportExcel} isSidebarOpen={isSidebarOpen}
+                        setIsSidebarOpen={setIsSidebarOpen}
+                      />
+                    ) : activeTab === 'processor' ? (
+                      <CSVProcessor />
+                    ) : (
+                      <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-6">
+                        <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                          <Layout size={40} />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-black text-white uppercase italic tracking-tight">Coming Soon</h2>
+                          <p className="text-slate-500 font-bold text-sm mt-2">This module is under development.</p>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </main>
 
-      <div className="max-w-[2000px] w-full mx-auto px-4 md:px-8 2xl:px-12 pb-12">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-          >
-            {activeTab === 'report' ? (
-              <WeeklyReport 
-                reportData={reportData} setReportData={setReportData}
-                selectedDate={selectedDate} setSelectedDate={setSelectedDate}
-                weekDates={weekDates} formData={formData} setFormData={setFormData}
-                handleAddTask={handleAddTask} deleteRow={deleteRow} moveRow={moveRow}
-                updateStatus={updateStatus} updateDayTime={updateDayTime}
-                updateMarkup={updateMarkup} bulkUpdateMarkup={bulkUpdateMarkup}
-                customProjects={customProjects} addCustomProject={addCustomProject}
-                exportExcel={exportExcel} isSidebarOpen={isSidebarOpen}
-                setIsSidebarOpen={setIsSidebarOpen}
-              />
-            ) : (
-              <CSVProcessor 
-                isSidebarOpen={isSidebarOpen}
-                setIsSidebarOpen={setIsSidebarOpen}
-              />
-            )}
+            <footer className="px-8 py-6 border-t border-white/5 text-center text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em]">
+              &copy; 2026 Rincovitch - Weekly Report Intelligence - Vietnam
+            </footer>
           </motion.div>
-        </AnimatePresence>
-      </div>
-      
-      <footer className="max-w-[2560px] w-[98%] 2xl:w-[95%] mx-auto mt-12 pt-8 border-t border-white/10 text-center text-white/30 text-xs">
-        <p>&copy; 2026 Rincovitch - Weekly Report System - Vietnam</p>
-      </footer>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>
   )

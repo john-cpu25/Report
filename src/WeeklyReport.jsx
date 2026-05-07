@@ -226,31 +226,33 @@ const WeeklyReport = ({
     <div className="relative">
       {/* Sidebar Overlay */}
       <AnimatePresence>
-        {isSidebarOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40"
-          />
-        )}
       </AnimatePresence>
 
       <main className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 2xl:grid-cols-12 gap-6 items-start">
 
 
-        {/* Sidebar Form */}
+        {/* Sidebar Form (Integrated in Grid on Desktop, Slider on Tablet/Mobile) */}
         <AnimatePresence>
           {isSidebarOpen && (
+            <motion.div 
+              key="mobile-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[55] lg:hidden"
+            />
+          )}
+          {isSidebarOpen && (
             <motion.aside 
-              initial={{ x: -400, opacity: 0 }}
+              key="entry-form-aside"
+              initial={{ x: -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -400, opacity: 0 }}
+              exit={{ x: -300, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 h-screen w-[320px] z-50 p-6 overflow-y-auto custom-scrollbar"
+              className="lg:relative fixed left-0 top-0 h-screen lg:h-auto w-[320px] lg:w-auto lg:col-span-2 z-[60] lg:z-0 lg:p-0 p-6 overflow-y-auto lg:overflow-visible custom-scrollbar"
             >
-              <div className="glass-panel p-6 border-white/10 shadow-2xl bg-slate-900/90 backdrop-blur-2xl h-full">
+              <div className="glass-panel p-4 border-white/10 shadow-2xl bg-slate-900/95 h-full">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
@@ -516,11 +518,11 @@ const WeeklyReport = ({
             </form>
             </div>
           </motion.aside>
-        )}
+          )}
         </AnimatePresence>
 
         {/* Main Table */}
-        <div className="lg:col-span-12 xl:col-span-9 2xl:col-span-9 space-y-4">
+        <div className={`${isSidebarOpen ? 'lg:col-span-7' : 'lg:col-span-9'} space-y-4 transition-all duration-500`}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-2xl border border-white/5 w-fit">
               {[
@@ -1037,8 +1039,8 @@ const WeeklyReport = ({
           </div>
         </div>
 
-        {/* Right Sidebar - Statistics */}
-        <aside className="lg:col-span-12 xl:col-span-3 2xl:col-span-3 space-y-6">
+        {/* Right Sidebar - Statistics (Always on the right) */}
+        <aside className="lg:col-span-3 space-y-6">
           <div className="glass-panel p-6 border-white/5 shadow-2xl bg-slate-900/30">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
@@ -1506,7 +1508,7 @@ const WeeklyReport = ({
             exit={{ y: 100, opacity: 0 }}
             className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[80] w-[90%] max-w-2xl"
           >
-            <div className="glass-panel p-4 bg-indigo-500/10 backdrop-blur-2xl border-indigo-500/20 shadow-[0_0_50px_rgba(99,102,241,0.2)] flex items-center justify-between gap-6">
+            <div className="glass-panel p-4 bg-indigo-500/10 border-indigo-500/20 shadow-[0_0_50px_rgba(99,102,241,0.2)] flex items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <div className="bg-indigo-500 text-white p-2 rounded-xl shadow-lg shadow-indigo-500/20">
                   <Layout size={20} />

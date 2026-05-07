@@ -154,6 +154,7 @@ const WorkflowAnimation = () => {
           {orbitPaths.map((path, i) => {
             const from = planets.find(p => p.id === path.from)
             const to = planets.find(p => p.id === path.to)
+            if (!from || !to) return null
             return (
               <line
                 key={`orbit-${i}`}
@@ -278,6 +279,7 @@ const WorkflowAnimation = () => {
                   ry={2}
                   fill="#60a5fa"
                   filter="url(#engine-glow)"
+                  initial={{ ry: 2, opacity: 0.6 }}
                   animate={{ ry: [2, 3.5, 2], opacity: [0.6, 1, 0.6] }}
                   transition={{ duration: 0.3, repeat: Infinity }}
                 />
@@ -287,6 +289,7 @@ const WorkflowAnimation = () => {
                   rx={0.3}
                   ry={1.5}
                   fill="#93c5fd"
+                  initial={{ ry: 1.5, opacity: 0.8 }}
                   animate={{ ry: [1.5, 2.5, 1.5], opacity: [0.8, 1, 0.8] }}
                   transition={{ duration: 0.2, repeat: Infinity }}
                 />

@@ -110,7 +110,7 @@ const CelestialBackground = () => {
             animate={{ scale: [1, 1.5, 1], opacity: 1 }}
             transition={{ duration: 4, repeat: Infinity, delay: i * 0.3 }}
             cx={`${star[0]}%`} cy={`${star[1]}%`}
-            r="3"
+            r={3}
             fill="white"
             filter="url(#glow)"
           />
