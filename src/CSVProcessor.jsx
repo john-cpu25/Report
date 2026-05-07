@@ -1,87 +1,169 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import * as XLSX from 'xlsx'
-import { Upload, FileText, BarChart3, Table as TableIcon, Download, Search } from 'lucide-react'
+import { Upload, FileText, BarChart3, Table as TableIcon, Download, Search, RefreshCw, Users, Database, Calendar } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import AtomicAnimation from './AtomicAnimation'
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
-import { Doughnut, Bar } from 'react-chartjs-2'
+import { supabase } from './supabaseClient'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement } from 'chart.js'
+import { Doughnut, Bar, Line } from 'react-chartjs-2'
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement)
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement)
 
-const DOW_MAP = { 1: 'T2', 2: 'T3', 3: 'T4', 4: 'T5', 5: 'T6' }
+const DOW_MAP = { 1: 'Mo', 2: 'Tu', 3: 'We', 4: 'Th', 5: 'Fr' }
 const PALETTE = ['#818cf8', '#10b981', '#f59e0b', '#3b82f6', '#f43f5e', '#8b5cf6', '#14b8a6', '#f97316', '#06b6d4', '#84cc16']
 
 const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const [data, setData] = useState([])
+  const [userData, setUserData] = useState([])
+  const [userMap, setUserMap] = useState({})
   const [view, setView] = useState('detail')
   const [filters, setFilters] = useState({ field: 'project', values: [] })
   const [fileName, setFileName] = useState('')
-  const [pivotMetric, setPivotMetric] = useState('time1') // 'time1', 'time2' or 'time3'
+  const [pivotMetric, setPivotMetric] = useState('time1')
+  const [isLoading, setIsLoading] = useState(false)
+  const [lastFetched, setLastFetched] = useState(null)
+  const [fetchError, setFetchError] = useState(null)
+  const [analyticsMode, setAnalyticsMode] = useState('leader') // 'leader' | 'user'
+  const [analyticsGranularity, setAnalyticsGranularity] = useState('month') // 'week' | 'month' | 'year'
+  const [searchQuery, setSearchQuery] = useState('')
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
+  const [selectedMetric, setSelectedMetric] = useState('time1') // 'time1' | 'time2' | 'time3'
+  const [columnFilters, setColumnFilters] = useState({ project: '', taskName: '', user: '' })
 
-  const processDate = (val) => {
+  // Auto-fetch from Supabase on mount
+  useEffect(() => { fetchSupabaseData() }, [])
+
+  // Auto-reset selectedMetric when switching to views that don't support TIME 3
+  useEffect(() => {
+    const isUserMode = view === 'userTasks' || view === 'userPivot' || (view === 'analytics' && analyticsMode === 'user');
+    if (isUserMode && selectedMetric === 'time3') {
+      setSelectedMetric('time1');
+    }
+  }, [view, analyticsMode, selectedMetric])
+
+  async function fetchSupabaseData() {
+    setIsLoading(true)
+    setFetchError(null)
+    try {
+      const [tasksRes, usersRes] = await Promise.all([
+        supabase.from('NMK_Task').select('*').order('created_at', { ascending: false }).limit(2000),
+        supabase.from('NMK_User').select('id, name, email')
+      ])
+      if (tasksRes.error) throw tasksRes.error
+      if (usersRes.error) throw usersRes.error
+
+      // Build user lookup map (index by both id and email for robustness)
+      const uMap = {}
+      usersRes.data.forEach(u => {
+        const name = u.name || u.email || u.id
+        uMap[u.id] = name
+        if (u.email) uMap[u.email] = name
+      })
+      setUserMap(uMap)
+
+      // Process leader data (same as old CSV logic)
+      const leaderProcessed = tasksRes.data.map(row => {
+        const createdAt = processDate(row.created_at)
+        const dateStart = processDate(row.date_start)
+        const dateEnd = processDate(row.date_end)
+        const dateComplete = processDate(row.date_complete)
+        const dateChecked = processDate(row.date_checked)
+        const rawName = row.name || ''
+        const parts = rawName.toString().split(':')
+        const time1 = getEffectiveDuration(dateStart, dateEnd)
+        const time2 = getEffectiveDuration(dateStart, dateComplete)
+        const time3 = getEffectiveDuration(dateStart, dateChecked)
+        
+        return {
+          project: parts[0]?.trim() || '-',
+          taskName: parts[1]?.trim() || '-',
+          createdBy: uMap[row.create_by] || row.create_by || '-',
+          day: formatDate(createdAt || dateStart),
+          createdAt, dateStart, dateEnd, dateComplete, dateChecked,
+          time1, time2, time3,
+          time1Str: formatDuration(time1),
+          time2Str: formatDuration(time2),
+          time3Str: formatDuration(time3),
+          dateObj: createdAt || dateStart
+        }
+      }).filter(r => r.project !== '-')
+      setData(leaderProcessed)
+
+      // Process user task data (new perspective)
+      const userProcessed = tasksRes.data.map(row => {
+        const createdAt = processDate(row.created_at)
+        const dateStarted = processDate(row.date_started)
+        const dateChecked = processDate(row.date_checked)
+        const rawName = row.name || ''
+        const parts = rawName.toString().split(':')
+        const time1 = getEffectiveDuration(dateStarted, dateChecked)
+        const time2 = getEffectiveDuration(createdAt, dateChecked)
+        
+        return {
+          userId: row.user_id,
+          userName: uMap[row.user_id] || row.user_id || '-',
+          project: parts[0]?.trim() || '-',
+          taskName: parts[1]?.trim() || '-',
+          createdAt, dateStarted, dateChecked,
+          createdAtStr: formatDateTime(createdAt),
+          dateStartedStr: formatDateTime(dateStarted),
+          dateCheckedStr: formatDateTime(dateChecked),
+          time1, time2,
+          time1Str: formatDuration(time1),
+          time2Str: formatDuration(time2),
+          dateObj: createdAt
+        }
+      }).filter(r => r.project !== '-')
+      setUserData(userProcessed)
+
+      setLastFetched(new Date())
+      setFileName(`Supabase Live — ${tasksRes.data.length} tasks`)
+    } catch (err) {
+      console.error('Supabase fetch error:', err)
+      setFetchError(err.message || 'Failed to fetch data')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+
+  function processDate(val) {
     if (!val) return null;
-    
-    // If it's already a Date object
-    if (val instanceof Date) {
-      return val;
-    }
-
-    // If it's a number (Excel serial date)
-    if (typeof val === 'number') {
-      return new Date((val - 25569) * 86400 * 1000);
-    }
-
+    if (val instanceof Date) return val;
+    if (typeof val === 'number') return new Date((val - 25569) * 86400 * 1000);
     let str = val.toString().trim();
-    
-    // If string is just a 5-digit number (Excel serial date as string)
     if (/^\d{5}(\.\d+)?$/.test(str)) {
       const num = parseFloat(str);
       return new Date((num - 25569) * 86400 * 1000);
     }
     if (str.startsWith('0001')) return null;
-
     try {
-      // 1. Clean up space and timezone
       let s = str.replace(' ', 'T');
       if (s.match(/[+-]\d{2}$/)) s += ':00';
-      
-      // 2. Try parsing
       let date = new Date(s);
-      
-      // 3. Fallback: Add Z if no timezone info
       if (isNaN(date.getTime())) {
-        if (!s.includes('Z') && !s.match(/[+-]\d{2}/)) {
-          date = new Date(s + 'Z');
-        }
+        if (!s.includes('Z') && !s.match(/[+-]\d{2}/)) date = new Date(s + 'Z');
       }
-      
-      // 4. Fallback: Remove fractional seconds (picky browsers)
       if (isNaN(date.getTime())) {
         let sNoMs = s.replace(/\.\d+(?=[+-Z]|$)/, '');
         date = new Date(sNoMs);
       }
-      
-      if (isNaN(date.getTime())) {
-        // Last resort: try very basic parse
-        date = new Date(str);
-      }
-
+      if (isNaN(date.getTime())) date = new Date(str);
       if (isNaN(date.getTime())) return null;
       
-      return date;
-    } catch (e) { 
-      return null; 
-    }
+      // Add 7 hours for UTC+7 (Vietnam Time)
+      return new Date(date.getTime() + 7 * 60 * 60 * 1000);
+    } catch (e) { return null; }
   }
 
-  const formatTime = (date) => {
+  function formatTime(date) {
     if (!date) return '-';
     const h = String(date.getUTCHours()).padStart(2, '0');
     const m = String(date.getUTCMinutes()).padStart(2, '0');
     return `${h}:${m}`;
   }
 
-  const formatDate = (date) => {
+  function formatDate(date) {
     if (!date) return '-';
     const y = date.getUTCFullYear();
     const m = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -89,36 +171,35 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
     return `${y}-${m}-${d}`;
   }
 
-  const getEffectiveDuration = (start, end) => {
+  function getEffectiveDuration(start, end) {
     if (!start || !end || end <= start) return 0;
-    
     let duration = end.getTime() - start.getTime();
-    
-    // Lunch break range for the day
-    // Note: Using UTC methods because processDate seems to keep times as parsed
     const lunchStart = new Date(start);
     lunchStart.setUTCHours(12, 30, 0, 0);
-    
     const lunchEnd = new Date(start);
     lunchEnd.setUTCHours(13, 30, 0, 0);
-    
-    // Overlap calculation
     const overlapStart = Math.max(start.getTime(), lunchStart.getTime());
     const overlapEnd = Math.min(end.getTime(), lunchEnd.getTime());
-    
-    if (overlapEnd > overlapStart) {
-      duration -= (overlapEnd - overlapStart);
-    }
-    
+    if (overlapEnd > overlapStart) duration -= (overlapEnd - overlapStart);
     return duration > 0 ? duration : 0;
   }
 
-  const formatDuration = (ms) => {
+  function formatDuration(ms) {
     if (!ms || ms <= 0) return '-';
     const totalMinutes = Math.floor(ms / 60000);
     const h = Math.floor(totalMinutes / 60);
     const m = totalMinutes % 60;
     return `${h}h ${m}m`;
+  }
+
+  function formatDateTime(date) {
+    if (!date) return '-';
+    const y = date.getUTCFullYear();
+    const mo = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(date.getUTCDate()).padStart(2, '0');
+    const h = String(date.getUTCHours()).padStart(2, '0');
+    const mi = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${y}-${mo}-${d} ${h}:${mi}`;
   }
 
   const handleFileUpload = (e) => {
@@ -196,16 +277,54 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
 
   const filteredData = useMemo(() => {
-    if (filters.values.length === 0) return data;
-    const selectedSet = new Set(filters.values.map(v => v.toLowerCase()));
     return data.filter(r => {
-      let rowVal = '';
-      if (filters.field === 'project') rowVal = r.project;
-      else if (filters.field === 'task') rowVal = r.taskName;
-      else if (filters.field === 'user') rowVal = r.createdBy;
-      return selectedSet.has(rowVal.toLowerCase());
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        if (!r.project.toLowerCase().includes(q) && !r.taskName.toLowerCase().includes(q) && !r.createdBy.toLowerCase().includes(q)) return false
+      }
+      if (columnFilters.project && !r.project.toLowerCase().includes(columnFilters.project.toLowerCase())) return false
+      if (columnFilters.taskName && !r.taskName.toLowerCase().includes(columnFilters.taskName.toLowerCase())) return false
+      if (columnFilters.user && !r.createdBy.toLowerCase().includes(columnFilters.user.toLowerCase())) return false
+
+      if (dateRange.start && r.dateObj && r.dateObj < new Date(dateRange.start)) return false
+      if (dateRange.end) {
+        const end = new Date(dateRange.end)
+        end.setHours(23, 59, 59, 999)
+        if (r.dateObj && r.dateObj > end) return false
+      }
+      if (filters.values.length > 0) {
+        const selectedSet = new Set(filters.values.map(v => v.toLowerCase()))
+        let rowVal = filters.field === 'project' ? r.project : filters.field === 'task' ? r.taskName : r.createdBy
+        if (!selectedSet.has(rowVal.toLowerCase())) return false
+      }
+      return true
     })
-  }, [data, filters])
+  }, [data, filters, searchQuery, dateRange, columnFilters])
+
+  const filteredUserData = useMemo(() => {
+    return userData.filter(r => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        if (!r.project.toLowerCase().includes(q) && !r.taskName.toLowerCase().includes(q) && !r.userName.toLowerCase().includes(q)) return false
+      }
+      if (columnFilters.project && !r.project.toLowerCase().includes(columnFilters.project.toLowerCase())) return false
+      if (columnFilters.taskName && !r.taskName.toLowerCase().includes(columnFilters.taskName.toLowerCase())) return false
+      if (columnFilters.user && !r.userName.toLowerCase().includes(columnFilters.user.toLowerCase())) return false
+
+      if (dateRange.start && r.dateObj && r.dateObj < new Date(dateRange.start)) return false
+      if (dateRange.end) {
+        const end = new Date(dateRange.end)
+        end.setHours(23, 59, 59, 999)
+        if (r.dateObj && r.dateObj > end) return false
+      }
+      if (filters.values.length > 0) {
+        const selectedSet = new Set(filters.values.map(v => v.toLowerCase()))
+        let rowVal = filters.field === 'project' ? r.project : filters.field === 'task' ? r.taskName : r.userName
+        if (!selectedSet.has(rowVal.toLowerCase())) return false
+      }
+      return true
+    })
+  }, [userData, filters, searchQuery, dateRange, columnFilters])
 
   const uniqueFilterValues = useMemo(() => {
     const vals = new Set();
@@ -225,6 +344,32 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
       return { ...prev, values: nextValues };
     });
   }
+
+  const columnOptions = useMemo(() => {
+    const projects = new Set();
+    const tasks = new Set();
+    const users = new Set();
+    
+    // Collect from Leader data
+    data.forEach(r => {
+      if (r.project && r.project !== '-') projects.add(r.project);
+      if (r.taskName && r.taskName !== '-') tasks.add(r.taskName);
+      if (r.createdBy && r.createdBy !== '-') users.add(r.createdBy);
+    });
+
+    // Collect from User data
+    userData.forEach(r => {
+      if (r.project && r.project !== '-') projects.add(r.project);
+      if (r.taskName && r.taskName !== '-') tasks.add(r.taskName);
+      if (r.userName && r.userName !== '-') users.add(r.userName);
+    });
+
+    return {
+      projects: Array.from(projects).sort(),
+      tasks: Array.from(tasks).sort(),
+      users: Array.from(users).sort()
+    };
+  }, [data, userData])
 
   const pivotData = useMemo(() => {
     const map = new Map()
@@ -256,56 +401,97 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   const projectStats = useMemo(() => {
     const pMap = new Map()
-    filteredData.forEach(r => {
-      if (!pMap.has(r.project)) pMap.set(r.project, { tasks: new Set(), logs: 0, totalTime1: 0, totalTime2: 0, totalTime3: 0 })
+    const targetData = analyticsMode === 'leader' ? filteredData : filteredUserData
+    targetData.forEach(r => {
+      if (!pMap.has(r.project)) pMap.set(r.project, { tasks: new Set(), logs: 0, t1: 0, t2: 0, t3: 0 })
       const p = pMap.get(r.project)
       p.tasks.add(r.taskName)
       p.logs++
-      p.totalTime1 += r.time1
-      p.totalTime2 += r.time2
-      p.totalTime3 += r.time3
+      p.t1 += r.time1 || 0
+      p.t2 += r.time2 || 0
+      p.t3 += r.time3 || 0
     })
-    return Array.from(pMap.entries())
-      .map(([name, v]) => ({ 
-        name, 
-        uniqueTasks: v.tasks.size, 
-        totalLogs: v.logs,
-        totalTime1: formatDuration(v.totalTime1),
-        totalTime2: formatDuration(v.totalTime2),
-        totalTime3: formatDuration(v.totalTime3),
-        rawTime1: v.totalTime1
-      }))
-      .sort((a, b) => b.rawTime1 - a.rawTime1)
-  }, [filteredData])
+    return Array.from(pMap.entries()).map(([name, v]) => ({
+      name, uniqueTasks: v.tasks.size, totalLogs: v.logs,
+      totalTime1: formatDuration(v.t1), totalTime2: formatDuration(v.t2), totalTime3: formatDuration(v.t3),
+      rawTime1: v.t1
+    })).sort((a, b) => b.rawTime1 - a.rawTime1)
+  }, [filteredData, filteredUserData, analyticsMode])
 
   const userStats = useMemo(() => {
     const uMap = new Map()
-    filteredData.forEach(r => {
-      if (!uMap.has(r.createdBy)) uMap.set(r.createdBy, { projects: new Set(), logs: 0, totalTime1: 0, totalTime2: 0, totalTime3: 0 })
-      const u = uMap.get(r.createdBy)
+    const targetData = analyticsMode === 'leader' ? filteredData : filteredUserData
+    targetData.forEach(r => {
+      const uName = analyticsMode === 'leader' ? r.createdBy : r.userName
+      if (!uMap.has(uName)) uMap.set(uName, { projects: new Set(), logs: 0, t1: 0, t2: 0, t3: 0 })
+      const u = uMap.get(uName)
       u.projects.add(r.project)
       u.logs++
-      u.totalTime1 += r.time1
-      u.totalTime2 += r.time2
-      u.totalTime3 += r.time3
+      u.t1 += r.time1 || 0
+      u.t2 += r.time2 || 0
+      u.t3 += r.time3 || 0
     })
-    return Array.from(uMap.entries())
-      .map(([name, v]) => ({ 
-        name, 
-        uniqueProjects: v.projects.size, 
-        totalLogs: v.logs,
-        totalTime1: formatDuration(v.totalTime1),
-        totalTime2: formatDuration(v.totalTime2),
-        totalTime3: formatDuration(v.totalTime3),
-        rawTime1: v.totalTime1
-      }))
-      .sort((a, b) => b.rawTime1 - a.rawTime1)
-  }, [filteredData])
+    return Array.from(uMap.entries()).map(([name, v]) => ({
+      name, uniqueProjects: v.projects.size, totalLogs: v.logs,
+      totalTime1: formatDuration(v.t1), totalTime2: formatDuration(v.t2), totalTime3: formatDuration(v.t3),
+      rawTime1: v.t1
+    })).sort((a, b) => b.rawTime1 - a.rawTime1)
+  }, [filteredData, filteredUserData, analyticsMode])
+
+  const periodicStats = useMemo(() => {
+    const mMap = new Map()
+    const targetData = analyticsMode === 'leader' ? filteredData : filteredUserData
+    targetData.forEach(r => {
+      if (!r.dateObj) return
+      let key = ''
+      if (analyticsGranularity === 'week') {
+        const d = new Date(r.dateObj)
+        d.setUTCDate(d.getUTCDate() - d.getUTCDay() + 1)
+        key = `Week ${d.getUTCDate()}/${d.getUTCMonth()+1}`
+      } else if (analyticsGranularity === 'year') {
+        key = `${r.dateObj.getUTCFullYear()}`
+      } else {
+        key = `${r.dateObj.getUTCFullYear()}-${String(r.dateObj.getUTCMonth() + 1).padStart(2, '0')}`
+      }
+      
+      if (!mMap.has(key)) mMap.set(key, { logs: 0, t1: 0, t2: 0, t3: 0 })
+      const m = mMap.get(key)
+      m.logs++
+      m.t1 += r.time1 || 0
+      m.t2 += r.time2 || 0
+      m.t3 += r.time3 || 0
+    })
+    return Array.from(mMap.entries())
+      .map(([name, v]) => ({ name, ...v, rawTime1: v.t1 }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [filteredData, filteredUserData, analyticsMode, analyticsGranularity])
+
+  const userPivotData = useMemo(() => {
+    const map = new Map()
+    filteredUserData.forEach(row => {
+      const key = `${row.userName}||${row.project}||${row.taskName}`
+      if (!map.has(key)) {
+        map.set(key, { userName: row.userName, project: row.project, taskName: row.taskName, days: {} })
+      }
+      const entry = map.get(key)
+      const dow = DOW_MAP[row.dateObj?.getUTCDay()]
+      if (dow) {
+        if (!entry.days[dow]) entry.days[dow] = []
+        entry.days[dow].push({
+          time1: row.time1,
+          time2: row.time2,
+          time1Str: row.time1Str,
+          time2Str: row.time2Str
+        })
+      }
+    })
+    return Array.from(map.values())
+  }, [filteredUserData])
 
   const chartData = {
     labels: projectStats.slice(0, 10).map(s => s.name),
     datasets: [{
-      data: projectStats.slice(0, 10).map(s => s.rawTime1 / 3600000), // hours
+      data: projectStats.slice(0, 10).map(s => s.rawTime1 / 3600000),
       backgroundColor: PALETTE,
       borderColor: 'rgba(255,255,255,0.1)',
       borderWidth: 2,
@@ -316,7 +502,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const barChartData = {
     labels: userStats.slice(0, 10).map(s => s.name.split('@')[0]),
     datasets: [{
-      label: 'Hours Worked (Time 1)',
+      label: analyticsMode === 'leader' ? 'Hours Worked (Time 1)' : 'Processing Time (Time 1)',
       data: userStats.slice(0, 10).map(s => s.rawTime1 / 3600000),
       backgroundColor: userStats.slice(0, 10).map((_, i) => PALETTE[i % PALETTE.length] + 'dd'),
       borderColor: userStats.slice(0, 10).map((_, i) => PALETTE[i % PALETTE.length]),
@@ -325,40 +511,82 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
     }]
   }
 
+  const periodicChartData = {
+    labels: periodicStats.map(s => s.name),
+    datasets: [{
+      label: analyticsMode === 'leader' ? 'Total Leader Hours' : 'Total User Hours',
+      data: periodicStats.map(s => s.rawTime1 / 3600000),
+      backgroundColor: 'rgba(99, 102, 241, 0.5)',
+      borderColor: '#6366f1',
+      borderWidth: 2,
+      fill: true,
+      tension: 0.4
+    }]
+  }
+
   return (
     <div className="space-y-8">
-      {data.length === 0 ? (
-        <div className="glass-panel p-20 text-center relative overflow-hidden group border-dashed border-2 border-white/10 hover:border-indigo-500/50 transition-all">
-          <input type="file" id="csv-upload" className="hidden" accept=".csv" onChange={handleFileUpload} />
-          <label htmlFor="csv-upload" className="cursor-pointer block">
-            <div className="flex flex-col items-center gap-6">
-              <div className="p-6 bg-indigo-500/10 rounded-3xl text-indigo-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-2xl shadow-indigo-500/20">
-                <Upload size={48} strokeWidth={1.5} />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-bold tracking-tight text-white">Import CSV Workflow</h3>
-                <p className="text-slate-400 text-sm max-w-sm mx-auto">Drop your CSV files here to analyze project timelines and statistics.</p>
-              </div>
-              <div className="btn btn-primary mt-4">
-                Choose File
-              </div>
+      {isLoading && data.length === 0 ? (
+        <div className="glass-panel p-20 text-center relative overflow-hidden border-2 border-indigo-500/20">
+          <div className="flex flex-col items-center gap-6">
+            <div className="p-6 bg-indigo-500/10 rounded-3xl text-indigo-400 animate-pulse shadow-2xl shadow-indigo-500/20">
+              <Database size={48} strokeWidth={1.5} />
             </div>
-          </label>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold tracking-tight text-white">Connecting to Supabase...</h3>
+              <p className="text-slate-400 text-sm">Fetching tasks and user data in real-time.</p>
+            </div>
+            <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
+              <motion.div animate={{ x: ['-100%', '100%'] }} transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }} className="w-1/2 h-full bg-indigo-500 rounded-full" />
+            </div>
+          </div>
+        </div>
+      ) : fetchError && data.length === 0 ? (
+        <div className="glass-panel p-20 text-center relative overflow-hidden border-2 border-rose-500/20">
+          <div className="flex flex-col items-center gap-6">
+            <div className="p-6 bg-rose-500/10 rounded-3xl text-rose-400 shadow-2xl shadow-rose-500/20">
+              <Database size={48} strokeWidth={1.5} />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold tracking-tight text-white">Connection Failed</h3>
+              <p className="text-rose-400 text-sm max-w-md mx-auto">{fetchError}</p>
+            </div>
+            <button onClick={fetchSupabaseData} className="btn btn-primary mt-4 flex items-center gap-2">
+              <RefreshCw size={16} /> Retry Connection
+            </button>
+          </div>
+        </div>
+      ) : data.length === 0 ? (
+        <div className="glass-panel p-20 text-center relative overflow-hidden group border-dashed border-2 border-white/10 hover:border-indigo-500/50 transition-all">
+          <div className="flex flex-col items-center gap-6">
+            <div className="p-6 bg-indigo-500/10 rounded-3xl text-indigo-400 group-hover:scale-110 transition-all duration-500 shadow-2xl shadow-indigo-500/20">
+              <Database size={48} strokeWidth={1.5} />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold tracking-tight text-white">No Data Available</h3>
+              <p className="text-slate-400 text-sm max-w-sm mx-auto">No tasks found in Supabase. Click reload to try again.</p>
+            </div>
+            <button onClick={fetchSupabaseData} className="btn btn-primary mt-4 flex items-center gap-2">
+              <RefreshCw size={16} /> Reload Data
+            </button>
+          </div>
         </div>
       ) : (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex gap-2 p-1.5 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/5 w-fit">
               {[
-                { id: 'detail', icon: FileText, label: 'Detail View' },
-                { id: 'pivot', icon: TableIcon, label: 'Weekly Pivot' },
+                { id: 'detail', icon: FileText, label: 'Leader View' },
+                { id: 'userTasks', icon: Users, label: 'User Tasks' },
+                { id: 'pivot', icon: TableIcon, label: 'Leader Pivot' },
+                { id: 'userPivot', icon: Calendar, label: 'User Weekly' },
                 { id: 'analytics', icon: BarChart3, label: 'Analytics' }
               ].map(t => (
                 <button
                   key={t.id}
                   onClick={() => setView(t.id)}
-                  className={`flex items-center gap-2.5 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
-                    view === t.id ? 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/25 scale-105' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                    view === t.id ? (t.id === 'userTasks' ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/25 scale-105' : 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/25 scale-105') : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                   }`}
                 >
                   <t.icon size={18} strokeWidth={2.5} />
@@ -366,12 +594,118 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 </button>
               ))}
             </div>
-            
-            <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-900/40 px-4 py-2 rounded-full border border-white/5">
-              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> {data.length} Records</span>
-              <span className="w-px h-3 bg-white/10"></span>
-              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {projectStats.length} Projects</span>
+
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="relative flex-grow max-w-2xl">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Smart Sea - Global Intelligence Search..." 
+                  className="w-full bg-slate-900/40 border border-white/5 rounded-2xl py-4 pl-14 pr-6 text-base font-bold text-white focus:border-indigo-500/50 focus:bg-slate-900/60 transition-all outline-none shadow-2xl placeholder:text-slate-600"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <div className="px-2 py-1 bg-indigo-500/10 rounded text-[9px] font-black text-indigo-400 border border-indigo-500/20 uppercase tracking-widest">Global</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={fetchSupabaseData}
+                  disabled={isLoading}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
+                    isLoading 
+                      ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20 cursor-wait' 
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/10'
+                  }`}
+                >
+                  <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+                  {isLoading ? 'Loading...' : 'Reload'}
+                </button>
+                <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-900/40 px-4 py-2.5 rounded-xl border border-white/5">
+                  <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live</span>
+                  <span className="w-px h-3 bg-white/10"></span>
+                  <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> {data.length} Records</span>
+                </div>
+              </div>
             </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/5">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-slate-900/50 border border-white/5 rounded-xl px-3 py-1.5 shadow-inner">
+                  <div className="flex items-center gap-2 border-r border-white/10 pr-3">
+                    <Calendar size={14} className="text-slate-500" />
+                    <input 
+                      type="month" 
+                      className="bg-transparent text-[11px] font-black text-indigo-400 outline-none [color-scheme:dark] cursor-pointer uppercase"
+                      onChange={e => {
+                        if (!e.target.value) return;
+                        const [y, m] = e.target.value.split('-').map(Number);
+                        const start = new Date(y, m - 1, 1);
+                        const end = new Date(y, m, 0);
+                        
+                        const formatYMD = (d) => {
+                          const year = d.getFullYear();
+                          const month = String(d.getMonth() + 1).padStart(2, '0');
+                          const day = String(d.getDate()).padStart(2, '0');
+                          return `${year}-${month}-${day}`;
+                        };
+                        
+                        setDateRange({ start: formatYMD(start), end: formatYMD(end) });
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 pl-1">
+                    <input 
+                      type="date" 
+                      className="bg-transparent text-[10px] font-bold text-slate-300 outline-none [color-scheme:dark] cursor-pointer"
+                      value={dateRange.start}
+                      onChange={e => setDateRange(prev => ({...prev, start: e.target.value}))}
+                    />
+                    <span className="text-slate-700 text-[10px]">TO</span>
+                    <input 
+                      type="date" 
+                      className="bg-transparent text-[10px] font-bold text-slate-300 outline-none [color-scheme:dark] cursor-pointer"
+                      value={dateRange.end}
+                      onChange={e => setDateRange(prev => ({...prev, end: e.target.value}))}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-1 p-1 bg-slate-900/50 rounded-xl border border-white/5">
+                  {[
+                    { label: 'Week', start: () => {
+                      const d = new Date();
+                      d.setDate(d.getDate() - d.getDay() + 1);
+                      return d.toISOString().split('T')[0];
+                    }},
+                    { label: 'Month', start: () => {
+                      const d = new Date();
+                      return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+                    }},
+                    { label: 'Year', start: () => {
+                      const d = new Date();
+                      return new Date(d.getFullYear(), 0, 1).toISOString().split('T')[0];
+                    }}
+                  ].map(p => (
+                    <button 
+                      key={p.label}
+                      onClick={() => setDateRange({ start: p.start(), end: new Date().toISOString().split('T')[0] })}
+                      className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white hover:bg-white/5 transition-all"
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-900/40 px-4 py-2 rounded-full border border-white/5">
+                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {projectStats.length} Projects</span>
+              </div>
+            </div>
+          </div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -435,11 +769,48 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                           </div>
                         </div>
 
+                        <div className="space-y-4">
+                          <label className="text-xs font-black text-violet-400 uppercase tracking-widest">Quick Presets</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { label: 'This Week', start: () => {
+                                const d = new Date();
+                                d.setDate(d.getDate() - d.getDay() + 1);
+                                return d.toISOString().split('T')[0];
+                              }},
+                              { label: 'This Month', start: () => {
+                                const d = new Date();
+                                return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+                              }},
+                              { label: 'Last Month', start: () => {
+                                const d = new Date();
+                                return new Date(d.getFullYear(), d.getMonth() - 1, 1).toISOString().split('T')[0];
+                              }},
+                              { label: 'Last 3 Months', start: () => {
+                                const d = new Date();
+                                return new Date(d.getFullYear(), d.getMonth() - 3, 1).toISOString().split('T')[0];
+                              }}
+                            ].map(p => (
+                              <button 
+                                key={p.label}
+                                onClick={() => setDateRange({ start: p.start(), end: new Date().toISOString().split('T')[0] })}
+                                className="bg-slate-950/50 border border-white/5 hover:border-violet-500/50 text-[10px] font-black py-2 rounded-lg transition-all"
+                              >
+                                {p.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         <button 
-                          onClick={() => setFilters({ field: filters.field, values: [] })}
+                          onClick={() => {
+                            setFilters({ field: filters.field, values: [] });
+                            setSearchQuery('');
+                            setDateRange({ start: '', end: '' });
+                          }}
                           className="btn btn-secondary w-full py-4 text-xs font-bold uppercase tracking-widest border-white/10"
                         >
-                          Clear All
+                          Reset Filters
                         </button>
                         
                         <div className="pt-4 border-t border-white/5">
@@ -454,44 +825,191 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
             <div className="flex-1 w-full space-y-8">
               {view === 'detail' && (
-                <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
-                  <div className="max-h-[800px] overflow-auto custom-scrollbar">
-                    <table className="w-full text-left">
-                      <thead className="sticky top-0 bg-slate-900/90 backdrop-blur-xl z-10">
-                        <tr className="text-slate-500 font-black uppercase text-[11px] tracking-[0.25em] border-b border-white/5 whitespace-nowrap">
-                          <th className="p-6">Project</th>
-                          <th className="p-6">Task Name</th>
-                          <th className="p-6">User</th>
-                          <th className="p-6">Day</th>
-                          <th className="p-6">Start</th>
-                          <th className="p-6">End</th>
-                          <th className="p-6">Done</th>
-                          <th className="p-6">Checked</th>
-                          <th className="p-6 text-emerald-400">Time 1</th>
-                          <th className="p-6 text-indigo-400">Time 2</th>
-                          <th className="p-6 text-violet-400">Time 3</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.03]">
-                        {filteredData.slice(0, 300).map((r, i) => (
-                          <tr key={i} className="hover:bg-white/[0.04] transition-all group border-l-2 border-transparent hover:border-indigo-500">
-                            <td className="p-6">
-                              <span className="text-indigo-400 font-bold text-base tracking-tight group-hover:text-indigo-300">{r.project}</span>
-                            </td>
-                            <td className="p-6 font-semibold text-slate-200 text-sm">{r.taskName}</td>
-                            <td className="p-6 text-slate-400 text-xs font-mono">{r.createdBy?.split('@')[0]}</td>
-                            <td className="p-6 text-slate-300 font-bold text-sm whitespace-nowrap">{r.day}</td>
-                            <td className="p-6 text-slate-400 text-sm">{formatTime(r.dateStart)}</td>
-                            <td className="p-6 text-slate-400 text-sm">{formatTime(r.dateEnd)}</td>
-                            <td className="p-6 text-slate-400 text-sm">{formatTime(r.dateComplete)}</td>
-                            <td className="p-6 text-slate-400 text-sm font-bold text-white">{formatTime(r.dateChecked)}</td>
-                            <td className="p-6 text-emerald-400 font-black text-sm">{r.time1Str}</td>
-                            <td className="p-6 text-indigo-400 font-black text-sm">{r.time2Str}</td>
-                            <td className="p-6 text-violet-400 font-black text-sm">{r.time3Str}</td>
-                          </tr>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-2 p-1 bg-slate-900/50 rounded-xl border border-white/5">
+                        {['time1', 'time2', 'time3'].map(m => (
+                          <button 
+                            key={m}
+                            disabled={m === 'time3' && (view === 'userTasks' || view === 'userPivot')}
+                            onClick={() => setSelectedMetric(m)}
+                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                              selectedMetric === m ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 
+                              (m === 'time3' && (view === 'userTasks' || view === 'userPivot')) ? 'opacity-20 cursor-not-allowed text-slate-700' : 'text-slate-500 hover:text-slate-300'
+                            }`}
+                          >
+                            {m}
+                          </button>
                         ))}
-                      </tbody>
-                    </table>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{filteredData.length} entries</span>
+                    </div>
+                  </div>
+                  <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 border-b border-white/10">
+                          <tr className="text-slate-400 font-bold uppercase text-[12px] tracking-[0.2em] whitespace-nowrap">
+                            <th className="p-5">
+                              <div className="flex flex-col gap-2">
+                                <span>Project</span>
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  value={columnFilters.project}
+                                  onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
+                                >
+                                  <option value="">All Projects</option>
+                                  {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                              </div>
+                            </th>
+                            <th className="p-5 min-w-[200px]">
+                              <div className="flex flex-col gap-2">
+                                <span>Task Name</span>
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
+                                  value={columnFilters.taskName}
+                                  onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
+                                >
+                                  <option value="">All Tasks</option>
+                                  {columnOptions.tasks.map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                              </div>
+                            </th>
+                            <th className="p-5">
+                              <div className="flex flex-col gap-2">
+                                <span>User</span>
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  value={columnFilters.user}
+                                  onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
+                                >
+                                  <option value="">All Users</option>
+                                  {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
+                                </select>
+                              </div>
+                            </th>
+                            <th className="p-5">Start</th>
+                            <th className="p-5">End</th>
+                            <th className="p-5">Done</th>
+                            <th className="p-5 text-center bg-emerald-500/5">T1</th>
+                            <th className="p-5 text-center bg-indigo-500/5">T2</th>
+                            <th className="p-5 text-center bg-violet-500/5">T3</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.03]">
+                          {filteredData.map((r, i) => (
+                            <tr key={i} className="hover:bg-white/[0.04] transition-all group border-l-2 border-transparent hover:border-indigo-500">
+                              <td className="p-5">
+                                <span className="text-indigo-400 font-bold text-sm tracking-tight">{r.project}</span>
+                              </td>
+                              <td className="p-5">
+                                <div className="font-medium text-slate-200 line-clamp-2" title={r.taskName}>{r.taskName}</div>
+                              </td>
+                              <td className="p-5 text-slate-500 text-xs font-mono">{r.createdBy?.split('@')[0]}</td>
+                              <td className="p-5 text-slate-400 text-xs">{formatTime(r.dateStart)}</td>
+                              <td className="p-5 text-slate-400 text-xs">{formatTime(r.dateEnd)}</td>
+                              <td className="p-5 text-slate-400 text-xs">{formatTime(r.dateComplete)}</td>
+                              <td className={`p-5 text-center font-bold text-emerald-400 ${selectedMetric === 'time1' ? 'bg-emerald-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time1Str}</td>
+                              <td className={`p-5 text-center font-bold text-indigo-400 ${selectedMetric === 'time2' ? 'bg-indigo-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time2Str}</td>
+                              <td className={`p-5 text-center font-bold text-violet-400 ${selectedMetric === 'time3' ? 'bg-violet-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time3Str}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {view === 'userTasks' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-2 p-1 bg-slate-900/50 rounded-xl border border-white/5">
+                        {['time1', 'time2'].map(m => (
+                          <button 
+                            key={m}
+                            onClick={() => setSelectedMetric(m)}
+                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedMetric === m ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                          >
+                            {m}
+                          </button>
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{filteredUserData.length} entries</span>
+                    </div>
+                  </div>
+                  <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 border-b border-white/10">
+                          <tr className="text-slate-400 font-bold uppercase text-[12px] tracking-[0.2em] whitespace-nowrap">
+                            <th className="p-5">
+                              <div className="flex flex-col gap-2">
+                                <span>User</span>
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  value={columnFilters.user}
+                                  onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
+                                >
+                                  <option value="">All Users</option>
+                                  {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
+                                </select>
+                              </div>
+                            </th>
+                            <th className="p-5">
+                              <div className="flex flex-col gap-2">
+                                <span>Project</span>
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  value={columnFilters.project}
+                                  onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
+                                >
+                                  <option value="">All Projects</option>
+                                  {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                              </div>
+                            </th>
+                            <th className="p-5 min-w-[200px]">
+                              <div className="flex flex-col gap-2">
+                                <span>Task Name</span>
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
+                                  value={columnFilters.taskName}
+                                  onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
+                                >
+                                  <option value="">All Tasks</option>
+                                  {columnOptions.tasks.map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                              </div>
+                            </th>
+                            <th className="p-5">Created At</th>
+                            <th className="p-5">Started</th>
+                            <th className="p-5">Checked</th>
+                            <th className="p-5 text-center bg-emerald-500/5">T1</th>
+                            <th className="p-5 text-center bg-indigo-500/5">T2</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.03]">
+                          {filteredUserData.map((r, i) => (
+                            <tr key={i} className="hover:bg-white/[0.04] transition-all group border-l-2 border-transparent hover:border-emerald-500">
+                              <td className="p-5 font-bold text-emerald-400 truncate max-w-[120px]">{r.userName}</td>
+                              <td className="p-5 font-bold text-indigo-400 truncate max-w-[120px]">{r.project}</td>
+                              <td className="p-5">
+                                <div className="font-medium text-slate-200 line-clamp-2" title={r.taskName}>{r.taskName}</div>
+                              </td>
+                              <td className="p-5 text-slate-500 text-[11px] font-mono whitespace-nowrap">{r.createdAtStr}</td>
+                              <td className="p-5 text-slate-400 text-[11px] font-mono whitespace-nowrap">{r.dateStartedStr}</td>
+                              <td className="p-5 text-white font-bold text-[11px] font-mono whitespace-nowrap">{r.dateCheckedStr}</td>
+                              <td className={`p-5 text-center font-bold text-emerald-400 ${selectedMetric === 'time1' ? 'bg-emerald-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time1Str}</td>
+                              <td className={`p-5 text-center font-bold text-indigo-400 ${selectedMetric === 'time2' ? 'bg-indigo-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time2Str}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
@@ -499,33 +1017,60 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
               {view === 'pivot' && (
                 <div className="space-y-4">
                   <div className="flex gap-2 p-1 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/5 w-fit">
-                    <button 
-                      onClick={() => setPivotMetric('time1')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time1' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
-                    >
-                      TIME 1
-                    </button>
-                    <button 
-                      onClick={() => setPivotMetric('time2')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time2' ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
-                    >
-                      TIME 2
-                    </button>
-                    <button 
-                      onClick={() => setPivotMetric('time3')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${pivotMetric === 'time3' ? 'bg-violet-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
-                    >
-                      TIME 3
-                    </button>
+                    {['time1', 'time2', 'time3'].map(m => (
+                      <button 
+                        key={m}
+                        onClick={() => setSelectedMetric(m)}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedMetric === m ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                      >
+                        {m.toUpperCase()}
+                      </button>
+                    ))}
                   </div>
                   <div className="glass-panel overflow-auto max-h-[700px] border-white/5 shadow-2xl custom-scrollbar">
                     <table className="w-full text-left text-sm border-collapse">
                       <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-2xl z-10 shadow-lg">
                         <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] border-b border-white/10">
-                          <th className="p-6 min-w-[150px]">Project</th>
-                          <th className="p-6 min-w-[200px]">Task</th>
-                          <th className="p-6">Create By</th>
-                          {['T2','T3','T4','T5','T6'].map(d => <th key={d} className="p-6 text-center">{d}</th>)}
+                          <th className="p-6 min-w-[150px]">
+                            <div className="flex flex-col gap-2">
+                              <span>Project</span>
+                              <select 
+                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                value={columnFilters.project}
+                                onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
+                              >
+                                <option value="">All Projects</option>
+                                {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
+                              </select>
+                            </div>
+                          </th>
+                          <th className="p-6 min-w-[200px]">
+                            <div className="flex flex-col gap-2">
+                              <span>Task</span>
+                              <select 
+                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
+                                value={columnFilters.taskName}
+                                onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
+                              >
+                                <option value="">All Tasks</option>
+                                {columnOptions.tasks.map(t => <option key={t} value={t}>{t}</option>)}
+                              </select>
+                            </div>
+                          </th>
+                          <th className="p-6">
+                            <div className="flex flex-col gap-2">
+                              <span>Create By</span>
+                              <select 
+                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                value={columnFilters.user}
+                                onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
+                              >
+                                <option value="">All Users</option>
+                                {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
+                              </select>
+                            </div>
+                          </th>
+                          {['Mo','Tu','We','Th','Fr'].map(d => <th key={d} className="p-6 text-center">{d}</th>)}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.05]">
@@ -534,16 +1079,111 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                             <td className="p-6 font-bold text-indigo-400">{r.project}</td>
                             <td className="p-6 font-medium text-slate-200">{r.taskName}</td>
                             <td className="p-6 text-[11px] text-slate-500 font-mono group-hover:text-slate-400">{r.createdBy}</td>
-                            {['T2','T3','T4','T5','T6'].map(d => (
+                            {['Mo','Tu','We','Th','Fr'].map(d => (
                               <td key={d} className="p-6 text-center">
                                 <div className="flex flex-col gap-1.5 items-center">
                                   {(r.days[d] || []).map((t, idx) => (
                                     <span key={idx} className={`${
-                                      pivotMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                                      pivotMetric === 'time2' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                                      selectedMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                                      selectedMetric === 'time2' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
                                       'bg-violet-500/10 text-violet-400 border-violet-500/20'
                                     } px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
-                                      {pivotMetric === 'time1' ? t.time1Str : pivotMetric === 'time2' ? t.time2Str : t.time3Str}
+                                      {selectedMetric === 'time1' ? t.time1Str : selectedMetric === 'time2' ? t.time2Str : t.time3Str}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {view === 'userPivot' && (
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex gap-2 p-1 bg-slate-900/50 rounded-xl border border-white/5">
+                      {['time1', 'time2'].map(m => (
+                        <button 
+                          key={m}
+                          onClick={() => setSelectedMetric(m)}
+                          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedMetric === m ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                          {m.toUpperCase()}
+                        </button>
+                      ))}
+                      <div className="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-800 bg-slate-900/30 opacity-20 cursor-not-allowed select-none">
+                        TIME3 N/A
+                      </div>
+                    </div>
+                  </div>
+                  <div className="glass-panel overflow-auto max-h-[700px] border-white/5 shadow-2xl custom-scrollbar">
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-2xl z-10 shadow-lg">
+                        <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] border-b border-white/10">
+                          <th className="p-6 min-w-[150px]">
+                            <div className="flex flex-col gap-2">
+                              <span>User</span>
+                              <select 
+                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                value={columnFilters.user}
+                                onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
+                              >
+                                <option value="">All Users</option>
+                                {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
+                              </select>
+                            </div>
+                          </th>
+                          <th className="p-6 min-w-[150px]">
+                            <div className="flex flex-col gap-2">
+                              <span>Project</span>
+                              <select 
+                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                value={columnFilters.project}
+                                onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
+                              >
+                                <option value="">All Projects</option>
+                                {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
+                              </select>
+                            </div>
+                          </th>
+                          <th className="p-6 min-w-[200px]">
+                            <div className="flex flex-col gap-2">
+                              <span>Task</span>
+                              <select 
+                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
+                                value={columnFilters.taskName}
+                                onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
+                              >
+                                <option value="">All Tasks</option>
+                                {columnOptions.tasks.map(t => <option key={t} value={t}>{t}</option>)}
+                              </select>
+                            </div>
+                          </th>
+                          {['Mo','Tu','We','Th','Fr'].map(d => (
+                            <th key={d} className="p-6 text-center">{d}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/[0.05]">
+                        {userPivotData.map((r, i) => (
+                          <tr key={i} className="hover:bg-white/[0.04] transition-all group">
+                            <td className="p-6 font-bold text-emerald-400">{r.userName}</td>
+                            <td className="p-6 font-medium text-indigo-400">{r.project}</td>
+                            <td className="p-6 text-slate-200">{r.taskName}</td>
+                            {['Mo','Tu','We','Th','Fr'].map(d => (
+                              <td key={d} className="p-6 text-center">
+                                <div className="flex flex-col gap-1.5 items-center">
+                                  {(r.days[d] || []).map((t, idx) => (
+                                    <span key={idx} className={`${
+                                      selectedMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                                      selectedMetric === 'time2' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                                      'bg-violet-500/10 text-violet-400 border-violet-500/20'
+                                    } px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
+                                      {selectedMetric === 'time1' ? t.time1Str : selectedMetric === 'time2' ? t.time2Str : t.time3Str}
                                     </span>
                                   ))}
                                 </div>
@@ -559,6 +1199,85 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
               {view === 'analytics' && (
                 <div className="space-y-8">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="flex gap-1 p-1 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/5 shadow-2xl">
+                      <button 
+                        onClick={() => setAnalyticsMode('leader')}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${analyticsMode === 'leader' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                      >
+                        <FileText size={14} /> Leader Mode
+                      </button>
+                      <button 
+                        onClick={() => setAnalyticsMode('user')}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${analyticsMode === 'user' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                      >
+                        <Users size={14} /> User Mode
+                      </button>
+                    </div>
+
+                    <div className="flex gap-1 p-1 bg-slate-900/30 rounded-xl border border-white/5">
+                      {['week', 'month', 'year'].map(g => (
+                        <button 
+                          key={g}
+                          onClick={() => setAnalyticsGranularity(g)}
+                          className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${analyticsGranularity === g ? 'bg-slate-700 text-white shadow-inner' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                          By {g}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5 lg:col-span-2">
+                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
+                        <span className="w-4 h-4 bg-violet-500 rounded flex items-center justify-center text-[10px] text-white">3</span>
+                        {analyticsGranularity.toUpperCase()}LY PERFORMANCE TREND
+                      </h3>
+                      <div className="w-full h-[300px]">
+                        <Line 
+                          data={periodicChartData}
+                          options={{
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                              y: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } },
+                              x: { grid: { display: false } }
+                            }
+                          }}
+                        />
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  <div className="glass-panel p-6 border-white/5 bg-slate-900/40">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{analyticsGranularity.toUpperCase()}LY AGGREGATE TABLE</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="text-slate-500 font-bold border-b border-white/5">
+                            <th className="py-3 px-4">Period</th>
+                            <th className="py-3 px-4">Total Logs</th>
+                            <th className="py-3 px-4">Total Time 1</th>
+                            <th className="py-3 px-4">Total Time 2</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {periodicStats.map(s => (
+                            <tr key={s.name} className="hover:bg-white/5 transition-colors">
+                              <td className="py-3 px-4 font-bold text-indigo-400">{s.name}</td>
+                              <td className="py-3 px-4 text-slate-300">{s.logs}</td>
+                              <td className="py-3 px-4 text-emerald-400">{formatDuration(s.t1)}</td>
+                              <td className="py-3 px-4 text-indigo-400">{formatDuration(s.t2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 flex flex-col items-center bg-slate-900/60 border-white/5">
                       <h3 className="font-bold text-slate-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
@@ -619,7 +1338,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               <th className="pb-4 text-center">Tasks</th>
                               <th className="pb-4 text-center text-emerald-400">Time 1</th>
                               <th className="pb-4 text-center text-indigo-400">Time 2</th>
-                              <th className="pb-4 text-center text-violet-400">Time 3</th>
+                              {analyticsMode === 'leader' && <th className="pb-4 text-center text-violet-400">Time 3</th>}
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-white/[0.03]">
@@ -629,7 +1348,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 <td className="py-4 text-center text-indigo-400 font-black">{s.uniqueTasks}</td>
                                 <td className="py-4 text-center text-emerald-400 font-bold">{s.totalTime1}</td>
                                 <td className="py-4 text-center text-indigo-400 font-bold">{s.totalTime2}</td>
-                                <td className="py-4 text-center text-violet-400 font-bold">{s.totalTime3}</td>
+                                {analyticsMode === 'leader' && <td className="py-4 text-center text-violet-400 font-bold">{s.totalTime3}</td>}
                               </tr>
                             ))}
                           </tbody>
@@ -651,7 +1370,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               <th className="pb-4 text-center">Projects</th>
                               <th className="pb-4 text-center text-emerald-400">Time 1</th>
                               <th className="pb-4 text-center text-indigo-400">Time 2</th>
-                              <th className="pb-4 text-center text-violet-400">Time 3</th>
+                              {analyticsMode === 'leader' && <th className="pb-4 text-center text-violet-400">Time 3</th>}
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-white/[0.03]">
@@ -661,7 +1380,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 <td className="py-4 text-center text-emerald-400 font-black">{s.uniqueProjects}</td>
                                 <td className="py-4 text-center text-emerald-400 font-bold">{s.totalTime1}</td>
                                 <td className="py-4 text-center text-indigo-400 font-bold">{s.totalTime2}</td>
-                                <td className="py-4 text-center text-violet-400 font-bold">{s.totalTime3}</td>
+                                {analyticsMode === 'leader' && <td className="py-4 text-center text-violet-400 font-bold">{s.totalTime3}</td>}
                               </tr>
                             ))}
                           </tbody>
@@ -673,6 +1392,63 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
               )}
             </div>
           </div>
+          {/* Time Calculation Reference */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-12 glass-panel p-8 bg-slate-900/40 border-white/5">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+              <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Time Calculation Methodology</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="space-y-6">
+                <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <FileText size={14} /> Leader View Formulas
+                </h4>
+                <div className="space-y-4">
+                  {[
+                    { label: 'TIME 1', formula: 'Date End - Date Start', desc: 'Baseline vs Planned Timeline' },
+                    { label: 'TIME 2', formula: 'Date Complete - Date Start', desc: 'Actual Execution vs Planned Start' },
+                    { label: 'TIME 3', formula: 'Date Checked - Date Start', desc: 'Final Approval vs Planned Start' }
+                  ].map(f => (
+                    <div key={f.label} className="bg-slate-950/30 p-4 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-black text-white">{f.label}</span>
+                        <code className="text-[10px] text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">{f.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <h4 className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Users size={14} /> User View Formulas
+                </h4>
+                <div className="space-y-4">
+                  {[
+                    { label: 'TIME 1', formula: 'Date Checked - Date Started', desc: 'Actual Working Duration' },
+                    { label: 'TIME 2', formula: 'Date Checked - Created At', desc: 'Total Task Lifecycle (Creation to Approval)' }
+                  ].map(f => (
+                    <div key={f.label} className="bg-slate-950/30 p-4 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-black text-white">{f.label}</span>
+                        <code className="text-[10px] text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">{f.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 pt-6 border-t border-white/5 flex items-center gap-3">
+              <div className="p-2 bg-rose-500/10 rounded-lg text-rose-400">
+                <Database size={14} />
+              </div>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
+                All calculations automatically deduct <span className="text-rose-400">1 hour lunch break</span> (12:30 - 13:30) if applicable.
+              </p>
+            </div>
+          </motion.div>
         </motion.div>
       )}
     </div>
