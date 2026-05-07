@@ -15,7 +15,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  X
+  X,
+  Battery,
+  CalendarHeart
 } from 'lucide-react'
 import NavItem from './NavItem'
 
@@ -35,6 +37,7 @@ const Sidebar = ({
         { id: 'projects', label: 'Projects', icon: FolderKanban },
         { id: 'report', label: 'Weekly Planner', icon: CalendarClock },
         { id: 'processor', label: 'Data Analyst', icon: BarChart3 },
+        { id: 'leave', label: 'Annual Leave', icon: Battery },
       ]
     },
     {

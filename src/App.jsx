@@ -10,6 +10,7 @@ import CelestialBackground from './CelestialBackground'
 import Preloader from './Preloader'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
+import AnnualLeave from './components/AnnualLeave'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
@@ -372,6 +373,8 @@ function App() {
                       />
                     ) : activeTab === 'processor' ? (
                       <CSVProcessor />
+                    ) : activeTab === 'leave' ? (
+                      <AnnualLeave />
                     ) : (
                       <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-6">
                         <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
