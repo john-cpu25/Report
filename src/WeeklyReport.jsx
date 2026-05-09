@@ -258,7 +258,7 @@ const WeeklyReport = ({
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Entry Form</h2>
+                <h2 className="text-lg font-black text-[var(--text-contrast)] tracking-tight uppercase">Entry Form</h2>
               </div>
               <button 
                 type="button"
@@ -307,13 +307,13 @@ const WeeklyReport = ({
               <div className="space-y-2">
                 <label>Project Name</label>
                 <select 
-                  className="input bg-slate-950/40 border-white/10 text-xs font-bold"
+                  className="input bg-[var(--bg-surface)] border-[var(--border)] text-xs font-bold text-[var(--text-main)]"
                   value={formData.project}
                   onChange={e => setFormData({...formData, project: e.target.value})}
                   required
                 >
-                  <option value="" disabled>Select Project...</option>
-                  {allProjects.map(p => <option key={p} value={p}>{p}</option>)}
+                  <option value="" disabled className="bg-[var(--bg-dark)]">Select Project...</option>
+                  {allProjects.map(p => <option key={p} value={p} className="bg-[var(--bg-dark)]">{p}</option>)}
                 </select>
               </div>
               <div className="space-y-2">
@@ -331,7 +331,7 @@ const WeeklyReport = ({
                 </div>
                 {formData.showLevel && (
                   <input 
-                    type="text" className="input bg-slate-950/40 border-white/10" placeholder="e.g. 1, 12, P1..."
+                    type="text" className="input bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-main)]" placeholder="e.g. 1, 12, P1..."
                     value={formData.level}
                     onChange={e => setFormData({...formData, level: e.target.value})}
                     required={formData.showLevel}
@@ -577,11 +577,11 @@ const WeeklyReport = ({
             )}
           </div>
 
-          <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
+          <div className="glass-panel overflow-hidden border-[var(--border)] shadow-2xl bg-[var(--bg-card)]">
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-white/[0.03] text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5">
+                  <tr className="bg-[var(--bg-header)] text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] border-b border-[var(--border)]">
                     <th className="px-4 py-4 w-12">
                       <input 
                         type="checkbox" 
@@ -735,17 +735,17 @@ const WeeklyReport = ({
                       </div>
                     </th>
                     {DAYS_OF_WEEK.map((d, i) => (
-                      <th key={d} className="px-4 py-4 text-center border-l border-white/5 bg-white/[0.01]">
+                      <th key={d} className="px-4 py-4 text-center border-l border-[var(--border)] bg-white/[0.01]">
                         <div className="flex flex-col gap-1">
-                          <span className="text-slate-300 font-black text-[10px] uppercase tracking-wider">{d === 'Wednesday' ? 'We' : d.substring(0, 2)}</span>
-                          <span className="text-[9px] font-bold text-slate-500 tracking-tight opacity-50">{weekDates[i]}</span>
+                          <span className="text-[var(--text-main)] font-black text-[10px] uppercase tracking-wider">{d === 'Wednesday' ? 'We' : d.substring(0, 2)}</span>
+                          <span className="text-[9px] font-bold text-[var(--text-muted)] tracking-tight opacity-50">{weekDates[i]}</span>
                         </div>
                       </th>
                     ))}
                     <th className="px-4 py-4 text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+                <tbody className="divide-y divide-[var(--border)]">
                   <AnimatePresence>
                     {formData.showProjectGroups ? (
                       Object.entries(groupedData).map(([projectName, tasks]) => {
@@ -754,7 +754,7 @@ const WeeklyReport = ({
                           <React.Fragment key={projectName}>
                             {/* Project Header Row */}
                             <tr 
-                              className={`sticky top-0 z-20 bg-slate-900/90 backdrop-blur-md border-y-2 border-indigo-500/20 cursor-pointer group/header hover:bg-indigo-500/5 transition-all ${focusedProject === projectName ? 'ring-1 ring-indigo-500 ring-inset' : ''}`}
+                              className={`sticky top-0 z-20 bg-[var(--table-sticky)] backdrop-blur-md border-y-2 border-indigo-500/20 cursor-pointer group/header hover:bg-indigo-500/5 transition-all ${focusedProject === projectName ? 'ring-1 ring-indigo-500 ring-inset' : ''}`}
                               onClick={() => toggleCollapse(projectName)}
                             >
                               <td colSpan={9} className="p-0">
@@ -762,19 +762,19 @@ const WeeklyReport = ({
                                   <div className="flex items-center gap-4">
                                     <motion.div 
                                       animate={{ rotate: isCollapsed ? 0 : 90 }}
-                                      className="text-indigo-400"
+                                      className="text-indigo-500"
                                     >
                                       <ArrowDown size={14} strokeWidth={3} />
                                     </motion.div>
-                                    <div className="w-2 h-6 bg-indigo-500 rounded-full shadow-[0_0_15px_#6366f1]"></div>
+                                    <div className="w-2 h-6 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.4)]"></div>
                                     <div>
                                       <div className="flex items-center gap-3">
-                                        <span className="text-sm font-black text-white uppercase tracking-[0.3em] leading-none">{projectName}</span>
-                                        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-[10px] font-black rounded-md uppercase tracking-widest border border-indigo-500/30">
+                                        <span className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-[0.3em] leading-none">{projectName}</span>
+                                        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-500 text-[10px] font-black rounded-md uppercase tracking-widest border border-indigo-500/30">
                                           {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
                                         </span>
                                       </div>
-                                      <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-1 opacity-60">Project Milestone Group</p>
+                                      <p className="text-[10px] font-bold text-indigo-500/60 uppercase tracking-widest mt-1 opacity-60">Project Milestone Group</p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-4">
@@ -805,12 +805,13 @@ const WeeklyReport = ({
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="hover:bg-white/[0.02] transition-all group border-b border-white/[0.04]"
+                                className="hover:bg-[var(--bg-header)] transition-all group border-b border-[var(--border)]"
+                                style={{ backgroundColor: index % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}
                               >
                                 <td className="px-3 py-3">
                                   <input 
                                     type="checkbox" 
-                                    className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
+                                    className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-surface)] text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
                                     checked={selectedRows.has(row.id)}
                                     onChange={(e) => {
                                       const next = new Set(selectedRows)
@@ -824,7 +825,7 @@ const WeeklyReport = ({
                                   <span className="text-indigo-400 text-[10px] font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase">{row.project}</span>
                                 </td>
                                 <td className="px-3 py-3">
-                                  <div className="text-[10px] font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
+                                  <div className="text-[10px] font-bold text-[var(--text-main)] tracking-tight leading-relaxed">{row.task}</div>
                                 </td>
                                 <td className="px-3 py-3">
                                   <MarkupCell 
@@ -865,7 +866,7 @@ const WeeklyReport = ({
                                       {isEditing ? (
                                         <input
                                           type="time"
-                                          className="bg-slate-950/80 border-indigo-500/30 text-[10px] font-bold p-1 w-20 mx-auto text-center"
+                                          className="bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-main)] text-[10px] font-bold p-1 w-20 mx-auto text-center rounded-lg"
                                           defaultValue={row.days[d] || ''}
                                           autoFocus
                                           onBlur={(e) => {
@@ -915,12 +916,13 @@ const WeeklyReport = ({
                           initial={{ opacity: 0, x: 10 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -10 }}
-                          className="hover:bg-white/[0.02] transition-all group"
+                          className="hover:bg-[var(--bg-header)] transition-all group border-b border-[var(--border)]"
+                          style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}
                         >
                           <td className="px-3 py-3">
                             <input 
                               type="checkbox" 
-                              className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
+                              className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-surface)] text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
                               checked={selectedRows.has(row.id)}
                               onChange={(e) => {
                                 const next = new Set(selectedRows)
@@ -934,7 +936,7 @@ const WeeklyReport = ({
                             <span className="text-indigo-400 text-[10px] font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase">{row.project}</span>
                           </td>
                           <td className="px-3 py-3">
-                            <div className="text-[10px] font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
+                            <div className="text-[10px] font-bold text-[var(--text-main)] tracking-tight leading-relaxed">{row.task}</div>
                           </td>
                           <td className="px-3 py-3">
                             <MarkupCell 
@@ -975,7 +977,7 @@ const WeeklyReport = ({
                                 {isEditing ? (
                                   <input
                                     type="time"
-                                    className="bg-slate-950/80 border-indigo-500/30 text-[10px] font-bold p-1 w-20 mx-auto text-center"
+                                    className="bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-main)] text-[10px] font-bold p-1 w-20 mx-auto text-center rounded-lg"
                                     defaultValue={row.days[d] || ''}
                                     autoFocus
                                     onBlur={(e) => {
@@ -992,10 +994,10 @@ const WeeklyReport = ({
                                   />
                                 ) : (
                                   <span 
-                                    className={`text-[10px] font-black tracking-tight cursor-pointer px-2 py-0.5 rounded-md transition-all hover:bg-white/10 ${
+                                    className={`text-[10px] font-black tracking-tight cursor-pointer px-2 py-0.5 rounded-md transition-all hover:bg-indigo-500/5 ${
                                       row.days[d] 
-                                        ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20' 
-                                        : 'text-slate-600'
+                                        ? 'text-indigo-500 bg-indigo-500/10 border border-indigo-500/20' 
+                                        : 'text-[var(--text-muted)]'
                                     }`}
                                     onClick={() => setEditingCell({ id: row.id, day: d })}
                                     title="Click to edit"
@@ -1201,9 +1203,9 @@ const WeeklyReport = ({
             {Array.from(new Set(filteredReportData.map(r => r.project))).map((proj, i) => {
               const count = filteredReportData.filter(r => r.project === proj).length
               return (
-                <div key={proj} className="px-6 py-4 bg-slate-900/50 rounded-2xl border border-white/5 flex flex-col gap-1 hover:border-indigo-500/30 transition-all group">
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{proj}</span>
-                  <span className="text-2xl font-black text-white group-hover:text-indigo-400 transition-colors">{count} <span className="text-xs text-slate-600 not-italic uppercase tracking-tight">tasks</span></span>
+                <div key={proj} className="px-6 py-4 bg-[var(--bg-surface)] rounded-2xl border border-[var(--glass-border)] flex flex-col gap-1 hover:border-indigo-500/30 transition-all group">
+                  <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{proj}</span>
+                  <span className="text-2xl font-black text-[var(--text-contrast)] group-hover:text-indigo-500 transition-colors">{count} <span className="text-xs text-[var(--text-muted)] not-italic uppercase tracking-tight">tasks</span></span>
                 </div>
               )
             })}
@@ -1249,7 +1251,7 @@ const WeeklyReport = ({
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative w-full max-w-3xl glass-panel p-8 border-white/10 shadow-2xl bg-slate-900 overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
+                className="relative w-full max-w-3xl glass-panel p-8 border-[var(--glass-border)] shadow-2xl bg-[var(--bg-dark)] overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
               >
                 <div className="absolute -right-12 -top-12 p-24 opacity-[0.03] pointer-events-none">
                   <Layout size={240} />
@@ -1310,8 +1312,8 @@ const WeeklyReport = ({
                             }}
                             className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all border ${
                               isSelected
-                                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
-                                : 'bg-slate-950/40 text-slate-600 border-white/5 hover:text-slate-400'
+                                ? 'bg-indigo-500/20 text-indigo-500 border-indigo-500/30'
+                                : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-[var(--text-main)]'
                             }`}
                           >
                             {p}
@@ -1385,8 +1387,8 @@ const WeeklyReport = ({
                             }}
                             className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
                               isSelected
-                                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/30'
-                                : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-white/15 hover:text-slate-300'
+                                ? 'bg-indigo-500/20 text-indigo-500 border-indigo-500/30 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/30'
+                                : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--glass-border)] hover:border-indigo-500/15 hover:text-[var(--text-main)]'
                             }`}
                           >
                             {wf}
@@ -1414,7 +1416,7 @@ const WeeklyReport = ({
                       </span>
                     </div>
                     <textarea 
-                      className="w-full h-40 bg-slate-950/60 border border-white/10 rounded-2xl p-6 text-sm font-medium text-slate-200 placeholder:text-slate-700 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all custom-scrollbar outline-none"
+                      className="w-full h-40 bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-2xl p-6 text-sm font-medium text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all custom-scrollbar outline-none"
                       placeholder={'E.g.\nREO BTM ALL\nREO TOP ALL\nSHEAR REO\nCORE WALL REO'}
                       value={batchTasksText}
                       onChange={(e) => setBatchTasksText(e.target.value)}
@@ -1508,7 +1510,7 @@ const WeeklyReport = ({
                       }}
                       className={`flex-[2] px-12 py-4 font-black text-xs tracking-[0.2em] rounded-2xl transition-all shadow-xl ${
                         !batchValidation.isValid
-                          ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                          ? 'bg-[var(--bg-surface)] text-[var(--text-muted)] cursor-not-allowed'
                           : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/20'
                       }`}
                     >

@@ -69,25 +69,25 @@ const MarkupCell = memo(({
 
   return (
     <div 
-      className={`group/markup cursor-pointer p-2 rounded-lg transition-all border border-transparent hover:border-white/10 hover:bg-white/5 min-h-[40px] flex flex-col justify-center items-center text-center ${hasData ? 'bg-indigo-500/5' : ''}`}
+      className={`group/markup cursor-pointer p-2 rounded-lg transition-all border border-transparent hover:border-[var(--border)] hover:bg-indigo-500/5 min-h-[40px] flex flex-col justify-center items-center text-center ${hasData ? 'bg-indigo-500/5' : ''}`}
       onClick={onStartEdit}
       title="Click to edit Markup Time"
     >
       {hasData ? (
         <>
           {markupDate && (
-            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-wider">
+            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-wider">
               {formatDate(markupDate)}
             </span>
           )}
           {markupTime && (
-            <span className="text-[11px] font-bold text-emerald-400">
+            <span className="text-[11px] font-bold text-emerald-500">
               {markupTime}
             </span>
           )}
         </>
       ) : (
-        <span className="text-slate-600 group-hover/markup:text-slate-400 text-xs font-black italic">—</span>
+        <span className="text-[var(--text-muted)] group-hover/markup:text-[var(--text-main)] text-xs font-black italic">—</span>
       )}
     </div>
   );

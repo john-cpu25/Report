@@ -111,7 +111,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
   return (
     <div className={`w-full mx-auto pb-20 transition-all duration-500 ${isExpanded ? 'px-0' : 'px-4 md:px-6'}`}>
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900/20 p-6 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-xl mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--glass-border)] shadow-2xl backdrop-blur-xl mb-8">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
             <ListTodo size={20} />
@@ -128,7 +128,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
         </div>
 
         {/* View Mode Switcher */}
-        <div className="flex bg-slate-950/60 p-1 rounded-2xl border border-white/5 shadow-inner">
+        <div className="flex bg-[var(--bg-surface)] p-1 rounded-2xl border border-[var(--glass-border)] shadow-inner">
           {['WEEK', 'MONTH', 'YEAR'].map(mode => (
             <button
               key={mode}
@@ -136,7 +136,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
               className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
                 viewMode === mode 
                   ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-                  : 'text-slate-500 hover:text-white'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
             >
               {mode}
@@ -153,8 +153,8 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
             <ChevronLeft size={18} />
           </button>
           
-          <div className="px-6 py-2.5 bg-slate-950/40 border border-white/5 rounded-xl text-center min-w-[200px]">
-            <span className="text-xs font-black text-white uppercase tracking-[0.2em]">
+          <div className="px-6 py-2.5 bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-xl text-center min-w-[200px]">
+            <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-[0.2em]">
               {viewMode === 'WEEK' && `Week of ${format(columns[0].date, 'MMM dd')}`}
               {viewMode === 'MONTH' && format(currentDate, 'MMMM yyyy')}
               {viewMode === 'YEAR' && format(currentDate, 'yyyy')}
@@ -179,8 +179,8 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
         <div className="overflow-x-auto custom-scrollbar">
           <div className="min-w-[1200px]">
             {/* Grid Header */}
-            <div className="grid grid-cols-[280px_1fr] border-b border-white/5 bg-slate-950/20">
-              <div className="p-6 flex items-center gap-3 border-r border-white/5">
+            <div className="grid grid-cols-[280px_1fr] border-b border-[var(--glass-border)] bg-[var(--bg-surface)]">
+              <div className="p-6 flex items-center gap-3 border-r border-[var(--glass-border)]">
                 <Layers size={14} className="text-slate-500" />
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Project / Workflows</span>
               </div>
@@ -188,7 +188,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                 {columns.map((col, i) => (
                   <div 
                     key={i} 
-                    className={`flex-1 min-w-[80px] p-4 flex flex-col items-center justify-center border-r border-white/5 last:border-0 ${col.isWeekend ? 'bg-slate-950/40' : ''}`}
+                    className={`flex-1 min-w-[80px] p-4 flex flex-col items-center justify-center border-r border-[var(--glass-border)] last:border-0 ${col.isWeekend ? 'bg-[var(--bg-surface)]' : ''}`}
                   >
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{col.label}</span>
                     <span className={`text-[11px] font-black mt-0.5 ${viewMode === 'WEEK' ? 'text-indigo-400' : 'text-white'}`}>{col.subLabel}</span>
@@ -201,7 +201,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
             <div className="divide-y divide-white/5">
               {projectGroups.length === 0 ? (
                 <div className="p-20 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-slate-900 mx-auto flex items-center justify-center border border-white/5">
+                  <div className="w-16 h-16 rounded-full bg-[var(--bg-surface)] mx-auto flex items-center justify-center border border-[var(--glass-border)]">
                     <Clock size={30} className="text-slate-700" />
                   </div>
                   <p className="text-xs font-black text-slate-500 uppercase tracking-[0.3em]">No Temporal Data Detected</p>
@@ -211,9 +211,9 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                   <div key={groupIdx} className="group/row">
                     <div className="grid grid-cols-[280px_1fr]">
                       {/* Left: Project Info */}
-                      <div className="p-6 bg-slate-950/10 border-r border-white/5 relative">
+                      <div className="p-6 bg-[var(--bg-surface)] border-r border-[var(--glass-border)] relative">
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover/row:opacity-100 transition-opacity" />
-                        <h3 className="text-sm font-black text-white uppercase tracking-tight truncate">{group.name}</h3>
+                        <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight truncate">{group.name}</h3>
                         <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">{group.tasks.length} Active Workflows</p>
                       </div>
 
@@ -267,8 +267,8 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                                   </span>
 
                                   {/* Tooltip on Hover */}
-                                  <div className="absolute top-[-40px] left-1/2 -translate-x-1/2 bg-slate-900 border border-white/10 p-2 rounded-lg opacity-0 group-hover/bar:opacity-100 transition-all whitespace-nowrap z-[100] shadow-2xl pointer-events-none">
-                                    <p className="text-[9px] font-black text-white uppercase">{task.task}</p>
+                                  <div className="absolute top-[-40px] left-1/2 -translate-x-1/2 bg-[var(--bg-dark)] border border-[var(--glass-border)] p-2 rounded-lg opacity-0 group-hover/bar:opacity-100 transition-all whitespace-nowrap z-[100] shadow-2xl pointer-events-none">
+                                    <p className="text-[9px] font-black text-[var(--text-main)] uppercase">{task.task}</p>
                                     <p className="text-[8px] font-bold text-slate-400 mt-0.5">{task.status} // {group.name}</p>
                                   </div>
                                 </motion.div>
@@ -290,22 +290,22 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
         </div>
       </div>
 
-      {/* Footer Intelligence */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[
-          { label: 'Temporal Density', value: '85%', icon: Zap, color: 'text-yellow-400' },
-          { label: 'Critical Path', value: '4 Assets', icon: Activity, color: 'text-rose-400' },
-          { label: 'Sync Status', value: 'Real-time', icon: Settings2, color: 'text-emerald-400' }
-        ].map((stat, i) => (
-          <div key={i} className="glass-panel p-6 border-white/5 flex items-center justify-between group hover:border-white/10 transition-all">
-            <div>
-              <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{stat.label}</p>
-              <p className={`text-xl font-black mt-1 ${stat.color}`}>{stat.value}</p>
+        {/* Footer Intelligence */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { label: 'Temporal Density', value: '85%', icon: Zap, color: 'text-yellow-400' },
+            { label: 'Critical Path', value: '4 Assets', icon: Activity, color: 'text-rose-400' },
+            { label: 'Sync Status', value: 'Real-time', icon: Settings2, color: 'text-emerald-400' }
+          ].map((stat, i) => (
+            <div key={i} className="glass-panel p-6 border-[var(--glass-border)] bg-[var(--bg-card)] flex items-center justify-between group hover:border-indigo-500/20 transition-all">
+              <div>
+                <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">{stat.label}</p>
+                <p className={`text-xl font-black mt-1 ${stat.color}`}>{stat.value}</p>
+              </div>
+              <stat.icon size={20} className="text-[var(--text-muted)] group-hover:text-indigo-500 transition-colors" />
             </div>
-            <stat.icon size={20} className="text-slate-700 group-hover:text-white transition-colors" />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
     </div>
   );
 };

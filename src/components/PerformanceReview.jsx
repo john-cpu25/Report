@@ -132,48 +132,50 @@ const PerformanceReview = () => {
 
   // --- Color class for time values ---
   const timeColor = (v) => {
-    if (v === null || v === undefined) return 'text-slate-600';
-    if (v < 1) return 'text-emerald-400';
-    if (v < 4) return 'text-sky-400';
-    if (v < 8) return 'text-amber-400';
-    return 'text-rose-400';
+    const isLight = document.body.classList.contains('theme-news');
+    if (v === null || v === undefined) return isLight ? 'text-slate-400' : 'text-slate-600';
+    
+    if (v < 1) return isLight ? 'text-emerald-600' : 'text-emerald-400';
+    if (v < 4) return isLight ? 'text-sky-600' : 'text-sky-400';
+    if (v < 8) return isLight ? 'text-amber-600' : 'text-amber-400';
+    return isLight ? 'text-rose-600' : 'text-rose-400';
   };
 
   return (
     <div className="max-w-full mx-auto space-y-8 pb-20 px-4 sm:px-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-slate-900/20 p-6 rounded-3xl border border-white/5 shadow-2xl">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 glass-panel p-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-8 bg-emerald-500 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.6)]" />
-            <h1 className="text-3xl font-black text-white uppercase tracking-tight">
-              Performance <span className="text-emerald-400">Review</span>
+            <div className="w-2 h-8 bg-emerald-500 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.4)]" />
+            <h1 className="text-3xl font-black text-[var(--text-contrast)] uppercase tracking-tight">
+              Performance <span className="text-emerald-500">Review</span>
             </h1>
           </div>
-          <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] ml-5">Unified Task Analytics — Raw Data View</p>
+          <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-5">Unified Task Analytics — Raw Data View</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-3 bg-slate-900/40 p-2 rounded-2xl border border-white/5 shadow-2xl">
+          <div className="flex items-center gap-3 bg-[var(--bg-surface)] p-2 rounded-2xl border border-[var(--border)] shadow-sm">
             <div className="flex items-center gap-2 px-3">
-              <Calendar size={14} className="text-slate-500" />
-              <input type="date" className="bg-transparent text-[11px] font-black text-white outline-none cursor-pointer uppercase"
+              <Calendar size={14} className="text-[var(--text-muted)]" />
+              <input type="date" className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer uppercase"
                 value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} />
             </div>
-            <div className="w-px h-4 bg-white/10" />
+            <div className="w-px h-4 bg-[var(--border)]" />
             <div className="flex items-center gap-2 px-3">
-              <input type="date" className="bg-transparent text-[11px] font-black text-white outline-none cursor-pointer uppercase"
+              <input type="date" className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer uppercase"
                 value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
             </div>
           </div>
-          <div className="bg-slate-900/40 p-2 rounded-2xl border border-white/5 flex items-center gap-3">
-            <Filter size={14} className="text-slate-500 ml-2" />
-            <select className="bg-transparent text-[11px] font-black text-emerald-400 outline-none cursor-pointer uppercase pr-4"
+          <div className="bg-[var(--bg-surface)] p-2 rounded-2xl border border-[var(--border)] flex items-center gap-3 shadow-sm">
+            <Filter size={14} className="text-[var(--text-muted)] ml-2" />
+            <select className="bg-transparent text-[11px] font-black text-emerald-500 outline-none cursor-pointer uppercase pr-4"
               value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}>
-              {teamOptions.map(t => <option key={t} value={t}>{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
+              {teamOptions.map(t => <option key={t} value={t} className="bg-[var(--bg-dark)]">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
             </select>
           </div>
-          <div className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-xs font-black text-slate-400 uppercase tracking-widest">
+          <div className="px-4 py-2 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] text-xs font-black text-[var(--text-muted)] uppercase tracking-widest shadow-sm">
             {tableData.length} Tasks
           </div>
         </div>
@@ -189,109 +191,109 @@ const PerformanceReview = () => {
           {/* Metric Cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {[
-              { label: 'Total Tasks', value: stats.total, icon: FileText, color: 'text-slate-400', bg: 'bg-slate-500/10' },
-              { label: 'Avg Plan [t1]', value: `${stats.avgT1.toFixed(1)}h`, icon: Clock, color: 'text-sky-400', bg: 'bg-sky-500/10' },
-              { label: 'Avg User [t2]', value: `${stats.avgT2.toFixed(1)}h`, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-              { label: 'Avg Check [t4]', value: `${stats.avgT4.toFixed(1)}h`, icon: CheckCircle2, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-              { label: 'Completed', value: stats.completed, icon: Zap, color: 'text-rose-400', bg: 'bg-rose-500/10' },
+              { label: 'Total Tasks', value: stats.total, icon: FileText, color: 'text-slate-500', bg: 'bg-slate-500/10' },
+              { label: 'Avg Plan [t1]', value: `${stats.avgT1.toFixed(1)}h`, icon: Clock, color: 'text-sky-500', bg: 'bg-sky-500/10' },
+              { label: 'Avg User [t2]', value: `${stats.avgT2.toFixed(1)}h`, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+              { label: 'Avg Check [t4]', value: `${stats.avgT4.toFixed(1)}h`, icon: CheckCircle2, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+              { label: 'Completed', value: stats.completed, icon: Zap, color: 'text-rose-500', bg: 'bg-rose-500/10' },
             ].map((stat, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                className="glass-panel p-4 border-white/5 bg-slate-900/40 relative overflow-hidden group">
+                className="glass-panel p-4 border-[var(--border)] bg-[var(--bg-card)] relative overflow-hidden group">
                 <div className={`absolute -right-4 -top-4 w-20 h-20 rounded-full ${stat.bg} opacity-20 group-hover:scale-125 transition-transform duration-500`} />
                 <div className="relative space-y-2">
                   <div className="flex items-center gap-2">
                     <div className={`p-1.5 rounded-lg ${stat.bg} ${stat.color}`}><stat.icon size={14} /></div>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stat.label}</p>
+                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{stat.label}</p>
                   </div>
-                  <p className="text-2xl font-black text-white tracking-tight">{stat.value}</p>
+                  <p className="text-2xl font-black text-[var(--text-contrast)] tracking-tight">{stat.value}</p>
                 </div>
               </motion.div>
             ))}
           </div>
 
           {/* Unified Raw Task Table */}
-          <div className="glass-panel overflow-hidden border-white/5 bg-slate-900/20">
+          <div className="glass-panel overflow-hidden border border-[var(--border)] bg-[var(--bg-surface)] shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse" style={{ minWidth: '1600px' }}>
                 <thead>
                   {/* Row 1: Group Headers */}
-                  <tr className="text-[10px] font-black uppercase tracking-widest border-b border-white/10">
-                    <th rowSpan={2} className="px-3 py-3 bg-amber-500/15 text-amber-300 border-r border-white/10 sticky left-0 z-10 min-w-[180px]">NAME</th>
-                    <th colSpan={4} className="px-3 py-3 bg-indigo-500/10 text-indigo-300 text-center border-r border-white/10">MANAGER / LEADER</th>
-                    <th colSpan={5} className="px-3 py-3 bg-sky-500/10 text-sky-300 text-center border-r border-white/10">USER</th>
-                    <th rowSpan={2} className="px-3 py-3 bg-slate-800/40 text-slate-400 text-center border-r border-white/10 min-w-[80px]">area</th>
-                    <th className="px-3 py-3 bg-emerald-500/10 text-emerald-300 text-center border-r border-white/10">PLAN TIME</th>
-                    <th colSpan={2} className="px-3 py-3 bg-emerald-500/15 text-emerald-300 text-center border-r border-white/10">USER COMPLETE</th>
-                    <th colSpan={2} className="px-3 py-3 bg-lime-500/10 text-lime-300 text-center">TASK COMPLETE</th>
+                  <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)]">
+                    <th rowSpan={2} className="px-3 py-3 text-amber-500 border-r border-b border-[var(--border)] sticky left-0 z-10 min-w-[180px] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)', borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>NAME</th>
+                    <th colSpan={4} className="px-3 py-3 bg-indigo-500/10 text-indigo-500 text-center border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>MANAGER / LEADER</th>
+                    <th colSpan={5} className="px-3 py-3 bg-sky-500/10 text-sky-500 text-center border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>USER</th>
+                    <th rowSpan={2} className="px-3 py-3 bg-[var(--bg-surface)] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] min-w-[80px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>area</th>
+                    <th className="px-3 py-3 bg-emerald-500/10 text-emerald-500 text-center border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>PLAN TIME</th>
+                    <th colSpan={2} className="px-3 py-3 bg-emerald-500/15 text-emerald-500 text-center border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>USER COMPLETE</th>
+                    <th colSpan={2} className="px-3 py-3 bg-lime-500/10 text-lime-500 text-center border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)' }}>TASK COMPLETE</th>
                   </tr>
                   {/* Row 2: Sub Headers */}
-                  <tr className="text-[9px] font-bold uppercase tracking-wider text-slate-500 border-b border-white/10 bg-white/[0.02]">
+                  <tr className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
                     {/* MANAGER/LEADER sub-cols */}
-                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/5 min-w-[100px]">create_by</th>
-                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/5 min-w-[95px]">created_at</th>
-                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/5 min-w-[95px]">date_start</th>
-                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/10 min-w-[95px]">date_end</th>
+                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[100px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>create_by</th>
+                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>created_at</th>
+                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_start</th>
+                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_end</th>
                     {/* USER sub-cols */}
-                    <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[100px]">user_id</th>
-                    <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[95px]">date_accepted</th>
-                    <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[95px]">date_started</th>
-                    <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[95px]">date_complete</th>
-                    <th className="px-3 py-2 bg-sky-500/5 border-r border-white/10 min-w-[95px]">date_checked</th>
+                    <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[100px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>user_id</th>
+                    <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_accepted</th>
+                    <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_started</th>
+                    <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_complete</th>
+                    <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_checked</th>
                     {/* PLAN TIME */}
-                    <th className="px-3 py-2 bg-emerald-500/5 border-r border-white/10 text-center min-w-[70px]">
-                      <span className="text-emerald-400">[t1]</span>
-                      <br /><span className="text-[8px] text-slate-600 normal-case">end − start</span>
+                    <th className="px-3 py-2 bg-emerald-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>
+                      <span className="text-emerald-500">[t1]</span>
+                      <br /><span className="text-[8px] text-[var(--text-muted)] normal-case">end − start</span>
                     </th>
                     {/* USER COMPLETE */}
-                    <th className="px-3 py-2 bg-emerald-500/8 border-r border-white/5 text-center min-w-[70px]">
-                      <span className="text-emerald-400">[t2]</span>
-                      <br /><span className="text-[8px] text-slate-600 normal-case">complete − accepted</span>
+                    <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[70px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>
+                      <span className="text-emerald-500">[t2]</span>
+                      <br /><span className="text-[8px] text-[var(--text-muted)] normal-case">complete − accepted</span>
                     </th>
-                    <th className="px-3 py-2 bg-emerald-500/8 border-r border-white/10 text-center min-w-[70px]">
-                      <span className="text-emerald-400">[t2]</span>
-                      <br /><span className="text-[8px] text-slate-600 normal-case">complete − started</span>
+                    <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[70px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>
+                      <span className="text-emerald-500">[t2]</span>
+                      <br /><span className="text-[8px] text-[var(--text-muted)] normal-case">complete − started</span>
                     </th>
                     {/* TASK COMPLETE */}
-                    <th className="px-3 py-2 bg-lime-500/5 border-r border-white/5 text-center min-w-[70px]">
-                      <span className="text-lime-400">[t4]</span>
-                      <br /><span className="text-[8px] text-slate-600 normal-case">checked − accepted</span>
+                    <th className="px-3 py-2 bg-lime-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>
+                      <span className="text-lime-500">[t4]</span>
+                      <br /><span className="text-[8px] text-[var(--text-muted)] normal-case">checked − accepted</span>
                     </th>
-                    <th className="px-3 py-2 bg-lime-500/5 text-center min-w-[70px]">
-                      <span className="text-lime-400">[t4]</span>
-                      <br /><span className="text-[8px] text-slate-600 normal-case">checked − started</span>
+                    <th className="px-3 py-2 bg-lime-500/5 border-b border-[var(--border)] text-center min-w-[70px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)' }}>
+                      <span className="text-lime-500">[t4]</span>
+                      <br /><span className="text-[8px] text-[var(--text-muted)] normal-case">checked − started</span>
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.03]">
+                <tbody className="divide-y divide-[var(--border)]">
                   {tableData.length === 0 ? (
-                    <tr><td colSpan={16} className="px-8 py-16 text-center text-slate-600 font-bold uppercase tracking-widest text-sm">No tasks found in selected range</td></tr>
+                    <tr><td colSpan={16} className="px-8 py-16 text-center text-[var(--text-muted)] font-bold uppercase tracking-widest text-sm">No tasks found in selected range</td></tr>
                   ) : tableData.map((t, i) => (
-                    <tr key={t.id || i} className="group hover:bg-white/[0.02] transition-all text-[11px]">
+                    <tr key={t.id || i} className="group hover:bg-[var(--bg-header)] transition-all text-[11px]" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
                       {/* NAME */}
-                      <td className="px-3 py-2.5 bg-slate-950/60 sticky left-0 z-10 border-r border-white/5">
-                        <span className="font-bold text-slate-200 group-hover:text-white transition-colors line-clamp-2">{t.task_name || '-'}</span>
+                      <td className="px-3 py-2.5 sticky left-0 z-10 border-r border-b border-[var(--border)] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)', borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>
+                        <span className="font-bold text-[var(--text-contrast)] group-hover:text-emerald-500 transition-colors line-clamp-2">{t.task_name || '-'}</span>
                       </td>
                       {/* MANAGER/LEADER */}
-                      <td className="px-3 py-2.5 text-indigo-300/70 font-semibold border-r border-white/[0.03] truncate max-w-[120px]">{t.creatorName}</td>
-                      <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDate(t.created_at)}</td>
-                      <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDate(t.date_start)}</td>
-                      <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/5">{fmtDate(t.date_end)}</td>
+                      <td className="px-3 py-2.5 text-indigo-500/80 font-semibold border-r border-b border-[var(--border)] truncate max-w-[120px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{t.creatorName}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.created_at)}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_start)}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_end)}</td>
                       {/* USER */}
-                      <td className="px-3 py-2.5 text-sky-300/70 font-semibold border-r border-white/[0.03] truncate max-w-[120px]">{t.userName}</td>
-                      <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDate(t.date_accepted)}</td>
-                      <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDate(t.date_started)}</td>
-                      <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDate(t.date_complete)}</td>
-                      <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/5">{fmtDate(t.date_checked)}</td>
+                      <td className="px-3 py-2.5 text-sky-500/80 font-semibold border-r border-b border-[var(--border)] truncate max-w-[120px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{t.userName}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_accepted)}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_started)}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_complete)}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-[var(--border)] border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_checked)}</td>
                       {/* area */}
-                      <td className="px-3 py-2.5 text-slate-500 text-center border-r border-white/5 font-semibold">{t.area || '-'}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] font-semibold" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{t.area || '-'}</td>
                       {/* PLAN TIME [t1] */}
-                      <td className={`px-3 py-2.5 text-center font-black border-r border-white/5 ${timeColor(t.t1)}`}>{fh(t.t1)}</td>
+                      <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t1)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fh(t.t1)}</td>
                       {/* USER COMPLETE [t2] */}
-                      <td className={`px-3 py-2.5 text-center font-black border-r border-white/[0.03] ${timeColor(t.t2a)}`}>{fh(t.t2a)}</td>
-                      <td className={`px-3 py-2.5 text-center font-black border-r border-white/5 ${timeColor(t.t2b)}`}>{fh(t.t2b)}</td>
+                      <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t2a)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fh(t.t2a)}</td>
+                      <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t2b)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fh(t.t2b)}</td>
                       {/* TASK COMPLETE [t4] */}
-                      <td className={`px-3 py-2.5 text-center font-black border-r border-white/[0.03] ${timeColor(t.t4a)}`}>{fh(t.t4a)}</td>
-                      <td className={`px-3 py-2.5 text-center font-black ${timeColor(t.t4b)}`}>{fh(t.t4b)}</td>
+                      <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t4a)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fh(t.t4a)}</td>
+                      <td className={`px-3 py-2.5 text-center font-black border-b border-[var(--border)] ${timeColor(t.t4b)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.15)' }}>{fh(t.t4b)}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -19,21 +19,21 @@ const EnergyBar = ({ used, total }) => {
     <div className="w-full space-y-6">
       <div className="flex justify-between items-end">
         <div className="space-y-1">
-          <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Energy Reserves</h3>
-          <p className="text-2xl font-black italic text-white flex items-baseline gap-2">
-            {percentage.toFixed(1)}<span className="text-xs not-italic text-slate-500">%</span>
+          <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Energy Reserves</h3>
+          <p className="text-2xl font-black italic text-[var(--text-contrast)] flex items-baseline gap-2">
+            {percentage.toFixed(1)}<span className="text-xs not-italic text-[var(--text-muted)]">%</span>
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Remaining</p>
-          <p className="text-lg font-bold text-indigo-400">{remainingDays.toFixed(1)} <span className="text-[10px] text-slate-600">DAYS</span></p>
+          <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Remaining</p>
+          <p className="text-lg font-bold text-indigo-500">{remainingDays.toFixed(1)} <span className="text-[10px] text-[var(--text-muted)]">DAYS</span></p>
         </div>
       </div>
 
       {/* Battery-style Segmented Bar */}
-      <div className="relative p-2 bg-slate-950 rounded-2xl border-4 border-slate-800 shadow-2xl flex items-center gap-1.5 h-16 group">
+      <div className="relative p-2 bg-[var(--bg-dark)] rounded-2xl border-4 border-[var(--border)] shadow-2xl flex items-center gap-1.5 h-16 group">
         {/* Battery Tip */}
-        <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-3 h-6 bg-slate-800 rounded-r-md" />
+        <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-3 h-6 bg-[var(--border)] rounded-r-md" />
 
         {/* Segments */}
         {[...Array(segments)].map((_, i) => {
@@ -44,7 +44,7 @@ const EnergyBar = ({ used, total }) => {
           return (
             <div 
               key={i} 
-              className="relative flex-1 h-full rounded-sm overflow-hidden bg-slate-900/50 border border-white/5"
+              className="relative flex-1 h-full rounded-sm overflow-hidden bg-[var(--bg-surface)] border border-[var(--border)]"
             >
               <AnimatePresence>
                 {isFilled && (
@@ -81,18 +81,18 @@ const EnergyBar = ({ used, total }) => {
       </div>
 
       <div className="flex gap-4">
-        <div className="flex-1 p-3 rounded-xl bg-slate-900/40 border border-white/5">
-          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Capacity</p>
+        <div className="flex-1 p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)]">
+          <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Total Capacity</p>
           <div className="flex items-center gap-2">
             <div className="flex gap-0.5">
               {[...Array(5)].map((_, i) => <div key={i} className="w-1 h-3 bg-indigo-500/40 rounded-full" />)}
             </div>
-            <p className="text-sm font-bold text-white">{total} Days</p>
+            <p className="text-sm font-bold text-[var(--text-main)]">{total} Days</p>
           </div>
         </div>
-        <div className="flex-1 p-3 rounded-xl bg-slate-900/40 border border-white/5">
-          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Consumption</p>
-          <p className="text-sm font-bold text-rose-400">-{used} Days</p>
+        <div className="flex-1 p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)]">
+          <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Consumption</p>
+          <p className="text-sm font-bold text-rose-500">-{used} Days</p>
         </div>
       </div>
     </div>

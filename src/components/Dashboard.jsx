@@ -153,12 +153,12 @@ const Dashboard = () => {
     scales: {
       y: { 
         beginAtZero: true,
-        grid: { color: 'rgba(255,255,255,0.05)' }, 
-        ticks: { color: '#64748b', font: { size: 9, weight: 'bold' } } 
+        grid: { color: 'var(--border)' }, 
+        ticks: { color: 'var(--text-muted)', font: { size: 9, weight: 'bold' } } 
       },
       x: { 
         grid: { display: false }, 
-        ticks: { color: '#64748b', font: { size: 9, weight: 'bold' } } 
+        ticks: { color: 'var(--text-muted)', font: { size: 9, weight: 'bold' } } 
       }
     }
   };
@@ -256,7 +256,7 @@ const Dashboard = () => {
                 <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Task Volume per Core Project</p>
               </div>
             </div>
-            <div className="p-3 bg-white/5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer transition-colors">
+            <div className="p-3 bg-[var(--bg-surface)] rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer transition-colors">
               <ArrowUpRight size={20} />
             </div>
           </div>
@@ -292,9 +292,9 @@ const Dashboard = () => {
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
                     idx === 0 ? 'bg-yellow-400/20 text-yellow-400' :
-                    idx === 1 ? 'bg-slate-300/20 text-slate-300' :
+                    idx === 1 ? 'bg-[var(--bg-header)] text-[var(--text-contrast)]' :
                     idx === 2 ? 'bg-orange-400/20 text-orange-400' :
-                    'bg-white/5 text-[var(--text-muted)]'
+                    'bg-[var(--bg-surface)] text-[var(--text-muted)]'
                   }`}>
                     {idx === 0 ? <Award size={18} /> : idx + 1}
                   </div>
@@ -313,7 +313,7 @@ const Dashboard = () => {
             )}
           </div>
 
-          <button className="mt-8 w-full py-4 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black text-[var(--text-main)] uppercase tracking-widest transition-all border border-[var(--glass-border)]">
+          <button className="mt-8 w-full py-4 bg-[var(--bg-surface)] hover:bg-indigo-500/10 rounded-2xl text-[10px] font-black text-[var(--text-main)] uppercase tracking-widest transition-all border border-[var(--glass-border)]">
             View Full Analysis
           </button>
         </div>
@@ -342,7 +342,7 @@ const Dashboard = () => {
                   Math.random() > 0.8 ? 'bg-indigo-500/60 shadow-[0_0_10px_rgba(99,102,241,0.3)]' :
                   Math.random() > 0.5 ? 'bg-indigo-500/30' :
                   Math.random() > 0.2 ? 'bg-indigo-500/10' :
-                  'bg-white/5'
+                  'bg-[var(--bg-surface)]'
                 }`}
               />
             ))}
@@ -366,7 +366,7 @@ const Dashboard = () => {
           <div className="space-y-4">
             {tasks.slice(0, 4).map((task, idx) => (
               <div key={task.id} className="flex gap-4 items-start pb-4 border-b border-[var(--glass-border)] last:border-0">
-                <div className="p-2 bg-white/5 rounded-lg text-[var(--text-muted)]">
+                <div className="p-2 bg-[var(--bg-surface)] rounded-lg text-[var(--text-muted)]">
                   <Clock size={14} />
                 </div>
                 <div>

@@ -218,7 +218,7 @@ const AnnualLeave = () => {
 
           <div className="h-10 w-px bg-[var(--glass-border)]" />
 
-          <div className="flex items-center gap-2 p-1 bg-slate-950/20 rounded-xl border border-[var(--glass-border)]">
+          <div className="flex items-center gap-2 p-1 bg-[var(--bg-surface)] rounded-xl border border-[var(--glass-border)]">
             <button 
               onClick={() => setViewMode('individual')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'individual' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
@@ -241,28 +241,28 @@ const AnnualLeave = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3 bg-slate-950/20 px-4 py-2.5 rounded-xl border border-[var(--glass-border)]">
+          <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2.5 rounded-xl border border-[var(--glass-border)]">
             <Users size={14} className="text-[var(--text-muted)]" />
             <select 
-              className="bg-transparent text-[11px] font-black text-indigo-400 outline-none cursor-pointer uppercase"
+              className="bg-transparent text-[11px] font-black text-indigo-500 outline-none cursor-pointer uppercase"
               value={selectedTeam}
               onChange={e => setSelectedTeam(e.target.value)}
             >
-              {teamOptions.map(t => <option key={t} value={t}>{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
+              {teamOptions.map(t => <option key={t} value={t} className="bg-[var(--bg-dark)]">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
             </select>
           </div>
 
           {viewMode === 'individual' && (
-            <div className="flex items-center gap-3 bg-slate-950/20 px-4 py-2.5 rounded-xl border border-[var(--glass-border)]">
+            <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2.5 rounded-xl border border-[var(--glass-border)]">
               <User size={14} className="text-[var(--text-muted)]" />
               <select 
                 className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer min-w-[150px]"
                 value={selectedUser}
                 onChange={e => setSelectedUser(e.target.value)}
               >
-                <option value="ADMIN">SYSTEM ADMIN</option>
+                <option value="ADMIN" className="bg-[var(--bg-dark)]">SYSTEM ADMIN</option>
                 {filteredUsersByTeam.map(u => (
-                  <option key={u.id} value={u.name || u.email}>{u.name || u.email}</option>
+                  <option key={u.id} value={u.name || u.email} className="bg-[var(--bg-dark)]">{u.name || u.email}</option>
                 ))}
               </select>
             </div>
@@ -310,11 +310,11 @@ const AnnualLeave = () => {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                      x: { stacked: true, grid: { display: false }, ticks: { color: '#64748b', font: { size: 9, weight: 'bold' } } },
-                      y: { stacked: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
+                      x: { stacked: true, grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 9, weight: 'bold' } } },
+                      y: { stacked: true, grid: { color: 'var(--border)' }, ticks: { color: 'var(--text-muted)' } }
                     },
                     plugins: {
-                      legend: { position: 'bottom', labels: { color: '#64748b', font: { size: 10, weight: 'bold' } } }
+                      legend: { position: 'bottom', labels: { color: 'var(--text-muted)', font: { size: 10, weight: 'bold' } } }
                     }
                   }}
                 />
@@ -394,21 +394,21 @@ const AnnualLeave = () => {
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
                 {summaryData.map(u => (
-                  <tr key={u.id} className="group hover:bg-white/[0.02] transition-all cursor-pointer" onClick={() => { setSelectedUser(u.name); setViewMode('individual'); }}>
+                  <tr key={u.id} className="group hover:bg-indigo-500/5 transition-all cursor-pointer" onClick={() => { setSelectedUser(u.name); setViewMode('individual'); }}>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400 font-black border border-[var(--glass-border)] group-hover:scale-110 transition-transform">
+                        <div className="w-10 h-10 rounded-full bg-[var(--bg-surface)] flex items-center justify-center text-indigo-500 font-black border border-[var(--glass-border)] group-hover:scale-110 transition-transform">
                           {u.name[0]}
                         </div>
-                        <div className="font-black text-[var(--text-main)] group-hover:text-white transition-colors">{u.name}</div>
+                        <div className="font-black text-[var(--text-main)] group-hover:text-indigo-500 transition-colors">{u.name}</div>
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <span className="px-3 py-1.5 rounded-lg bg-slate-950/60 border border-[var(--glass-border)] text-xs font-black text-[var(--text-muted)] uppercase tracking-widest">{u.team}</span>
+                      <span className="px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--glass-border)] text-xs font-black text-[var(--text-muted)] uppercase tracking-widest">{u.team}</span>
                     </td>
                     <td className="px-8 py-6 text-center text-xs font-bold text-[var(--text-muted)]">{u.seniority} Yrs</td>
                     <td className="px-8 py-6 text-center">
-                      <span className="text-sm font-black text-indigo-400">{u.allowance}</span>
+                      <span className="text-sm font-black text-indigo-500">{u.allowance}</span>
                     </td>
                     <td className="px-8 py-6 text-center">
                       <span className="text-sm font-black text-emerald-400">{u.used}</span>
@@ -417,9 +417,9 @@ const AnnualLeave = () => {
                       <span className={`text-sm font-black ${u.remaining < 3 ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{u.remaining}</span>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden ml-auto">
+                      <div className="w-24 h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden ml-auto">
                         <div 
-                          className="h-full bg-indigo-500 shadow-[0_0_8px_#6366f1]" 
+                          className="h-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]" 
                           style={{ width: `${Math.min(100, (u.used / u.allowance) * 100)}%` }}
                         />
                       </div>
@@ -493,7 +493,7 @@ const AnnualLeave = () => {
                   Dựa trên thâm niên <span className="text-indigo-300 font-bold">{seniority} năm</span>, 
                   bạn được hưởng quỹ nghỉ phép <span className="text-indigo-300 font-bold">{totalAllowance} ngày</span>/năm.
                 </p>
-                <div className="p-3 rounded-xl bg-slate-950/40 border border-[var(--glass-border)] flex items-start gap-3">
+                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--glass-border)] flex items-start gap-3">
                   <AlertCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
                   <p className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider leading-normal">
                     {totalAllowance === 15 ? 'Đã đạt mức tối đa 15 ngày phép/năm.' : 'Làm việc trên 1 năm sẽ được tăng lên 15 ngày.'}
@@ -522,7 +522,7 @@ const AnnualLeave = () => {
                     <div className="relative">
                       <input 
                         type="date" 
-                        className="input pl-10 h-12 bg-slate-950/20 text-[var(--text-main)] border-[var(--glass-border)]"
+                        className="input pl-10 h-12 bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--glass-border)]"
                         value={formData.date}
                         onChange={e => setFormData({ ...formData, date: e.target.value })}
                         required
@@ -545,7 +545,7 @@ const AnnualLeave = () => {
                           className={`h-12 rounded-xl text-sm font-black uppercase tracking-widest transition-all border ${
                             formData.amount === opt.val
                               ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
-                              : 'bg-slate-950/20 text-[var(--text-muted)] border-[var(--glass-border)] hover:border-white/10'
+                              : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--glass-border)] hover:border-indigo-500/10'
                           }`}
                         >
                           {opt.label}
@@ -558,7 +558,7 @@ const AnnualLeave = () => {
                     <label className="text-sm font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Reason / Note</label>
                     <input 
                       type="text" 
-                      className="input h-12 bg-slate-950/20 text-[var(--text-main)] border-[var(--glass-border)]" 
+                      className="input h-12 bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--glass-border)]" 
                       placeholder="Optional note..." 
                       value={formData.note}
                       onChange={e => setFormData({ ...formData, note: e.target.value })}
@@ -589,7 +589,7 @@ const AnnualLeave = () => {
                 <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
                   {currentYearEntries.length === 0 ? (
                     <div className="p-16 text-center space-y-4">
-                      <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-[var(--glass-border)] flex items-center justify-center mx-auto text-slate-800">
+                    <div className="w-20 h-20 rounded-3xl bg-[var(--bg-surface)] border border-[var(--glass-border)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
                         <Calendar size={40} />
                       </div>
                       <div>

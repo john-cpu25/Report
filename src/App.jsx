@@ -25,11 +25,18 @@ function App() {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('appTheme') || 'GALAXY'
   })
+  const [background, setBackground] = useState(() => {
+    return localStorage.getItem('appBackground') || (theme === 'GALAXY' ? 'GALAXY' : 'BAMBOO')
+  })
 
   useEffect(() => {
     localStorage.setItem('appTheme', theme)
     document.body.className = `theme-${theme.toLowerCase()}`
   }, [theme])
+
+  useEffect(() => {
+    localStorage.setItem('appBackground', background)
+  }, [background])
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebarCollapsed')
     return saved !== null ? JSON.parse(saved) : false
@@ -346,7 +353,11 @@ return (
         <Preloader key="preloader" onLoadingComplete={() => setIsLoading(false)} />
       ) : (
         <div className="flex min-h-screen relative">
-          {theme === 'GALAXY' ? <CelestialBackground /> : <BambooBackground />}
+          {background === 'GALAXY' && <CelestialBackground />}
+          {background === 'BAMBOO' && <BambooBackground />}
+          {background === 'MINIMAL' && (
+            <div className={`fixed inset-0 z-[-1] ${theme === 'GALAXY' ? 'bg-slate-950' : 'bg-slate-50'}`} />
+          )}
           
           <Sidebar 
             collapsed={sidebarCollapsed} 
@@ -420,7 +431,10 @@ return (
                     ) : activeTab === 'planning' ? (
                       <Planning reportData={reportData} weekDates={weekDates} />
                     ) : activeTab === 'settings' ? (
-                      <Settings theme={theme} setTheme={setTheme} />
+                      <Settings 
+                        theme={theme} setTheme={setTheme} 
+                        background={background} setBackground={setBackground} 
+                      />
                     ) : (
                       <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-6">
                         <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">

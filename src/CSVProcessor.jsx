@@ -210,6 +210,14 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
     return duration > 0 ? duration : 0;
   }
 
+  function formatYMD(d) {
+    if (!d) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   function formatDuration(ms) {
     if (!ms || ms <= 0) return '-';
     const totalMinutes = Math.floor(ms / 60000);
@@ -629,181 +637,132 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
             </button>
           </div>
         </div>
-      ) : data.length === 0 ? (
-        <div className="glass-panel p-20 text-center relative overflow-hidden group border-dashed border-2 border-white/10 hover:border-indigo-500/50 transition-all">
-          <div className="flex flex-col items-center gap-6">
-            <div className="p-6 bg-indigo-500/10 rounded-3xl text-indigo-400 group-hover:scale-110 transition-all duration-500 shadow-2xl shadow-indigo-500/20">
-              <Database size={48} strokeWidth={1.5} />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold tracking-tight text-white">No Data Available</h3>
-              <p className="text-slate-400 text-sm max-w-sm mx-auto">No tasks found in Supabase. Click reload to try again.</p>
-            </div>
-            <button onClick={fetchSupabaseData} className="btn btn-primary mt-4 flex items-center gap-2">
-              <RefreshCw size={16} /> Reload Data
-            </button>
-          </div>
-        </div>
       ) : (
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-6 bg-slate-900/30 p-5 rounded-3xl border border-white/5 shadow-xl">
-            <div className="flex gap-1.5 p-1.5 bg-slate-950/60 backdrop-blur-xl rounded-2xl border border-white/5 w-fit">
+        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
+          {/* Header Controls */}
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-6 glass-panel p-6">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-8 bg-indigo-500 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.4)]" />
+                <h1 className="text-3xl font-black text-[var(--text-contrast)] uppercase tracking-tight">
+                  Data <span className="text-indigo-500">Analyst</span>
+                </h1>
+              </div>
+              <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-5">Cross-Project Performance Intelligence</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 bg-[var(--bg-surface)] p-2 rounded-2xl border border-[var(--border)] shadow-sm">
               {[
-                { id: 'unified', icon: TableIcon, label: 'Unified View' },
-                { id: 'weeklyReport', icon: Calendar, label: 'Weekly Report' },
-                { id: 'analytics', icon: BarChart3, label: 'Analytics' }
+                { id: 'unified', icon: TableIcon, label: 'UNIFIED VIEW' },
+                { id: 'weeklyReport', icon: Calendar, label: 'WEEKLY REPORT' },
+                { id: 'analytics', icon: BarChart3, label: 'ANALYTICS' }
               ].map(t => (
                 <button
                   key={t.id}
                   onClick={() => setView(t.id)}
-                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
-                    view === t.id ? (t.id === 'userTasks' ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/25 scale-105' : 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/25 scale-105') : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[10px] font-black transition-all duration-300 uppercase tracking-widest ${
+                    view === t.id ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5'
                   }`}
                 >
-                  <t.icon size={18} strokeWidth={2.5} />
+                  <t.icon size={14} strokeWidth={3} />
                   {t.label}
                 </button>
               ))}
             </div>
+          </div>
 
-            <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="relative flex-grow max-w-lg group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+          {/* Search & Filter Bar */}
+          <div className="glass-panel p-6 space-y-6">
+            <div className="flex flex-col xl:flex-row gap-6">
+              {/* Search */}
+              <div className="relative flex-grow group">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-indigo-400 transition-colors" size={18} />
                 <input 
                   type="text" 
-                  placeholder="" 
-                  className="w-full bg-slate-900/40 border border-white/5 rounded-2xl py-4 pl-14 pr-32 text-base font-bold text-white focus:border-indigo-500/50 focus:bg-slate-900/60 transition-all outline-none shadow-2xl placeholder:text-slate-600"
+                  placeholder="SEARCH ACROSS PROJECTS, TASKS OR USERS..." 
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-4 text-xs font-black text-[var(--text-main)] focus:border-indigo-500/50 transition-all outline-none shadow-sm placeholder:text-[var(--text-muted)] placeholder:opacity-50 uppercase tracking-widest"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                  <select 
-                    className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-1.5 text-xs font-black text-indigo-400 outline-none cursor-pointer hover:bg-indigo-500/20 transition-all uppercase tracking-widest"
-                    value={selectedTeam}
-                    onChange={e => setSelectedTeam(e.target.value)}
-                  >
-                    {teamOptions.map(t => <option key={t} value={t}>{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
-                  </select>
-                  <div className="px-3 py-1.5 bg-white/5 rounded-xl text-xs font-black text-slate-400 border border-white/10 uppercase tracking-widest">Global</div>
-                </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={fetchSupabaseData}
-                  disabled={isLoading}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border ${
-                    isLoading 
-                      ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20 cursor-wait' 
-                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/10 active:scale-95'
-                  }`}
-                >
-                  <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-                  {isLoading ? 'Loading...' : 'Reload'}
-                </button>
-                <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-900/40 px-5 py-3 rounded-2xl border border-white/5 shadow-xl">
-                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]"></span> Live</span>
-                  <span className="w-px h-4 bg-white/10"></span>
-                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1]"></span> {data.length} Records</span>
+              {/* Date Controls */}
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-3 bg-[var(--bg-surface)] p-2 rounded-2xl border border-[var(--border)] shadow-sm">
+                  <div className="flex items-center gap-2 px-3 border-r border-[var(--border)]">
+                    <Calendar size={14} className="text-indigo-500" />
+                    <input type="month" className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer uppercase"
+                      onChange={e => {
+                        if (!e.target.value) return;
+                        const [y, m] = e.target.value.split('-').map(Number);
+                        const start = new Date(y, m - 1, 1);
+                        const end = new Date(y, m, 0);
+                        const f = d => formatYMD(d);
+                        setDateRange({ start: f(start), end: f(end) });
+                      }} />
+                  </div>
+                  <div className="flex items-center gap-2 px-3">
+                    <input type="date" className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer uppercase"
+                      value={dateRange.start} onChange={e => setDateRange(p => ({...p, start: e.target.value}))} />
+                    <span className="text-[10px] font-bold text-[var(--text-muted)] mx-1">TO</span>
+                    <input type="date" className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer uppercase"
+                      value={dateRange.end} onChange={e => setDateRange(p => ({...p, end: e.target.value}))} />
+                  </div>
                 </div>
+
+                <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] shadow-sm">
+                  {['WEEK', 'MONTH', 'YEAR'].map(label => (
+                    <button key={label} onClick={() => {
+                      const d = new Date();
+                      let s;
+                      if (label === 'WEEK') { d.setDate(d.getDate() - d.getDay() + 1); s = d.toISOString().split('T')[0]; }
+                      else if (label === 'MONTH') { s = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0]; }
+                      else { s = new Date(d.getFullYear(), 0, 1).toISOString().split('T')[0]; }
+                      setDateRange({ start: s, end: new Date().toISOString().split('T')[0] });
+                    }}
+                    className="px-4 py-2 rounded-xl text-[10px] font-black text-[var(--text-muted)] hover:text-white hover:bg-indigo-500 transition-all uppercase tracking-widest">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <button onClick={fetchSupabaseData} disabled={isLoading}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                    isLoading ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95'
+                  }`}>
+                  <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+                  {isLoading ? 'SYNCING...' : 'RELOAD'}
+                </button>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/5">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 bg-slate-800/80 border border-indigo-500/20 rounded-2xl px-4 py-2 shadow-2xl backdrop-blur-xl group focus-within:border-indigo-500/50 transition-all">
-                    <div className="flex items-center gap-3 border-r border-white/10 pr-4">
-                      <Calendar size={16} className="text-indigo-400" />
-                      <input 
-                        type="month" 
-                        id="month-picker"
-                        className="bg-transparent text-[11px] font-black text-indigo-400 outline-none [color-scheme:dark] cursor-pointer uppercase tracking-wider"
-                        onChange={e => {
-                          if (!e.target.value) return;
-                          const [y, m] = e.target.value.split('-').map(Number);
-                          const start = new Date(y, m - 1, 1);
-                          const end = new Date(y, m, 0);
-                          
-                          const formatYMD = (d) => {
-                            const year = d.getFullYear();
-                            const month = String(d.getMonth() + 1).padStart(2, '0');
-                            const day = String(d.getDate()).padStart(2, '0');
-                            return `${year}-${month}-${day}`;
-                          };
-                          
-                          setDateRange({ start: formatYMD(start), end: formatYMD(end) });
-                        }}
-                      />
-                    </div>
-                    <div className="flex items-center gap-3 pl-2">
-                      <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mb-0.5">Start Date</span>
-                        <input 
-                          type="date" 
-                          className="bg-transparent text-[11px] font-black text-white outline-none [color-scheme:dark] cursor-pointer hover:text-indigo-400 transition-colors"
-                          value={dateRange.start}
-                          onChange={e => setDateRange(prev => ({...prev, start: e.target.value}))}
-                        />
-                      </div>
-                      <div className="h-6 w-px bg-white/5 mx-1" />
-                      <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mb-0.5">End Date</span>
-                        <input 
-                          type="date" 
-                          className="bg-transparent text-[11px] font-black text-white outline-none [color-scheme:dark] cursor-pointer hover:text-indigo-400 transition-colors"
-                          value={dateRange.end}
-                          onChange={e => setDateRange(prev => ({...prev, end: e.target.value}))}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 p-1 bg-slate-900/50 rounded-2xl border border-white/5 shadow-xl">
-                    {[
-                      { label: 'Week', start: () => {
-                        const d = new Date();
-                        d.setDate(d.getDate() - d.getDay() + 1);
-                        return d.toISOString().split('T')[0];
-                      }},
-                      { label: 'Month', start: () => {
-                        const d = new Date();
-                        return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
-                      }},
-                      { label: 'Year', start: () => {
-                        const d = new Date();
-                        return new Date(d.getFullYear(), 0, 1).toISOString().split('T')[0];
-                      }}
-                    ].map(p => {
-                      const isActive = false; // Add logic if needed
-                      return (
-                        <button 
-                          key={p.label}
-                          onClick={() => {
-                            const start = p.start();
-                            const end = new Date().toISOString().split('T')[0];
-                            setDateRange({ start, end });
-                            
-                            // Update month picker if it's a month preset
-                            if (p.label === 'Month') {
-                              const monthInput = document.getElementById('month-picker');
-                              if (monthInput) monthInput.value = start.substring(0, 7);
-                            }
-                          }}
-                          className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white hover:bg-white/10 hover:shadow-lg transition-all active:scale-95"
-                        >
-                          {p.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+            {/* Sub Filters */}
+            <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-[var(--border)]">
+              <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2.5 rounded-2xl border border-[var(--border)] shadow-sm">
+                <Users size={14} className="text-indigo-500" />
+                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">TEAM FILTER:</span>
+                <select className="bg-transparent text-[10px] font-black text-indigo-500 outline-none cursor-pointer uppercase tracking-widest"
+                  value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}>
+                  {teamOptions.map(t => <option key={t} value={t} className="bg-[var(--bg-dark)]">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
+                </select>
+              </div>
 
-                <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-900/40 px-5 py-2.5 rounded-2xl border border-white/5 shadow-xl">
-                  <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span> {projectStats.length} Projects</span>
+              <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2.5 rounded-2xl border border-[var(--border)] shadow-sm">
+                <TableIcon size={14} className="text-indigo-500" />
+                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">GROUP BY:</span>
+                <select className="bg-transparent text-[10px] font-black text-indigo-500 outline-none cursor-pointer uppercase tracking-widest"
+                  value={groupBy} onChange={e => setGroupBy(e.target.value)}>
+                  {['none', 'project', 'user'].map(g => <option key={g} value={g} className="bg-[var(--bg-dark)] uppercase">{g.toUpperCase()}</option>)}
+                </select>
+              </div>
+
+              <div className="ml-auto flex items-center gap-3">
+                <div className="px-4 py-2.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                  {filteredData.length} RECORDS DETECTED
                 </div>
               </div>
+            </div>
+          </div>
 
               {/* Week Selector Section (Visible when month is picked) */}
               {(() => {
@@ -856,7 +815,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                           className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
                             isActive
                               ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
-                              : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-indigo-500/30 hover:text-indigo-300'
+                              : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border)] hover:border-indigo-500/30 hover:text-indigo-500'
                           }`}
                         >
                           W{weekNum} <span className="opacity-40 ml-1 font-bold">({w.start.getDate()}/{w.start.getMonth()+1} - {w.end.getDate()}/{w.end.getMonth()+1})</span>
@@ -866,9 +825,6 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   </motion.div>
                 );
               })()}
-            </div>
-          </div>
-          </div>
 
           <div className="flex flex-col lg:flex-row gap-8 items-start">
             {/* Sidebar Toggle Overlay */}
@@ -880,7 +836,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={() => setIsSidebarOpen(false)}
-                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40"
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
                   />
                   <motion.aside 
                     initial={{ x: -400, opacity: 0 }}
@@ -889,7 +845,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                     className="fixed left-0 top-0 h-screen w-[320px] z-50 p-6 overflow-y-auto custom-scrollbar"
                   >
-                    <div className="glass-panel p-6 border-white/10 shadow-2xl bg-slate-900/90 backdrop-blur-2xl h-full">
+                    <div className="glass-panel p-6 border-[var(--border)] shadow-2xl bg-[var(--bg-card)] backdrop-blur-2xl h-full">
                       <div className="space-y-8">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
@@ -899,7 +855,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         <div className="space-y-4">
                           <label className="text-xs font-black text-indigo-400 uppercase tracking-widest">Filter Type</label>
                           <select 
-                            className="input bg-slate-950/50 border-white/10 text-sm font-bold h-12"
+                            className="input bg-[var(--bg-surface)] border-[var(--border)] text-sm font-bold h-12 text-[var(--text-main)]"
                             value={filters.field}
                             onChange={e => setFilters({ field: e.target.value, values: [] })}
                           >
@@ -914,14 +870,14 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                             Select Values
                             <span className="text-xs bg-emerald-500/20 px-2 py-0.5 rounded-full">{filters.values.length}</span>
                           </label>
-                          <div className="max-h-[350px] overflow-auto p-2 bg-slate-950/50 border border-white/10 rounded-2xl custom-scrollbar space-y-1">
+                          <div className="max-h-[350px] overflow-auto p-2 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl custom-scrollbar space-y-1">
                             {uniqueFilterValues.map(v => (
                               <label key={v} className={`flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-2.5 rounded-xl transition-all ${filters.values.includes(v) ? 'bg-indigo-500/10' : ''}`}>
                                 <input 
                                   type="checkbox" 
                                   checked={filters.values.includes(v)}
                                   onChange={() => toggleFilterValue(v)}
-                                  className="w-5 h-5 rounded-lg border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500 transition-all"
+                                  className="w-5 h-5 rounded-lg border-[var(--border)] bg-[var(--bg-card)] text-indigo-500 focus:ring-indigo-500 transition-all"
                                 />
                                 <span className={`text-[13px] leading-tight ${filters.values.includes(v) ? 'text-indigo-300 font-bold' : 'text-slate-400'}`}>
                                   {v}
@@ -956,7 +912,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               <button 
                                 key={p.label}
                                 onClick={() => setDateRange({ start: p.start(), end: new Date().toISOString().split('T')[0] })}
-                                className="bg-slate-950/50 border border-white/5 hover:border-violet-500/50 text-xs font-black py-2 rounded-lg transition-all"
+                                className="bg-[var(--bg-surface)] border border-[var(--border)] hover:border-violet-500/50 text-[var(--text-main)] text-xs font-black py-2 rounded-lg transition-all"
                               >
                                 {p.label}
                               </button>
@@ -1087,121 +1043,114 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 };
 
                 return (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{tableRows.length} entries</span>
-                    </div>
-                    <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
+                    <div className="glass-panel overflow-hidden border border-[var(--border)] shadow-xl bg-[var(--bg-card)]">
                       <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse" style={{ minWidth: '1800px' }}>
-                          <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10">
-                            {/* Row 1: Group Headers */}
-                            <tr className="text-[10px] font-black uppercase tracking-widest border-b border-white/10">
-                              <th rowSpan={2} className="px-3 py-3 bg-amber-500/15 text-amber-300 border-r border-white/10 sticky left-0 z-20 min-w-[200px]">
+                          <thead className="sticky top-0 z-10">
+                            <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
+                              <th rowSpan={2} className="px-3 py-3 text-amber-500 border-r border-b border-[var(--border)] sticky left-0 z-20 min-w-[200px] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
                                 <div className="flex flex-col gap-2">
                                   <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('project')}>
                                     <span>NAME {renderSortIcon('project')}</span>
                                   </div>
                                   <select 
-                                    className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full"
+                                    className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full text-[var(--text-main)]"
                                     value={columnFilters.project}
                                     onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
                                   >
-                                    <option value="">All Projects</option>
-                                    {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
+                                    <option value="" className="bg-[var(--bg-card)]">All Projects</option>
+                                    {columnOptions.projects.map(p => <option key={p} value={p} className="bg-[var(--bg-card)]">{p}</option>)}
                                   </select>
                                   <select 
-                                    className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full mt-1"
+                                    className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full mt-1 text-[var(--text-main)]"
                                     value={columnFilters.taskName}
                                     onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
                                   >
-                                    <option value="">All Tasks</option>
-                                    {columnOptions.tasks.map(t => <option key={t} value={t}>{t}</option>)}
+                                    <option value="" className="bg-[var(--bg-card)]">All Tasks</option>
+                                    {columnOptions.tasks.map(t => <option key={t} value={t} className="bg-[var(--bg-card)]">{t}</option>)}
                                   </select>
                                 </div>
                               </th>
-                              <th colSpan={4} className="px-3 py-3 bg-indigo-500/10 text-indigo-300 text-center border-r border-white/10">
-                                <div className="flex items-center justify-center gap-2">
+                              <th colSpan={4} className="px-3 py-3 bg-indigo-500/10 text-indigo-500 text-center border-r border-b border-[var(--border)]">
+                                <div className="flex flex-col gap-2">
                                   <span>MANAGER / LEADER</span>
                                   <select 
-                                    className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none text-left"
+                                    className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none text-[var(--text-main)]"
                                     value={columnFilters.creator}
                                     onChange={e => setColumnFilters(prev => ({...prev, creator: e.target.value}))}
                                   >
-                                    <option value="">All Creators</option>
-                                    {columnOptions.creators.map(u => <option key={u} value={u}>{u}</option>)}
+                                    <option value="" className="bg-[var(--bg-card)]">All Creators</option>
+                                    {columnOptions.creators.map(u => <option key={u} value={u} className="bg-[var(--bg-card)]">{u}</option>)}
                                   </select>
                                 </div>
                               </th>
-                              <th colSpan={5} className="px-3 py-3 bg-sky-500/10 text-sky-300 text-center border-r border-white/10">
-                                <div className="flex items-center justify-center gap-2">
+                              <th colSpan={5} className="px-3 py-3 bg-sky-500/10 text-sky-500 text-center border-r border-b border-[var(--border)]">
+                                <div className="flex flex-col gap-2">
                                   <span>USER</span>
                                   <select 
-                                    className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none text-left"
+                                    className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none text-[var(--text-main)]"
                                     value={columnFilters.user}
                                     onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
                                   >
-                                    <option value="">All Users</option>
-                                    {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
+                                    <option value="" className="bg-[var(--bg-card)]">All Users</option>
+                                    {columnOptions.users.map(u => <option key={u} value={u} className="bg-[var(--bg-card)]">{u}</option>)}
                                   </select>
                                 </div>
                               </th>
-                              <th rowSpan={2} className="px-3 py-3 bg-slate-800/40 text-slate-400 text-center border-r border-white/10 min-w-[80px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('area')}>
+                              <th rowSpan={2} className="px-3 py-3 bg-[var(--bg-header)] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] min-w-[80px]" onClick={() => handleSort('area')}>
                                 area {renderSortIcon('area')}
                               </th>
-                              <th className="px-3 py-3 bg-emerald-500/10 text-emerald-300 text-center border-r border-white/10">PLAN TIME</th>
-                              <th colSpan={2} className="px-3 py-3 bg-emerald-500/15 text-emerald-300 text-center border-r border-white/10">USER COMPLETE</th>
-                              <th colSpan={2} className="px-3 py-3 bg-lime-500/10 text-lime-300 text-center">TASK COMPLETE</th>
+                              <th className="px-3 py-3 bg-emerald-500/10 text-emerald-500 text-center border-r border-b border-[var(--border)]">PLAN TIME</th>
+                              <th colSpan={2} className="px-3 py-3 bg-emerald-500/15 text-emerald-500 text-center border-r border-b border-[var(--border)]">USER COMPLETE</th>
+                              <th colSpan={2} className="px-3 py-3 bg-lime-500/10 text-lime-500 text-center border-b border-[var(--border)]">TASK COMPLETE</th>
                             </tr>
-                            {/* Row 2: Sub Headers */}
-                            <tr className="text-[9px] font-bold uppercase tracking-wider text-slate-500 border-b border-white/10 bg-white/[0.02]">
-                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/5 min-w-[100px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('creator')}>create_by {renderSortIcon('creator')}</th>
-                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/5 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('created_at')}>created_at {renderSortIcon('created_at')}</th>
-                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/5 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_start')}>date_start {renderSortIcon('date_start')}</th>
-                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/10 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_end')}>date_end {renderSortIcon('date_end')}</th>
-                              <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[100px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('user')}>user_id {renderSortIcon('user')}</th>
-                              <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_accepted')}>date_accepted {renderSortIcon('date_accepted')}</th>
-                              <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_started')}>date_started {renderSortIcon('date_started')}</th>
-                              <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_complete')}>date_complete {renderSortIcon('date_complete')}</th>
-                              <th className="px-3 py-2 bg-sky-500/5 border-r border-white/10 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_checked')}>date_checked {renderSortIcon('date_checked')}</th>
-                              <th className="px-3 py-2 bg-emerald-500/5 border-r border-white/10 text-center min-w-[65px] cursor-pointer hover:bg-emerald-500/10 transition-colors" onClick={() => handleSort('t1')}><span className="text-emerald-400">[t1] {renderSortIcon('t1')}</span><br/><span className="text-[8px] text-slate-600 normal-case">end−start</span></th>
-                              <th className="px-3 py-2 bg-emerald-500/8 border-r border-white/5 text-center min-w-[65px] cursor-pointer hover:bg-emerald-500/10 transition-colors" onClick={() => handleSort('t2a')}><span className="text-emerald-400">[t2] {renderSortIcon('t2a')}</span><br/><span className="text-[8px] text-slate-600 normal-case">comp−accept</span></th>
-                              <th className="px-3 py-2 bg-emerald-500/8 border-r border-white/10 text-center min-w-[65px] cursor-pointer hover:bg-emerald-500/10 transition-colors" onClick={() => handleSort('t2b')}><span className="text-emerald-400">[t2] {renderSortIcon('t2b')}</span><br/><span className="text-[8px] text-slate-600 normal-case">comp−start</span></th>
-                              <th className="px-3 py-2 bg-lime-500/5 border-r border-white/5 text-center min-w-[65px] cursor-pointer hover:bg-lime-500/10 transition-colors" onClick={() => handleSort('t4a')}><span className="text-lime-400">[t4] {renderSortIcon('t4a')}</span><br/><span className="text-[8px] text-slate-600 normal-case">check−accept</span></th>
-                              <th className="px-3 py-2 bg-lime-500/5 text-center min-w-[65px] cursor-pointer hover:bg-lime-500/10 transition-colors" onClick={() => handleSort('t4b')}><span className="text-lime-400">[t4] {renderSortIcon('t4b')}</span><br/><span className="text-[8px] text-slate-600 normal-case">check−start</span></th>
+                            <tr className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
+                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[100px]" onClick={() => handleSort('creator')}>create_by {renderSortIcon('creator')}</th>
+                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('created_at')}>created_at {renderSortIcon('created_at')}</th>
+                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_start')}>date_start {renderSortIcon('date_start')}</th>
+                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_end')}>date_end {renderSortIcon('date_end')}</th>
+                              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[100px]" onClick={() => handleSort('user')}>user_id {renderSortIcon('user')}</th>
+                              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_accepted')}>date_accepted {renderSortIcon('date_accepted')}</th>
+                              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_started')}>date_started {renderSortIcon('date_started')}</th>
+                              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_complete')}>date_complete {renderSortIcon('date_complete')}</th>
+                              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_checked')}>date_checked {renderSortIcon('date_checked')}</th>
+                              <th className="px-3 py-2 bg-emerald-500/5 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t1')}><span className="text-emerald-500">[t1] {renderSortIcon('t1')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">end−start</span></th>
+                              <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t2a')}><span className="text-emerald-500">[t2] {renderSortIcon('t2a')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">comp−accept</span></th>
+                              <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t2b')}><span className="text-emerald-500">[t2] {renderSortIcon('t2b')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">comp−start</span></th>
+                              <th className="px-3 py-2 bg-lime-500/5 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t4a')}><span className="text-lime-500">[t4] {renderSortIcon('t4a')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">check−accept</span></th>
+                              <th className="px-3 py-2 bg-lime-500/5 border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t4b')}><span className="text-lime-500">[t4] {renderSortIcon('t4b')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">check−start</span></th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-white/[0.03]">
+                          <tbody className="divide-y divide-[var(--border)]">
                             {tableRows.length === 0 ? (
-                              <tr><td colSpan={16} className="px-8 py-16 text-center text-slate-600 font-bold uppercase tracking-widest text-sm">No tasks found</td></tr>
+                              <tr><td colSpan={16} className="px-8 py-16 text-center text-[var(--text-muted)] font-black uppercase tracking-widest text-sm">No tasks found</td></tr>
                             ) : tableRows.map((r, i) => (
-                              <tr key={r.id || i} className="group hover:bg-white/[0.02] transition-all text-[11px]">
-                                <td className="px-3 py-2.5 bg-slate-950/60 sticky left-0 z-10 border-r border-white/5">
+                              <tr key={r.id || i} className="group hover:bg-[var(--bg-header)] transition-all text-[11px]" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
+                                <td className="px-3 py-2.5 sticky left-0 z-10 border-r border-b border-[var(--border)] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
                                   <div className="flex flex-col">
-                                    <span className="text-indigo-400 font-black text-[10px] tracking-tight">{r.project}</span>
-                                    <span className="font-bold text-slate-200 group-hover:text-white transition-colors line-clamp-1">{r.taskName}</span>
+                                    <span className="text-indigo-500 font-black text-[10px] tracking-tight">{r.project}</span>
+                                    <span className="font-bold text-[var(--text-contrast)] group-hover:text-emerald-500 transition-colors line-clamp-1">{r.taskName}</span>
                                   </div>
                                 </td>
-                                <td className="px-3 py-2.5 text-indigo-300/70 font-semibold border-r border-white/[0.03] truncate max-w-[120px]">{r.creator}</td>
-                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDt(r.created_at)}</td>
-                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDt(r.date_start)}</td>
-                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/5">{fmtDt(r.date_end)}</td>
-                                <td className="px-3 py-2.5 text-sky-300/70 font-semibold border-r border-white/[0.03] truncate max-w-[120px]">{r.user}</td>
-                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDt(r.date_accepted)}</td>
-                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDt(r.date_started)}</td>
-                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDt(r.date_complete)}</td>
-                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/5">{fmtDt(r.date_checked)}</td>
-                                <td className="px-3 py-2.5 text-slate-500 text-center border-r border-white/5 font-semibold">{r.area}</td>
-                                <td className={`px-3 py-2.5 text-center font-black border-r border-white/5 ${tc(r.t1)}`}>{fh(r.t1)}</td>
-                                <td className={`px-3 py-2.5 text-center font-black border-r border-white/[0.03] ${tc(r.t2a)}`}>{fh(r.t2a)}</td>
-                                <td className={`px-3 py-2.5 text-center font-black border-r border-white/5 ${tc(r.t2b)}`}>{fh(r.t2b)}</td>
-                                <td className={`px-3 py-2.5 text-center font-black border-r border-white/[0.03] ${tc(r.t4a)}`}>{fh(r.t4a)}</td>
-                                <td className={`px-3 py-2.5 text-center font-black ${tc(r.t4b)}`}>{fh(r.t4b)}</td>
+                                <td className="px-3 py-2.5 text-indigo-500/80 font-bold border-r border-b border-[var(--border)] truncate max-w-[120px]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{r.creator}</td>
+                                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fmtDt(r.created_at)}</td>
+                                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fmtDt(r.date_start)}</td>
+                                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fmtDt(r.date_end)}</td>
+                                <td className="px-3 py-2.5 text-sky-500/80 font-bold border-r border-b border-[var(--border)] truncate max-w-[120px]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{r.user}</td>
+                                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fmtDt(r.date_accepted)}</td>
+                                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fmtDt(r.date_started)}</td>
+                                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fmtDt(r.date_complete)}</td>
+                                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fmtDt(r.date_checked)}</td>
+                                <td className="px-3 py-2.5 text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] font-semibold" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{r.area}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${tc(r.t1)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fh(r.t1)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${tc(r.t2a)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fh(r.t2a)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${tc(r.t2b)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fh(r.t2b)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${tc(r.t4a)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fh(r.t4a)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-b border-[var(--border)] ${tc(r.t4b)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)' }}>{fh(r.t4b)}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
-                      </div>
                     </div>
                   </div>
                 );
@@ -1209,36 +1158,36 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
               {view === 'detail' && (
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between bg-[var(--bg-surface)] p-4 rounded-2xl border border-[var(--border)]">
                     <div className="flex items-center gap-3">
-                      <div className="flex gap-2 p-1 bg-slate-900/50 rounded-xl border border-white/5">
+                      <div className="flex gap-2 p-1 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-sm">
                         {['time1', 'time2', 'time3'].map(m => (
                           <button 
                             key={m}
                             disabled={m === 'time3' && (view === 'userTasks' || view === 'userPivot')}
                             onClick={() => setSelectedMetric(m)}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
+                            className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                               selectedMetric === m ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 
-                              (m === 'time3' && (view === 'userTasks' || view === 'userPivot')) ? 'opacity-20 cursor-not-allowed text-slate-700' : 'text-slate-500 hover:text-slate-300'
+                              (m === 'time3' && (view === 'userTasks' || view === 'userPivot')) ? 'opacity-20 cursor-not-allowed text-[var(--text-muted)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                             }`}
                           >
                             {m}
                           </button>
                         ))}
                       </div>
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{filteredData.length} entries</span>
+                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{filteredData.length} ENTRIES</span>
                     </div>
                   </div>
-                  <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
+                  <div className="glass-panel overflow-hidden border border-[var(--border)] shadow-xl bg-[var(--bg-card)]">
                     <div className="overflow-x-auto custom-scrollbar">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 border-b border-white/10">
-                          <tr className="text-slate-400 font-bold uppercase text-sm tracking-[0.2em] whitespace-nowrap">
-                            <th className="p-5">
+                      <table className="w-full text-left text-sm border-collapse">
+                        <thead className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--bg-header)]">
+                          <tr className="text-[var(--text-muted)] font-black uppercase text-[10px] tracking-widest whitespace-nowrap">
+                            <th className="p-5 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>
                               <div className="flex flex-col gap-2">
                                 <span>Project</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold lowercase outline-none focus:border-indigo-500 text-[var(--text-main)]"
                                   value={columnFilters.project}
                                   onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
                                 >
@@ -1247,11 +1196,11 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 </select>
                               </div>
                             </th>
-                            <th className="p-5 min-w-[200px]">
+                            <th className="p-5 min-w-[200px] border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>
                               <div className="flex flex-col gap-2">
                                 <span>Task Name</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
+                                  className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold lowercase outline-none focus:border-indigo-500 text-[var(--text-main)] max-w-[250px]"
                                   value={columnFilters.taskName}
                                   onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
                                 >
@@ -1260,11 +1209,11 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 </select>
                               </div>
                             </th>
-                            <th className="p-5">
+                            <th className="p-5 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>
                               <div className="flex flex-col gap-2">
                                 <span>User</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold lowercase outline-none focus:border-indigo-500 text-[var(--text-main)]"
                                   value={columnFilters.user}
                                   onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
                                 >
@@ -1273,30 +1222,30 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 </select>
                               </div>
                             </th>
-                            <th className="p-4">Start</th>
-                            <th className="p-4">End</th>
-                            <th className="p-4">Done</th>
-                            <th className="p-4 text-center bg-emerald-500/5">T1</th>
-                            <th className="p-4 text-center bg-indigo-500/5">T2</th>
+                            <th className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Start</th>
+                            <th className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>End</th>
+                            <th className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Done</th>
+                            <th className="p-4 text-center bg-emerald-500/5 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>T1</th>
+                            <th className="p-4 text-center bg-indigo-500/5 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>T2</th>
                             <th className="p-4 text-center bg-violet-500/5">T3</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/[0.03]">
+                        <tbody className="divide-y divide-[var(--border)]">
                           {filteredData.map((r, i) => (
-                            <tr key={i} className="hover:bg-white/[0.04] transition-all group border-l-2 border-transparent hover:border-indigo-500">
-                              <td className="p-4">
-                                <span className="text-indigo-400 font-bold text-sm tracking-tight">{r.project}</span>
+                            <tr key={i} className="group hover:bg-[var(--bg-header)] transition-all" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
+                              <td className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>
+                                <span className="text-indigo-500 font-black text-[11px] tracking-tight">{r.project}</span>
                               </td>
-                              <td className="p-4">
-                                <div className="font-medium text-slate-200 line-clamp-2" title={r.taskName}>{r.taskName}</div>
+                              <td className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>
+                                <div className="font-bold text-[var(--text-main)] line-clamp-2" title={r.taskName}>{r.taskName}</div>
                               </td>
-                              <td className="p-4 text-slate-500 text-xs font-mono">{r.createdBy?.split('@')[0]}</td>
-                              <td className="p-4 text-slate-400 text-xs">{formatTime(r.dateStart)}</td>
-                              <td className="p-4 text-slate-400 text-xs">{formatTime(r.dateEnd)}</td>
-                              <td className="p-4 text-slate-400 text-xs">{formatTime(r.dateComplete)}</td>
-                              <td className={`p-4 text-center font-bold text-emerald-400 ${selectedMetric === 'time1' ? 'bg-emerald-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time1Str}</td>
-                              <td className={`p-4 text-center font-bold text-indigo-400 ${selectedMetric === 'time2' ? 'bg-indigo-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time2Str}</td>
-                              <td className={`p-4 text-center font-bold text-violet-400 ${selectedMetric === 'time3' ? 'bg-violet-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time3Str}</td>
+                              <td className="p-4 text-[var(--text-muted)] text-[11px] font-mono border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{r.createdBy?.split('@')[0]}</td>
+                              <td className="p-4 text-[var(--text-muted)] text-[11px] border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{formatTime(r.dateStart)}</td>
+                              <td className="p-4 text-[var(--text-muted)] text-[11px] border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{formatTime(r.dateEnd)}</td>
+                              <td className="p-4 text-[var(--text-contrast)] font-bold text-[11px] border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{formatTime(r.dateComplete)}</td>
+                              <td className={`p-4 text-center font-black text-emerald-500 border-r border-[var(--border)] ${selectedMetric === 'time1' ? 'bg-emerald-500/10' : 'opacity-40'}`} style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{r.time1Str}</td>
+                              <td className={`p-4 text-center font-black text-indigo-500 border-r border-[var(--border)] ${selectedMetric === 'time2' ? 'bg-indigo-500/10' : 'opacity-40'}`} style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{r.time2Str}</td>
+                              <td className={`p-4 text-center font-black text-violet-500 ${selectedMetric === 'time3' ? 'bg-violet-500/10' : 'opacity-40'}`}>{r.time3Str}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1308,32 +1257,32 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
               {view === 'userTasks' && (
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between bg-[var(--bg-surface)] p-4 rounded-2xl border border-[var(--border)]">
                     <div className="flex items-center gap-3">
-                      <div className="flex gap-2 p-1 bg-slate-900/50 rounded-xl border border-white/5">
+                      <div className="flex gap-2 p-1 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-sm">
                         {['time1', 'time2'].map(m => (
                           <button 
                             key={m}
                             onClick={() => setSelectedMetric(m)}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${selectedMetric === m ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedMetric === m ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                           >
                             {m}
                           </button>
                         ))}
                       </div>
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{filteredUserData.length} entries</span>
+                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{filteredUserData.length} USER ENTRIES</span>
                     </div>
                   </div>
-                  <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
+                  <div className="glass-panel overflow-hidden border border-[var(--border)] shadow-xl bg-[var(--bg-card)]">
                     <div className="overflow-x-auto custom-scrollbar">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 border-b border-white/10">
-                          <tr className="text-slate-400 font-bold uppercase text-sm tracking-[0.2em] whitespace-nowrap">
-                            <th className="p-4 w-px whitespace-nowrap">
+                      <table className="w-full text-left text-sm border-collapse">
+                        <thead className="sticky top-0 z-10 border-b border-[var(--border)]">
+                          <tr className="text-[var(--text-muted)] font-black uppercase text-[10px] tracking-widest whitespace-nowrap bg-[var(--bg-header)]">
+                            <th className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>
                               <div className="flex flex-col gap-2">
                                 <span>Project</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold lowercase outline-none focus:border-indigo-500 text-[var(--text-main)]"
                                   value={columnFilters.project}
                                   onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
                                 >
@@ -1342,11 +1291,11 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 </select>
                               </div>
                             </th>
-                            <th className="p-4 w-px whitespace-nowrap">
+                            <th className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>
                               <div className="flex flex-col gap-2">
-                                <span>Create By</span>
+                                <span>User</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold lowercase outline-none focus:border-indigo-500 text-[var(--text-main)]"
                                   value={columnFilters.user}
                                   onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
                                 >
@@ -1355,11 +1304,11 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 </select>
                               </div>
                             </th>
-                            <th className="p-4 text-left">
+                            <th className="p-4 text-left border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>
                               <div className="flex flex-col gap-2">
                                 <span>Task Name</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
+                                  className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold lowercase outline-none focus:border-indigo-500 text-[var(--text-main)] max-w-[250px]"
                                   value={columnFilters.taskName}
                                   onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
                                 >
@@ -1368,26 +1317,26 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 </select>
                               </div>
                             </th>
-                            <th className="p-4">Created At</th>
-                            <th className="p-4">Started</th>
-                            <th className="p-4">Checked</th>
-                            <th className="p-4 text-center bg-emerald-500/5">T1</th>
+                            <th className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Created At</th>
+                            <th className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Started</th>
+                            <th className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Checked</th>
+                            <th className="p-4 text-center bg-emerald-500/5 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>T1</th>
                             <th className="p-4 text-center bg-indigo-500/5">T2</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/[0.03]">
+                        <tbody className="divide-y divide-[var(--border)]">
                           {filteredUserData.map((r, i) => (
-                            <tr key={i} className="hover:bg-white/[0.04] transition-all group border-l-2 border-transparent hover:border-emerald-500">
-                              <td className="p-4 font-black text-indigo-400 whitespace-nowrap">{r.project}</td>
-                              <td className="p-4 font-black text-slate-200 uppercase text-[10px] tracking-tight whitespace-nowrap">{r.userName}</td>
-                              <td className="p-4">
-                                <div className="font-bold text-slate-300 line-clamp-1" title={r.taskName}>{r.taskName}</div>
+                            <tr key={i} className="group hover:bg-[var(--bg-header)] transition-all" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
+                              <td className="p-4 font-black text-indigo-500 whitespace-nowrap border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{r.project}</td>
+                              <td className="p-4 font-black text-[var(--text-contrast)] uppercase text-[10px] tracking-tight whitespace-nowrap border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{r.userName}</td>
+                              <td className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>
+                                <div className="font-bold text-[var(--text-main)] line-clamp-1" title={r.taskName}>{r.taskName}</div>
                               </td>
-                              <td className="p-4 text-slate-500 text-[11px] font-mono whitespace-nowrap">{r.createdAtStr}</td>
-                              <td className="p-4 text-slate-400 text-[11px] font-mono whitespace-nowrap">{r.dateStartedStr}</td>
-                              <td className="p-4 text-white font-bold text-[11px] font-mono whitespace-nowrap">{r.dateCheckedStr}</td>
-                              <td className={`p-4 text-center font-bold text-emerald-400 ${selectedMetric === 'time1' ? 'bg-emerald-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time1Str}</td>
-                              <td className={`p-4 text-center font-bold text-indigo-400 ${selectedMetric === 'time2' ? 'bg-indigo-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time2Str}</td>
+                              <td className="p-4 text-[var(--text-muted)] text-[11px] font-mono whitespace-nowrap border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{r.createdAtStr}</td>
+                              <td className="p-4 text-[var(--text-muted)] text-[11px] font-mono whitespace-nowrap border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{r.dateStartedStr}</td>
+                              <td className="p-4 text-[var(--text-contrast)] font-bold text-[11px] font-mono whitespace-nowrap border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{r.dateCheckedStr}</td>
+                              <td className={`p-4 text-center font-black text-emerald-500 border-r border-[var(--border)] ${selectedMetric === 'time1' ? 'bg-emerald-500/10' : 'opacity-40'}`} style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{r.time1Str}</td>
+                              <td className={`p-4 text-center font-black text-indigo-500 ${selectedMetric === 'time2' ? 'bg-indigo-500/10' : 'opacity-40'}`}>{r.time2Str}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1398,148 +1347,86 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
               )}
 
               {view === 'weeklyReport' && (
-                <div className="space-y-4">
-                  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                    <div className="flex gap-2 p-1 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/5 w-fit">
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-[var(--bg-surface)] p-4 rounded-2xl border border-[var(--border)]">
+                    <div className="flex gap-2 p-1 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-sm">
                       {[
-                        { id: 'time1', label: 'PLAN TIME [t1]' },
-                        { id: 'time2', label: 'USER COMPLETE [t2]' },
-                        { id: 'time3', label: 'TASK COMPLETE [t4]' }
+                        { id: 'time1', label: 'PLAN [t1]' },
+                        { id: 'time2', label: 'USER [t2]' },
+                        { id: 'time3', label: 'TASK [t4]' }
                       ].map(m => (
                         <button 
                           key={m.id}
                           onClick={() => setSelectedMetric(m.id)}
-                          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedMetric === m.id ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                          className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedMetric === m.id ? 'bg-indigo-500 text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                         >
                           {m.label}
                         </button>
                       ))}
                     </div>
                     
-                    <div className="flex gap-1 p-1 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/5 w-fit items-center">
-                      <span className="text-[10px] font-black text-slate-500 uppercase px-3 tracking-widest">GROUP BY:</span>
+                    <div className="flex gap-1 p-1 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-sm items-center">
+                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase px-3 tracking-widest">GROUP:</span>
                       {['none', 'project', 'user'].map(g => (
                         <button 
                           key={g}
                           onClick={() => setGroupBy(g)}
-                          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-widest ${groupBy === g ? 'bg-amber-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                          className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${groupBy === g ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                         >
                           {g}
                         </button>
                       ))}
                     </div>
                   </div>
-                  <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
+                  <div className="glass-panel overflow-hidden border border-[var(--border)] shadow-xl bg-[var(--bg-card)]">
                     <div className="overflow-x-auto custom-scrollbar">
                       <table className="w-full text-left border-collapse" style={{ minWidth: '1200px' }}>
-                        <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10">
-                          {/* Row 1: Group Headers */}
-                          <tr className="text-[10px] font-black uppercase tracking-widest border-b border-white/10">
-                            <th rowSpan={2} className="px-3 py-3 bg-amber-500/15 text-amber-300 border-r border-white/10 sticky left-0 z-20 min-w-[200px]">
-                              <div className="flex flex-col gap-2">
-                                <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('project')}>
-                                  <span>NAME {sortConfig.key === 'project' ? <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span> : null}</span>
-                                </div>
-                                <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full"
-                                  value={columnFilters.project}
-                                  onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
-                                >
-                                  <option value="">All Projects</option>
-                                  {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
-                                </select>
-                                <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full mt-1"
-                                  value={columnFilters.taskName}
-                                  onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
-                                >
-                                  <option value="">All Tasks</option>
-                                  {columnOptions.tasks.map(t => <option key={t} value={t}>{t}</option>)}
-                                </select>
-                              </div>
+                        <thead className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--bg-header)]">
+                          <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)]">
+                            <th rowSpan={2} className="px-3 py-3 text-amber-500 border-r border-b border-[var(--border)] sticky left-0 z-20 min-w-[200px] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
+                              NAME
                             </th>
-                            <th rowSpan={2} className="px-3 py-3 bg-indigo-500/10 text-indigo-300 text-center border-r border-white/10 min-w-[120px] align-top">
-                              <div className="flex flex-col gap-2 h-full justify-start">
-                                <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('creator')}>
-                                  <span>MANAGER {sortConfig.key === 'creator' ? <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span> : null}</span>
-                                </div>
-                                <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none text-left w-full mt-1"
-                                  value={columnFilters.creator}
-                                  onChange={e => setColumnFilters(prev => ({...prev, creator: e.target.value}))}
-                                >
-                                  <option value="">All Creators</option>
-                                  {columnOptions.creators.map(u => <option key={u} value={u}>{u}</option>)}
-                                </select>
-                              </div>
-                            </th>
-                            <th rowSpan={2} className="px-3 py-3 bg-sky-500/10 text-sky-300 text-center border-r border-white/10 min-w-[120px] align-top">
-                              <div className="flex flex-col gap-2 h-full justify-start">
-                                <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('user')}>
-                                  <span>USER {sortConfig.key === 'user' ? <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span> : null}</span>
-                                </div>
-                                <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none text-left w-full mt-1"
-                                  value={columnFilters.user}
-                                  onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
-                                >
-                                  <option value="">All Users</option>
-                                  {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
-                                </select>
-                              </div>
-                            </th>
-                            <th rowSpan={2} className="px-3 py-3 bg-slate-800/40 text-slate-400 text-center border-r border-white/10 min-w-[80px] cursor-pointer hover:bg-white/5 transition-colors align-top" onClick={() => handleSort('area')}>
-                              <div className="flex flex-col justify-start h-full">
-                                <span>AREA {sortConfig.key === 'area' ? <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span> : null}</span>
-                              </div>
-                            </th>
-                            <th colSpan={5} className="px-3 py-3 bg-emerald-500/10 text-emerald-300 text-center border-r border-white/10">DAYS OF WEEK</th>
+                            <th rowSpan={2} className="px-3 py-3 bg-indigo-500/10 text-indigo-500 text-center border-r border-b border-[var(--border)] min-w-[120px]">MANAGER</th>
+                            <th rowSpan={2} className="px-3 py-3 bg-sky-500/10 text-sky-500 text-center border-r border-b border-[var(--border)] min-w-[120px]">USER</th>
+                            <th rowSpan={2} className="px-3 py-3 bg-[var(--bg-header)] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] min-w-[80px]">AREA</th>
+                            <th colSpan={5} className="px-3 py-3 bg-emerald-500/10 text-emerald-500 text-center border-b border-[var(--border)]">DAYS OF WEEK</th>
                           </tr>
-                          {/* Row 2: Sub Headers */}
-                          <tr className="text-[9px] font-bold uppercase tracking-wider text-slate-500 border-b border-white/10 bg-white/[0.02]">
-                            {['Mo','Tu','We','Th','Fr'].map(d => <th key={d} className="px-3 py-2 bg-emerald-500/5 border-r border-white/5 text-center min-w-[65px]">{d}</th>)}
+                          <tr className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
+                            {['Mo','Tu','We','Th','Fr'].map(d => <th key={d} className="px-3 py-2 bg-emerald-500/5 border-r border-[var(--border)] text-center min-w-[65px]">{d}</th>)}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/[0.03]">
-                          {Object.entries(groupedWeeklyData).length === 0 || weeklyReportData.length === 0 ? (
-                            <tr><td colSpan={9} className="px-8 py-16 text-center text-slate-600 font-bold uppercase tracking-widest text-sm">No tasks found in selected range</td></tr>
+                        <tbody className="divide-y divide-[var(--border)]">
+                          {Object.entries(groupedWeeklyData).length === 0 ? (
+                            <tr><td colSpan={9} className="px-8 py-16 text-center text-[var(--text-muted)] font-black uppercase tracking-widest text-sm">No tasks found</td></tr>
                           ) : Object.entries(groupedWeeklyData).map(([groupName, rows], gIdx) => (
                             <React.Fragment key={gIdx}>
                               {groupBy !== 'none' && (
-                                <tr className="bg-slate-800/50 border-y border-white/10">
-                                  <td colSpan={9} className="px-4 py-3 text-xs font-black uppercase tracking-widest text-amber-400 sticky left-0 z-10">
-                                    {groupBy === 'project' ? 'PROJECT: ' : 'USER: '} <span className="text-white">{groupName}</span>
-                                    <span className="ml-3 text-[10px] text-slate-400 bg-slate-900/80 px-2 py-1 rounded-md">{rows.length} TASKS</span>
+                                <tr className="bg-[var(--bg-header)] border-y border-[var(--border)]">
+                                  <td colSpan={9} className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 sticky left-0 z-10 backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
+                                    {groupBy === 'project' ? 'PROJECT: ' : 'USER: '} <span className="text-[var(--text-contrast)]">{groupName}</span>
                                   </td>
                                 </tr>
                               )}
                               {rows.map((r, i) => (
-                                <tr key={`${gIdx}-${i}`} className="hover:bg-white/[0.04] transition-all group text-[11px]">
-                                  {/* NAME */}
-                                  <td className="px-3 py-2.5 bg-slate-950/60 sticky left-0 z-10 border-r border-white/5">
+                                <tr key={`${gIdx}-${i}`} className="hover:bg-[var(--bg-header)] transition-all group text-[11px]" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
+                                  <td className="px-3 py-2.5 sticky left-0 z-10 border-r border-b border-[var(--border)] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
                                     <div className="flex flex-col gap-1">
-                                      {groupBy !== 'project' && <span className="font-bold text-indigo-400 truncate max-w-[200px] group-hover:text-indigo-300 transition-colors">{r.project}</span>}
-                                      <span className="font-medium text-slate-400 truncate max-w-[200px] group-hover:text-white transition-colors">{r.taskName}</span>
+                                      {groupBy !== 'project' && <span className="font-black text-indigo-500 truncate max-w-[200px]">{r.project}</span>}
+                                      <span className="font-bold text-[var(--text-main)] truncate max-w-[200px] group-hover:text-emerald-500 transition-colors">{r.taskName}</span>
                                     </div>
                                   </td>
-                                  {/* MANAGER/LEADER */}
-                                  <td className="px-3 py-2.5 text-[10px] font-black text-indigo-300/70 uppercase tracking-tight whitespace-nowrap group-hover:text-indigo-200 transition-colors border-r border-white/[0.03] text-center">{r.creator}</td>
-                                  {/* USER */}
-                                  <td className="px-3 py-2.5 text-[10px] font-black text-sky-300/70 uppercase tracking-tight whitespace-nowrap group-hover:text-sky-200 transition-colors border-r border-white/[0.03] text-center">
-                                    {groupBy !== 'user' ? r.user : '-'}
-                                  </td>
-                                  {/* AREA */}
-                                  <td className="px-3 py-2.5 text-slate-500 text-center border-r border-white/5 font-semibold">{r.area}</td>
-                                  {/* DAYS */}
-                                  {['Mo','Tu','We','Th','Fr'].map(d => (
-                                    <td key={d} className="px-3 py-2.5 text-center border-r border-white/5">
+                                  <td className="px-3 py-2.5 text-[10px] font-black text-indigo-500/80 uppercase tracking-tight whitespace-nowrap border-r border-b border-[var(--border)] text-center">{r.creator}</td>
+                                  <td className="px-3 py-2.5 text-[10px] font-black text-sky-500/80 uppercase tracking-tight whitespace-nowrap border-r border-b border-[var(--border)] text-center">{r.user}</td>
+                                  <td className="px-3 py-2.5 text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] font-semibold">{r.area}</td>
+                                  {['Mo','Tu','We','Th','Fr'].map((d, dIdx) => (
+                                    <td key={d} className={`px-3 py-2.5 text-center border-b border-[var(--border)] ${dIdx < 4 ? 'border-r' : ''}`}>
                                       <div className="flex flex-col gap-1.5 items-center">
                                         {(r.days[d] || []).map((t, idx) => (
                                           <span key={idx} className={`${
-                                            selectedMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                                            selectedMetric === 'time2' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-                                            'bg-lime-500/10 text-lime-400 border-lime-500/20'
-                                          } px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
+                                            selectedMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                                            selectedMetric === 'time2' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' :
+                                            'bg-lime-500/10 text-lime-500 border-lime-500/20'
+                                          } px-2.5 py-1 rounded-md text-[10px] font-black border shadow-sm`}>
                                             {selectedMetric === 'time1' ? t.time1Str : selectedMetric === 'time2' ? t.time2Str : t.time3Str}
                                           </span>
                                         ))}
@@ -1556,42 +1443,41 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   </div>
                 </div>
               )}
-
-              {view === 'analytics' && (
+                       {view === 'analytics' && (
                 <div className="space-y-8">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="flex gap-2 p-1 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/5">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[var(--bg-surface)] p-4 rounded-2xl border border-[var(--border)]">
+                    <div className="flex gap-2 p-1 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-sm">
                       <button 
                         onClick={() => setAnalyticsMode('project')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${analyticsMode === 'project' ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${analyticsMode === 'project' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                       >
-                        <TableIcon size={14} /> Project Mode
+                        <TableIcon size={14} /> PROJECT MODE
                       </button>
                       <button 
                         onClick={() => setAnalyticsMode('user')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${analyticsMode === 'user' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${analyticsMode === 'user' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                       >
-                        <Users size={14} /> User Mode
+                        <Users size={14} /> USER MODE
                       </button>
                     </div>
 
-                    <div className="flex gap-1 p-1 bg-slate-900/30 rounded-xl border border-white/5">
+                    <div className="flex gap-1 p-1 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-sm">
                       {['week', 'month', 'year'].map(g => (
                         <button 
                           key={g}
                           onClick={() => setAnalyticsGranularity(g)}
-                          className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${analyticsGranularity === g ? 'bg-slate-700 text-white shadow-inner' : 'text-slate-500 hover:text-slate-300'}`}
+                          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${analyticsGranularity === g ? 'bg-[var(--bg-header)] text-indigo-500' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                         >
-                          By {g}
+                          BY {g.toUpperCase()}
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5 lg:col-span-2">
-                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-xs tracking-[0.3em] flex items-center gap-2">
-                        <span className="w-4 h-4 bg-violet-500 rounded flex items-center justify-center text-xs text-white">3</span>
+                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] lg:col-span-2 shadow-xl">
+                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                        <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
                         {analyticsGranularity.toUpperCase()}LY PERFORMANCE TREND
                       </h3>
                       <div className="w-full h-[300px]">
@@ -1601,8 +1487,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                             maintainAspectRatio: false,
                             plugins: { legend: { display: false } },
                             scales: {
-                              y: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } },
-                              x: { grid: { display: false } }
+                              y: { grid: { color: 'rgba(0,0,0,0.05)' }, border: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 10, weight: 'bold' } } },
+                              x: { grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 10, weight: 'bold' } } }
                             }
                           }}
                         />
@@ -1610,27 +1496,30 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     </motion.div>
                   </div>
 
-                  <div className="glass-panel p-4 border-white/5 bg-slate-900/40">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{analyticsGranularity.toUpperCase()}LY AGGREGATE TABLE</h3>
+                  <div className="glass-panel p-6 border border-[var(--border)] bg-[var(--bg-card)] shadow-xl">
+                    <div className="flex items-center justify-between mb-8">
+                      <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] flex items-center gap-3">
+                        <div className="w-1.5 h-4 bg-amber-500 rounded-full" />
+                        {analyticsGranularity.toUpperCase()}LY AGGREGATE TABLE
+                      </h3>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
+                      <table className="w-full text-left text-xs border-collapse">
                         <thead>
-                          <tr className="text-slate-500 font-bold border-b border-white/5">
-                            <th className="py-3 px-4">Period</th>
-                            <th className="py-3 px-4">Total Logs</th>
-                            <th className="py-3 px-4">Total Time 1</th>
-                            <th className="py-3 px-4">Total Time 2</th>
+                          <tr className="text-[var(--text-muted)] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
+                            <th className="py-4 px-6 border-r border-[var(--border)]">Period</th>
+                            <th className="py-4 px-6 text-center border-r border-[var(--border)]">Total Logs</th>
+                            <th className="py-4 px-6 text-center border-r border-[var(--border)]">Total Time 1</th>
+                            <th className="py-4 px-6 text-center">Total Time 2</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
-                          {periodicStats.map(s => (
-                            <tr key={s.name} className="hover:bg-white/5 transition-colors">
-                              <td className="py-3 px-4 font-bold text-indigo-400">{s.name}</td>
-                              <td className="py-3 px-4 text-slate-300">{s.logs}</td>
-                              <td className="py-3 px-4 text-emerald-400">{formatDuration(s.t1)}</td>
-                              <td className="py-3 px-4 text-indigo-400">{formatDuration(s.t2)}</td>
+                        <tbody className="divide-y divide-[var(--border)]">
+                          {periodicStats.map((s, i) => (
+                            <tr key={s.name} className="group hover:bg-[var(--bg-header)] transition-all" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
+                              <td className="py-4 px-6 font-black text-[var(--text-contrast)] font-mono border-r border-[var(--border)]">{s.name}</td>
+                              <td className="py-4 px-6 text-center font-bold text-indigo-500 border-r border-[var(--border)]">{s.logs}</td>
+                              <td className="py-4 px-6 text-center font-black text-emerald-500 border-r border-[var(--border)]">{formatDuration(s.t1)}</td>
+                              <td className="py-4 px-6 text-center font-black text-sky-500">{formatDuration(s.t2)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1639,9 +1528,9 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 flex flex-col items-center bg-slate-900/60 border-white/5">
-                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-xs tracking-[0.3em] flex items-center gap-2">
-                        <span className="w-4 h-4 bg-indigo-500 rounded flex items-center justify-center text-xs text-white">1</span>
+                    <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 flex flex-col items-center bg-[var(--bg-card)] border border-[var(--border)] shadow-xl">
+                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                        <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
                         Project Time Distribution (Time 1)
                       </h3>
                       <div className="w-full h-[350px] relative">
@@ -1656,15 +1545,15 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                           }} 
                         />
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                          <span className="text-3xl font-black text-white">{projectStats.length}</span>
-                          <span className="text-xs text-slate-500 uppercase tracking-widest font-bold">Projects</span>
+                          <span className="text-3xl font-black text-[var(--text-contrast)]">{projectStats.length}</span>
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-black">Projects</span>
                         </div>
                       </div>
                     </motion.div>
                     
-                    <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5">
-                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-xs tracking-[0.3em] flex items-center gap-2">
-                        <span className="w-4 h-4 bg-emerald-500 rounded flex items-center justify-center text-xs text-white">2</span>
+                    <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl">
+                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                        <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
                         User Workload (Time 1)
                       </h3>
                       <div className="w-full h-[350px]">
@@ -1674,8 +1563,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                             maintainAspectRatio: false, 
                             plugins: { legend: { display: false } },
                             scales: {
-                              y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { weight: 'bold' } } },
-                              x: { grid: { display: false }, ticks: { color: '#64748b', font: { weight: 'bold', size: 10 } } }
+                              y: { grid: { color: 'rgba(0,0,0,0.05)' }, border: { display: false }, ticks: { color: 'var(--text-muted)', font: { weight: 'bold', size: 10 } } },
+                              x: { grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { weight: 'bold', size: 10 } } }
                             }
                           }} 
                         />
@@ -1685,30 +1574,30 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                     {/* Project Summary */}
-                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5 overflow-hidden">
-                      <h3 className="font-bold text-indigo-400 mb-8 uppercase text-xs tracking-[0.3em] flex items-center gap-2">
-                        <TableIcon size={14} />
+                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] overflow-hidden shadow-xl">
+                      <h3 className="font-black text-indigo-500 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                        <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
                         Summary by Project
                       </h3>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
+                        <table className="w-full text-left text-xs border-collapse">
                           <thead>
-                            <tr className="text-slate-500 font-bold uppercase tracking-widest border-b border-white/5">
-                              <th className="pb-4">Project</th>
-                              <th className="pb-4 text-center">Tasks</th>
-                              <th className="pb-4 text-center text-emerald-400">Time 1</th>
-                              <th className="pb-4 text-center text-indigo-400">Time 2</th>
-                              {analyticsMode === 'leader' && <th className="pb-4 text-center text-violet-400">Time 3</th>}
+                            <tr className="text-[var(--text-muted)] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
+                              <th className="py-4 px-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Project</th>
+                              <th className="py-4 px-4 text-center border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Tasks</th>
+                              <th className="py-4 px-4 text-center text-emerald-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 1</th>
+                              <th className="py-4 px-4 text-center text-indigo-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 2</th>
+                              {analyticsMode === 'leader' && <th className="py-4 px-4 text-center text-violet-500">Time 3</th>}
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-white/[0.03]">
+                          <tbody className="divide-y divide-[var(--border)]">
                             {projectStats.map((s, i) => (
-                              <tr key={s.name} className="group hover:bg-white/[0.02]">
-                                <td className="py-4 font-bold text-slate-200">{s.name}</td>
-                                <td className="py-4 text-center text-indigo-400 font-black">{s.uniqueTasks}</td>
-                                <td className="py-4 text-center text-emerald-400 font-bold">{s.totalTime1}</td>
-                                <td className="py-4 text-center text-indigo-400 font-bold">{s.totalTime2}</td>
-                                {analyticsMode === 'leader' && <td className="py-4 text-center text-violet-400 font-bold">{s.totalTime3}</td>}
+                              <tr key={s.name} className="group hover:bg-[var(--bg-header)] transition-all" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
+                                <td className="py-4 px-4 font-black text-[var(--text-contrast)] border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.name}</td>
+                                <td className="py-4 px-4 text-center text-indigo-500 font-black border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.uniqueTasks}</td>
+                                <td className="py-4 px-4 text-center text-emerald-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime1}</td>
+                                <td className="py-4 px-4 text-center text-indigo-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime2}</td>
+                                {analyticsMode === 'leader' && <td className="py-4 px-4 text-center text-violet-500 font-bold">{s.totalTime3}</td>}
                               </tr>
                             ))}
                           </tbody>
@@ -1717,30 +1606,30 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     </motion.div>
 
                     {/* User Summary */}
-                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5 overflow-hidden">
-                      <h3 className="font-bold text-emerald-400 mb-8 uppercase text-xs tracking-[0.3em] flex items-center gap-2">
-                        <Search size={14} />
+                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] overflow-hidden shadow-xl">
+                      <h3 className="font-black text-emerald-500 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                        <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
                         Summary by Created By
                       </h3>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
+                        <table className="w-full text-left text-xs border-collapse">
                           <thead>
-                            <tr className="text-slate-500 font-bold uppercase tracking-widest border-b border-white/5">
-                              <th className="pb-4">User</th>
-                              <th className="pb-4 text-center">Projects</th>
-                              <th className="pb-4 text-center text-emerald-400">Time 1</th>
-                              <th className="pb-4 text-center text-indigo-400">Time 2</th>
-                              {analyticsMode === 'leader' && <th className="pb-4 text-center text-violet-400">Time 3</th>}
+                            <tr className="text-[var(--text-muted)] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
+                              <th className="py-4 px-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>User</th>
+                              <th className="py-4 px-4 text-center border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Projects</th>
+                              <th className="py-4 px-4 text-center text-emerald-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 1</th>
+                              <th className="py-4 px-4 text-center text-indigo-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 2</th>
+                              {analyticsMode === 'leader' && <th className="py-4 px-4 text-center text-violet-500">Time 3</th>}
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-white/[0.03]">
+                          <tbody className="divide-y divide-[var(--border)]">
                             {userStats.map((s, i) => (
-                              <tr key={s.name} className="group hover:bg-white/[0.02]">
-                                <td className="py-4 font-bold text-slate-200 text-xs font-mono">{s.name}</td>
-                                <td className="py-4 text-center text-emerald-400 font-black">{s.uniqueProjects}</td>
-                                <td className="py-4 text-center text-emerald-400 font-bold">{s.totalTime1}</td>
-                                <td className="py-4 text-center text-indigo-400 font-bold">{s.totalTime2}</td>
-                                {analyticsMode === 'leader' && <td className="py-4 text-center text-violet-400 font-bold">{s.totalTime3}</td>}
+                              <tr key={s.name} className="group hover:bg-[var(--bg-header)] transition-all" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
+                                <td className="py-4 px-4 font-black text-[var(--text-contrast)] font-mono border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.name}</td>
+                                <td className="py-4 px-4 text-center text-emerald-500 font-black border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.uniqueProjects}</td>
+                                <td className="py-4 px-4 text-center text-emerald-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime1}</td>
+                                <td className="py-4 px-4 text-center text-indigo-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime2}</td>
+                                {analyticsMode === 'leader' && <td className="py-4 px-4 text-center text-violet-500 font-bold">{s.totalTime3}</td>}
                               </tr>
                             ))}
                           </tbody>
@@ -1753,14 +1642,14 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
             </div>
           </div>
           {/* Time Calculation Reference */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-12 glass-panel p-8 bg-slate-900/40 border-white/5">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-12 glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-              <h3 className="text-sm font-black text-white uppercase tracking-widest">Time Calculation Methodology</h3>
+              <h3 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Time Calculation Methodology</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div className="space-y-6">
-                <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <h4 className="text-[11px] font-black text-indigo-500 uppercase tracking-[0.2em] flex items-center gap-2">
                   <FileText size={14} /> Leader View Formulas
                 </h4>
                 <div className="space-y-4">
@@ -1769,19 +1658,19 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     { label: 'TIME 2', formula: 'Date Complete - Date Start', desc: 'Actual Execution vs Planned Start' },
                     { label: 'TIME 3', formula: 'Date Checked - Date Start', desc: 'Final Approval vs Planned Start' }
                   ].map(f => (
-                    <div key={f.label} className="bg-slate-950/30 p-4 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all">
+                    <div key={f.label} className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border)] hover:border-indigo-500/30 transition-all">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-black text-white">{f.label}</span>
-                        <code className="text-xs text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
+                        <span className="text-xs font-black text-[var(--text-contrast)]">{f.label}</span>
+                        <code className="text-xs text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
                       </div>
-                      <p className="text-xs text-slate-500 font-bold uppercase tracking-tight">{f.desc}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tight">{f.desc}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-6">
-                <h4 className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <h4 className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.2em] flex items-center gap-2">
                   <Users size={14} /> User View Formulas
                 </h4>
                 <div className="space-y-4">
@@ -1789,23 +1678,23 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     { label: 'TIME 1', formula: 'Date Checked - Date Started', desc: 'Actual Working Duration' },
                     { label: 'TIME 2', formula: 'Date Checked - Created At', desc: 'Total Task Lifecycle (Creation to Approval)' }
                   ].map(f => (
-                    <div key={f.label} className="bg-slate-950/30 p-4 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all">
+                    <div key={f.label} className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border)] hover:border-emerald-500/30 transition-all">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-black text-white">{f.label}</span>
-                        <code className="text-xs text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
+                        <span className="text-xs font-black text-[var(--text-contrast)]">{f.label}</span>
+                        <code className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
                       </div>
-                      <p className="text-xs text-slate-500 font-bold uppercase tracking-tight">{f.desc}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tight">{f.desc}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="mt-8 pt-6 border-t border-white/5 flex items-center gap-3">
-              <div className="p-2 bg-rose-500/10 rounded-lg text-rose-400">
+            <div className="mt-8 pt-6 border-t border-[var(--border)] flex items-center gap-3">
+              <div className="p-2 bg-rose-500/10 rounded-lg text-rose-500">
                 <Database size={14} />
               </div>
-              <p className="text-xs text-slate-500 font-black uppercase tracking-widest">
-                All calculations automatically deduct <span className="text-rose-400">1 hour lunch break</span> (12:30 - 13:30) if applicable.
+              <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest">
+                All calculations automatically deduct <span className="text-rose-500">1 hour lunch break</span> (12:30 - 13:30) if applicable.
               </p>
             </div>
           </motion.div>

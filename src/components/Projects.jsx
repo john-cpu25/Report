@@ -98,23 +98,23 @@ const Projects = () => {
   return (
     <div className="w-full mx-auto space-y-8 pb-20 px-4 sm:px-6">
       {/* Header Intelligence */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900/20 p-6 rounded-3xl border border-white/5 shadow-2xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--glass-border)] shadow-2xl">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="w-2 h-8 bg-indigo-500 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.6)]" />
-            <h1 className="text-3xl font-black text-white uppercase tracking-tight">
+            <h1 className="text-3xl font-black text-[var(--text-main)] uppercase tracking-tight">
               Project <span className="text-indigo-400">Intelligence</span>
             </h1>
           </div>
-          <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] ml-5">Global Portfolio Management System</p>
+          <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-5">Global Portfolio Management System</p>
         </div>
 
         <div className="relative group max-w-md w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
           <input 
             type="text" 
             placeholder="FILTER PROJECTS..." 
-            className="w-full bg-slate-900/40 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-white focus:border-indigo-500/50 focus:bg-slate-900/60 transition-all outline-none shadow-2xl placeholder:text-slate-700"
+            className="w-full bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-[var(--text-main)] focus:border-indigo-500/50 focus:bg-[var(--bg-card)] transition-all outline-none shadow-2xl placeholder:text-[var(--text-muted)]"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
@@ -140,10 +140,10 @@ const Projects = () => {
                 exit={{ opacity: 0, scale: 0.9 }}
                 whileHover={{ y: -8, transition: { duration: 0.2 } }}
                 onClick={() => setSelectedId(project.id)}
-                className={`group relative cursor-pointer glass-panel overflow-hidden border-white/5 transition-all ${
+                className={`group relative cursor-pointer glass-panel overflow-hidden border-[var(--glass-border)] transition-all ${
                   selectedId === project.id 
                     ? 'ring-2 ring-indigo-500 shadow-[0_0_40px_rgba(99,102,241,0.2)] bg-indigo-500/5' 
-                    : 'hover:bg-white/[0.03] hover:border-white/10'
+                    : 'hover:bg-indigo-500/5 hover:border-indigo-500/20'
                 }`}
               >
                 {/* Accent Color Strip */}
@@ -156,12 +156,12 @@ const Projects = () => {
                   {/* Top Row: Key & Version */}
                   <div className="flex justify-between items-start gap-4">
                     <div 
-                      className="px-4 py-2 rounded-xl bg-slate-950 border border-white/5 text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] shadow-inner break-words leading-relaxed"
+                      className="px-4 py-2 rounded-xl bg-[var(--bg-dark)] border border-[var(--glass-border)] text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] shadow-inner break-words leading-relaxed"
                       title={project.name}
                     >
                       {project.name || 'N/A'}
                     </div>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 text-[9px] font-bold text-slate-500 uppercase tracking-wider shrink-0 border border-white/5">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface)] text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider shrink-0 border border-[var(--glass-border)]">
                       <Cpu size={10} />
                       {project.revit_version || '2024'}
                     </div>
@@ -169,12 +169,12 @@ const Projects = () => {
 
                   {/* Project Identity */}
                   <div className="space-y-1">
-                    <h3 className="text-2xl font-black text-white uppercase group-hover:text-indigo-400 transition-colors truncate" title={project.key}>
+                    <h3 className="text-2xl font-black text-[var(--text-main)] uppercase group-hover:text-indigo-500 transition-colors truncate" title={project.key}>
                       {project.key}
                     </h3>
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Active System</span>
+                      <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Active System</span>
                     </div>
                   </div>
 
@@ -209,7 +209,7 @@ const Projects = () => {
           
           <div className="lg:col-span-3">
             <div className="sticky top-6">
-              <div className="glass-panel p-6 border-white/5 shadow-2xl relative overflow-hidden bg-slate-900/30">
+              <div className="glass-panel p-6 border-[var(--glass-border)] shadow-2xl relative overflow-hidden bg-[var(--bg-card)]">
                 <div className="absolute top-0 right-0 p-8 opacity-5">
                   <Sparkles size={80} />
                 </div>
@@ -225,7 +225,7 @@ const Projects = () => {
                     </div>
                   </div>
 
-                  <div className="flex bg-slate-950/50 p-1 rounded-xl mb-6 border border-white/5">
+                  <div className="flex bg-[var(--bg-surface)] p-1 rounded-xl mb-6 border border-[var(--glass-border)]">
                     {['WEEK', 'MONTH', 'YEAR'].map(filter => (
                       <button
                         key={filter}
@@ -265,7 +265,7 @@ const Projects = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: idx * 0.05 }}
                             onClick={() => setSelectedId(proj.id)}
-                            className={`bg-slate-900/50 hover:bg-indigo-500/10 border border-white/5 hover:border-indigo-500/30 transition-all rounded-xl p-4 cursor-pointer group flex flex-col gap-2 relative overflow-hidden`}
+                            className={`bg-[var(--bg-surface)] hover:bg-indigo-500/10 border border-[var(--glass-border)] hover:border-indigo-500/30 transition-all rounded-xl p-4 cursor-pointer group flex flex-col gap-2 relative overflow-hidden`}
                             style={isTop3 ? {
                               boxShadow: `inset 0 0 20px ${glowColor}`,
                               border: `1px solid ${glowColor.replace('0.2', '0.4')}`
@@ -299,10 +299,10 @@ const Projects = () => {
                                     <Crown size={16} className={`${crownColor} drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]`} fill="currentColor" />
                                   </motion.div>
                                 )}
-                                <span className="text-sm font-black text-white uppercase group-hover:text-indigo-400 transition-colors pr-2 break-words leading-tight">
-                                  {proj.key}
-                                </span>
-                              </div>
+                                  <span className="text-sm font-black text-[var(--text-main)] group-hover:text-indigo-500 transition-colors pr-2 break-words leading-tight">
+                                    {proj.key}
+                                  </span>
+                                </div>
                               <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase whitespace-nowrap transition-all ${
                                 isTop3 ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-indigo-500/20 text-indigo-400'
                               }`}>
@@ -336,7 +336,7 @@ const Projects = () => {
             
             <motion.div
               layoutId={`card-${selectedId}`}
-              className="relative w-full max-w-5xl bg-slate-900 border border-white/10 rounded-none overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.8)]"
+              className="relative w-full max-w-5xl bg-[var(--bg-dark)] border border-[var(--glass-border)] rounded-none overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.8)]"
             >
               <div 
                 className="absolute top-0 left-0 w-full h-2 z-10"
@@ -386,7 +386,7 @@ const Projects = () => {
                 </div>
 
                 {/* Right: Detailed Data */}
-                <div className="lg:w-3/5 px-10 pb-10 md:px-14 md:pb-14 flex flex-col space-y-10 bg-slate-900 relative">
+                <div className="lg:w-3/5 px-10 pb-10 md:px-14 md:pb-14 flex flex-col space-y-10 bg-[var(--bg-dark)] relative">
                   {/* EXPLICIT SPACER TO FORCE CONTENT DOWN */}
                   <div className="h-40 shrink-0 w-full" />
 
@@ -422,8 +422,8 @@ const Projects = () => {
                         <User size={24} />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase">Lead Manager</p>
-                        <p className="text-white font-black text-lg">NM KHANG</p>
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">Lead Manager</p>
+                        <p className="text-[var(--text-main)] font-black text-lg">NM KHANG</p>
                       </div>
                     </div>
                   </div>
