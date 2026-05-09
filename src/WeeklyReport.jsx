@@ -581,8 +581,8 @@ const WeeklyReport = ({
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-white/[0.03] text-sm font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5">
-                    <th className="p-6 w-12">
+                  <tr className="bg-white/[0.03] text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5">
+                    <th className="px-4 py-4 w-12">
                       <input 
                         type="checkbox" 
                         className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
@@ -596,7 +596,7 @@ const WeeklyReport = ({
                         }}
                       />
                     </th>
-                    <th className="p-6 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('project')}>
+                    <th className="px-4 py-4 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('project')}>
                       <div className="flex items-center gap-2">
                         Project
                         <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
@@ -604,7 +604,7 @@ const WeeklyReport = ({
                         </div>
                       </div>
                     </th>
-                    <th className="p-6 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('task')}>
+                    <th className="px-4 py-4 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('task')}>
                       <div className="flex items-center gap-2">
                         Task Details
                         <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
@@ -612,7 +612,7 @@ const WeeklyReport = ({
                         </div>
                       </div>
                     </th>
-                    <th className="p-6 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('markupTime')}>
+                    <th className="px-4 py-4 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('markupTime')}>
                       <div className="flex items-center gap-2">
                         Markup Time
                         <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
@@ -620,7 +620,7 @@ const WeeklyReport = ({
                         </div>
                       </div>
                     </th>
-                    <th className="p-6 relative">
+                    <th className="px-4 py-4 relative">
                       <div className="flex items-center justify-between gap-2">
                         <div 
                           className="flex items-center gap-2 cursor-pointer hover:text-slate-300 transition-colors group/header"
@@ -735,14 +735,14 @@ const WeeklyReport = ({
                       </div>
                     </th>
                     {DAYS_OF_WEEK.map((d, i) => (
-                      <th key={d} className="p-6 text-center">
+                      <th key={d} className="px-4 py-4 text-center border-l border-white/5 bg-white/[0.01]">
                         <div className="flex flex-col gap-1">
-                          <span className="text-slate-300 font-black text-xs uppercase tracking-wider">{d === 'Wednesday' ? 'We' : d.substring(0, 2)}</span>
-                          <span className="text-xs font-bold text-slate-500 tracking-tight opacity-50">{weekDates[i]}</span>
+                          <span className="text-slate-300 font-black text-[10px] uppercase tracking-wider">{d === 'Wednesday' ? 'We' : d.substring(0, 2)}</span>
+                          <span className="text-[9px] font-bold text-slate-500 tracking-tight opacity-50">{weekDates[i]}</span>
                         </div>
                       </th>
                     ))}
-                    <th className="p-6 text-center">Actions</th>
+                    <th className="px-4 py-4 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
@@ -758,7 +758,7 @@ const WeeklyReport = ({
                               onClick={() => toggleCollapse(projectName)}
                             >
                               <td colSpan={9} className="p-0">
-                                <div className="flex items-center justify-between px-6 py-4">
+                                <div className="flex items-center justify-between px-4 py-3">
                                   <div className="flex items-center gap-4">
                                     <motion.div 
                                       animate={{ rotate: isCollapsed ? 0 : 90 }}
@@ -770,11 +770,11 @@ const WeeklyReport = ({
                                     <div>
                                       <div className="flex items-center gap-3">
                                         <span className="text-sm font-black text-white uppercase tracking-[0.3em] leading-none">{projectName}</span>
-                                        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs font-black rounded-md uppercase tracking-widest border border-indigo-500/30">
+                                        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-[10px] font-black rounded-md uppercase tracking-widest border border-indigo-500/30">
                                           {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
                                         </span>
                                       </div>
-                                      <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mt-1 opacity-60">Project Milestone Group</p>
+                                      <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-1 opacity-60">Project Milestone Group</p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-4">
@@ -807,7 +807,7 @@ const WeeklyReport = ({
                                 exit={{ opacity: 0, height: 0 }}
                                 className="hover:bg-white/[0.02] transition-all group border-b border-white/[0.04]"
                               >
-                                <td className="p-6">
+                                <td className="px-3 py-3">
                                   <input 
                                     type="checkbox" 
                                     className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
@@ -820,13 +820,13 @@ const WeeklyReport = ({
                                     }}
                                   />
                                 </td>
-                                <td className="p-6">
-                                  <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase">{row.project}</span>
+                                <td className="px-3 py-3">
+                                  <span className="text-indigo-400 text-[10px] font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase">{row.project}</span>
                                 </td>
-                                <td className="p-6">
-                                  <div className="text-sm font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
+                                <td className="px-3 py-3">
+                                  <div className="text-[10px] font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
                                 </td>
-                                <td className="p-4">
+                                <td className="px-3 py-3">
                                   <MarkupCell 
                                     id={row.id}
                                     markupDate={row.markupDate}
@@ -840,9 +840,9 @@ const WeeklyReport = ({
                                     }}
                                   />
                                 </td>
-                                <td className="p-6">
+                                <td className="px-3 py-3">
                                   <select 
-                                    className={`text-[10px] font-black py-1.5 px-3 rounded-lg border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${
+                                    className={`text-[10px] font-black py-1 px-2 rounded-lg border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${
                                       row.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5' :
                                       row.status === 'PENDING' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-slate-500/5' :
                                       row.status === 'TMR' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20 shadow-orange-500/5' :
@@ -859,14 +859,13 @@ const WeeklyReport = ({
                                   </select>
                                 </td>
                                 {DAYS_OF_WEEK.map(d => {
-                                  const colors = getStatusColor(row.status)
                                   const isEditing = editingCell && editingCell.id === row.id && editingCell.day === d
                                   return (
-                                    <td key={d} className="p-4 text-center">
+                                    <td key={d} className="px-2 py-2 text-center">
                                       {isEditing ? (
                                         <input
                                           type="time"
-                                          className="input bg-slate-950/80 border-indigo-500/30 text-xs font-bold p-1.5 w-24 mx-auto text-center"
+                                          className="bg-slate-950/80 border-indigo-500/30 text-[10px] font-bold p-1 w-20 mx-auto text-center"
                                           defaultValue={row.days[d] || ''}
                                           autoFocus
                                           onBlur={(e) => {
@@ -883,10 +882,10 @@ const WeeklyReport = ({
                                         />
                                       ) : (
                                         <span 
-                                          className={`text-xs font-black tracking-tight cursor-pointer px-2.5 py-1 rounded-md transition-all hover:ring-1 hover:ring-white/20 ${
+                                          className={`text-[10px] font-black tracking-tight cursor-pointer px-2 py-0.5 rounded-md transition-all hover:bg-white/10 ${
                                             row.days[d] 
-                                              ? `${colors.text} ${colors.bg} ${colors.border} border` 
-                                              : 'text-slate-600 hover:text-slate-400'
+                                              ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20' 
+                                              : 'text-slate-600'
                                           }`}
                                           onClick={() => setEditingCell({ id: row.id, day: d })}
                                           title="Click to edit"
@@ -918,7 +917,7 @@ const WeeklyReport = ({
                           exit={{ opacity: 0, x: -10 }}
                           className="hover:bg-white/[0.02] transition-all group"
                         >
-                          <td className="p-6">
+                          <td className="px-3 py-3">
                             <input 
                               type="checkbox" 
                               className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
@@ -931,13 +930,13 @@ const WeeklyReport = ({
                               }}
                             />
                           </td>
-                          <td className="p-6">
-                            <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase">{row.project}</span>
+                          <td className="px-3 py-3">
+                            <span className="text-indigo-400 text-[10px] font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase">{row.project}</span>
                           </td>
-                          <td className="p-6">
-                            <div className="text-sm font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
+                          <td className="px-3 py-3">
+                            <div className="text-[10px] font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
                           </td>
-                          <td className="p-4">
+                          <td className="px-3 py-3">
                             <MarkupCell 
                               id={row.id}
                               markupDate={row.markupDate}
@@ -951,7 +950,7 @@ const WeeklyReport = ({
                               }}
                             />
                           </td>
-                          <td className="p-6">
+                          <td className="px-3 py-3">
                             <select 
                               className={`text-[10px] font-black py-1.5 px-3 rounded-lg border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${
                                 row.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5' :
@@ -970,14 +969,13 @@ const WeeklyReport = ({
                             </select>
                           </td>
                           {DAYS_OF_WEEK.map(d => {
-                            const colors = getStatusColor(row.status)
                             const isEditing = editingCell && editingCell.id === row.id && editingCell.day === d
                             return (
-                              <td key={d} className="p-4 text-center">
+                              <td key={d} className="px-2 py-2 text-center">
                                 {isEditing ? (
                                   <input
                                     type="time"
-                                    className="input bg-slate-950/80 border-indigo-500/30 text-xs font-bold p-1.5 w-24 mx-auto text-center"
+                                    className="bg-slate-950/80 border-indigo-500/30 text-[10px] font-bold p-1 w-20 mx-auto text-center"
                                     defaultValue={row.days[d] || ''}
                                     autoFocus
                                     onBlur={(e) => {
@@ -994,10 +992,10 @@ const WeeklyReport = ({
                                   />
                                 ) : (
                                   <span 
-                                    className={`text-xs font-black tracking-tight cursor-pointer px-2.5 py-1 rounded-md transition-all hover:ring-1 hover:ring-white/20 ${
+                                    className={`text-[10px] font-black tracking-tight cursor-pointer px-2 py-0.5 rounded-md transition-all hover:bg-white/10 ${
                                       row.days[d] 
-                                        ? `${colors.text} ${colors.bg} ${colors.border} border` 
-                                        : 'text-slate-600 hover:text-slate-400'
+                                        ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20' 
+                                        : 'text-slate-600'
                                     }`}
                                     onClick={() => setEditingCell({ id: row.id, day: d })}
                                     title="Click to edit"
@@ -1008,7 +1006,7 @@ const WeeklyReport = ({
                               </td>
                             )
                           })}
-                          <td className="p-4">
+                          <td className="px-3 py-3">
                             <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
                               <button onClick={() => moveRow(row.id, -1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowUp size={14} strokeWidth={3} /></button>
                               <button onClick={() => moveRow(row.id, 1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowDown size={14} strokeWidth={3} /></button>
@@ -1038,12 +1036,20 @@ const WeeklyReport = ({
         </div>
 
         {/* Right Sidebar - Statistics (Always on the right) */}
-        <aside className="lg:col-span-3 space-y-6">
-          <div className="glass-panel p-6 border-white/5 shadow-2xl bg-slate-900/30">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-              <h2 className="text-lg font-black text-white tracking-tight uppercase">Data Intelligence</h2>
+        <aside className="lg:col-span-3 space-y-4">
+          <div className="glass-panel p-4 border-white/5 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <Layout size={100} />
             </div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+                <div>
+                  <h2 className="text-sm font-black text-white tracking-tight uppercase">Data Intelligence</h2>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Real-time Analytics</p>
+                </div>
+              </div>
             
             <div className="space-y-8">
               {/* Status Doughnut */}
@@ -1132,12 +1138,13 @@ const WeeklyReport = ({
                       }
                     }}
                   />
-                </div>
               </div>
             </div>
           </div>
+            </div>
+          </div>
 
-          <div className="glass-panel p-6 border-white/5 shadow-2xl">
+          <div className="glass-panel p-4 border-white/5 shadow-2xl">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Daily Activity</h3>
             <div className="space-y-4">
               {DAYS_OF_WEEK.map(d => (
@@ -1161,13 +1168,13 @@ const WeeklyReport = ({
 
       {/* Bottom Dashboard / Project Distribution */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
-        <div className="glass-panel p-8 border-white/5 shadow-2xl lg:col-span-9 relative overflow-hidden">
+        <div className="glass-panel p-6 border-white/5 shadow-2xl lg:col-span-9 relative overflow-hidden">
           <KamehamehaAnimation />
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-6 bg-orange-500 rounded-full"></div>
-              <h2 className="text-xl font-black text-white tracking-tight uppercase">Workforce Distribution</h2>
+              <h2 className="text-sm font-black text-white tracking-tight uppercase">Workforce Distribution</h2>
             </div>
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Weekly Overview</span>
           </div>
@@ -1187,18 +1194,18 @@ const WeeklyReport = ({
         </div>
       </div>
 
-        <div className="glass-panel p-8 border-white/5 shadow-2xl bg-indigo-500/5 overflow-hidden relative group lg:col-span-3">
+        <div className="glass-panel p-6 border-white/5 shadow-2xl bg-indigo-500/5 overflow-hidden relative group lg:col-span-3">
           <div className="relative z-10">
-            <h3 className="text-lg font-black text-white uppercase mb-4">System Update</h3>
-            <p className="text-sm text-slate-400 leading-relaxed mb-6">
+            <h3 className="text-sm font-black text-white uppercase mb-4">System Update</h3>
+            <p className="text-[11px] text-slate-400 leading-relaxed mb-6">
               The reporting system is now synced with the local database. Your progress is automatically saved to local storage.
             </p>
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-indigo-500 rounded-xl text-white shadow-lg">
-                <FileSpreadsheet size={20} />
+              <div className="p-2.5 bg-indigo-500 rounded-xl text-white shadow-lg">
+                <FileSpreadsheet size={16} />
               </div>
               <div>
-                <p className="text-xs font-black text-white">v2.1 Stable</p>
+                <p className="text-[11px] font-black text-white">v2.1 Stable</p>
                 <p className="text-[10px] text-indigo-400 font-bold uppercase">Ready for export</p>
               </div>
             </div>
