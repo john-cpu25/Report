@@ -799,7 +799,7 @@ const WeeklyReport = ({
                             </tr>
                             
                             {/* Task Rows */}
-                            {!isCollapsed && tasks.map((row) => (
+                            {!isCollapsed && tasks.map((row, index) => (
                               <motion.tr 
                                 key={row.id}
                                 initial={{ opacity: 0, height: 0 }}
@@ -910,7 +910,7 @@ const WeeklyReport = ({
                         )
                       })
                     ) : (
-                      filteredReportData.map((row) => (
+                      filteredReportData.map((row, i) => (
                         <motion.tr 
                           key={row.id}
                           initial={{ opacity: 0, x: 10 }}
