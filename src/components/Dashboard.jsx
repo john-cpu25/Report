@@ -174,9 +174,9 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-12 w-full">
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 w-full">
         <div>
           <h1 className="text-3xl font-black text-[var(--text-main)] uppercase tracking-tighter flex items-center gap-3">
             <LayoutDashboard className="text-indigo-500" size={32} />
@@ -203,7 +203,7 @@ const Dashboard = () => {
       </div>
 
       {/* Hero Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
         {stats.map((stat, idx) => (
           <motion.div
             key={stat.label}
@@ -227,7 +227,7 @@ const Dashboard = () => {
                 <stat.icon size={24} />
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{stat.label}</p>
+                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-80">{stat.label}</p>
                 <motion.p 
                   initial={{ scale: 0.5 }}
                   animate={{ scale: 1 }}
@@ -245,18 +245,18 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:col-span-12 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 w-full">
         {/* Project Pulse Chart */}
-        <div className="xl:col-span-2 bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-8 space-y-8">
+        <div className="xl:col-span-2 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[2.5rem] p-8 space-y-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
               <div>
-                <h2 className="text-lg font-black text-white uppercase tracking-tight">Project Activity Distribution</h2>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Task Volume per Core Project</p>
+                <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Project Activity Distribution</h2>
+                <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Task Volume per Core Project</p>
               </div>
             </div>
-            <div className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-white cursor-pointer transition-colors">
+            <div className="p-3 bg-white/5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer transition-colors">
               <ArrowUpRight size={20} />
             </div>
           </div>
@@ -265,18 +265,18 @@ const Dashboard = () => {
             {tasks.length > 0 ? (
               <Bar data={chartData} options={barOptions} />
             ) : (
-              <p className="text-slate-500 font-bold italic">No data available for this range.</p>
+              <p className="text-[var(--text-muted)] font-bold italic">No data available for this range.</p>
             )}
           </div>
         </div>
 
         {/* Team Leaderboard */}
-        <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-8 flex flex-col">
+        <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[2.5rem] p-8 flex flex-col">
           <div className="flex items-center gap-4 mb-10">
             <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
             <div>
-              <h2 className="text-lg font-black text-white uppercase tracking-tight">Elite Agents</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Top Performers by Task Volume</p>
+              <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Elite Agents</h2>
+              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Top Performers by Task Volume</p>
             </div>
           </div>
 
@@ -287,47 +287,47 @@ const Dashboard = () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl group hover:bg-indigo-500/10 hover:border-indigo-500/20 transition-all"
+                className="flex items-center justify-between p-4 bg-white/5 border border-[var(--glass-border)] rounded-2xl group hover:bg-indigo-500/10 hover:border-indigo-500/20 transition-all"
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
                     idx === 0 ? 'bg-yellow-400/20 text-yellow-400' :
                     idx === 1 ? 'bg-slate-300/20 text-slate-300' :
                     idx === 2 ? 'bg-orange-400/20 text-orange-400' :
-                    'bg-white/5 text-slate-500'
+                    'bg-white/5 text-[var(--text-muted)]'
                   }`}>
                     {idx === 0 ? <Award size={18} /> : idx + 1}
                   </div>
                   <div>
-                    <p className="text-sm font-black text-white uppercase">{user.name}</p>
-                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Active Operative</p>
+                    <p className="text-sm font-black text-[var(--text-main)] uppercase">{user.name}</p>
+                    <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Active Operative</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-black text-white">{user.count}</p>
+                  <p className="text-lg font-black text-[var(--text-main)]">{user.count}</p>
                   <p className="text-[9px] font-bold text-emerald-400 uppercase">Tasks</p>
                 </div>
               </motion.div>
             )) : (
-              <p className="text-slate-500 font-bold italic text-center py-10">No active agents found.</p>
+              <p className="text-[var(--text-muted)] font-bold italic text-center py-10">No active agents found.</p>
             )}
           </div>
 
-          <button className="mt-8 w-full py-4 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black text-white uppercase tracking-widest transition-all border border-white/5">
+          <button className="mt-8 w-full py-4 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black text-[var(--text-main)] uppercase tracking-widest transition-all border border-[var(--glass-border)]">
             View Full Analysis
           </button>
         </div>
       </div>
 
       {/* Activity Heatmap & Feed */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
         {/* Mock Activity Heatmap */}
-        <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-8">
+        <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[2.5rem] p-8">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-1.5 h-6 bg-yellow-400 rounded-full" />
             <div>
-              <h2 className="text-lg font-black text-white uppercase tracking-tight">Intelligence Heatmap</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">System Load over Time</p>
+              <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Intelligence Heatmap</h2>
+              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">System Load over Time</p>
             </div>
           </div>
           
@@ -338,7 +338,7 @@ const Dashboard = () => {
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.01 }}
-                className={`aspect-square rounded-md border border-white/5 ${
+                className={`aspect-square rounded-md border border-[var(--glass-border)] ${
                   Math.random() > 0.8 ? 'bg-indigo-500/60 shadow-[0_0_10px_rgba(99,102,241,0.3)]' :
                   Math.random() > 0.5 ? 'bg-indigo-500/30' :
                   Math.random() > 0.2 ? 'bg-indigo-500/10' :
@@ -347,39 +347,39 @@ const Dashboard = () => {
               />
             ))}
           </div>
-          <div className="flex justify-between mt-4 text-[8px] font-black text-slate-600 uppercase tracking-widest">
+          <div className="flex justify-between mt-4 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
             <span>Low Intensity</span>
             <span>Critical Load</span>
           </div>
         </div>
 
         {/* Live Feed Ticker */}
-        <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-8 overflow-hidden relative">
+        <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[2.5rem] p-8 overflow-hidden relative">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-1.5 h-6 bg-rose-500 rounded-full" />
             <div>
-              <h2 className="text-lg font-black text-white uppercase tracking-tight">Direct Intelligence Stream</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Live System Updates</p>
+              <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Direct Intelligence Stream</h2>
+              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Live System Updates</p>
             </div>
           </div>
 
           <div className="space-y-4">
             {tasks.slice(0, 4).map((task, idx) => (
-              <div key={task.id} className="flex gap-4 items-start pb-4 border-b border-white/5 last:border-0">
-                <div className="p-2 bg-white/5 rounded-lg text-slate-500">
+              <div key={task.id} className="flex gap-4 items-start pb-4 border-b border-[var(--glass-border)] last:border-0">
+                <div className="p-2 bg-white/5 rounded-lg text-[var(--text-muted)]">
                   <Clock size={14} />
                 </div>
                 <div>
-                  <p className="text-[11px] text-white font-bold leading-tight">
+                  <p className="text-[11px] text-[var(--text-main)] font-bold leading-tight">
                     <span className="text-indigo-400 font-black">@{task.user}</span> committed new task to <span className="text-yellow-400 font-black">#{task.project}</span>
                   </p>
-                  <p className="text-[9px] text-slate-500 font-black uppercase mt-1">2 MINUTES AGO</p>
+                  <p className="text-[9px] text-[var(--text-muted)] font-black uppercase mt-1">2 MINUTES AGO</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-slate-950 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-[var(--bg-dark)] to-transparent pointer-events-none" />
         </div>
       </div>
     </div>

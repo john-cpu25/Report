@@ -366,7 +366,7 @@ return (
                 : 0 
             }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="min-h-screen flex flex-col"
+            className="flex-1 min-h-screen flex flex-col w-full"
           >
             <TopBar 
               onMenuClick={() => {
@@ -383,7 +383,7 @@ return (
               activeTab={activeTab}
             />
 
-            <main className="flex-grow p-4 md:p-6 lg:p-8">
+            <main className="flex-grow p-4 md:p-6 lg:p-8 w-full">
               <div className="w-full">
                 <AnimatePresence mode="wait">
                   <motion.div

@@ -12,7 +12,7 @@ const TopBar = ({
 }) => {
   return (
     <header className="h-20 bg-[var(--glass-bg)] backdrop-blur-xl border-b border-[var(--glass-border)] sticky top-0 z-30">
-      <div className="max-w-[1600px] mx-auto h-full flex items-center justify-between px-6">
+      <div className="w-full h-full flex items-center justify-between px-6">
         <div className="flex items-center gap-6">
           <button 
             onClick={onMenuClick}
