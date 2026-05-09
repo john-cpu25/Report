@@ -1,11 +1,14 @@
+
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import * as XLSX from 'xlsx'
-import { Upload, FileText, BarChart3, Table as TableIcon, Download, Search, RefreshCw, Users, Database, Calendar } from 'lucide-react'
+import { Upload, FileText, BarChart3, Table as TableIcon, Download, Search, RefreshCw, Users, Database, Calendar, Clock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import AtomicAnimation from './AtomicAnimation'
 import { supabase } from './supabaseClient'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement } from 'chart.js'
 import { Doughnut, Bar, Line } from 'react-chartjs-2'
+import { calculateWorkingDuration, formatDuration as formatDur } from './utils/timeUtils'
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement)
 
@@ -198,16 +201,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
   }
 
   function getEffectiveDuration(start, end) {
-    if (!start || !end || end <= start) return 0;
-    let duration = end.getTime() - start.getTime();
-    const lunchStart = new Date(start);
-    lunchStart.setUTCHours(12, 30, 0, 0);
-    const lunchEnd = new Date(start);
-    lunchEnd.setUTCHours(13, 30, 0, 0);
-    const overlapStart = Math.max(start.getTime(), lunchStart.getTime());
-    const overlapEnd = Math.min(end.getTime(), lunchEnd.getTime());
-    if (overlapEnd > overlapStart) duration -= (overlapEnd - overlapStart);
-    return duration > 0 ? duration : 0;
+    return calculateWorkingDuration(start, end);
   }
 
   function formatYMD(d) {
@@ -1675,8 +1669,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 </h4>
                 <div className="space-y-4">
                   {[
-                    { label: 'TIME 1', formula: 'Date Checked - Date Started', desc: 'Actual Working Duration' },
-                    { label: 'TIME 2', formula: 'Date Checked - Created At', desc: 'Total Task Lifecycle (Creation to Approval)' }
+                    { label: 'TIME 4', formula: 'Date Checked - Date Started', desc: 'Actual Working Duration' },
+                    { label: 'TIME 5', formula: 'Date Checked - Created At', desc: 'Total Task Lifecycle (Creation to Approval)' }
                   ].map(f => (
                     <div key={f.label} className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border)] hover:border-emerald-500/30 transition-all">
                       <div className="flex justify-between items-center mb-1">
@@ -1689,15 +1683,25 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 </div>
               </div>
             </div>
-            <div className="mt-8 pt-6 border-t border-[var(--border)] flex items-center gap-3">
-              <div className="p-2 bg-rose-500/10 rounded-lg text-rose-500">
-                <Database size={14} />
+            <div className="mt-8 pt-6 border-t border-[var(--border)] flex flex-col md:flex-row md:items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-rose-500/10 rounded-lg text-rose-500">
+                    <Clock size={14} />
+                  </div>
+                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest">
+                    Working Hours: <span className="text-rose-500">09:00 - 12:30</span> & <span className="text-rose-500">13:30 - 18:00</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-500">
+                    <Database size={14} />
+                  </div>
+                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest">
+                    Multi-day tasks only count <span className="text-indigo-500">8 working hours</span> per day.
+                  </p>
+                </div>
               </div>
-              <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest">
-                All calculations automatically deduct <span className="text-rose-500">1 hour lunch break</span> (12:30 - 13:30) if applicable.
-              </p>
-            </div>
-          </motion.div>
+            </motion.div>
         </motion.div>
       )}
     </div>

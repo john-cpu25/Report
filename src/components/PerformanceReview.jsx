@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO, startOfDay, endOfDay, startOfWeek } from 'date-fns';
 import { supabase } from '../supabaseClient';
+import { calculateWorkingDuration, getDurationHours } from '../utils/timeUtils';
 
 const PerformanceReview = () => {
   const [tasks, setTasks] = useState([]);
@@ -54,8 +55,7 @@ const PerformanceReview = () => {
     const e = processDate(endVal);
     const s = processDate(startVal);
     if (!e || !s) return null;
-    const ms = e.getTime() - s.getTime();
-    return ms > 0 ? ms / 3600000 : null;
+    return getDurationHours(calculateWorkingDuration(s, e));
   }
 
   // --- FETCH ---
