@@ -1,0 +1,129 @@
+[
+  {
+    "id": "1",
+    "name": "Vũ Đỗ",
+    "position": "Engineer Team Leader",
+    "team": "Leadership",
+    "level": 0,
+    "children": [
+      {
+        "id": "2",
+        "name": "Vỹ Trần",
+        "position": "Assistant",
+        "team": "Support",
+        "level": 1,
+        "isAssistant": true,
+        "children": []
+      },
+      {
+        "id": "3",
+        "name": "Trí Nguyễn",
+        "position": "Senior Engineer",
+        "team": "Slab Design",
+        "level": 1,
+        "layout": "vertical",
+        "children": [
+          { "id": "4", "name": "Ngân Trần", "position": "Engineer", "team": "Slab Design", "level": 2, "side": "right" },
+          { "id": "5", "name": "Tâm Nguyễn", "position": "Junior 2", "team": "Slab Design", "level": 2, "side": "right" },
+          { "id": "6", "name": "Junior 4", "position": "Junior 4", "team": "Slab Design", "level": 2, "side": "right" }
+        ]
+      },
+      {
+        "id": "7",
+        "name": "Bảo Phạm",
+        "position": "Engineer",
+        "team": "Slab Design",
+        "level": 1,
+        "children": []
+      },
+      {
+        "id": "8",
+        "name": "Đức Phạm",
+        "position": "Senior Engineer",
+        "team": "Slab Design",
+        "level": 1,
+        "layout": "vertical",
+        "children": [
+          { "id": "9", "name": "Nhân Phạm", "position": "Engineer", "team": "Slab Design", "level": 2, "side": "right" },
+          { "id": "10", "name": "An Nguyễn", "position": "Junior 3", "team": "Slab Design", "level": 2, "side": "right" },
+          { "id": "11", "name": "Linh Huỳnh", "position": "Junior 1", "team": "Slab Design", "level": 2, "side": "right" }
+        ]
+      },
+      {
+        "id": "12",
+        "name": "Dung Đỗ",
+        "position": "Senior Engineer",
+        "team": "Slab Design",
+        "level": 1,
+        "layout": "vertical",
+        "children": [
+          { "id": "13", "name": "Kỳ Phan", "position": "Engineer", "team": "Slab Design", "level": 2, "side": "right" }
+        ]
+      },
+      {
+        "id": "14",
+        "name": "Nhân Nguyễn",
+        "position": "BIM Manager",
+        "team": "BIM / REO / MTO",
+        "level": 1,
+        "children": [
+          {
+            "id": "15",
+            "name": "Cường Phạm",
+            "position": "Line Manager",
+            "team": "BIM",
+            "level": 2,
+            "layout": "vertical",
+            "children": [
+              {
+                "id": "16",
+                "name": "Tiến Trần",
+                "position": "Senior Drafter",
+                "team": "BIM",
+                "level": 3,
+                "layout": "vertical",
+                "side": "left",
+                "children": [
+                  { "id": "18", "name": "Nhân Khưu", "position": "Drafter", "team": "BIM", "level": 4, "side": "right" },
+                  { "id": "17", "name": "Trung Nguyễn", "position": "Drafter", "team": "BIM", "level": 4, "side": "right" }
+                ]
+              },
+              { "id": "19", "name": "Ánh Nguyễn", "position": "Drafter", "team": "BIM", "level": 3, "side": "right" },
+              { "id": "20", "name": "Hoàng Phạm", "position": "Drafter", "team": "BIM", "level": 3, "side": "right" },
+              { "id": "21", "name": "Đăng Nguyễn", "position": "Drafter", "team": "BIM", "level": 3, "side": "right" },
+              { "id": "22", "name": "Drafter 1", "position": "Drafter", "team": "BIM", "level": 3, "side": "right" },
+              { "id": "23", "name": "Drafter 2", "position": "Drafter", "team": "BIM", "level": 3, "side": "right" }
+            ]
+          },
+          { "id": "27", "name": "Khánh Nguyễn", "position": "Drafter", "team": "BIM", "level": 2 },
+          {
+            "id": "24",
+            "name": "Nguyên Lý",
+            "position": "Team Leader",
+            "team": "BIM",
+            "level": 2,
+            "layout": "vertical",
+            "children": [
+              { "id": "25", "name": "Quân Nguyễn", "position": "Drafter", "team": "BIM", "level": 3, "side": "right" },
+              { "id": "26", "name": "Khiêm Nguyễn", "position": "Team Leader", "team": "BIM", "level": 3, "side": "right" },
+              { "id": "28", "name": "Quang Nguyễn", "position": "Drafter", "team": "BIM", "level": 3, "side": "right" },
+              { "id": "29", "name": "Khang Trịnh", "position": "Trainee", "team": "BIM", "level": 3, "side": "right" },
+              { "id": "30", "name": "Tâm Phan", "position": "Drafter & Arch", "team": "BIM", "level": 3, "side": "right" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "31",
+        "name": "Sơn Lâm",
+        "position": "Senior Engineer",
+        "team": "Lateral Design",
+        "level": 1,
+        "layout": "vertical",
+        "children": [
+          { "id": "32", "name": "Junior 1", "position": "Engineer", "team": "Lateral Design", "level": 2, "side": "right" }
+        ]
+      }
+    ]
+  }
+]

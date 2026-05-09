@@ -17,6 +17,7 @@ import Dashboard from './components/Dashboard'
 import Planning from './components/Planning'
 import Settings from './components/Settings'
 import BambooBackground from './components/BambooBackground'
+import OrgChart from './components/OrgChart'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
@@ -430,6 +431,8 @@ return (
                       <Dashboard />
                     ) : activeTab === 'planning' ? (
                       <Planning reportData={reportData} weekDates={weekDates} />
+                    ) : activeTab === 'organization' ? (
+                      <OrgChart />
                     ) : activeTab === 'settings' ? (
                       <Settings 
                         theme={theme} setTheme={setTheme} 

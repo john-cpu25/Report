@@ -17,7 +17,8 @@ import {
   Menu,
   X,
   Battery,
-  CalendarHeart
+  CalendarHeart,
+  Network
 } from 'lucide-react'
 import NavItem from './NavItem'
 
@@ -35,6 +36,7 @@ const Sidebar = ({
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'projects', label: 'Projects', icon: FolderKanban },
+        { id: 'organization', label: 'Organization', icon: Network },
         { id: 'report', label: 'Weekly Planner', icon: CalendarClock },
         { id: 'processor', label: 'Data Analyst', icon: BarChart3 },
         { id: 'leave', label: 'Annual Leave', icon: Battery },
