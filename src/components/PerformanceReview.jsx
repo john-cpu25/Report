@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  TrendingUp, Clock, Zap, Calendar, Filter, CheckCircle2, AlertTriangle, Users, FileText
+  TrendingUp, Clock, Zap, Calendar, Filter, CheckCircle2, AlertTriangle, Users, FileText, 
+  CalendarRange, Edit3, Save, PlusSquare, LayoutGrid, List
 } from 'lucide-react';
-import { format, parseISO, startOfDay, endOfDay, startOfWeek } from 'date-fns';
+import { format, parseISO, startOfDay, endOfDay, startOfWeek, isWithinInterval } from 'date-fns';
 import { supabase } from '../supabaseClient';
 import { calculateWorkingDuration, getDurationHours } from '../utils/timeUtils';
 
@@ -16,6 +17,16 @@ const PerformanceReview = () => {
     start: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'),
     end: format(new Date(), 'yyyy-MM-dd')
   });
+  const [viewMode, setViewMode] = useState('raw'); // 'raw' | 'weekly' | 'summary'
+  const [activeMetric, setActiveMetric] = useState('t2b'); // 't1' | 't2b' | 't4b'
+  const [manualData, setManualData] = useState(() => {
+    const saved = localStorage.getItem('perfManualData');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem('perfManualData', JSON.stringify(manualData));
+  }, [manualData]);
 
   // --- DATE PROCESSING ---
   function processDate(val) {
@@ -100,6 +111,12 @@ const PerformanceReview = () => {
       if (selectedTeam !== 'ALL') {
         if (creator?.team !== selectedTeam && user?.team !== selectedTeam) return null;
       }
+
+      // Calculate "Check Duration" for leaders: checked - complete
+      const dateComplete = processDate(t.date_complete);
+      const dateChecked = processDate(t.date_checked);
+      const checkTime = (dateComplete && dateChecked) ? getDurationHours(calculateWorkingDuration(dateComplete, dateChecked)) : 0;
+
       return {
         ...t,
         creatorName: creator?.displayName || t.create_by || '-',
@@ -109,9 +126,110 @@ const PerformanceReview = () => {
         t2b: calcHours(t.date_complete, t.date_started),
         t4a: calcHours(t.date_checked, t.date_accepted),
         t4b: calcHours(t.date_checked, t.date_started),
+        checkTime: checkTime
       };
     }).filter(Boolean);
   }, [tasks, userMap, selectedTeam]);
+
+  // --- WEEKLY VIEW DATA ---
+  const weeklyData = useMemo(() => {
+    const userGroups = {};
+    const DOW_MAP = { 1: 'Mo', 2: 'Tu', 3: 'We', 4: 'Th', 5: 'Fr' };
+
+    tableData.forEach(t => {
+      const uName = t.userName;
+      if (!userGroups[uName]) {
+        userGroups[uName] = { 
+          name: uName, 
+          team: t.team || userMap[t.user_id]?.team || '-', 
+          tasks: {} 
+        };
+      }
+      
+      const taskKey = t.task_name || 'No Title';
+      if (!userGroups[uName].tasks[taskKey]) {
+        userGroups[uName].tasks[taskKey] = { 
+          name: taskKey, 
+          project: t.project || '-',
+          days: { Mo: [], Tu: [], We: [], Th: [], Fr: [] } 
+        };
+      }
+
+      const date = processDate(t.created_at || t.date_start);
+      if (date) {
+        const dow = DOW_MAP[date.getUTCDay()];
+        if (dow) {
+          userGroups[uName].tasks[taskKey].days[dow].push(t);
+        }
+      }
+    });
+    return userGroups;
+  }, [tableData, userMap]);
+
+  // --- SUMMARY / EFFICIENCY DATA ---
+  const efficiencyData = useMemo(() => {
+    const summary = {};
+    
+    // Initialize with all visible users
+    users.forEach(u => {
+      const name = u.name || u.email;
+      if (selectedTeam !== 'ALL' && u.team !== selectedTeam) return;
+      
+      // Fetch leave from localStorage
+      const leaveEntries = JSON.parse(localStorage.getItem(`leaveEntries_${name}`) || '[]');
+      const rangeStart = startOfDay(parseISO(dateRange.start));
+      const rangeEnd = endOfDay(parseISO(dateRange.end));
+      
+      const leaveDays = leaveEntries.filter(e => {
+        const d = parseISO(e.date);
+        return isWithinInterval(d, { start: rangeStart, end: rangeEnd }) && e.type !== 'HOLIDAY';
+      }).reduce((sum, e) => sum + Number(e.amount), 0);
+
+      summary[name] = {
+        id: u.id,
+        name,
+        team: u.team || '-',
+        projectTime: 0,
+        checkTime: 0,
+        otTime: manualData[name]?.ot || 0,
+        manualCheck: manualData[name]?.check || 0,
+        leaveDays: leaveDays,
+      };
+    });
+
+    // Accumulate from tasks
+    tableData.forEach(t => {
+      // User project time
+      if (summary[t.userName]) {
+        summary[t.userName].projectTime += t.t2b || 0;
+      }
+      // Leader check time
+      if (summary[t.creatorName]) {
+        summary[t.creatorName].checkTime += t.checkTime || 0;
+      }
+    });
+
+    return Object.values(summary).map(s => {
+      const totalWork = s.projectTime + s.checkTime + s.otTime + s.manualCheck;
+      const leaveHours = s.leaveDays * 8;
+      const capacity = 40; 
+      
+      // Calculate efficiency: Total Plan Time / Total Actual Time for the user's tasks
+      const userTasks = tableData.filter(t => t.userName === s.name);
+      const totalPlan = userTasks.reduce((sum, t) => sum + (t.t1 || 0), 0);
+      const totalActual = userTasks.reduce((sum, t) => sum + (t.t2b || 0), 0);
+      const efficiency = totalActual > 0 ? (totalPlan / totalActual) * 100 : 100;
+
+      return {
+        ...s,
+        totalWork,
+        totalPlan,
+        efficiency,
+        free: Math.max(0, capacity - totalWork - leaveHours),
+        performance: (totalWork / capacity) * 100
+      };
+    }).sort((a, b) => b.totalWork - a.totalWork);
+  }, [tableData, users, manualData, dateRange]);
 
   // --- STATS ---
   const stats = useMemo(() => {
@@ -156,6 +274,22 @@ const PerformanceReview = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
+          {/* View Switcher */}
+          <div className="flex items-center gap-2 p-1 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] shadow-sm">
+            <button onClick={() => setViewMode('raw')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'raw' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+              <List size={14} /> Raw
+            </button>
+            <button onClick={() => setViewMode('weekly')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'weekly' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+              <CalendarRange size={14} /> Weekly
+            </button>
+            <button onClick={() => setViewMode('summary')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+              <TrendingUp size={14} /> Summary
+            </button>
+          </div>
+
           <div className="flex items-center gap-3 bg-[var(--bg-surface)] p-2 rounded-2xl border border-[var(--border)] shadow-sm">
             <div className="flex items-center gap-2 px-3">
               <Calendar size={14} className="text-[var(--text-muted)]" />
@@ -211,95 +345,193 @@ const PerformanceReview = () => {
             ))}
           </div>
 
-          {/* Unified Raw Task Table */}
-          <div className="glass-panel overflow-hidden border border-[var(--border)] bg-[var(--bg-surface)] shadow-xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse" style={{ minWidth: '1600px' }}>
-                <thead>
-                  {/* Row 1: Group Headers */}
-                  <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)]">
-                    <th rowSpan={2} className="px-3 py-3 text-amber-500 border-r border-b border-[var(--border)] sticky left-0 z-10 min-w-[180px] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)', borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>NAME</th>
-                    <th colSpan={4} className="px-3 py-3 bg-indigo-500/10 text-indigo-500 text-center border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>MANAGER / LEADER</th>
-                    <th colSpan={5} className="px-3 py-3 bg-sky-500/10 text-sky-500 text-center border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>USER</th>
-                    <th rowSpan={2} className="px-3 py-3 bg-[var(--bg-surface)] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] min-w-[80px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>area</th>
-                    <th className="px-3 py-3 bg-emerald-500/10 text-emerald-500 text-center border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>PLAN TIME</th>
-                    <th colSpan={2} className="px-3 py-3 bg-emerald-500/15 text-emerald-500 text-center border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>USER COMPLETE</th>
-                    <th colSpan={2} className="px-3 py-3 bg-lime-500/10 text-lime-500 text-center border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)' }}>TASK COMPLETE</th>
-                  </tr>
-                  {/* Row 2: Sub Headers */}
-                  <tr className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
-                    {/* MANAGER/LEADER sub-cols */}
-                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[100px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>create_by</th>
-                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>created_at</th>
-                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_start</th>
-                    <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_end</th>
-                    {/* USER sub-cols */}
-                    <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[100px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>user_id</th>
-                    <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_accepted</th>
-                    <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_started</th>
-                    <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_complete</th>
-                    <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[95px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>date_checked</th>
-                    {/* PLAN TIME */}
-                    <th className="px-3 py-2 bg-emerald-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>
-                      <span className="text-emerald-500">[t1]</span>
-                      <br /><span className="text-[8px] text-[var(--text-muted)] normal-case">end − start</span>
-                    </th>
-                    {/* USER COMPLETE */}
-                    <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[70px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>
-                      <span className="text-emerald-500">[t2]</span>
-                      <br /><span className="text-[8px] text-[var(--text-muted)] normal-case">complete − accepted</span>
-                    </th>
-                    <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[70px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>
-                      <span className="text-emerald-500">[t2]</span>
-                      <br /><span className="text-[8px] text-[var(--text-muted)] normal-case">complete − started</span>
-                    </th>
-                    {/* TASK COMPLETE */}
-                    <th className="px-3 py-2 bg-lime-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>
-                      <span className="text-lime-500">[t4]</span>
-                      <br /><span className="text-[8px] text-[var(--text-muted)] normal-case">checked − accepted</span>
-                    </th>
-                    <th className="px-3 py-2 bg-lime-500/5 border-b border-[var(--border)] text-center min-w-[70px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)' }}>
-                      <span className="text-lime-500">[t4]</span>
-                      <br /><span className="text-[8px] text-[var(--text-muted)] normal-case">checked − started</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]">
-                  {tableData.length === 0 ? (
-                    <tr><td colSpan={16} className="px-8 py-16 text-center text-[var(--text-muted)] font-bold uppercase tracking-widest text-sm">No tasks found in selected range</td></tr>
-                  ) : tableData.map((t, i) => (
-                    <tr key={t.id || i} className="group hover:bg-[var(--bg-header)] transition-all text-[11px]" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
-                      {/* NAME */}
-                      <td className="px-3 py-2.5 sticky left-0 z-10 border-r border-b border-[var(--border)] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)', borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>
-                        <span className="font-bold text-[var(--text-contrast)] group-hover:text-emerald-500 transition-colors line-clamp-2">{t.task_name || '-'}</span>
-                      </td>
-                      {/* MANAGER/LEADER */}
-                      <td className="px-3 py-2.5 text-indigo-500/80 font-semibold border-r border-b border-[var(--border)] truncate max-w-[120px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{t.creatorName}</td>
-                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.created_at)}</td>
-                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_start)}</td>
-                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_end)}</td>
-                      {/* USER */}
-                      <td className="px-3 py-2.5 text-sky-500/80 font-semibold border-r border-b border-[var(--border)] truncate max-w-[120px]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{t.userName}</td>
-                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_accepted)}</td>
-                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_started)}</td>
-                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_complete)}</td>
-                      <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-[var(--border)] border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fmtDate(t.date_checked)}</td>
-                      {/* area */}
-                      <td className="px-3 py-2.5 text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] font-semibold" style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{t.area || '-'}</td>
-                      {/* PLAN TIME [t1] */}
-                      <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t1)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fh(t.t1)}</td>
-                      {/* USER COMPLETE [t2] */}
-                      <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t2a)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fh(t.t2a)}</td>
-                      <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t2b)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fh(t.t2b)}</td>
-                      {/* TASK COMPLETE [t4] */}
-                      <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t4a)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>{fh(t.t4a)}</td>
-                      <td className={`px-3 py-2.5 text-center font-black border-b border-[var(--border)] ${timeColor(t.t4b)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.15)' }}>{fh(t.t4b)}</td>
+          {viewMode === 'raw' && (
+            <div className="glass-panel overflow-hidden border border-[var(--border)] bg-[var(--bg-surface)] shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse" style={{ minWidth: '1600px' }}>
+                  <thead>
+                    <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)]">
+                      <th rowSpan={2} className="px-3 py-3 text-amber-500 border-r border-b border-[var(--border)] sticky left-0 z-10 min-w-[180px] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)', borderBottomColor: 'rgba(0,0,0,0.15)', borderRightColor: 'rgba(0,0,0,0.15)' }}>NAME</th>
+                      <th colSpan={4} className="px-3 py-3 bg-indigo-500/10 text-indigo-500 text-center border-r border-b border-[var(--border)]">MANAGER / LEADER</th>
+                      <th colSpan={5} className="px-3 py-3 bg-sky-500/10 text-sky-500 text-center border-r border-b border-[var(--border)]">USER</th>
+                      <th rowSpan={2} className="px-3 py-3 bg-[var(--bg-surface)] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] min-w-[80px]">area</th>
+                      <th className="px-3 py-3 bg-emerald-500/10 text-emerald-500 text-center border-r border-b border-[var(--border)]">PLAN TIME</th>
+                      <th colSpan={2} className="px-3 py-3 bg-emerald-500/15 text-emerald-500 text-center border-r border-b border-[var(--border)]">USER COMPLETE</th>
+                      <th colSpan={2} className="px-3 py-3 bg-lime-500/10 text-lime-500 text-center border-b border-[var(--border)]">TASK COMPLETE</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                    <tr className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
+                      <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)]">create_by</th>
+                      <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)]">created_at</th>
+                      <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)]">date_start</th>
+                      <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)]">date_end</th>
+                      <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)]">user_id</th>
+                      <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)]">date_accepted</th>
+                      <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)]">date_started</th>
+                      <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)]">date_complete</th>
+                      <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)]">date_checked</th>
+                      <th className="px-3 py-2 bg-emerald-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]">[t1]</th>
+                      <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[70px]">[t2]</th>
+                      <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[70px]">[t2]</th>
+                      <th className="px-3 py-2 bg-lime-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]">[t4]</th>
+                      <th className="px-3 py-2 bg-lime-500/5 border-b border-[var(--border)] text-center min-w-[70px]">[t4]</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    {tableData.length === 0 ? (
+                      <tr><td colSpan={16} className="px-8 py-16 text-center text-[var(--text-muted)] font-bold uppercase tracking-widest text-sm">No tasks found</td></tr>
+                    ) : tableData.map((t, i) => (
+                      <tr key={t.id || i} className="group hover:bg-[var(--bg-header)] transition-all text-[11px]" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
+                        <td className="px-3 py-2.5 sticky left-0 z-10 border-r border-b border-[var(--border)] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
+                          <span className="font-bold text-[var(--text-contrast)] line-clamp-2">{t.task_name || '-'}</span>
+                        </td>
+                        <td className="px-3 py-2.5 text-indigo-500/80 font-semibold border-r border-b border-[var(--border)]">{t.creatorName}</td>
+                        <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDate(t.created_at)}</td>
+                        <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDate(t.date_start)}</td>
+                        <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDate(t.date_end)}</td>
+                        <td className="px-3 py-2.5 text-sky-500/80 font-semibold border-r border-b border-[var(--border)]">{t.userName}</td>
+                        <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDate(t.date_accepted)}</td>
+                        <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDate(t.date_started)}</td>
+                        <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDate(t.date_complete)}</td>
+                        <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDate(t.date_checked)}</td>
+                        <td className="px-3 py-2.5 text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] font-semibold">{t.area || '-'}</td>
+                        <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t1)}`}>{fh(t.t1)}</td>
+                        <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t2a)}`}>{fh(t.t2a)}</td>
+                        <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t2b)}`}>{fh(t.t2b)}</td>
+                        <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t4a)}`}>{fh(t.t4a)}</td>
+                        <td className={`px-3 py-2.5 text-center font-black border-b border-[var(--border)] ${timeColor(t.t4b)}`}>{fh(t.t4b)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
+
+          {viewMode === 'weekly' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between glass-panel p-4 border-[var(--border)]">
+                <h3 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Weekly Distribution</h3>
+                <div className="flex gap-2 p-1 bg-[var(--bg-surface)] rounded-xl border border-[var(--border)]">
+                  {['t1', 't2b', 't4b'].map(m => (
+                    <button key={m} onClick={() => setActiveMetric(m)}
+                      className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${activeMetric === m ? 'bg-indigo-500 text-white' : 'text-[var(--text-muted)]'}`}>
+                      {m === 't1' ? 'Plan' : m === 't2b' ? 'User' : 'Task'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="glass-panel overflow-hidden border border-[var(--border)] bg-[var(--bg-surface)]">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
+                        <th className="px-4 py-4 border-r border-[var(--border)] min-w-[200px]">Project & User</th>
+                        {['Mo', 'Tu', 'We', 'Th', 'Fr'].map(d => <th key={d} className="px-4 py-4 text-center border-r border-[var(--border)]">{d}</th>)}
+                        <th className="px-4 py-4 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border)]">
+                      {Object.values(weeklyData).map((user, ui) => (
+                        <React.Fragment key={ui}>
+                          <tr className="bg-indigo-500/5">
+                            <td colSpan={7} className="px-4 py-2 font-black text-indigo-400 text-[10px] uppercase tracking-[0.2em]">{user.name} ({user.team})</td>
+                          </tr>
+                          {Object.values(user.tasks).map((task, ti) => {
+                            const daySum = (dow) => task.days[dow].reduce((s, t) => s + (t[activeMetric] || 0), 0);
+                            const total = ['Mo', 'Tu', 'We', 'Th', 'Fr'].reduce((s, d) => s + daySum(d), 0);
+                            return (
+                              <tr key={ti} className="text-[11px] hover:bg-[var(--bg-header)]">
+                                <td className="px-4 py-3 border-r border-[var(--border)]">
+                                  <div className="font-bold text-[var(--text-contrast)]">{task.project}</div>
+                                  <div className="text-[9px] text-[var(--text-muted)] font-black uppercase mt-0.5 truncate max-w-[250px]">{task.name}</div>
+                                </td>
+                                {['Mo', 'Tu', 'We', 'Th', 'Fr'].map(d => {
+                                  const val = daySum(d);
+                                  return (
+                                    <td key={d} className={`px-4 py-3 text-center border-r border-[var(--border)] font-black ${timeColor(val > 0 ? val : null)}`}>
+                                      {val > 0 ? val.toFixed(1) : '-'}
+                                    </td>
+                                  );
+                                })}
+                                <td className="px-4 py-3 text-right font-black text-indigo-500">{total.toFixed(1)}h</td>
+                              </tr>
+                            );
+                          })}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {viewMode === 'summary' && (
+            <div className="space-y-6">
+              <div className="glass-panel p-4 border-[var(--border)] bg-indigo-500/5">
+                <h3 className="text-sm font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
+                  <TrendingUp size={16} /> Efficiency Summary Table
+                </h3>
+                <p className="text-[10px] text-[var(--text-muted)] font-bold mt-1 uppercase tracking-widest ml-6">
+                  Weekly performance calculated based on 40h standard week
+                </p>
+              </div>
+              <div className="glass-panel overflow-hidden border border-[var(--border)] bg-[var(--bg-surface)]">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
+                      <th className="px-6 py-4">Full Name</th>
+                      <th className="px-4 py-4 text-center">Project Time</th>
+                      <th className="px-4 py-4 text-center">Check Time</th>
+                      <th className="px-4 py-4 text-center bg-indigo-500/5">OT Time</th>
+                      <th className="px-4 py-4 text-center bg-amber-500/5">Leave (D)</th>
+                      <th className="px-4 py-4 text-center">Free Time</th>
+                      <th className="px-4 py-4 text-center text-emerald-500">Efficiency</th>
+                      <th className="px-6 py-4 text-right">Performance (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    {efficiencyData.map((s, i) => (
+                      <tr key={i} className="text-[11px] group hover:bg-[var(--bg-header)] transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-black text-[var(--text-contrast)] uppercase tracking-tight">{s.name}</div>
+                          <div className="text-[9px] text-[var(--text-muted)] font-bold uppercase">{s.team}</div>
+                        </td>
+                        <td className="px-4 py-4 text-center font-mono font-bold text-sky-400">{s.projectTime.toFixed(1)}h</td>
+                        <td className="px-4 py-4 text-center font-mono font-bold text-amber-400">
+                          <div className="flex flex-col items-center">
+                            <span>{s.checkTime.toFixed(1)}h</span>
+                            {s.manualCheck > 0 && <span className="text-[8px] opacity-60">+{s.manualCheck}h manual</span>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-center bg-indigo-500/5">
+                          <input type="number" step="0.5" className="bg-transparent w-16 text-center font-black text-indigo-400 outline-none border-b border-indigo-500/20 focus:border-indigo-500 transition-colors"
+                            value={s.otTime} onChange={(e) => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setManualData(prev => ({ ...prev, [s.name]: { ...prev[s.name], ot: val } }));
+                            }} />
+                        </td>
+                        <td className="px-4 py-4 text-center bg-amber-500/5 font-black text-amber-500">{s.leaveDays}d</td>
+                        <td className="px-4 py-4 text-center font-black text-[var(--text-muted)]">{s.free.toFixed(1)}h</td>
+                        <td className="px-4 py-4 text-center font-black text-emerald-500">{s.efficiency.toFixed(0)}%</td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex flex-col items-end gap-1">
+                            <span className={`text-sm font-black ${s.performance >= 90 ? 'text-emerald-500' : s.performance >= 70 ? 'text-sky-500' : 'text-rose-500'}`}>
+                              {s.performance.toFixed(1)}%
+                            </span>
+                            <div className="w-24 h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
+                              <div className={`h-full transition-all duration-1000 ${s.performance >= 90 ? 'bg-emerald-500' : s.performance >= 70 ? 'bg-sky-500' : 'bg-rose-500'}`}
+                                style={{ width: `${Math.min(100, s.performance)}%` }} />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
