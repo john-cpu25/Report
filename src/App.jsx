@@ -13,11 +13,23 @@ import TopBar from './components/TopBar'
 import AnnualLeave from './components/AnnualLeave'
 import Projects from './components/Projects'
 import PerformanceReview from './components/PerformanceReview'
+import Dashboard from './components/Dashboard'
+import Planning from './components/Planning'
+import Settings from './components/Settings'
+import BambooBackground from './components/BambooBackground'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
 function App() {
-  const [activeTab, setActiveTab] = useState('report')
+  const [activeTab, setActiveTab] = useState('dashboard')
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('appTheme') || 'GALAXY'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('appTheme', theme)
+    document.body.className = `theme-${theme.toLowerCase()}`
+  }, [theme])
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebarCollapsed')
     return saved !== null ? JSON.parse(saved) : false
@@ -328,13 +340,13 @@ function App() {
     }
   }
 
-  return (
+return (
     <AnimatePresence mode="wait">
       {isLoading ? (
         <Preloader key="preloader" onLoadingComplete={() => setIsLoading(false)} />
       ) : (
-        <div className="min-h-screen bg-transparent text-white selection:bg-indigo-500/30 overflow-x-hidden relative">
-          <CelestialBackground />
+        <div className="flex min-h-screen relative">
+          {theme === 'GALAXY' ? <CelestialBackground /> : <BambooBackground />}
           
           <Sidebar 
             collapsed={sidebarCollapsed} 
@@ -403,6 +415,12 @@ function App() {
                       <Projects />
                     ) : activeTab === 'review' ? (
                       <PerformanceReview />
+                    ) : activeTab === 'dashboard' ? (
+                      <Dashboard />
+                    ) : activeTab === 'planning' ? (
+                      <Planning reportData={reportData} weekDates={weekDates} />
+                    ) : activeTab === 'settings' ? (
+                      <Settings theme={theme} setTheme={setTheme} />
                     ) : (
                       <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-6">
                         <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">

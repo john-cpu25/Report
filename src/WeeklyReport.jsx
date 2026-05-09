@@ -1,5 +1,5 @@
 import React from 'react'
-import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet, Layout, X, Filter } from 'lucide-react'
+import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet, Layout, X, Filter, Activity, Zap } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import WorkflowAnimation from './WorkflowAnimation'
 
@@ -224,7 +224,7 @@ const WeeklyReport = ({
       <AnimatePresence>
       </AnimatePresence>
 
-      <div className="max-w-[1600px] mx-auto px-6 pb-20">
+      <div className="w-full mx-auto px-4 md:px-6 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
 
@@ -1035,8 +1035,8 @@ const WeeklyReport = ({
           </div>
         </div>
 
-        {/* Right Sidebar - Statistics (Always on the right) */}
-        <aside className="lg:col-span-3 space-y-4">
+        {/* Right Sidebar - Statistics (Sticky on the right) */}
+        <aside className="lg:col-span-3 space-y-4 sticky top-24">
           <div className="glass-panel p-4 border-white/5 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5">
               <Layout size={100} />
@@ -1145,23 +1145,41 @@ const WeeklyReport = ({
           </div>
 
           <div className="glass-panel p-4 border-white/5 shadow-2xl">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Daily Activity</h3>
-            <div className="space-y-4">
-              {DAYS_OF_WEEK.map(d => (
-                <div key={d} className="flex items-center gap-4">
-                  <span className="text-[10px] font-black text-slate-500 w-6">{d}</span>
-                  <div className="flex-grow h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(stats.dayCounts[d] / (stats.totalTasks || 1)) * 100}%` }}
-                      className="h-full bg-indigo-500/40"
-                    />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-300">{stats.dayCounts[d]}</span>
+              {/* Daily Activity Stats */}
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Activity size={14} className="text-indigo-400" />
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Intensity</h3>
                 </div>
-              ))}
-            </div>
-            <WorkflowAnimation />
+                <div className="space-y-2">
+                  {DAYS_OF_WEEK.map(day => (
+                    <div key={day} className="group flex flex-col gap-1">
+                      <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter">
+                        <span className={stats.dayCounts[day] > 0 ? 'text-indigo-300' : 'text-slate-600'}>{day}</span>
+                        <span className={stats.dayCounts[day] > 0 ? 'text-white' : 'text-slate-700'}>{stats.dayCounts[day]}</span>
+                      </div>
+                      <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(stats.dayCounts[day] / (stats.totalTasks || 1)) * 100}%` }}
+                          className="h-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Workflow Automation Visual */}
+              <div className="pt-6 border-t border-white/5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Zap size={14} className="text-yellow-400" />
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Workflow</h3>
+                </div>
+                <div className="bg-slate-950/40 rounded-2xl p-4 border border-white/5">
+                  <WorkflowAnimation />
+                </div>
+              </div>
           </div>
         </aside>
       </div>

@@ -75,7 +75,7 @@ const Sidebar = ({
             className="flex items-center gap-2"
           >
             <div className="w-1.5 h-5 bg-indigo-500 rounded-full" />
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Navigation</span>
+            <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Navigation</span>
           </motion.div>
         )}
         <button 
@@ -94,7 +94,7 @@ const Sidebar = ({
               <motion.h3 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="px-3 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-2"
+                className="px-3 text-[9px] font-black text-[var(--text-muted)] opacity-60 uppercase tracking-[0.2em] mb-2"
               >
                 {section.title}
               </motion.h3>
@@ -126,7 +126,7 @@ const Sidebar = ({
         <div className="px-6 mt-8">
           <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
             <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Version</p>
-            <p className="text-[11px] font-bold text-slate-400">Intelligence v2.1.0</p>
+            <p className="text-[11px] font-bold text-[var(--text-muted)]">Intelligence v2.1.0</p>
           </div>
         </div>
       )}
@@ -140,7 +140,7 @@ const Sidebar = ({
         initial={false}
         animate={collapsed ? 'collapsed' : 'expanded'}
         variants={sidebarVariants}
-        className="hidden lg:block fixed left-0 top-0 h-screen bg-slate-950/40 backdrop-blur-3xl border-r border-white/5 z-40 overflow-hidden"
+        className="hidden lg:block fixed left-0 top-0 h-screen bg-[var(--glass-bg)] backdrop-blur-3xl border-r border-[var(--glass-border)] z-40 overflow-hidden"
       >
         <SidebarContent />
       </motion.aside>
@@ -161,7 +161,7 @@ const Sidebar = ({
               animate={{ x: 0 }}
               exit={{ x: -260 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 h-screen w-[260px] bg-slate-950 z-[101] lg:hidden overflow-hidden shadow-2xl"
+              className="fixed left-0 top-0 h-screen w-[260px] bg-[var(--bg-dark)] z-[101] lg:hidden overflow-hidden shadow-2xl"
             >
               <div className="absolute top-6 right-6 lg:hidden">
                 <button onClick={() => setMobileOpen(false)} className="text-slate-500 hover:text-white">

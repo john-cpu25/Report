@@ -106,11 +106,10 @@ const CelestialBackground = () => {
         {constellation.stars.map((star, i) => (
           <motion.circle
             key={`cstar-${i}`}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: [1, 1.5, 1], opacity: 1 }}
+            initial={{ r: 0, opacity: 0 }}
+            animate={{ r: [2, 4, 2], opacity: 1 }}
             transition={{ duration: 4, repeat: Infinity, delay: i * 0.3 }}
             cx={`${star[0]}%`} cy={`${star[1]}%`}
-            r={3}
             fill="white"
             filter="url(#glow)"
           />

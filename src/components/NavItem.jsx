@@ -17,7 +17,7 @@ const NavItem = ({
         relative w-full flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all duration-300 group
         ${active 
           ? `bg-${color}-500/10 text-${color}-400 shadow-lg shadow-${color}-500/5` 
-          : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]'
+          : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/[0.03]'
         }
       `}
     >
@@ -42,14 +42,14 @@ const NavItem = ({
         <div className="flex-grow flex items-center justify-between overflow-hidden">
           <span className={`
             text-[13px] font-bold tracking-tight whitespace-nowrap transition-all duration-300
-            ${active ? 'text-slate-100' : 'text-slate-400 group-hover:text-slate-200'}
+            ${active ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)]'}
           `}>
             {label}
           </span>
           {count !== null && (
             <span className={`
               text-[9px] font-black px-1.5 py-0.5 rounded-md
-              ${active ? `bg-${color}-500/20 text-${color}-400` : 'bg-slate-800 text-slate-500'}
+              ${active ? `bg-${color}-500/20 text-${color}-400` : 'bg-[var(--bg-dark)] text-[var(--text-muted)]'}
             `}>
               {count}
             </span>
