@@ -15,8 +15,10 @@ const PALETTE = ['#818cf8', '#10b981', '#f59e0b', '#3b82f6', '#f43f5e', '#8b5cf6
 const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const [data, setData] = useState([])
   const [userData, setUserData] = useState([])
+  const [rawTasks, setRawTasks] = useState([])
   const [userMap, setUserMap] = useState({})
-  const [view, setView] = useState('detail')
+  const [userTeamMap, setUserTeamMap] = useState({})
+  const [view, setView] = useState('unified')
   const [filters, setFilters] = useState({ field: 'project', values: [] })
   const [fileName, setFileName] = useState('')
   const [pivotMetric, setPivotMetric] = useState('time1')
@@ -29,7 +31,15 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const [selectedTeam, setSelectedTeam] = useState('ALL')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [selectedMetric, setSelectedMetric] = useState('time1') // 'time1' | 'time2' | 'time3'
-  const [columnFilters, setColumnFilters] = useState({ project: '', taskName: '', user: '' })
+  const [columnFilters, setColumnFilters] = useState({ project: '', taskName: '', user: '', creator: '' })
+  const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' })
+  const [groupBy, setGroupBy] = useState('none') // 'none' | 'project' | 'user'
+
+  const handleSort = (key) => {
+    let direction = 'asc'
+    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc'
+    setSortConfig({ key, direction })
+  }
 
   // Auto-fetch from Supabase on mount
   useEffect(() => { fetchSupabaseData() }, [])
@@ -59,13 +69,18 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
       usersRes.data.forEach(u => {
         const name = u.name || u.email || u.id
         uMap[u.id] = name
+        uMap[u.id.toLowerCase()] = name
         uTeamMap[u.id] = u.team || '-'
+        uTeamMap[u.id.toLowerCase()] = u.team || '-'
         if (u.email) {
           uMap[u.email] = name
+          uMap[u.email.toLowerCase()] = name
           uTeamMap[u.email] = u.team || '-'
+          uTeamMap[u.email.toLowerCase()] = u.team || '-'
         }
       })
       setUserMap(uMap)
+      setUserTeamMap(uTeamMap)
 
       // Process leader data (same as old CSV logic)
       const leaderProcessed = tasksRes.data.map(row => {
@@ -83,7 +98,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
         return {
           project: parts[0]?.trim() || '-',
           taskName: parts[1]?.trim() || '-',
-          createdBy: uMap[row.create_by] || row.create_by || '-',
+          createdBy: uMap[row.create_by] || uMap[row.create_by?.toLowerCase()] || row.create_by || '-',
           day: formatDate(createdAt || dateStart),
           createdAt, dateStart, dateEnd, dateComplete, dateChecked,
           time1, time2, time3,
@@ -91,10 +106,13 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
           time2Str: formatDuration(time2),
           time3Str: formatDuration(time3),
           dateObj: createdAt || dateStart,
-          team: uTeamMap[row.create_by] || '-'
+          team: uTeamMap[row.create_by] || uTeamMap[row.create_by?.toLowerCase()] || '-'
         }
       }).filter(r => r.project !== '-')
       setData(leaderProcessed)
+
+      // Store raw tasks for unified table
+      setRawTasks(tasksRes.data || [])
 
       // Process user task data (new perspective)
       const userProcessed = tasksRes.data.map(row => {
@@ -108,7 +126,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
         
         return {
           userId: row.user_id,
-          userName: uMap[row.user_id] || row.user_id || '-',
+          userName: uMap[row.user_id] || uMap[row.user_id?.toLowerCase()] || row.user_id || '-',
           project: parts[0]?.trim() || '-',
           taskName: parts[1]?.trim() || '-',
           createdAt, dateStarted, dateChecked,
@@ -119,7 +137,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
           time1Str: formatDuration(time1),
           time2Str: formatDuration(time2),
           dateObj: createdAt,
-          team: uTeamMap[row.user_id] || '-'
+          team: uTeamMap[row.user_id] || uTeamMap[row.user_id?.toLowerCase()] || '-'
         }
       }).filter(r => r.project !== '-')
       setUserData(userProcessed)
@@ -359,12 +377,13 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
     const projects = new Set();
     const tasks = new Set();
     const users = new Set();
+    const creators = new Set();
     
     // Collect from Leader data
     data.forEach(r => {
       if (r.project && r.project !== '-') projects.add(r.project);
       if (r.taskName && r.taskName !== '-') tasks.add(r.taskName);
-      if (r.createdBy && r.createdBy !== '-') users.add(r.createdBy);
+      if (r.createdBy && r.createdBy !== '-') creators.add(r.createdBy);
     });
 
     // Collect from User data
@@ -377,7 +396,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
     return {
       projects: Array.from(projects).sort(),
       tasks: Array.from(tasks).sort(),
-      users: Array.from(users).sort()
+      users: Array.from(users).sort(),
+      creators: Array.from(creators).sort()
     };
   }, [data, userData])
 
@@ -388,33 +408,89 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
     return ['ALL', ...Array.from(teams).sort()];
   }, [data, userData])
 
-  const pivotData = useMemo(() => {
+  const weeklyReportData = useMemo(() => {
     const map = new Map()
-    filteredData.forEach(row => {
-      const key = `${row.project}||${row.taskName}`
-      if (!map.has(key)) {
-        map.set(key, { project: row.project, taskName: row.taskName, users: new Set(), days: {} })
+    rawTasks.forEach(row => {
+      const rawName = row.name || ''
+      const parts = rawName.toString().split(':')
+      const project = parts[0]?.trim() || '-'
+      const taskName = parts[1]?.trim() || '-'
+      const creator = userMap[row.create_by] || userMap[row.create_by?.toLowerCase()] || row.create_by || '-'
+      const user = userMap[row.user_id] || userMap[row.user_id?.toLowerCase()] || row.user_id || '-'
+      const area = row.area || '-'
+
+      if (selectedTeam !== 'ALL') {
+        const cTeam = userTeamMap[row.create_by] || userTeamMap[row.create_by?.toLowerCase()] || '-'
+        const uTeam = userTeamMap[row.user_id] || userTeamMap[row.user_id?.toLowerCase()] || '-'
+        if (cTeam !== selectedTeam && uTeam !== selectedTeam) return
       }
+      
+      if (columnFilters.project && !project.toLowerCase().includes(columnFilters.project.toLowerCase())) return
+      if (columnFilters.taskName && !taskName.toLowerCase().includes(columnFilters.taskName.toLowerCase())) return
+      if (columnFilters.creator && !creator.toLowerCase().includes(columnFilters.creator.toLowerCase())) return
+      if (columnFilters.user && !user.toLowerCase().includes(columnFilters.user.toLowerCase())) return
+      
+      const dateStart = processDate(row.date_start)
+      const dateEnd = processDate(row.date_end)
+      const dateComplete = processDate(row.date_complete)
+      const dateChecked = processDate(row.date_checked)
+      
+      const pivotDate = dateStart || processDate(row.created_at)
+      if (dateRange.start && pivotDate && pivotDate < new Date(dateRange.start)) return
+      if (dateRange.end && pivotDate && pivotDate > new Date(dateRange.end)) return
+
+      const key = `${project}||${taskName}||${creator}||${user}||${area}`
+      if (!map.has(key)) {
+        map.set(key, { project, taskName, creator, user, area, days: {} })
+      }
+      
       const entry = map.get(key)
-      if (row.createdBy !== '-') entry.users.add(row.createdBy)
-      const dow = DOW_MAP[row.dateObj?.getUTCDay()]
+      const dow = pivotDate ? DOW_MAP[pivotDate.getUTCDay()] : null
       if (dow) {
         if (!entry.days[dow]) entry.days[dow] = []
+        
+        const t1 = getEffectiveDuration(dateStart, dateEnd)
+        const t2 = getEffectiveDuration(dateStart, dateComplete)
+        const t3 = getEffectiveDuration(dateStart, dateChecked)
+
         entry.days[dow].push({
-          time1: row.time1,
-          time2: row.time2,
-          time3: row.time3,
-          time1Str: row.time1Str,
-          time2Str: row.time2Str,
-          time3Str: row.time3Str
+          time1: t1,
+          time2: t2,
+          time3: t3,
+          time1Str: formatDuration(t1),
+          time2Str: formatDuration(t2),
+          time3Str: formatDuration(t3)
         })
       }
     })
-    return Array.from(map.values()).map(r => ({
-      ...r,
-      createdBy: Array.from(r.users).join(', ')
-    }))
-  }, [filteredData])
+    
+    let result = Array.from(map.values())
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        let aVal = a[sortConfig.key];
+        let bVal = b[sortConfig.key];
+        if (aVal === null || aVal === undefined) aVal = '';
+        if (bVal === null || bVal === undefined) bVal = '';
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    } else {
+      result.sort((a, b) => a.project.localeCompare(b.project))
+    }
+    return result
+  }, [rawTasks, userMap, selectedTeam, columnFilters, dateRange, sortConfig])
+
+  const groupedWeeklyData = useMemo(() => {
+    if (groupBy === 'none') return { 'All Data': weeklyReportData }
+    const map = {}
+    weeklyReportData.forEach(r => {
+      const key = groupBy === 'project' ? r.project : r.user
+      if (!map[key]) map[key] = []
+      map[key].push(r)
+    })
+    return map
+  }, [weeklyReportData, groupBy])
 
   const projectStats = useMemo(() => {
     const pMap = new Map()
@@ -483,27 +559,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
       .sort((a, b) => a.name.localeCompare(b.name))
   }, [filteredData, filteredUserData, analyticsMode, analyticsGranularity])
 
-  const userPivotData = useMemo(() => {
-    const map = new Map()
-    filteredUserData.forEach(row => {
-      const key = `${row.userName}||${row.project}||${row.taskName}`
-      if (!map.has(key)) {
-        map.set(key, { userName: row.userName, project: row.project, taskName: row.taskName, days: {} })
-      }
-      const entry = map.get(key)
-      const dow = DOW_MAP[row.dateObj?.getUTCDay()]
-      if (dow) {
-        if (!entry.days[dow]) entry.days[dow] = []
-        entry.days[dow].push({
-          time1: row.time1,
-          time2: row.time2,
-          time1Str: row.time1Str,
-          time2Str: row.time2Str
-        })
-      }
-    })
-    return Array.from(map.values())
-  }, [filteredUserData])
+
 
   const chartData = {
     labels: projectStats.slice(0, 10).map(s => s.name),
@@ -542,7 +598,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="w-full space-y-8 pb-20 px-4 sm:px-6">
       {isLoading && data.length === 0 ? (
         <div className="glass-panel p-20 text-center relative overflow-hidden border-2 border-indigo-500/20">
           <div className="flex flex-col items-center gap-6">
@@ -590,13 +646,11 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
         </div>
       ) : (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex gap-2 p-1.5 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/5 w-fit">
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-6 bg-slate-900/30 p-5 rounded-3xl border border-white/5 shadow-xl">
+            <div className="flex gap-1.5 p-1.5 bg-slate-950/60 backdrop-blur-xl rounded-2xl border border-white/5 w-fit">
               {[
-                { id: 'detail', icon: FileText, label: 'Leader View' },
-                { id: 'userTasks', icon: Users, label: 'User Tasks' },
-                { id: 'pivot', icon: TableIcon, label: 'Leader Pivot' },
-                { id: 'userPivot', icon: Calendar, label: 'User Weekly' },
+                { id: 'unified', icon: TableIcon, label: 'Unified View' },
+                { id: 'weeklyReport', icon: Calendar, label: 'Weekly Report' },
                 { id: 'analytics', icon: BarChart3, label: 'Analytics' }
               ].map(t => (
                 <button
@@ -614,24 +668,24 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
             <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="relative flex-grow max-w-2xl group">
+              <div className="relative flex-grow max-w-lg group">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
                 <input 
                   type="text" 
-                  placeholder="Search Data Intelligence..." 
+                  placeholder="" 
                   className="w-full bg-slate-900/40 border border-white/5 rounded-2xl py-4 pl-14 pr-32 text-base font-bold text-white focus:border-indigo-500/50 focus:bg-slate-900/60 transition-all outline-none shadow-2xl placeholder:text-slate-600"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
                   <select 
-                    className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-1.5 text-[10px] font-black text-indigo-400 outline-none cursor-pointer hover:bg-indigo-500/20 transition-all uppercase tracking-widest"
+                    className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-1.5 text-xs font-black text-indigo-400 outline-none cursor-pointer hover:bg-indigo-500/20 transition-all uppercase tracking-widest"
                     value={selectedTeam}
                     onChange={e => setSelectedTeam(e.target.value)}
                   >
                     {teamOptions.map(t => <option key={t} value={t}>{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
                   </select>
-                  <div className="px-3 py-1.5 bg-white/5 rounded-xl text-[10px] font-black text-slate-400 border border-white/10 uppercase tracking-widest">Global</div>
+                  <div className="px-3 py-1.5 bg-white/5 rounded-xl text-xs font-black text-slate-400 border border-white/10 uppercase tracking-widest">Global</div>
                 </div>
               </div>
 
@@ -737,7 +791,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               if (monthInput) monthInput.value = start.substring(0, 7);
                             }
                           }}
-                          className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white hover:bg-white/10 hover:shadow-lg transition-all active:scale-95"
+                          className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white hover:bg-white/10 hover:shadow-lg transition-all active:scale-95"
                         >
                           {p.label}
                         </button>
@@ -785,7 +839,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex flex-wrap items-center gap-3 p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10"
                   >
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mr-2">Select Week:</span>
+                    <span className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mr-2">Select Week:</span>
                     {weeks.map((w, i) => {
                       const startStr = w.start.toISOString().split('T')[0];
                       const endStr = w.end.toISOString().split('T')[0];
@@ -799,7 +853,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         <button
                           key={i}
                           onClick={() => setDateRange({ start: startStr, end: endStr })}
-                          className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
                             isActive
                               ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
                               : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-indigo-500/30 hover:text-indigo-300'
@@ -839,7 +893,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                       <div className="space-y-8">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                          <h2 className="text-lg font-black text-white tracking-tight uppercase italic">Filter Engine</h2>
+                          <h2 className="text-lg font-black text-white tracking-tight uppercase">Filter Engine</h2>
                         </div>
 
                         <div className="space-y-4">
@@ -858,7 +912,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         <div className="space-y-4">
                           <label className="text-xs font-black text-emerald-400 uppercase tracking-widest flex justify-between">
                             Select Values
-                            <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded-full">{filters.values.length}</span>
+                            <span className="text-xs bg-emerald-500/20 px-2 py-0.5 rounded-full">{filters.values.length}</span>
                           </label>
                           <div className="max-h-[350px] overflow-auto p-2 bg-slate-950/50 border border-white/10 rounded-2xl custom-scrollbar space-y-1">
                             {uniqueFilterValues.map(v => (
@@ -902,7 +956,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               <button 
                                 key={p.label}
                                 onClick={() => setDateRange({ start: p.start(), end: new Date().toISOString().split('T')[0] })}
-                                className="bg-slate-950/50 border border-white/5 hover:border-violet-500/50 text-[10px] font-black py-2 rounded-lg transition-all"
+                                className="bg-slate-950/50 border border-white/5 hover:border-violet-500/50 text-xs font-black py-2 rounded-lg transition-all"
                               >
                                 {p.label}
                               </button>
@@ -932,6 +986,227 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
             </AnimatePresence>
 
             <div className="flex-1 w-full space-y-8">
+              {view === 'unified' && (() => {
+                const uMap = userMap;
+                const calcHours = (endVal, startVal) => {
+                  const e = processDate(endVal);
+                  const s = processDate(startVal);
+                  if (!e || !s) return null;
+                  const ms = e.getTime() - s.getTime();
+                  return ms > 0 ? ms / 3600000 : null;
+                };
+                const fmtDt = (val) => {
+                  const d = processDate(val);
+                  if (!d) return '';
+                  const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
+                  const day = String(d.getUTCDate()).padStart(2, '0');
+                  const h = String(d.getUTCHours()).padStart(2, '0');
+                  const mi = String(d.getUTCMinutes()).padStart(2, '0');
+                  return `${day}/${mo} ${h}:${mi}`;
+                };
+                const fh = (v) => v !== null && v !== undefined ? v.toFixed(1) : '';
+                const tc = (v) => {
+                  if (v === null || v === undefined) return 'text-slate-600';
+                  if (v < 1) return 'text-emerald-400';
+                  if (v < 4) return 'text-sky-400';
+                  if (v < 8) return 'text-amber-400';
+                  return 'text-rose-400';
+                };
+
+                let tableRows = rawTasks.map(t => {
+                  const rawName = t.name || '';
+                  const parts = rawName.toString().split(':');
+                  const creator = uMap[t.create_by] || uMap[t.create_by?.toLowerCase()] || t.create_by || '-';
+                  const user = uMap[t.user_id] || uMap[t.user_id?.toLowerCase()] || t.user_id || '-';
+                  const creatorTeam = userTeamMap[t.create_by] || userTeamMap[t.create_by?.toLowerCase()] || '-';
+                  const userTeam = userTeamMap[t.user_id] || userTeamMap[t.user_id?.toLowerCase()] || '-';
+                  if (selectedTeam !== 'ALL' && creatorTeam !== selectedTeam && userTeam !== selectedTeam) return null;
+                  if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    const name = (parts[1] || '').toLowerCase();
+                    const proj = (parts[0] || '').toLowerCase();
+                    if (!name.includes(q) && !proj.includes(q) && !creator.toLowerCase().includes(q) && !user.toLowerCase().includes(q)) return null;
+                  }
+                  if (columnFilters.project && !(parts[0] || '').toLowerCase().includes(columnFilters.project.toLowerCase())) return null;
+                  if (columnFilters.taskName && !(parts[1] || '').toLowerCase().includes(columnFilters.taskName.toLowerCase())) return null;
+                  if (columnFilters.creator && !creator.toLowerCase().includes(columnFilters.creator.toLowerCase())) return null;
+                  if (columnFilters.user && !user.toLowerCase().includes(columnFilters.user.toLowerCase())) return null;
+                  if (dateRange.start) {
+                    const d = processDate(t.created_at);
+                    if (d && d < new Date(dateRange.start)) return null;
+                  }
+                  if (dateRange.end) {
+                    const d = processDate(t.created_at);
+                    const end = new Date(dateRange.end); end.setHours(23,59,59,999);
+                    if (d && d > end) return null;
+                  }
+                  return {
+                    id: t.id,
+                    project: parts[0]?.trim() || '-',
+                    taskName: parts[1]?.trim() || '-',
+                    creator, user,
+                    created_at: t.created_at,
+                    date_start: t.date_start,
+                    date_end: t.date_end,
+                    date_accepted: t.date_accepted,
+                    date_started: t.date_started,
+                    date_complete: t.date_complete,
+                    date_checked: t.date_checked,
+                    area: t.area || '-',
+                    t1: calcHours(t.date_end, t.date_start),
+                    t2a: calcHours(t.date_complete, t.date_accepted),
+                    t2b: calcHours(t.date_complete, t.date_started),
+                    t4a: calcHours(t.date_checked, t.date_accepted),
+                    t4b: calcHours(t.date_checked, t.date_started),
+                  };
+                }).filter(Boolean);
+
+                if (sortConfig.key) {
+                  tableRows.sort((a, b) => {
+                    let aVal = a[sortConfig.key];
+                    let bVal = b[sortConfig.key];
+                    
+                    // Specific handling for dates if they are in standard ISO format, string comparison works
+                    // Handling numeric values
+                    if (typeof aVal === 'number' && typeof bVal === 'number') {
+                      return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+                    }
+
+                    if (aVal === null || aVal === undefined) aVal = '';
+                    if (bVal === null || bVal === undefined) bVal = '';
+
+                    if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+                    return 0;
+                  });
+                }
+
+                const renderSortIcon = (key) => {
+                  if (sortConfig.key !== key) return null;
+                  return <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
+                };
+
+                return (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{tableRows.length} entries</span>
+                    </div>
+                    <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
+                      <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse" style={{ minWidth: '1800px' }}>
+                          <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10">
+                            {/* Row 1: Group Headers */}
+                            <tr className="text-[10px] font-black uppercase tracking-widest border-b border-white/10">
+                              <th rowSpan={2} className="px-3 py-3 bg-amber-500/15 text-amber-300 border-r border-white/10 sticky left-0 z-20 min-w-[200px]">
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('project')}>
+                                    <span>NAME {renderSortIcon('project')}</span>
+                                  </div>
+                                  <select 
+                                    className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full"
+                                    value={columnFilters.project}
+                                    onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
+                                  >
+                                    <option value="">All Projects</option>
+                                    {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
+                                  </select>
+                                  <select 
+                                    className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full mt-1"
+                                    value={columnFilters.taskName}
+                                    onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
+                                  >
+                                    <option value="">All Tasks</option>
+                                    {columnOptions.tasks.map(t => <option key={t} value={t}>{t}</option>)}
+                                  </select>
+                                </div>
+                              </th>
+                              <th colSpan={4} className="px-3 py-3 bg-indigo-500/10 text-indigo-300 text-center border-r border-white/10">
+                                <div className="flex items-center justify-center gap-2">
+                                  <span>MANAGER / LEADER</span>
+                                  <select 
+                                    className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none text-left"
+                                    value={columnFilters.creator}
+                                    onChange={e => setColumnFilters(prev => ({...prev, creator: e.target.value}))}
+                                  >
+                                    <option value="">All Creators</option>
+                                    {columnOptions.creators.map(u => <option key={u} value={u}>{u}</option>)}
+                                  </select>
+                                </div>
+                              </th>
+                              <th colSpan={5} className="px-3 py-3 bg-sky-500/10 text-sky-300 text-center border-r border-white/10">
+                                <div className="flex items-center justify-center gap-2">
+                                  <span>USER</span>
+                                  <select 
+                                    className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none text-left"
+                                    value={columnFilters.user}
+                                    onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
+                                  >
+                                    <option value="">All Users</option>
+                                    {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
+                                  </select>
+                                </div>
+                              </th>
+                              <th rowSpan={2} className="px-3 py-3 bg-slate-800/40 text-slate-400 text-center border-r border-white/10 min-w-[80px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('area')}>
+                                area {renderSortIcon('area')}
+                              </th>
+                              <th className="px-3 py-3 bg-emerald-500/10 text-emerald-300 text-center border-r border-white/10">PLAN TIME</th>
+                              <th colSpan={2} className="px-3 py-3 bg-emerald-500/15 text-emerald-300 text-center border-r border-white/10">USER COMPLETE</th>
+                              <th colSpan={2} className="px-3 py-3 bg-lime-500/10 text-lime-300 text-center">TASK COMPLETE</th>
+                            </tr>
+                            {/* Row 2: Sub Headers */}
+                            <tr className="text-[9px] font-bold uppercase tracking-wider text-slate-500 border-b border-white/10 bg-white/[0.02]">
+                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/5 min-w-[100px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('creator')}>create_by {renderSortIcon('creator')}</th>
+                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/5 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('created_at')}>created_at {renderSortIcon('created_at')}</th>
+                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/5 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_start')}>date_start {renderSortIcon('date_start')}</th>
+                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-white/10 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_end')}>date_end {renderSortIcon('date_end')}</th>
+                              <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[100px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('user')}>user_id {renderSortIcon('user')}</th>
+                              <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_accepted')}>date_accepted {renderSortIcon('date_accepted')}</th>
+                              <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_started')}>date_started {renderSortIcon('date_started')}</th>
+                              <th className="px-3 py-2 bg-sky-500/5 border-r border-white/5 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_complete')}>date_complete {renderSortIcon('date_complete')}</th>
+                              <th className="px-3 py-2 bg-sky-500/5 border-r border-white/10 min-w-[90px] cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('date_checked')}>date_checked {renderSortIcon('date_checked')}</th>
+                              <th className="px-3 py-2 bg-emerald-500/5 border-r border-white/10 text-center min-w-[65px] cursor-pointer hover:bg-emerald-500/10 transition-colors" onClick={() => handleSort('t1')}><span className="text-emerald-400">[t1] {renderSortIcon('t1')}</span><br/><span className="text-[8px] text-slate-600 normal-case">end−start</span></th>
+                              <th className="px-3 py-2 bg-emerald-500/8 border-r border-white/5 text-center min-w-[65px] cursor-pointer hover:bg-emerald-500/10 transition-colors" onClick={() => handleSort('t2a')}><span className="text-emerald-400">[t2] {renderSortIcon('t2a')}</span><br/><span className="text-[8px] text-slate-600 normal-case">comp−accept</span></th>
+                              <th className="px-3 py-2 bg-emerald-500/8 border-r border-white/10 text-center min-w-[65px] cursor-pointer hover:bg-emerald-500/10 transition-colors" onClick={() => handleSort('t2b')}><span className="text-emerald-400">[t2] {renderSortIcon('t2b')}</span><br/><span className="text-[8px] text-slate-600 normal-case">comp−start</span></th>
+                              <th className="px-3 py-2 bg-lime-500/5 border-r border-white/5 text-center min-w-[65px] cursor-pointer hover:bg-lime-500/10 transition-colors" onClick={() => handleSort('t4a')}><span className="text-lime-400">[t4] {renderSortIcon('t4a')}</span><br/><span className="text-[8px] text-slate-600 normal-case">check−accept</span></th>
+                              <th className="px-3 py-2 bg-lime-500/5 text-center min-w-[65px] cursor-pointer hover:bg-lime-500/10 transition-colors" onClick={() => handleSort('t4b')}><span className="text-lime-400">[t4] {renderSortIcon('t4b')}</span><br/><span className="text-[8px] text-slate-600 normal-case">check−start</span></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/[0.03]">
+                            {tableRows.length === 0 ? (
+                              <tr><td colSpan={16} className="px-8 py-16 text-center text-slate-600 font-bold uppercase tracking-widest text-sm">No tasks found</td></tr>
+                            ) : tableRows.map((r, i) => (
+                              <tr key={r.id || i} className="group hover:bg-white/[0.02] transition-all text-[11px]">
+                                <td className="px-3 py-2.5 bg-slate-950/60 sticky left-0 z-10 border-r border-white/5">
+                                  <div className="flex flex-col">
+                                    <span className="text-indigo-400 font-black text-[10px] tracking-tight">{r.project}</span>
+                                    <span className="font-bold text-slate-200 group-hover:text-white transition-colors line-clamp-1">{r.taskName}</span>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2.5 text-indigo-300/70 font-semibold border-r border-white/[0.03] truncate max-w-[120px]">{r.creator}</td>
+                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDt(r.created_at)}</td>
+                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDt(r.date_start)}</td>
+                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/5">{fmtDt(r.date_end)}</td>
+                                <td className="px-3 py-2.5 text-sky-300/70 font-semibold border-r border-white/[0.03] truncate max-w-[120px]">{r.user}</td>
+                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDt(r.date_accepted)}</td>
+                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDt(r.date_started)}</td>
+                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/[0.03]">{fmtDt(r.date_complete)}</td>
+                                <td className="px-3 py-2.5 text-slate-500 font-mono border-r border-white/5">{fmtDt(r.date_checked)}</td>
+                                <td className="px-3 py-2.5 text-slate-500 text-center border-r border-white/5 font-semibold">{r.area}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-white/5 ${tc(r.t1)}`}>{fh(r.t1)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-white/[0.03] ${tc(r.t2a)}`}>{fh(r.t2a)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-white/5 ${tc(r.t2b)}`}>{fh(r.t2b)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-white/[0.03] ${tc(r.t4a)}`}>{fh(r.t4a)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black ${tc(r.t4b)}`}>{fh(r.t4b)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {view === 'detail' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
@@ -942,7 +1217,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                             key={m}
                             disabled={m === 'time3' && (view === 'userTasks' || view === 'userPivot')}
                             onClick={() => setSelectedMetric(m)}
-                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                            className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
                               selectedMetric === m ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 
                               (m === 'time3' && (view === 'userTasks' || view === 'userPivot')) ? 'opacity-20 cursor-not-allowed text-slate-700' : 'text-slate-500 hover:text-slate-300'
                             }`}
@@ -951,19 +1226,19 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                           </button>
                         ))}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{filteredData.length} entries</span>
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{filteredData.length} entries</span>
                     </div>
                   </div>
                   <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
                     <div className="overflow-x-auto custom-scrollbar">
                       <table className="w-full text-left text-sm">
                         <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 border-b border-white/10">
-                          <tr className="text-slate-400 font-bold uppercase text-[12px] tracking-[0.2em] whitespace-nowrap">
+                          <tr className="text-slate-400 font-bold uppercase text-sm tracking-[0.2em] whitespace-nowrap">
                             <th className="p-5">
                               <div className="flex flex-col gap-2">
                                 <span>Project</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
                                   value={columnFilters.project}
                                   onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
                                 >
@@ -976,7 +1251,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               <div className="flex flex-col gap-2">
                                 <span>Task Name</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
                                   value={columnFilters.taskName}
                                   onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
                                 >
@@ -989,7 +1264,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               <div className="flex flex-col gap-2">
                                 <span>User</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
                                   value={columnFilters.user}
                                   onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
                                 >
@@ -998,30 +1273,30 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 </select>
                               </div>
                             </th>
-                            <th className="p-5">Start</th>
-                            <th className="p-5">End</th>
-                            <th className="p-5">Done</th>
-                            <th className="p-5 text-center bg-emerald-500/5">T1</th>
-                            <th className="p-5 text-center bg-indigo-500/5">T2</th>
-                            <th className="p-5 text-center bg-violet-500/5">T3</th>
+                            <th className="p-4">Start</th>
+                            <th className="p-4">End</th>
+                            <th className="p-4">Done</th>
+                            <th className="p-4 text-center bg-emerald-500/5">T1</th>
+                            <th className="p-4 text-center bg-indigo-500/5">T2</th>
+                            <th className="p-4 text-center bg-violet-500/5">T3</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.03]">
                           {filteredData.map((r, i) => (
                             <tr key={i} className="hover:bg-white/[0.04] transition-all group border-l-2 border-transparent hover:border-indigo-500">
-                              <td className="p-5">
+                              <td className="p-4">
                                 <span className="text-indigo-400 font-bold text-sm tracking-tight">{r.project}</span>
                               </td>
-                              <td className="p-5">
+                              <td className="p-4">
                                 <div className="font-medium text-slate-200 line-clamp-2" title={r.taskName}>{r.taskName}</div>
                               </td>
-                              <td className="p-5 text-slate-500 text-xs font-mono">{r.createdBy?.split('@')[0]}</td>
-                              <td className="p-5 text-slate-400 text-xs">{formatTime(r.dateStart)}</td>
-                              <td className="p-5 text-slate-400 text-xs">{formatTime(r.dateEnd)}</td>
-                              <td className="p-5 text-slate-400 text-xs">{formatTime(r.dateComplete)}</td>
-                              <td className={`p-5 text-center font-bold text-emerald-400 ${selectedMetric === 'time1' ? 'bg-emerald-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time1Str}</td>
-                              <td className={`p-5 text-center font-bold text-indigo-400 ${selectedMetric === 'time2' ? 'bg-indigo-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time2Str}</td>
-                              <td className={`p-5 text-center font-bold text-violet-400 ${selectedMetric === 'time3' ? 'bg-violet-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time3Str}</td>
+                              <td className="p-4 text-slate-500 text-xs font-mono">{r.createdBy?.split('@')[0]}</td>
+                              <td className="p-4 text-slate-400 text-xs">{formatTime(r.dateStart)}</td>
+                              <td className="p-4 text-slate-400 text-xs">{formatTime(r.dateEnd)}</td>
+                              <td className="p-4 text-slate-400 text-xs">{formatTime(r.dateComplete)}</td>
+                              <td className={`p-4 text-center font-bold text-emerald-400 ${selectedMetric === 'time1' ? 'bg-emerald-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time1Str}</td>
+                              <td className={`p-4 text-center font-bold text-indigo-400 ${selectedMetric === 'time2' ? 'bg-indigo-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time2Str}</td>
+                              <td className={`p-4 text-center font-bold text-violet-400 ${selectedMetric === 'time3' ? 'bg-violet-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time3Str}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1040,38 +1315,25 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                           <button 
                             key={m}
                             onClick={() => setSelectedMetric(m)}
-                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedMetric === m ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${selectedMetric === m ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                           >
                             {m}
                           </button>
                         ))}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{filteredUserData.length} entries</span>
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{filteredUserData.length} entries</span>
                     </div>
                   </div>
                   <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
                     <div className="overflow-x-auto custom-scrollbar">
                       <table className="w-full text-left text-sm">
                         <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 border-b border-white/10">
-                          <tr className="text-slate-400 font-bold uppercase text-[12px] tracking-[0.2em] whitespace-nowrap">
-                            <th className="p-5">
-                              <div className="flex flex-col gap-2">
-                                <span>User</span>
-                                <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
-                                  value={columnFilters.user}
-                                  onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
-                                >
-                                  <option value="">All Users</option>
-                                  {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
-                                </select>
-                              </div>
-                            </th>
-                            <th className="p-5">
+                          <tr className="text-slate-400 font-bold uppercase text-sm tracking-[0.2em] whitespace-nowrap">
+                            <th className="p-4 w-px whitespace-nowrap">
                               <div className="flex flex-col gap-2">
                                 <span>Project</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
                                   value={columnFilters.project}
                                   onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
                                 >
@@ -1080,11 +1342,24 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 </select>
                               </div>
                             </th>
-                            <th className="p-5 min-w-[200px]">
+                            <th className="p-4 w-px whitespace-nowrap">
+                              <div className="flex flex-col gap-2">
+                                <span>Create By</span>
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                                  value={columnFilters.user}
+                                  onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
+                                >
+                                  <option value="">All Users</option>
+                                  {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
+                                </select>
+                              </div>
+                            </th>
+                            <th className="p-4 text-left">
                               <div className="flex flex-col gap-2">
                                 <span>Task Name</span>
                                 <select 
-                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
                                   value={columnFilters.taskName}
                                   onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
                                 >
@@ -1093,26 +1368,26 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 </select>
                               </div>
                             </th>
-                            <th className="p-5">Created At</th>
-                            <th className="p-5">Started</th>
-                            <th className="p-5">Checked</th>
-                            <th className="p-5 text-center bg-emerald-500/5">T1</th>
-                            <th className="p-5 text-center bg-indigo-500/5">T2</th>
+                            <th className="p-4">Created At</th>
+                            <th className="p-4">Started</th>
+                            <th className="p-4">Checked</th>
+                            <th className="p-4 text-center bg-emerald-500/5">T1</th>
+                            <th className="p-4 text-center bg-indigo-500/5">T2</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.03]">
                           {filteredUserData.map((r, i) => (
                             <tr key={i} className="hover:bg-white/[0.04] transition-all group border-l-2 border-transparent hover:border-emerald-500">
-                              <td className="p-5 font-bold text-emerald-400 truncate max-w-[120px]">{r.userName}</td>
-                              <td className="p-5 font-bold text-indigo-400 truncate max-w-[120px]">{r.project}</td>
-                              <td className="p-5">
-                                <div className="font-medium text-slate-200 line-clamp-2" title={r.taskName}>{r.taskName}</div>
+                              <td className="p-4 font-black text-indigo-400 whitespace-nowrap">{r.project}</td>
+                              <td className="p-4 font-black text-slate-200 uppercase text-[10px] tracking-tight whitespace-nowrap">{r.userName}</td>
+                              <td className="p-4">
+                                <div className="font-bold text-slate-300 line-clamp-1" title={r.taskName}>{r.taskName}</div>
                               </td>
-                              <td className="p-5 text-slate-500 text-[11px] font-mono whitespace-nowrap">{r.createdAtStr}</td>
-                              <td className="p-5 text-slate-400 text-[11px] font-mono whitespace-nowrap">{r.dateStartedStr}</td>
-                              <td className="p-5 text-white font-bold text-[11px] font-mono whitespace-nowrap">{r.dateCheckedStr}</td>
-                              <td className={`p-5 text-center font-bold text-emerald-400 ${selectedMetric === 'time1' ? 'bg-emerald-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time1Str}</td>
-                              <td className={`p-5 text-center font-bold text-indigo-400 ${selectedMetric === 'time2' ? 'bg-indigo-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time2Str}</td>
+                              <td className="p-4 text-slate-500 text-[11px] font-mono whitespace-nowrap">{r.createdAtStr}</td>
+                              <td className="p-4 text-slate-400 text-[11px] font-mono whitespace-nowrap">{r.dateStartedStr}</td>
+                              <td className="p-4 text-white font-bold text-[11px] font-mono whitespace-nowrap">{r.dateCheckedStr}</td>
+                              <td className={`p-4 text-center font-bold text-emerald-400 ${selectedMetric === 'time1' ? 'bg-emerald-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time1Str}</td>
+                              <td className={`p-4 text-center font-bold text-indigo-400 ${selectedMetric === 'time2' ? 'bg-indigo-500/10 scale-110 shadow-lg z-10 relative rounded-lg' : 'opacity-40'}`}>{r.time2Str}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1122,198 +1397,175 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 </div>
               )}
 
-              {view === 'pivot' && (
+              {view === 'weeklyReport' && (
                 <div className="space-y-4">
-                  <div className="flex gap-2 p-1 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/5 w-fit">
-                    {['time1', 'time2', 'time3'].map(m => (
-                      <button 
-                        key={m}
-                        onClick={() => setSelectedMetric(m)}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedMetric === m ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
-                      >
-                        {m.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="glass-panel overflow-auto max-h-[700px] border-white/5 shadow-2xl custom-scrollbar">
-                    <table className="w-full text-left text-sm border-collapse">
-                      <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-2xl z-10 shadow-lg">
-                        <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] border-b border-white/10">
-                          <th className="p-6 min-w-[150px]">
-                            <div className="flex flex-col gap-2">
-                              <span>Project</span>
-                              <select 
-                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
-                                value={columnFilters.project}
-                                onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
-                              >
-                                <option value="">All Projects</option>
-                                {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
-                              </select>
-                            </div>
-                          </th>
-                          <th className="p-6 min-w-[200px]">
-                            <div className="flex flex-col gap-2">
-                              <span>Task</span>
-                              <select 
-                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
-                                value={columnFilters.taskName}
-                                onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
-                              >
-                                <option value="">All Tasks</option>
-                                {columnOptions.tasks.map(t => <option key={t} value={t}>{t}</option>)}
-                              </select>
-                            </div>
-                          </th>
-                          <th className="p-6">
-                            <div className="flex flex-col gap-2">
-                              <span>Create By</span>
-                              <select 
-                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
-                                value={columnFilters.user}
-                                onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
-                              >
-                                <option value="">All Users</option>
-                                {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
-                              </select>
-                            </div>
-                          </th>
-                          {['Mo','Tu','We','Th','Fr'].map(d => <th key={d} className="p-6 text-center">{d}</th>)}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.05]">
-                        {pivotData.map((r, i) => (
-                          <tr key={i} className="hover:bg-white/[0.04] transition-all group">
-                            <td className="p-6 font-bold text-indigo-400">{r.project}</td>
-                            <td className="p-6 font-medium text-slate-200">{r.taskName}</td>
-                            <td className="p-6 text-[11px] text-slate-500 font-mono group-hover:text-slate-400">{r.createdBy}</td>
-                            {['Mo','Tu','We','Th','Fr'].map(d => (
-                              <td key={d} className="p-6 text-center">
-                                <div className="flex flex-col gap-1.5 items-center">
-                                  {(r.days[d] || []).map((t, idx) => (
-                                    <span key={idx} className={`${
-                                      selectedMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                                      selectedMetric === 'time2' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-                                      'bg-violet-500/10 text-violet-400 border-violet-500/20'
-                                    } px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
-                                      {selectedMetric === 'time1' ? t.time1Str : selectedMetric === 'time2' ? t.time2Str : t.time3Str}
-                                    </span>
-                                  ))}
-                                </div>
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {view === 'userPivot' && (
-                <div className="space-y-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex gap-2 p-1 bg-slate-900/50 rounded-xl border border-white/5">
-                      {['time1', 'time2'].map(m => (
+                  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                    <div className="flex gap-2 p-1 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/5 w-fit">
+                      {[
+                        { id: 'time1', label: 'PLAN TIME [t1]' },
+                        { id: 'time2', label: 'USER COMPLETE [t2]' },
+                        { id: 'time3', label: 'TASK COMPLETE [t4]' }
+                      ].map(m => (
                         <button 
-                          key={m}
-                          onClick={() => setSelectedMetric(m)}
-                          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedMetric === m ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                          key={m.id}
+                          onClick={() => setSelectedMetric(m.id)}
+                          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedMetric === m.id ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
                         >
-                          {m.toUpperCase()}
+                          {m.label}
                         </button>
                       ))}
-                      <div className="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-800 bg-slate-900/30 opacity-20 cursor-not-allowed select-none">
-                        TIME3 N/A
-                      </div>
+                    </div>
+                    
+                    <div className="flex gap-1 p-1 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/5 w-fit items-center">
+                      <span className="text-[10px] font-black text-slate-500 uppercase px-3 tracking-widest">GROUP BY:</span>
+                      {['none', 'project', 'user'].map(g => (
+                        <button 
+                          key={g}
+                          onClick={() => setGroupBy(g)}
+                          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-widest ${groupBy === g ? 'bg-amber-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                          {g}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="glass-panel overflow-auto max-h-[700px] border-white/5 shadow-2xl custom-scrollbar">
-                    <table className="w-full text-left text-sm border-collapse">
-                      <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-2xl z-10 shadow-lg">
-                        <tr className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] border-b border-white/10">
-                          <th className="p-6 min-w-[150px]">
-                            <div className="flex flex-col gap-2">
-                              <span>User</span>
-                              <select 
-                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
-                                value={columnFilters.user}
-                                onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
-                              >
-                                <option value="">All Users</option>
-                                {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
-                              </select>
-                            </div>
-                          </th>
-                          <th className="p-6 min-w-[150px]">
-                            <div className="flex flex-col gap-2">
-                              <span>Project</span>
-                              <select 
-                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none"
-                                value={columnFilters.project}
-                                onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
-                              >
-                                <option value="">All Projects</option>
-                                {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
-                              </select>
-                            </div>
-                          </th>
-                          <th className="p-6 min-w-[200px]">
-                            <div className="flex flex-col gap-2">
-                              <span>Task</span>
-                              <select 
-                                className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-[10px] font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none max-w-[250px]"
-                                value={columnFilters.taskName}
-                                onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
-                              >
-                                <option value="">All Tasks</option>
-                                {columnOptions.tasks.map(t => <option key={t} value={t}>{t}</option>)}
-                              </select>
-                            </div>
-                          </th>
-                          {['Mo','Tu','We','Th','Fr'].map(d => (
-                            <th key={d} className="p-6 text-center">{d}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.05]">
-                        {userPivotData.map((r, i) => (
-                          <tr key={i} className="hover:bg-white/[0.04] transition-all group">
-                            <td className="p-6 font-bold text-emerald-400">{r.userName}</td>
-                            <td className="p-6 font-medium text-indigo-400">{r.project}</td>
-                            <td className="p-6 text-slate-200">{r.taskName}</td>
-                            {['Mo','Tu','We','Th','Fr'].map(d => (
-                              <td key={d} className="p-6 text-center">
-                                <div className="flex flex-col gap-1.5 items-center">
-                                  {(r.days[d] || []).map((t, idx) => (
-                                    <span key={idx} className={`${
-                                      selectedMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                                      selectedMetric === 'time2' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-                                      'bg-violet-500/10 text-violet-400 border-violet-500/20'
-                                    } px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
-                                      {selectedMetric === 'time1' ? t.time1Str : selectedMetric === 'time2' ? t.time2Str : t.time3Str}
-                                    </span>
-                                  ))}
+                  <div className="glass-panel overflow-hidden border-white/5 shadow-2xl">
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full text-left border-collapse" style={{ minWidth: '1200px' }}>
+                        <thead className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10">
+                          {/* Row 1: Group Headers */}
+                          <tr className="text-[10px] font-black uppercase tracking-widest border-b border-white/10">
+                            <th rowSpan={2} className="px-3 py-3 bg-amber-500/15 text-amber-300 border-r border-white/10 sticky left-0 z-20 min-w-[200px]">
+                              <div className="flex flex-col gap-2">
+                                <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('project')}>
+                                  <span>NAME {sortConfig.key === 'project' ? <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span> : null}</span>
                                 </div>
-                              </td>
-                            ))}
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full"
+                                  value={columnFilters.project}
+                                  onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
+                                >
+                                  <option value="">All Projects</option>
+                                  {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full mt-1"
+                                  value={columnFilters.taskName}
+                                  onChange={e => setColumnFilters(prev => ({...prev, taskName: e.target.value}))}
+                                >
+                                  <option value="">All Tasks</option>
+                                  {columnOptions.tasks.map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                              </div>
+                            </th>
+                            <th rowSpan={2} className="px-3 py-3 bg-indigo-500/10 text-indigo-300 text-center border-r border-white/10 min-w-[120px] align-top">
+                              <div className="flex flex-col gap-2 h-full justify-start">
+                                <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('creator')}>
+                                  <span>MANAGER {sortConfig.key === 'creator' ? <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span> : null}</span>
+                                </div>
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none text-left w-full mt-1"
+                                  value={columnFilters.creator}
+                                  onChange={e => setColumnFilters(prev => ({...prev, creator: e.target.value}))}
+                                >
+                                  <option value="">All Creators</option>
+                                  {columnOptions.creators.map(u => <option key={u} value={u}>{u}</option>)}
+                                </select>
+                              </div>
+                            </th>
+                            <th rowSpan={2} className="px-3 py-3 bg-sky-500/10 text-sky-300 text-center border-r border-white/10 min-w-[120px] align-top">
+                              <div className="flex flex-col gap-2 h-full justify-start">
+                                <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('user')}>
+                                  <span>USER {sortConfig.key === 'user' ? <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span> : null}</span>
+                                </div>
+                                <select 
+                                  className="bg-slate-950/80 border border-white/5 rounded-md px-2 py-1 text-xs font-normal lowercase outline-none focus:border-indigo-500 cursor-pointer appearance-none text-left w-full mt-1"
+                                  value={columnFilters.user}
+                                  onChange={e => setColumnFilters(prev => ({...prev, user: e.target.value}))}
+                                >
+                                  <option value="">All Users</option>
+                                  {columnOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
+                                </select>
+                              </div>
+                            </th>
+                            <th rowSpan={2} className="px-3 py-3 bg-slate-800/40 text-slate-400 text-center border-r border-white/10 min-w-[80px] cursor-pointer hover:bg-white/5 transition-colors align-top" onClick={() => handleSort('area')}>
+                              <div className="flex flex-col justify-start h-full">
+                                <span>AREA {sortConfig.key === 'area' ? <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span> : null}</span>
+                              </div>
+                            </th>
+                            <th colSpan={5} className="px-3 py-3 bg-emerald-500/10 text-emerald-300 text-center border-r border-white/10">DAYS OF WEEK</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                          {/* Row 2: Sub Headers */}
+                          <tr className="text-[9px] font-bold uppercase tracking-wider text-slate-500 border-b border-white/10 bg-white/[0.02]">
+                            {['Mo','Tu','We','Th','Fr'].map(d => <th key={d} className="px-3 py-2 bg-emerald-500/5 border-r border-white/5 text-center min-w-[65px]">{d}</th>)}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.03]">
+                          {Object.entries(groupedWeeklyData).length === 0 || weeklyReportData.length === 0 ? (
+                            <tr><td colSpan={9} className="px-8 py-16 text-center text-slate-600 font-bold uppercase tracking-widest text-sm">No tasks found in selected range</td></tr>
+                          ) : Object.entries(groupedWeeklyData).map(([groupName, rows], gIdx) => (
+                            <React.Fragment key={gIdx}>
+                              {groupBy !== 'none' && (
+                                <tr className="bg-slate-800/50 border-y border-white/10">
+                                  <td colSpan={9} className="px-4 py-3 text-xs font-black uppercase tracking-widest text-amber-400 sticky left-0 z-10">
+                                    {groupBy === 'project' ? 'PROJECT: ' : 'USER: '} <span className="text-white">{groupName}</span>
+                                    <span className="ml-3 text-[10px] text-slate-400 bg-slate-900/80 px-2 py-1 rounded-md">{rows.length} TASKS</span>
+                                  </td>
+                                </tr>
+                              )}
+                              {rows.map((r, i) => (
+                                <tr key={`${gIdx}-${i}`} className="hover:bg-white/[0.04] transition-all group text-[11px]">
+                                  {/* NAME */}
+                                  <td className="px-3 py-2.5 bg-slate-950/60 sticky left-0 z-10 border-r border-white/5">
+                                    <div className="flex flex-col gap-1">
+                                      {groupBy !== 'project' && <span className="font-bold text-indigo-400 truncate max-w-[200px] group-hover:text-indigo-300 transition-colors">{r.project}</span>}
+                                      <span className="font-medium text-slate-400 truncate max-w-[200px] group-hover:text-white transition-colors">{r.taskName}</span>
+                                    </div>
+                                  </td>
+                                  {/* MANAGER/LEADER */}
+                                  <td className="px-3 py-2.5 text-[10px] font-black text-indigo-300/70 uppercase tracking-tight whitespace-nowrap group-hover:text-indigo-200 transition-colors border-r border-white/[0.03] text-center">{r.creator}</td>
+                                  {/* USER */}
+                                  <td className="px-3 py-2.5 text-[10px] font-black text-sky-300/70 uppercase tracking-tight whitespace-nowrap group-hover:text-sky-200 transition-colors border-r border-white/[0.03] text-center">
+                                    {groupBy !== 'user' ? r.user : '-'}
+                                  </td>
+                                  {/* AREA */}
+                                  <td className="px-3 py-2.5 text-slate-500 text-center border-r border-white/5 font-semibold">{r.area}</td>
+                                  {/* DAYS */}
+                                  {['Mo','Tu','We','Th','Fr'].map(d => (
+                                    <td key={d} className="px-3 py-2.5 text-center border-r border-white/5">
+                                      <div className="flex flex-col gap-1.5 items-center">
+                                        {(r.days[d] || []).map((t, idx) => (
+                                          <span key={idx} className={`${
+                                            selectedMetric === 'time1' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                                            selectedMetric === 'time2' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                                            'bg-lime-500/10 text-lime-400 border-lime-500/20'
+                                          } px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-lg`}>
+                                            {selectedMetric === 'time1' ? t.time1Str : selectedMetric === 'time2' ? t.time2Str : t.time3Str}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </React.Fragment>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
 
               {view === 'analytics' && (
                 <div className="space-y-8">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="flex gap-1 p-1 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/5 shadow-2xl">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex gap-2 p-1 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/5">
                       <button 
-                        onClick={() => setAnalyticsMode('leader')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${analyticsMode === 'leader' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        onClick={() => setAnalyticsMode('project')}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${analyticsMode === 'project' ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                       >
-                        <FileText size={14} /> Leader Mode
+                        <Table size={14} /> Project Mode
                       </button>
                       <button 
                         onClick={() => setAnalyticsMode('user')}
@@ -1328,7 +1580,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         <button 
                           key={g}
                           onClick={() => setAnalyticsGranularity(g)}
-                          className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${analyticsGranularity === g ? 'bg-slate-700 text-white shadow-inner' : 'text-slate-500 hover:text-slate-300'}`}
+                          className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${analyticsGranularity === g ? 'bg-slate-700 text-white shadow-inner' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                           By {g}
                         </button>
@@ -1338,8 +1590,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5 lg:col-span-2">
-                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
-                        <span className="w-4 h-4 bg-violet-500 rounded flex items-center justify-center text-[10px] text-white">3</span>
+                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-xs tracking-[0.3em] flex items-center gap-2">
+                        <span className="w-4 h-4 bg-violet-500 rounded flex items-center justify-center text-xs text-white">3</span>
                         {analyticsGranularity.toUpperCase()}LY PERFORMANCE TREND
                       </h3>
                       <div className="w-full h-[300px]">
@@ -1358,7 +1610,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     </motion.div>
                   </div>
 
-                  <div className="glass-panel p-6 border-white/5 bg-slate-900/40">
+                  <div className="glass-panel p-4 border-white/5 bg-slate-900/40">
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{analyticsGranularity.toUpperCase()}LY AGGREGATE TABLE</h3>
                     </div>
@@ -1388,8 +1640,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 flex flex-col items-center bg-slate-900/60 border-white/5">
-                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
-                        <span className="w-4 h-4 bg-indigo-500 rounded flex items-center justify-center text-[10px] text-white">1</span>
+                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-xs tracking-[0.3em] flex items-center gap-2">
+                        <span className="w-4 h-4 bg-indigo-500 rounded flex items-center justify-center text-xs text-white">1</span>
                         Project Time Distribution (Time 1)
                       </h3>
                       <div className="w-full h-[350px] relative">
@@ -1405,14 +1657,14 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         />
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                           <span className="text-3xl font-black text-white">{projectStats.length}</span>
-                          <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Projects</span>
+                          <span className="text-xs text-slate-500 uppercase tracking-widest font-bold">Projects</span>
                         </div>
                       </div>
                     </motion.div>
                     
                     <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5">
-                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
-                        <span className="w-4 h-4 bg-emerald-500 rounded flex items-center justify-center text-[10px] text-white">2</span>
+                      <h3 className="font-bold text-slate-400 mb-8 uppercase text-xs tracking-[0.3em] flex items-center gap-2">
+                        <span className="w-4 h-4 bg-emerald-500 rounded flex items-center justify-center text-xs text-white">2</span>
                         User Workload (Time 1)
                       </h3>
                       <div className="w-full h-[350px]">
@@ -1434,7 +1686,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                     {/* Project Summary */}
                     <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5 overflow-hidden">
-                      <h3 className="font-bold text-indigo-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
+                      <h3 className="font-bold text-indigo-400 mb-8 uppercase text-xs tracking-[0.3em] flex items-center gap-2">
                         <TableIcon size={14} />
                         Summary by Project
                       </h3>
@@ -1466,7 +1718,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
                     {/* User Summary */}
                     <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-slate-900/60 border-white/5 overflow-hidden">
-                      <h3 className="font-bold text-emerald-400 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
+                      <h3 className="font-bold text-emerald-400 mb-8 uppercase text-xs tracking-[0.3em] flex items-center gap-2">
                         <Search size={14} />
                         Summary by Created By
                       </h3>
@@ -1484,7 +1736,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                           <tbody className="divide-y divide-white/[0.03]">
                             {userStats.map((s, i) => (
                               <tr key={s.name} className="group hover:bg-white/[0.02]">
-                                <td className="py-4 font-bold text-slate-200 text-[10px] font-mono">{s.name}</td>
+                                <td className="py-4 font-bold text-slate-200 text-xs font-mono">{s.name}</td>
                                 <td className="py-4 text-center text-emerald-400 font-black">{s.uniqueProjects}</td>
                                 <td className="py-4 text-center text-emerald-400 font-bold">{s.totalTime1}</td>
                                 <td className="py-4 text-center text-indigo-400 font-bold">{s.totalTime2}</td>
@@ -1504,7 +1756,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-12 glass-panel p-8 bg-slate-900/40 border-white/5">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-              <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Time Calculation Methodology</h3>
+              <h3 className="text-sm font-black text-white uppercase tracking-widest">Time Calculation Methodology</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div className="space-y-6">
@@ -1520,9 +1772,9 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     <div key={f.label} className="bg-slate-950/30 p-4 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all">
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-xs font-black text-white">{f.label}</span>
-                        <code className="text-[10px] text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
+                        <code className="text-xs text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
                       </div>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">{f.desc}</p>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-tight">{f.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -1540,9 +1792,9 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     <div key={f.label} className="bg-slate-950/30 p-4 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all">
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-xs font-black text-white">{f.label}</span>
-                        <code className="text-[10px] text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
+                        <code className="text-xs text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
                       </div>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">{f.desc}</p>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-tight">{f.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -1552,7 +1804,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
               <div className="p-2 bg-rose-500/10 rounded-lg text-rose-400">
                 <Database size={14} />
               </div>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
+              <p className="text-xs text-slate-500 font-black uppercase tracking-widest">
                 All calculations automatically deduct <span className="text-rose-400">1 hour lunch break</span> (12:30 - 13:30) if applicable.
               </p>
             </div>

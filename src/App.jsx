@@ -44,6 +44,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [reportData, setReportData] = useState([])
   const [customProjects, setCustomProjects] = useState([])
+  const [supabaseProjects, setSupabaseProjects] = useState([])
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   
@@ -60,7 +61,25 @@ function App() {
       setReportData(migratedLogs)
     }
     if (savedProjects) setCustomProjects(JSON.parse(savedProjects))
+
+    const fetchSupabaseProjects = async () => {
+      try {
+        const { data, error } = await import('./supabaseClient').then(m => m.supabase.from('NMK_Project').select('name, key').order('key'));
+        if (error) throw error;
+        if (data) {
+          const keys = data.map(p => (p.key || p.name).toUpperCase()).filter(Boolean);
+          setSupabaseProjects(keys);
+        }
+      } catch (err) {
+        console.error('Failed to fetch Supabase projects:', err);
+      }
+    };
+    fetchSupabaseProjects();
   }, [])
+
+  const allProjects = useMemo(() => {
+    return Array.from(new Set([...supabaseProjects, ...customProjects])).sort()
+  }, [supabaseProjects, customProjects])
 
   // Save data
   useEffect(() => {
@@ -371,8 +390,10 @@ function App() {
                         updateStatus={updateStatus} updateDayTime={updateDayTime}
                         updateMarkup={updateMarkup} bulkUpdateMarkup={bulkUpdateMarkup}
                         customProjects={customProjects} addCustomProject={addCustomProject}
+                        allProjects={allProjects}
                         exportExcel={exportExcel} isSidebarOpen={isSidebarOpen}
                         setIsSidebarOpen={setIsSidebarOpen}
+                        sidebarCollapsed={sidebarCollapsed}
                       />
                     ) : activeTab === 'processor' ? (
                       <CSVProcessor />

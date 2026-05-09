@@ -188,7 +188,7 @@ const AnnualLeave = () => {
               <Landmark size={20} />
             </div>
             <div>
-              <h2 className="text-xs font-black text-white uppercase italic tracking-widest">VN Annual Leave</h2>
+              <h2 className="text-xs font-black text-white uppercase tracking-widest">VN Annual Leave</h2>
               <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Management Dashboard</p>
             </div>
           </div>
@@ -198,13 +198,13 @@ const AnnualLeave = () => {
           <div className="flex items-center gap-2 p-1 bg-slate-950/50 rounded-xl border border-white/5">
             <button 
               onClick={() => setViewMode('individual')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'individual' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'individual' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
             >
               <User size={14} /> Individual
             </button>
             <button 
               onClick={() => setViewMode('summary')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
             >
               <LayoutGrid size={14} /> Team Summary
             </button>
@@ -245,17 +245,17 @@ const AnnualLeave = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
           <div className="flex justify-between items-end">
             <div>
-              <h2 className="text-2xl font-black text-white uppercase italic italic tracking-tight">Team <span className="text-indigo-400">Overview</span></h2>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight">Team <span className="text-indigo-400">Overview</span></h2>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Aggregate leave statistics for Vietnam operations</p>
             </div>
             <div className="flex gap-4">
               <div className="bg-slate-900/40 p-4 rounded-2xl border border-white/5 text-center min-w-[120px]">
-                <p className="text-[10px] font-black text-slate-500 uppercase mb-1">Total Users</p>
-                <p className="text-xl font-black text-white italic">{summaryData.length}</p>
+                <p className="text-sm font-black text-slate-500 uppercase mb-1">Total Users</p>
+                <p className="text-xl font-black text-white">{summaryData.length}</p>
               </div>
               <div className="bg-indigo-500/10 p-4 rounded-2xl border border-indigo-500/20 text-center min-w-[120px]">
-                <p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Avg Used</p>
-                <p className="text-xl font-black text-white italic">
+                <p className="text-sm font-black text-indigo-400 uppercase mb-1">Avg Used</p>
+                <p className="text-xl font-black text-white">
                   {summaryData.length ? (summaryData.reduce((s, u) => s + u.used, 0) / summaryData.length).toFixed(1) : 0}D
                 </p>
               </div>
@@ -265,7 +265,7 @@ const AnnualLeave = () => {
           <div className="glass-panel overflow-hidden border-white/5 bg-slate-900/20 backdrop-blur-xl">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-white/[0.03] text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-white/10">
+                <tr className="bg-white/[0.03] text-sm font-black text-slate-400 uppercase tracking-[0.2em] border-b border-white/10">
                   <th className="px-8 py-5">User Intelligence</th>
                   <th className="px-8 py-5">Team</th>
                   <th className="px-8 py-5 text-center">Seniority</th>
@@ -287,7 +287,7 @@ const AnnualLeave = () => {
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <span className="px-3 py-1.5 rounded-lg bg-slate-950/60 border border-white/5 text-[9px] font-black text-slate-500 uppercase tracking-widest">{u.team}</span>
+                      <span className="px-3 py-1.5 rounded-lg bg-slate-950/60 border border-white/5 text-xs font-black text-slate-500 uppercase tracking-widest">{u.team}</span>
                     </td>
                     <td className="px-8 py-6 text-center text-xs font-bold text-slate-400">{u.seniority} Yrs</td>
                     <td className="px-8 py-6 text-center">
@@ -320,7 +320,7 @@ const AnnualLeave = () => {
             <div className="flex-grow space-y-2">
               <div className="flex items-center gap-3">
                 <div className="w-2 h-8 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
-                <h1 className="text-3xl font-black italic text-white uppercase tracking-tight">
+                <h1 className="text-3xl font-black text-white uppercase tracking-tight">
                   {selectedUser.split(' ')[0]}'s <span className="text-indigo-400">Leave</span>
                 </h1>
               </div>
@@ -330,14 +330,14 @@ const AnnualLeave = () => {
             <div className="flex items-center gap-4">
               <button 
                 onClick={handleInsertHolidays}
-                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all active:scale-95"
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-sm font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all active:scale-95"
               >
                 <Landmark size={14} /> Insert VN Holidays
               </button>
               
               <div className="glass-panel p-4 flex items-center gap-6 border-white/5 bg-slate-900/40">
                 <div className="space-y-1">
-                  <label className="!mb-0 text-[9px] font-black text-slate-500 uppercase">Work Start</label>
+                  <label className="!mb-0 text-xs font-black text-slate-500 uppercase">Work Start</label>
                   <input 
                     type="date" 
                     className="bg-transparent border-none text-indigo-400 font-black text-sm p-0 focus:ring-0 cursor-pointer"
@@ -351,8 +351,8 @@ const AnnualLeave = () => {
                     <Award size={20} />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Seniority</p>
-                    <p className="text-lg font-black text-white italic">{seniority} {seniority === 1 ? 'YEAR' : 'YEARS'}</p>
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest leading-none">Seniority</p>
+                    <p className="text-lg font-black text-white">{seniority} {seniority === 1 ? 'YEAR' : 'YEARS'}</p>
                   </div>
                 </div>
               </div>
@@ -369,7 +369,7 @@ const AnnualLeave = () => {
               <div className="glass-panel p-5 border-indigo-500/10 bg-indigo-500/5 space-y-4">
                 <div className="flex items-center gap-2 text-indigo-400">
                   <Info size={16} />
-                  <h4 className="text-[10px] font-black uppercase tracking-widest">Policy Overview</h4>
+                  <h4 className="text-sm font-black uppercase tracking-widest">Policy Overview</h4>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
                   Hợp đồng lao động tại <span className="text-indigo-300 font-bold">Việt Nam</span>. 
@@ -378,7 +378,7 @@ const AnnualLeave = () => {
                 </p>
                 <div className="p-3 rounded-xl bg-slate-950/40 border border-white/5 flex items-start gap-3">
                   <AlertCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
-                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider leading-normal">
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider leading-normal">
                     {totalAllowance === 15 ? 'Đã đạt mức tối đa 15 ngày phép/năm.' : 'Làm việc trên 1 năm sẽ được tăng lên 15 ngày.'}
                   </p>
                 </div>
@@ -392,16 +392,16 @@ const AnnualLeave = () => {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <Clock className="text-indigo-400" size={18} />
-                    <h3 className="text-sm font-black text-white uppercase italic tracking-widest">Book Leave Request</h3>
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest">Book Leave Request</h3>
                   </div>
-                  <div className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[9px] font-black text-indigo-400 uppercase tracking-widest">
+                  <div className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-black text-indigo-400 uppercase tracking-widest">
                     Create Entry
                   </div>
                 </div>
 
                 <form onSubmit={handleAddLeave} className="grid grid-cols-1 md:grid-cols-12 gap-4">
                   <div className="md:col-span-4 space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Leave Date</label>
+                    <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Leave Date</label>
                     <div className="relative">
                       <input 
                         type="date" 
@@ -415,7 +415,7 @@ const AnnualLeave = () => {
                   </div>
 
                   <div className="md:col-span-3 space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Duration</label>
+                    <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Duration</label>
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         { val: 1, label: 'Full Day' },
@@ -425,7 +425,7 @@ const AnnualLeave = () => {
                           key={opt.val}
                           type="button"
                           onClick={() => setFormData({ ...formData, amount: opt.val })}
-                          className={`h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                          className={`h-12 rounded-xl text-sm font-black uppercase tracking-widest transition-all border ${
                             formData.amount === opt.val
                               ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
                               : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-white/10'
@@ -438,7 +438,7 @@ const AnnualLeave = () => {
                   </div>
 
                   <div className="md:col-span-3 space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Reason / Note</label>
+                    <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">Reason / Note</label>
                     <input 
                       type="text" 
                       className="input h-12 bg-slate-950/50" 
@@ -462,9 +462,9 @@ const AnnualLeave = () => {
                 <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <List className="text-slate-500" size={14} />
-                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Leave History {new Date().getFullYear()}</h3>
+                    <h3 className="text-sm font-black text-slate-500 uppercase tracking-[0.3em]">Leave History {new Date().getFullYear()}</h3>
                   </div>
-                  <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-500/20">
+                  <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-500/20">
                     {currentYearEntries.length} Records Found
                   </span>
                 </div>
@@ -477,12 +477,12 @@ const AnnualLeave = () => {
                       </div>
                       <div>
                         <p className="text-sm font-black text-slate-500 uppercase tracking-widest">No Leave Records</p>
-                        <p className="text-[10px] text-slate-600 font-bold mt-1 uppercase tracking-wider">Lịch sử nghỉ phép sẽ hiển thị ở đây.</p>
+                        <p className="text-sm text-slate-600 font-bold mt-1 uppercase tracking-wider">Lịch sử nghỉ phép sẽ hiển thị ở đây.</p>
                       </div>
                     </div>
                   ) : (
                     <table className="w-full text-left border-collapse">
-                      <thead className="bg-white/[0.01] text-[9px] font-black uppercase tracking-widest text-slate-600 border-b border-white/5 sticky top-0 z-10 backdrop-blur-md">
+                      <thead className="bg-white/[0.01] text-xs font-black uppercase tracking-widest text-slate-600 border-b border-white/5 sticky top-0 z-10 backdrop-blur-md">
                         <tr>
                           <th className="px-6 py-4">Date</th>
                           <th className="px-6 py-4 text-center">Amount</th>
@@ -501,17 +501,17 @@ const AnnualLeave = () => {
                               className={`group hover:bg-white/[0.02] transition-colors ${entry.type === 'HOLIDAY' ? 'bg-amber-500/[0.02]' : ''}`}
                             >
                               <td className="px-6 py-4">
-                                <span className="text-xs font-black text-slate-300 italic">
+                                <span className="text-xs font-black text-slate-300">
                                   {format(parseISO(entry.date), 'EEEE, MMM dd, yyyy')}
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-center">
                                 {entry.type === 'HOLIDAY' ? (
-                                  <span className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                  <span className="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
                                     HOLIDAY
                                   </span>
                                 ) : (
-                                  <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                                  <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${
                                     entry.amount === 1 
                                       ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' 
                                       : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'

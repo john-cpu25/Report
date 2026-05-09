@@ -54,17 +54,17 @@ const Projects = () => {
   );
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-8 pb-20">
+    <div className="max-w-[1500px] mx-auto space-y-8 pb-20 px-4 sm:px-6">
       {/* Header Intelligence */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900/20 p-6 rounded-3xl border border-white/5 shadow-2xl">
+        <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="w-2 h-8 bg-indigo-500 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.6)]" />
-            <h1 className="text-4xl font-black italic text-white uppercase tracking-tight">
+            <h1 className="text-3xl font-black text-white uppercase tracking-tight">
               Project <span className="text-indigo-400">Intelligence</span>
             </h1>
           </div>
-          <p className="text-slate-500 font-bold text-xs uppercase tracking-[0.3em] ml-5">Global Portfolio Management System</p>
+          <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em] ml-5">Global Portfolio Management System</p>
         </div>
 
         <div className="relative group max-w-md w-full">
@@ -206,7 +206,7 @@ const Projects = () => {
                       </div>
                       <div>
                         <p className="text-[10px] font-black text-indigo-400/60 uppercase tracking-widest leading-none">Priority</p>
-                        <p className="text-xl font-black text-white italic">HIGH-LEVEL</p>
+                        <p className="text-xl font-black text-white">HIGH-LEVEL</p>
                       </div>
                     </div>
                   </div>
@@ -230,7 +230,7 @@ const Projects = () => {
                         ID: {selectedId.slice(0, 8)}
                       </span>
                     </div>
-                    <h2 className="text-5xl font-black text-white uppercase italic leading-tight">
+                    <h2 className="text-5xl font-black text-white uppercase tracking-tight">
                       {selectedProject.name}
                     </h2>
                   </div>
@@ -248,21 +248,21 @@ const Projects = () => {
                         <Cpu size={14} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Platform</span>
                       </div>
-                      <p className="text-lg font-black text-white italic">REVIT {selectedProject.revit_version || '2024'}</p>
+                      <p className="text-lg font-black text-white">REVIT {selectedProject.revit_version || '2024'}</p>
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-emerald-400 mb-1">
                         <User size={14} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Manager</span>
                       </div>
-                      <p className="text-lg font-black text-white italic">NM KHANG</p>
+                      <p className="text-lg font-black text-white">NM KHANG</p>
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-amber-400 mb-1">
                         <Calendar size={14} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Modified</span>
                       </div>
-                      <p className="text-lg font-black text-white italic">MAY 2026</p>
+                      <p className="text-lg font-black text-white">MAY 2026</p>
                     </div>
                   </div>
 

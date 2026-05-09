@@ -121,7 +121,7 @@ const CelestialBackground = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 0.2, y: 0 }}
-        className="absolute bottom-12 left-12 font-black text-white text-4xl tracking-[0.5em] uppercase italic pointer-events-none select-none"
+        className="absolute bottom-12 left-12 font-black text-white text-4xl tracking-[0.5em] uppercase pointer-events-none select-none"
       >
         {constellation.name}
       </motion.div>

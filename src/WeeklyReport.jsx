@@ -2,7 +2,7 @@ import React from 'react'
 import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet, Layout, X, Filter } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import WorkflowAnimation from './WorkflowAnimation'
-import projectsData from './data/projects.json'
+
 import KamehamehaAnimation from './KamehamehaAnimation'
 import { generateTasks, validateTaskInput } from './utils/taskEngine'
 import MarkupCell from './components/MarkupCell'
@@ -42,8 +42,8 @@ const ALL_STATUSES = ['WIP', 'DONE', 'PENDING', 'TMR', 'PLANNING', 'URGENT', 'HI
 const WeeklyReport = ({ 
   reportData, setReportData, selectedDate, setSelectedDate, weekDates, 
   formData, setFormData, handleAddTask, deleteRow, moveRow, updateStatus,
-  updateDayTime, updateMarkup, bulkUpdateMarkup, customProjects, addCustomProject, exportExcel,
-  isSidebarOpen, setIsSidebarOpen
+  updateDayTime, updateMarkup, bulkUpdateMarkup, customProjects, addCustomProject, 
+  allProjects, exportExcel, isSidebarOpen, setIsSidebarOpen, sidebarCollapsed
 }) => {
   const [newProjectName, setNewProjectName] = React.useState('')
   const [showAddProject, setShowAddProject] = React.useState(false)
@@ -74,9 +74,7 @@ const WeeklyReport = ({
     });
   }, [batchProjects, batchLevelsText, batchLevelEnabled, batchWorkflows, batchTasksText]);
 
-  const allProjects = React.useMemo(() => {
-    return [...projectsData, ...customProjects].sort()
-  }, [customProjects])
+
 
   const filteredReportData = React.useMemo(() => {
     let result = reportData.filter(r => r.team === formData.team && visibleStatuses.includes(r.status))
@@ -211,24 +209,23 @@ const WeeklyReport = ({
   }
 
   const handleEtaMode = (mode) => {
-    if (mode === '12:30') {
-      setFormData({...formData, etaMode: '12:30', eta: '12:30'})
-    } else if (mode === '17:30') {
-      setFormData({...formData, etaMode: '17:30', eta: '17:30'})
+    if (mode === 'MO') {
+      setFormData({...formData, etaMode: 'MO', eta: '12:30'})
+    } else if (mode === 'AF') {
+      setFormData({...formData, etaMode: 'AF', eta: '17:30'})
     } else if (mode === 'CUSTOM') {
       setFormData({...formData, etaMode: 'CUSTOM', eta: ''})
-    } else if (mode === 'OVERTIME') {
-      setFormData({...formData, etaMode: 'OVERTIME', eta: '18:00'})
     }
   }
 
   return (
-    <div className="relative">
+    <div className="relative min-h-screen">
       {/* Sidebar Overlay */}
       <AnimatePresence>
       </AnimatePresence>
 
-      <main className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 2xl:grid-cols-12 gap-6 items-start">
+      <div className="max-w-[1600px] mx-auto px-6 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
 
         {/* Sidebar Form (Integrated in Grid on Desktop, Slider on Tablet/Mobile) */}
@@ -246,17 +243,22 @@ const WeeklyReport = ({
           {isSidebarOpen && (
             <motion.aside 
               key="entry-form-aside"
-              initial={{ x: -300, opacity: 0 }}
+              initial={{ x: -400, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -300, opacity: 0 }}
+              exit={{ x: -400, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="lg:relative fixed left-0 top-0 h-screen lg:h-auto w-[320px] lg:w-auto lg:col-span-2 z-[60] lg:z-0 lg:p-0 p-6 overflow-y-auto lg:overflow-visible custom-scrollbar"
+              className="fixed left-0 top-20 bottom-0 w-[320px] lg:w-[360px] z-[51] p-4 lg:p-6 overflow-y-auto custom-scrollbar bg-slate-950/80 backdrop-blur-2xl border-r border-white/10 shadow-[20px_0_50px_rgba(0,0,0,0.5)]"
+              style={{ 
+                left: typeof window !== 'undefined' && window.innerWidth >= 1024 
+                  ? (sidebarCollapsed ? 72 : 260) 
+                  : 0 
+              }}
             >
-              <div className="glass-panel p-4 border-white/10 shadow-2xl bg-slate-900/95 h-full">
+              <div className="p-1 h-full">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                <h2 className="text-lg font-black text-white tracking-tight uppercase italic">Entry Form</h2>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Entry Form</h2>
               </div>
               <button 
                 type="button"
@@ -324,7 +326,7 @@ const WeeklyReport = ({
                       checked={formData.showLevel}
                       onChange={e => setFormData({...formData, showLevel: e.target.checked, level: e.target.checked ? formData.level : ''})}
                     />
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Show</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Show</span>
                   </label>
                 </div>
                 {formData.showLevel && (
@@ -380,7 +382,7 @@ const WeeklyReport = ({
                             setFormData({...formData, tasks: newTasks})
                           }}
                         />
-                        <span className="text-[9px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider leading-none">{t}</span>
+                        <span className="text-[10px] font-medium text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-wider leading-none">{t}</span>
                       </label>
                     ))}
                   </div>
@@ -398,7 +400,7 @@ const WeeklyReport = ({
                             setFormData({...formData, tasks: newTasks})
                           }}
                         />
-                        <span className="text-[9px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider leading-none">{t}</span>
+                        <span className="text-[10px] font-medium text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-wider leading-none">{t}</span>
                       </label>
                     ))}
                   </div>
@@ -416,7 +418,7 @@ const WeeklyReport = ({
                             setFormData({...formData, tasks: newTasks})
                           }}
                         />
-                        <span className="text-[9px] font-black text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-wider leading-none">{t}</span>
+                        <span className="text-[10px] font-medium text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-wider leading-none">{t}</span>
                       </label>
                     ))}
                   </div>
@@ -465,20 +467,17 @@ const WeeklyReport = ({
                   <label>ETA Time</label>
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
-                      { mode: '12:30', label: 'MORNING' },
-                      { mode: '17:30', label: 'AFTERNOON' },
+                      { mode: 'MO', label: 'MO' },
+                      { mode: 'AF', label: 'AF' },
                       { mode: 'CUSTOM', label: 'CUSTOM' },
-                      { mode: 'OVERTIME', label: 'OVERTIME' },
                     ].map(opt => (
                       <button
                         key={opt.mode}
                         type="button"
                         onClick={() => handleEtaMode(opt.mode)}
-                        className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border ${
+                        className={`px-2 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all border ${
                           formData.etaMode === opt.mode
-                            ? opt.mode === 'OVERTIME' 
-                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/30 shadow-lg shadow-rose-500/10'
-                              : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-lg shadow-indigo-500/10'
+                            ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-lg shadow-indigo-500/10'
                             : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-white/15 hover:text-slate-300'
                         }`}
                       >
@@ -522,7 +521,7 @@ const WeeklyReport = ({
         </AnimatePresence>
 
         {/* Main Table */}
-        <div className={`${isSidebarOpen ? 'lg:col-span-7' : 'lg:col-span-9'} space-y-4 transition-all duration-500`}>
+        <div className="lg:col-span-9 space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-2xl border border-white/5 w-fit">
               {[
@@ -582,7 +581,7 @@ const WeeklyReport = ({
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-white/[0.03] text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 border-b border-white/5">
+                  <tr className="bg-white/[0.03] text-sm font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5">
                     <th className="p-6 w-12">
                       <input 
                         type="checkbox" 
@@ -665,17 +664,17 @@ const WeeklyReport = ({
                                   className="absolute right-0 top-full mt-2 w-56 z-[70] glass-panel bg-slate-900/95 backdrop-blur-xl border-white/10 shadow-2xl p-2"
                                 >
                                   <div className="p-2 border-b border-white/5 mb-2 flex items-center justify-between">
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Filter Status</span>
+                                    <span className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Filter Status</span>
                                     <div className="flex gap-2">
                                       <button 
                                         onClick={() => setVisibleStatuses(ALL_STATUSES)}
-                                        className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest"
+                                        className="text-xs font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest"
                                       >
                                         All
                                       </button>
                                       <button 
                                         onClick={() => setVisibleStatuses([])}
-                                        className="text-[9px] font-black text-slate-500 hover:text-slate-400 uppercase tracking-widest"
+                                        className="text-xs font-black text-slate-500 hover:text-slate-400 uppercase tracking-widest"
                                       >
                                         None
                                       </button>
@@ -689,33 +688,32 @@ const WeeklyReport = ({
                                       return (
                                         <label 
                                           key={s} 
-                                          className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all ${
-                                            isSelected ? 'bg-white/5' : 'hover:bg-white/[0.02]'
+                                          className={`flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                                            isSelected ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-transparent border border-transparent hover:bg-white/5'
                                           }`}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            if (isSelected) {
+                                              setVisibleStatuses(visibleStatuses.filter(x => x !== s));
+                                            } else {
+                                              setVisibleStatuses([...visibleStatuses, s]);
+                                            }
+                                          }}
                                         >
-                                          <div className="relative flex items-center">
-                                            <input 
-                                              type="checkbox" 
-                                              className="peer hidden"
-                                              checked={isSelected}
-                                              onChange={() => {
-                                                if (isSelected) {
-                                                  setVisibleStatuses(visibleStatuses.filter(x => x !== s));
-                                                } else {
-                                                  setVisibleStatuses([...visibleStatuses, s]);
-                                                }
-                                              }}
-                                            />
-                                            <div className={`w-4 h-4 rounded border border-white/20 transition-all flex items-center justify-center ${
-                                              isSelected ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : 'bg-slate-950'
-                                            }`}>
-                                              {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-                                            </div>
+                                          <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${colors.bg.replace('/10', '')} shadow-[0_0_8px_currentColor]`} />
+                                            <span className={`text-[11px] font-bold uppercase tracking-widest truncate ${isSelected ? 'text-white' : 'text-slate-400'}`}>
+                                              {s}
+                                            </span>
                                           </div>
-                                          <span className={`text-[10px] font-black uppercase tracking-wider ${isSelected ? 'text-white' : 'text-slate-500'}`}>
-                                            {s}
-                                          </span>
-                                          <div className={`ml-auto w-2 h-2 rounded-full ${colors.bg.replace('/10', '')} shadow-[0_0_5px_currentColor]`} />
+                                          
+                                          <div className={`w-8 h-4 rounded-full relative transition-all duration-300 flex-shrink-0 ${
+                                            isSelected ? 'bg-indigo-500' : 'bg-slate-800'
+                                          }`}>
+                                            <div className={`absolute top-0.5 bottom-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-300 ${
+                                              isSelected ? 'left-[18px]' : 'left-0.5'
+                                            }`} />
+                                          </div>
                                         </label>
                                       );
                                     })}
@@ -724,7 +722,7 @@ const WeeklyReport = ({
                                   <div className="mt-2 p-2 border-t border-white/5 flex justify-end">
                                     <button 
                                       onClick={() => setShowStatusFilter(false)}
-                                      className="px-3 py-1.5 bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest rounded-md hover:bg-indigo-600 transition-all"
+                                      className="px-3 py-1.5 bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-md hover:bg-indigo-600 transition-all"
                                     >
                                       Apply Filter
                                     </button>
@@ -739,8 +737,8 @@ const WeeklyReport = ({
                     {DAYS_OF_WEEK.map((d, i) => (
                       <th key={d} className="p-6 text-center">
                         <div className="flex flex-col gap-1">
-                          <span className="text-slate-300 font-black">{d}</span>
-                          <span className="text-[9px] font-bold text-slate-500 tracking-tight opacity-50">{weekDates[i]}</span>
+                          <span className="text-slate-300 font-black text-xs uppercase tracking-wider">{d === 'Wednesday' ? 'We' : d.substring(0, 2)}</span>
+                          <span className="text-xs font-bold text-slate-500 tracking-tight opacity-50">{weekDates[i]}</span>
                         </div>
                       </th>
                     ))}
@@ -771,12 +769,12 @@ const WeeklyReport = ({
                                     <div className="w-2 h-6 bg-indigo-500 rounded-full shadow-[0_0_15px_#6366f1]"></div>
                                     <div>
                                       <div className="flex items-center gap-3">
-                                        <span className="text-sm font-black text-white uppercase tracking-[0.3em] italic leading-none">{projectName}</span>
-                                        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-[9px] font-black rounded-md uppercase tracking-widest border border-indigo-500/30">
+                                        <span className="text-sm font-black text-white uppercase tracking-[0.3em] leading-none">{projectName}</span>
+                                        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs font-black rounded-md uppercase tracking-widest border border-indigo-500/30">
                                           {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
                                         </span>
                                       </div>
-                                      <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mt-1 opacity-60">Project Milestone Group</p>
+                                      <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mt-1 opacity-60">Project Milestone Group</p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-4">
@@ -785,7 +783,7 @@ const WeeklyReport = ({
                                         e.stopPropagation()
                                         setFocusedProject(focusedProject === projectName ? null : projectName)
                                       }}
-                                      className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border ${
+                                      className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all border ${
                                         focusedProject === projectName 
                                           ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20' 
                                           : 'bg-white/5 text-slate-400 border-white/5 hover:border-indigo-500/30 hover:text-indigo-400'
@@ -823,7 +821,7 @@ const WeeklyReport = ({
                                   />
                                 </td>
                                 <td className="p-6">
-                                  <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase italic">{row.project}</span>
+                                  <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase">{row.project}</span>
                                 </td>
                                 <td className="p-6">
                                   <div className="text-sm font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
@@ -934,7 +932,7 @@ const WeeklyReport = ({
                             />
                           </td>
                           <td className="p-6">
-                            <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase italic">{row.project}</span>
+                            <span className="text-indigo-400 font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase">{row.project}</span>
                           </td>
                           <td className="p-6">
                             <div className="text-sm font-bold text-slate-200 tracking-tight leading-relaxed">{row.task}</div>
@@ -1044,7 +1042,7 @@ const WeeklyReport = ({
           <div className="glass-panel p-6 border-white/5 shadow-2xl bg-slate-900/30">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-              <h2 className="text-lg font-black text-white tracking-tight uppercase italic">Data Intelligence</h2>
+              <h2 className="text-lg font-black text-white tracking-tight uppercase">Data Intelligence</h2>
             </div>
             
             <div className="space-y-8">
@@ -1089,19 +1087,19 @@ const WeeklyReport = ({
                 />
                 <div className="absolute flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tasks</span>
-                  <span className="text-3xl font-black text-white italic">{stats.totalTasks}</span>
+                  <span className="text-3xl font-black text-white">{stats.totalTasks}</span>
                 </div>
               </div>
 
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white/[0.03] p-4 rounded-xl border border-white/5">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Projects</p>
-                  <p className="text-xl font-black text-indigo-400 italic">{stats.uniqueProjects}</p>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Projects</p>
+                  <p className="text-xl font-black text-indigo-400">{stats.uniqueProjects}</p>
                 </div>
                 <div className="bg-white/[0.03] p-4 rounded-xl border border-white/5">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Done</p>
-                  <p className="text-xl font-black text-emerald-400 italic">{stats.doneTasks}</p>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Done</p>
+                  <p className="text-xl font-black text-emerald-400">{stats.doneTasks}</p>
                 </div>
               </div>
 
@@ -1159,7 +1157,7 @@ const WeeklyReport = ({
             <WorkflowAnimation />
           </div>
         </aside>
-      </main>
+      </div>
 
       {/* Bottom Dashboard / Project Distribution */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
@@ -1169,9 +1167,9 @@ const WeeklyReport = ({
             <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-6 bg-orange-500 rounded-full"></div>
-              <h2 className="text-xl font-black text-white tracking-tight uppercase italic">Workforce Distribution</h2>
+              <h2 className="text-xl font-black text-white tracking-tight uppercase">Workforce Distribution</h2>
             </div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">Weekly Overview</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Weekly Overview</span>
           </div>
           
           <div className="flex flex-wrap gap-4">
@@ -1180,18 +1178,18 @@ const WeeklyReport = ({
               return (
                 <div key={proj} className="px-6 py-4 bg-slate-900/50 rounded-2xl border border-white/5 flex flex-col gap-1 hover:border-indigo-500/30 transition-all group">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{proj}</span>
-                  <span className="text-2xl font-black text-white italic group-hover:text-indigo-400 transition-colors">{count} <span className="text-xs text-slate-600 not-italic uppercase tracking-tight">tasks</span></span>
+                  <span className="text-2xl font-black text-white group-hover:text-indigo-400 transition-colors">{count} <span className="text-xs text-slate-600 not-italic uppercase tracking-tight">tasks</span></span>
                 </div>
               )
             })}
-            {filteredReportData.length === 0 && <p className="text-slate-500 text-sm italic py-4">No data available for distribution analysis.</p>}
+            {filteredReportData.length === 0 && <p className="text-slate-500 text-sm py-4">No data available for distribution analysis.</p>}
           </div>
         </div>
       </div>
 
         <div className="glass-panel p-8 border-white/5 shadow-2xl bg-indigo-500/5 overflow-hidden relative group lg:col-span-3">
           <div className="relative z-10">
-            <h3 className="text-lg font-black text-white uppercase italic mb-4">System Update</h3>
+            <h3 className="text-lg font-black text-white uppercase mb-4">System Update</h3>
             <p className="text-sm text-slate-400 leading-relaxed mb-6">
               The reporting system is now synced with the local database. Your progress is automatically saved to local storage.
             </p>
@@ -1239,7 +1237,7 @@ const WeeklyReport = ({
                       <Layout size={24} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Batch Add Tasks</h2>
+                      <h2 className="text-2xl font-black text-white tracking-tight uppercase">Batch Add Tasks</h2>
                       <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Power Tool — Create multiple rows instantly</p>
                     </div>
                   </div>
@@ -1260,14 +1258,14 @@ const WeeklyReport = ({
                         <button 
                           type="button"
                           onClick={() => setBatchProjects([...allProjects])}
-                          className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-indigo-500/20 transition-all"
+                          className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-widest rounded-lg border border-indigo-500/20 transition-all"
                         >
                           All
                         </button>
                         <button 
                           type="button"
                           onClick={() => setBatchProjects([])}
-                          className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-white/5 transition-all"
+                          className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 text-xs font-black uppercase tracking-widest rounded-lg border border-white/5 transition-all"
                         >
                           Clear
                         </button>
@@ -1285,7 +1283,7 @@ const WeeklyReport = ({
                                 isSelected ? prev.filter(x => x !== p) : [...prev, p]
                               )
                             }}
-                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all border ${
                               isSelected
                                 ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
                                 : 'bg-slate-950/40 text-slate-600 border-white/5 hover:text-slate-400'
@@ -1309,7 +1307,7 @@ const WeeklyReport = ({
                           checked={batchLevelEnabled}
                           onChange={e => { setBatchLevelEnabled(e.target.checked); if (!e.target.checked) setBatchLevelsText('') }}
                         />
-                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Enable Multi-Level</span>
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Enable Multi-Level</span>
                       </label>
                     </div>
                     {batchLevelEnabled ? (
@@ -1320,7 +1318,7 @@ const WeeklyReport = ({
                           value={batchLevelsText}
                           onChange={e => setBatchLevelsText(e.target.value)}
                         />
-                        <p className="text-[9px] text-slate-500 italic">Example: 1, 2, 5, 10, Roof</p>
+                        <p className="text-xs text-slate-500">Example: 1, 2, 5, 10, Roof</p>
                       </div>
                     ) : (
                       <div className="input bg-slate-950/30 border-white/5 text-slate-600 cursor-not-allowed flex items-center text-xs">Level Disabled (Tasks will be created with no level)</div>
@@ -1335,14 +1333,14 @@ const WeeklyReport = ({
                         <button 
                           type="button"
                           onClick={() => setBatchWorkflows([...currentWorkflow.col1, ...currentWorkflow.col2, ...currentWorkflow.col3])}
-                          className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-indigo-500/20 transition-all"
+                          className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-widest rounded-lg border border-indigo-500/20 transition-all"
                         >
                           Select All
                         </button>
                         <button 
                           type="button"
                           onClick={() => setBatchWorkflows([])}
-                          className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-white/5 transition-all"
+                          className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 text-xs font-black uppercase tracking-widest rounded-lg border border-white/5 transition-all"
                         >
                           Clear
                         </button>
@@ -1372,7 +1370,7 @@ const WeeklyReport = ({
                       })}
                     </div>
                     {batchWorkflows.length > 0 && (
-                      <p className="text-[9px] text-indigo-400/60 font-bold italic">
+                      <p className="text-xs text-indigo-400/60 font-bold">
                         Each task line × {batchWorkflows.length} workflow{batchWorkflows.length > 1 ? 's' : ''} = cross-product generation
                       </p>
                     )}
@@ -1382,7 +1380,7 @@ const WeeklyReport = ({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Task Details (One per line)</label>
-                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest italic border ${
+                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border ${
                         batchValidation.totalTasks > 0 
                           ? 'text-orange-400 bg-orange-500/10 border-orange-500/20'
                           : 'text-slate-600 bg-white/5 border-white/5'
@@ -1418,7 +1416,7 @@ const WeeklyReport = ({
                         }
                       }}
                     />
-                    <p className="text-[10px] text-slate-500 italic px-2 flex justify-between">
+                    <p className="text-[10px] text-slate-500 px-2 flex justify-between">
                       <span>Note: Each line × selected workflows = individual task entries.</span>
                       <span className="text-indigo-400/50">Ctrl + Enter to deploy</span>
                     </p>
@@ -1427,7 +1425,7 @@ const WeeklyReport = ({
                   {/* Preview */}
                   {batchValidation.isValid && (
                     <div className="space-y-2 p-4 bg-white/[0.02] rounded-2xl border border-white/5 max-h-32 overflow-y-auto custom-scrollbar">
-                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Preview (first 10 generated tasks)</p>
+                      <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Preview (first 10 generated tasks)</p>
                       {(() => {
                         const lines = batchTasksText.split('\n').filter(t => t.trim())
                         const effectiveLines = lines.length > 0 ? lines.slice(0, 3) : [""]
@@ -1442,7 +1440,7 @@ const WeeklyReport = ({
                           )
                         ).slice(0, 10).map((item, i) => (
                           <div key={i} className="text-[11px] text-slate-400 font-mono py-0.5 flex items-center gap-2">
-                            <span className="text-indigo-500/40 text-[9px]">{String(i+1).padStart(2, '0')}</span>
+                            <span className="text-indigo-500/40 text-xs">{String(i+1).padStart(2, '0')}</span>
                             <span className="text-indigo-300/80">{item.proj}</span>
                             <span className="text-slate-600">›</span>
                             {batchLevelEnabled && item.level && <><span className="text-violet-400">L{item.level}</span><span className="text-slate-600">›</span></>}
@@ -1450,7 +1448,7 @@ const WeeklyReport = ({
                           </div>
                         ))
                       })()}
-                      {batchValidation.totalTasks > 10 && <p className="text-[9px] text-slate-600 italic">...and {batchValidation.totalTasks - 10} more</p>}
+                      {batchValidation.totalTasks > 10 && <p className="text-xs text-slate-600">...and {batchValidation.totalTasks - 10} more</p>}
                     </div>
                   )}
 
@@ -1556,6 +1554,7 @@ const WeeklyReport = ({
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   )
 }
