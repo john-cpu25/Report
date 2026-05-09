@@ -25,7 +25,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [lastFetched, setLastFetched] = useState(null)
   const [fetchError, setFetchError] = useState(null)
-  const [analyticsMode, setAnalyticsMode] = useState('leader') // 'leader' | 'user'
+  const [analyticsMode, setAnalyticsMode] = useState('project') // 'project' | 'user'
   const [analyticsGranularity, setAnalyticsGranularity] = useState('month') // 'week' | 'month' | 'year'
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTeam, setSelectedTeam] = useState('ALL')
@@ -494,7 +494,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   const projectStats = useMemo(() => {
     const pMap = new Map()
-    const targetData = analyticsMode === 'leader' ? filteredData : filteredUserData
+    const targetData = analyticsMode === 'project' ? filteredData : filteredUserData
     targetData.forEach(r => {
       if (!pMap.has(r.project)) pMap.set(r.project, { tasks: new Set(), logs: 0, t1: 0, t2: 0, t3: 0 })
       const p = pMap.get(r.project)
@@ -513,9 +513,9 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   const userStats = useMemo(() => {
     const uMap = new Map()
-    const targetData = analyticsMode === 'leader' ? filteredData : filteredUserData
+    const targetData = analyticsMode === 'project' ? filteredData : filteredUserData
     targetData.forEach(r => {
-      const uName = analyticsMode === 'leader' ? r.createdBy : r.userName
+      const uName = analyticsMode === 'project' ? r.createdBy : r.userName
       if (!uMap.has(uName)) uMap.set(uName, { projects: new Set(), logs: 0, t1: 0, t2: 0, t3: 0 })
       const u = uMap.get(uName)
       u.projects.add(r.project)
@@ -533,7 +533,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   const periodicStats = useMemo(() => {
     const mMap = new Map()
-    const targetData = analyticsMode === 'leader' ? filteredData : filteredUserData
+    const targetData = analyticsMode === 'project' ? filteredData : filteredUserData
     targetData.forEach(r => {
       if (!r.dateObj) return
       let key = ''
@@ -1565,7 +1565,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         onClick={() => setAnalyticsMode('project')}
                         className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${analyticsMode === 'project' ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                       >
-                        <Table size={14} /> Project Mode
+                        <TableIcon size={14} /> Project Mode
                       </button>
                       <button 
                         onClick={() => setAnalyticsMode('user')}
