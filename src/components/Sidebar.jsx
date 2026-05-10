@@ -1,3 +1,4 @@
+
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -14,23 +15,24 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
-  Menu,
   X,
   Battery,
-  CalendarHeart,
   Network,
   Workflow as WorkflowIcon
 } from 'lucide-react'
 import NavItem from './NavItem'
+import { useApp } from '../context/AppContext'
 
-const Sidebar = ({ 
-  collapsed, 
-  setCollapsed, 
-  mobileOpen, 
-  setMobileOpen,
-  activeTab,
-  setActiveTab
-}) => {
+const Sidebar = () => {
+  const {
+    sidebarCollapsed: collapsed,
+    setSidebarCollapsed: setCollapsed,
+    mobileSidebarOpen: mobileOpen,
+    setMobileSidebarOpen: setMobileOpen,
+    activeTab,
+    setActiveTab
+  } = useApp();
+
   const sections = [
     {
       title: 'MAIN',
@@ -70,36 +72,23 @@ const Sidebar = ({
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full py-6">
-      {/* Sidebar Header (Toggle in Desktop) */}
       <div className={`px-4 mb-8 flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-2"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
             <div className="w-1.5 h-5 bg-indigo-500 rounded-full" />
             <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Navigation</span>
           </motion.div>
         )}
-        <button 
-          onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex p-1.5 rounded-lg hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-colors"
-        >
+        <button onClick={() => setCollapsed(!collapsed)} className="hidden lg:flex p-1.5 rounded-lg hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-colors">
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
 
-      {/* Nav Sections */}
       <div className="flex-grow overflow-y-auto custom-scrollbar px-3 space-y-8 pb-20">
         {sections.map((section, idx) => (
           <div key={section.title} className="space-y-2">
             {!collapsed && (
-              <motion.h3 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="px-3 text-[9px] font-black text-[var(--text-muted)] opacity-60 uppercase tracking-[0.2em] mb-2"
-              >
+              <motion.h3 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-3 text-[9px] font-black text-[var(--text-muted)] opacity-60 uppercase tracking-[0.2em] mb-2">
                 {section.title}
               </motion.h3>
             )}
@@ -112,7 +101,6 @@ const Sidebar = ({
                   active={activeTab === item.id}
                   collapsed={collapsed}
                   onClick={() => {
-                    console.log('Switching to tab:', item.id);
                     setActiveTab(item.id);
                     if (mobileOpen) setMobileOpen(false);
                   }}
@@ -126,12 +114,11 @@ const Sidebar = ({
         ))}
       </div>
 
-      {/* Sidebar Footer */}
       {!collapsed && (
         <div className="px-6 mt-8">
           <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
             <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Version</p>
-            <p className="text-[11px] font-bold text-[var(--text-muted)]">Intelligence v4.6.1</p>
+            <p className="text-[11px] font-bold text-[var(--text-muted)]">Intelligence v4.7.0</p>
           </div>
         </div>
       )}
@@ -140,7 +127,6 @@ const Sidebar = ({
 
   return (
     <>
-      {/* Desktop Sidebar */}
       <motion.aside
         initial={false}
         animate={collapsed ? 'collapsed' : 'expanded'}
@@ -150,28 +136,13 @@ const Sidebar = ({
         <SidebarContent />
       </motion.aside>
 
-      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] lg:hidden"
-            />
-            <motion.aside
-              initial={{ x: -260 }}
-              animate={{ x: 0 }}
-              exit={{ x: -260 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 h-screen w-[260px] bg-[var(--bg-dark)] z-[101] lg:hidden overflow-hidden shadow-2xl"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileOpen(false)} className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] lg:hidden" />
+            <motion.aside initial={{ x: -260 }} animate={{ x: 0 }} exit={{ x: -260 }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed left-0 top-0 h-screen w-[260px] bg-[var(--bg-dark)] z-[101] lg:hidden overflow-hidden shadow-2xl">
               <div className="absolute top-6 right-6 lg:hidden">
-                <button onClick={() => setMobileOpen(false)} className="text-slate-500 hover:text-white">
-                  <X size={20} />
-                </button>
+                <button onClick={() => setMobileOpen(false)} className="text-slate-500 hover:text-white"><X size={20} /></button>
               </div>
               <SidebarContent />
             </motion.aside>

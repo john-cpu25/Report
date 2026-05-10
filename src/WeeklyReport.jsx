@@ -39,12 +39,20 @@ ChartJS.register(
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 const ALL_STATUSES = ['WIP', 'DONE', 'PENDING', 'TMR', 'PLANNING', 'URGENT', 'HIGH PRIORITY', 'ISSUE']
 
-const WeeklyReport = ({ 
-  reportData, setReportData, selectedDate, setSelectedDate, weekDates, 
-  formData, setFormData, handleAddTask, deleteRow, moveRow, updateStatus,
-  updateDayTime, updateMarkup, bulkUpdateMarkup, customProjects, addCustomProject, 
-  allProjects, exportExcel, isSidebarOpen, setIsSidebarOpen, sidebarCollapsed
-}) => {
+import { useApp } from './context/AppContext'
+
+const WeeklyReport = ({ exportExcel }) => {
+  const {
+    reportData, setReportData,
+    selectedDate, setSelectedDate,
+    weekDates,
+    formData, setFormData,
+    handleAddTask, deleteRow, moveRow, updateStatus,
+    updateDayTime, updateMarkup, bulkUpdateMarkup,
+    allProjects,
+    isSidebarOpen, setIsSidebarOpen,
+    sidebarCollapsed
+  } = useApp();
   const [newProjectName, setNewProjectName] = React.useState('')
   const [showAddProject, setShowAddProject] = React.useState(false)
   const [sortConfig, setSortConfig] = React.useState({ key: 'project', direction: 'asc' })

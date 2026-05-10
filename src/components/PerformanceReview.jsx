@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO, startOfDay, endOfDay, startOfWeek, isWithinInterval } from 'date-fns';
 import { supabase } from '../supabaseClient';
-import { calculateWorkingDuration, getDurationHours } from '../utils/timeUtils';
+import { calculateWorkingMinutes, formatMinutes, calculateTaskMetrics } from '../utils/performanceEngine';
 
 const PerformanceReview = () => {
   const [tasks, setTasks] = useState([]);
@@ -66,7 +66,7 @@ const PerformanceReview = () => {
     const e = processDate(endVal);
     const s = processDate(startVal);
     if (!e || !s) return null;
-    return getDurationHours(calculateWorkingDuration(s, e));
+    return calculateWorkingMinutes(s, e) / 60;
   }
 
   // --- FETCH ---
@@ -115,7 +115,7 @@ const PerformanceReview = () => {
       // Calculate "Check Duration" for leaders: checked - complete
       const dateComplete = processDate(t.date_complete);
       const dateChecked = processDate(t.date_checked);
-      const checkTime = (dateComplete && dateChecked) ? getDurationHours(calculateWorkingDuration(dateComplete, dateChecked)) : 0;
+      const checkTime = (dateComplete && dateChecked) ? (calculateWorkingMinutes(dateComplete, dateChecked) / 60) : 0;
 
       return {
         ...t,

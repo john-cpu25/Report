@@ -1,21 +1,32 @@
+
 import React from 'react'
 import { Menu, Filter, Bell, Search, User, Plus } from 'lucide-react'
 import RincovitchLogo from '../RincovitchLogo'
+import { useApp } from '../context/AppContext'
 
-const TopBar = ({ 
-  onMenuClick, 
-  onAddTask,
-  showProjectGroups, 
-  onToggleProjectGroups,
-  isSidebarCollapsed,
-  activeTab
-}) => {
+const TopBar = () => {
+  const {
+    sidebarCollapsed, setSidebarCollapsed,
+    mobileSidebarOpen, setMobileSidebarOpen,
+    isSidebarOpen, setIsSidebarOpen,
+    showProjectGroups, setShowProjectGroups,
+    activeTab
+  } = useApp();
+
+  const handleMenuClick = () => {
+    if (window.innerWidth < 1024) {
+      setMobileSidebarOpen(true);
+    } else {
+      setSidebarCollapsed(!sidebarCollapsed);
+    }
+  };
+
   return (
     <header className="h-20 bg-[var(--glass-bg)] backdrop-blur-xl border-b border-[var(--glass-border)] sticky top-0 z-30">
       <div className="w-full h-full flex items-center justify-between px-6">
         <div className="flex items-center gap-6">
           <button 
-            onClick={onMenuClick}
+            onClick={handleMenuClick}
             className="p-2 rounded-xl hover:bg-white/5 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all active:scale-95"
           >
             <Menu size={22} />
@@ -48,7 +59,7 @@ const TopBar = ({
           )}
 
           <button 
-            onClick={onToggleProjectGroups}
+            onClick={() => setShowProjectGroups(!showProjectGroups)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 ${
               showProjectGroups 
                 ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
@@ -61,7 +72,7 @@ const TopBar = ({
           </button>
 
           <button 
-            onClick={onAddTask}
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
           >
             <Plus size={16} strokeWidth={3} />
