@@ -18,7 +18,8 @@ import {
   X,
   Battery,
   CalendarHeart,
-  Network
+  Network,
+  Workflow as WorkflowIcon
 } from 'lucide-react'
 import NavItem from './NavItem'
 
@@ -49,6 +50,7 @@ const Sidebar = ({
         { id: 'wip', label: 'Work In Progress', icon: Wrench },
         { id: 'issues', label: 'Issues', icon: AlertCircle },
         { id: 'review', label: 'Review', icon: CheckCircle2 },
+        { id: 'workflows', label: 'Procedures', icon: WorkflowIcon },
       ]
     },
     {
@@ -89,7 +91,7 @@ const Sidebar = ({
       </div>
 
       {/* Nav Sections */}
-      <div className="flex-grow overflow-y-auto custom-scrollbar px-3 space-y-8">
+      <div className="flex-grow overflow-y-auto custom-scrollbar px-3 space-y-8 pb-20">
         {sections.map((section, idx) => (
           <div key={section.title} className="space-y-2">
             {!collapsed && (
@@ -110,8 +112,9 @@ const Sidebar = ({
                   active={activeTab === item.id}
                   collapsed={collapsed}
                   onClick={() => {
-                    setActiveTab(item.id)
-                    if (mobileOpen) setMobileOpen(false)
+                    console.log('Switching to tab:', item.id);
+                    setActiveTab(item.id);
+                    if (mobileOpen) setMobileOpen(false);
                   }}
                 />
               ))}
@@ -128,7 +131,7 @@ const Sidebar = ({
         <div className="px-6 mt-8">
           <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
             <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Version</p>
-            <p className="text-[11px] font-bold text-[var(--text-muted)]">Intelligence v2.1.0</p>
+            <p className="text-[11px] font-bold text-[var(--text-muted)]">Intelligence v4.6.1</p>
           </div>
         </div>
       )}

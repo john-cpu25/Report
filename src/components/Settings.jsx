@@ -144,7 +144,7 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
         <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em]">Current System Core</p>
         <div className="flex items-center justify-center gap-4">
           <Monitor size={16} className="text-indigo-500" />
-          <span className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Version 4.5.0-LEGACY-FIX</span>
+          <span className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Version 4.6.0-INTEL-ZEN</span>
         </div>
       </div>
     </div>

@@ -31,6 +31,12 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const [analyticsMode, setAnalyticsMode] = useState('project') // 'project' | 'user'
   const [analyticsGranularity, setAnalyticsGranularity] = useState('month') // 'week' | 'month' | 'year'
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(searchQuery), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
   const [selectedTeam, setSelectedTeam] = useState('ALL')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [selectedMetric, setSelectedMetric] = useState('time1') // 'time1' | 'time2' | 'time3'
@@ -92,22 +98,27 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
         const dateEnd = processDate(row.date_end)
         const dateComplete = processDate(row.date_complete)
         const dateChecked = processDate(row.date_checked)
+        const dateStarted = processDate(row.date_started)
         const rawName = row.name || ''
         const parts = rawName.toString().split(':')
         const time1 = getEffectiveDuration(dateStart, dateEnd)
         const time2 = getEffectiveDuration(dateStart, dateComplete)
         const time3 = getEffectiveDuration(dateStart, dateChecked)
+        const time4 = getEffectiveDuration(dateStarted, dateChecked)
+        const time5 = getEffectiveDuration(createdAt, dateChecked)
         
         return {
           project: parts[0]?.trim() || '-',
           taskName: parts[1]?.trim() || '-',
           createdBy: uMap[row.create_by] || uMap[row.create_by?.toLowerCase()] || row.create_by || '-',
           day: formatDate(createdAt || dateStart),
-          createdAt, dateStart, dateEnd, dateComplete, dateChecked,
-          time1, time2, time3,
+          createdAt, dateStart, dateEnd, dateComplete, dateChecked, dateStarted,
+          time1, time2, time3, time4, time5,
           time1Str: formatDuration(time1),
           time2Str: formatDuration(time2),
           time3Str: formatDuration(time3),
+          time4Str: formatDuration(time4),
+          time5Str: formatDuration(time5),
           dateObj: createdAt || dateStart,
           team: uTeamMap[row.create_by] || uTeamMap[row.create_by?.toLowerCase()] || '-'
         }
@@ -120,25 +131,35 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
       // Process user task data (new perspective)
       const userProcessed = tasksRes.data.map(row => {
         const createdAt = processDate(row.created_at)
-        const dateStarted = processDate(row.date_started)
+        const dateStart = processDate(row.date_start)
+        const dateEnd = processDate(row.date_end)
+        const dateComplete = processDate(row.date_complete)
         const dateChecked = processDate(row.date_checked)
+        const dateStarted = processDate(row.date_started)
         const rawName = row.name || ''
         const parts = rawName.toString().split(':')
-        const time1 = getEffectiveDuration(dateStarted, dateChecked)
-        const time2 = getEffectiveDuration(createdAt, dateChecked)
+        
+        const time1 = getEffectiveDuration(dateStart, dateEnd)
+        const time2 = getEffectiveDuration(dateStart, dateComplete)
+        const time3 = getEffectiveDuration(dateStart, dateChecked)
+        const time4 = getEffectiveDuration(dateStarted, dateChecked)
+        const time5 = getEffectiveDuration(createdAt, dateChecked)
         
         return {
           userId: row.user_id,
           userName: uMap[row.user_id] || uMap[row.user_id?.toLowerCase()] || row.user_id || '-',
           project: parts[0]?.trim() || '-',
           taskName: parts[1]?.trim() || '-',
-          createdAt, dateStarted, dateChecked,
+          createdAt, dateStart, dateEnd, dateComplete, dateChecked, dateStarted,
           createdAtStr: formatDateTime(createdAt),
           dateStartedStr: formatDateTime(dateStarted),
           dateCheckedStr: formatDateTime(dateChecked),
-          time1, time2,
+          time1, time2, time3, time4, time5,
           time1Str: formatDuration(time1),
           time2Str: formatDuration(time2),
+          time3Str: formatDuration(time3),
+          time4Str: formatDuration(time4),
+          time5Str: formatDuration(time5),
           dateObj: createdAt,
           team: uTeamMap[row.user_id] || uTeamMap[row.user_id?.toLowerCase()] || '-'
         }
@@ -264,13 +285,13 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
           const dateEnd = processDate(dateEndStr)
           const dateComplete = processDate(dateCompleteStr)
           const dateChecked = processDate(dateCheckedStr)
+          const dateStarted = processDate(row['date_started'] || row['Date Started'] || '')
           
-          // TIME 1 = date_end - date_start
-          // TIME 2 = date_complete - date_start
-          // TIME 3 = date_checked - date_start
           const time1 = getEffectiveDuration(dateStart, dateEnd)
           const time2 = getEffectiveDuration(dateStart, dateComplete)
           const time3 = getEffectiveDuration(dateStart, dateChecked)
+          const time4 = getEffectiveDuration(dateStarted, dateChecked)
+          const time5 = getEffectiveDuration(createdAt, dateChecked)
           
           const parts = rawName.toString().split(':')
           
@@ -284,12 +305,17 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
             dateEnd,
             dateComplete,
             dateChecked,
+            dateStarted,
             time1,
             time2,
             time3,
+            time4,
+            time5,
             time1Str: formatDuration(time1),
             time2Str: formatDuration(time2),
             time3Str: formatDuration(time3),
+            time4Str: formatDuration(time4),
+            time5Str: formatDuration(time5),
             dateObj: createdAt || dateStart
           }
         } catch (err) {
@@ -306,8 +332,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   const filteredData = useMemo(() => {
     return data.filter(r => {
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase()
+      if (searchTerm) {
+        const q = searchTerm.toLowerCase()
         if (!r.project.toLowerCase().includes(q) && !r.taskName.toLowerCase().includes(q) && !r.createdBy.toLowerCase().includes(q)) return false
       }
       if (selectedTeam !== 'ALL' && r.team !== selectedTeam) return false
@@ -328,12 +354,12 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
       }
       return true
     })
-  }, [data, filters, searchQuery, dateRange, columnFilters])
+  }, [data, filters, searchTerm, selectedTeam, dateRange, columnFilters])
 
   const filteredUserData = useMemo(() => {
     return userData.filter(r => {
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase()
+      if (searchTerm) {
+        const q = searchTerm.toLowerCase()
         if (!r.project.toLowerCase().includes(q) && !r.taskName.toLowerCase().includes(q) && !r.userName.toLowerCase().includes(q)) return false
       }
       if (selectedTeam !== 'ALL' && r.team !== selectedTeam) return false
@@ -354,7 +380,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
       }
       return true
     })
-  }, [userData, filters, searchQuery, dateRange, columnFilters])
+  }, [userData, filters, searchTerm, selectedTeam, dateRange, columnFilters])
 
   const uniqueFilterValues = useMemo(() => {
     const vals = new Set();
@@ -498,17 +524,20 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
     const pMap = new Map()
     const targetData = analyticsMode === 'project' ? filteredData : filteredUserData
     targetData.forEach(r => {
-      if (!pMap.has(r.project)) pMap.set(r.project, { tasks: new Set(), logs: 0, t1: 0, t2: 0, t3: 0 })
+      if (!pMap.has(r.project)) pMap.set(r.project, { tasks: new Set(), logs: 0, t1: 0, t2: 0, t3: 0, t4: 0, t5: 0 })
       const p = pMap.get(r.project)
       p.tasks.add(r.taskName)
       p.logs++
       p.t1 += r.time1 || 0
       p.t2 += r.time2 || 0
       p.t3 += r.time3 || 0
+      p.t4 += r.time4 || 0
+      p.t5 += r.time5 || 0
     })
     return Array.from(pMap.entries()).map(([name, v]) => ({
       name, uniqueTasks: v.tasks.size, totalLogs: v.logs,
       totalTime1: formatDuration(v.t1), totalTime2: formatDuration(v.t2), totalTime3: formatDuration(v.t3),
+      totalTime4: formatDuration(v.t4), totalTime5: formatDuration(v.t5),
       rawTime1: v.t1
     })).sort((a, b) => b.rawTime1 - a.rawTime1)
   }, [filteredData, filteredUserData, analyticsMode])
@@ -518,17 +547,20 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
     const targetData = analyticsMode === 'project' ? filteredData : filteredUserData
     targetData.forEach(r => {
       const uName = analyticsMode === 'project' ? r.createdBy : r.userName
-      if (!uMap.has(uName)) uMap.set(uName, { projects: new Set(), logs: 0, t1: 0, t2: 0, t3: 0 })
+      if (!uMap.has(uName)) uMap.set(uName, { projects: new Set(), logs: 0, t1: 0, t2: 0, t3: 0, t4: 0, t5: 0 })
       const u = uMap.get(uName)
       u.projects.add(r.project)
       u.logs++
       u.t1 += r.time1 || 0
       u.t2 += r.time2 || 0
       u.t3 += r.time3 || 0
+      u.t4 += r.time4 || 0
+      u.t5 += r.time5 || 0
     })
     return Array.from(uMap.entries()).map(([name, v]) => ({
       name, uniqueProjects: v.projects.size, totalLogs: v.logs,
       totalTime1: formatDuration(v.t1), totalTime2: formatDuration(v.t2), totalTime3: formatDuration(v.t3),
+      totalTime4: formatDuration(v.t4), totalTime5: formatDuration(v.t5),
       rawTime1: v.t1
     })).sort((a, b) => b.rawTime1 - a.rawTime1)
   }, [filteredData, filteredUserData, analyticsMode])
@@ -549,12 +581,14 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
         key = `${r.dateObj.getUTCFullYear()}-${String(r.dateObj.getUTCMonth() + 1).padStart(2, '0')}`
       }
       
-      if (!mMap.has(key)) mMap.set(key, { logs: 0, t1: 0, t2: 0, t3: 0 })
+      if (!mMap.has(key)) mMap.set(key, { logs: 0, t1: 0, t2: 0, t3: 0, t4: 0, t5: 0 })
       const m = mMap.get(key)
       m.logs++
       m.t1 += r.time1 || 0
       m.t2 += r.time2 || 0
       m.t3 += r.time3 || 0
+      m.t4 += r.time4 || 0
+      m.t5 += r.time5 || 0
     })
     return Array.from(mMap.entries())
       .map(([name, v]) => ({ name, ...v, rawTime1: v.t1 }))
@@ -642,7 +676,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   Data <span className="text-indigo-500">Analyst</span>
                 </h1>
               </div>
-              <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-5">Cross-Project Performance Intelligence</p>
+              <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-normal ml-5">Cross-Project Performance Intelligence</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 bg-[var(--bg-surface)] p-2 rounded-2xl border border-[var(--border)] shadow-sm">
@@ -654,7 +688,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 <button
                   key={t.id}
                   onClick={() => setView(t.id)}
-                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[10px] font-black transition-all duration-300 uppercase tracking-widest ${
+                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[10px] font-black transition-all duration-300 uppercase tracking-normal ${
                     view === t.id ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5'
                   }`}
                 >
@@ -674,7 +708,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 <input 
                   type="text" 
                   placeholder="SEARCH ACROSS PROJECTS, TASKS OR USERS..." 
-                  className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-4 text-xs font-black text-[var(--text-main)] focus:border-indigo-500/50 transition-all outline-none shadow-sm placeholder:text-[var(--text-muted)] placeholder:opacity-50 uppercase tracking-widest"
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-4 text-xs font-black text-[var(--text-main)] focus:border-indigo-500/50 transition-all outline-none shadow-sm placeholder:text-[var(--text-muted)] placeholder:opacity-50 uppercase tracking-normal"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                 />
@@ -714,14 +748,14 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                       else { s = new Date(d.getFullYear(), 0, 1).toISOString().split('T')[0]; }
                       setDateRange({ start: s, end: new Date().toISOString().split('T')[0] });
                     }}
-                    className="px-4 py-2 rounded-xl text-[10px] font-black text-[var(--text-muted)] hover:text-white hover:bg-indigo-500 transition-all uppercase tracking-widest">
+                    className="px-4 py-2 rounded-xl text-[10px] font-black text-[var(--text-muted)] hover:text-white hover:bg-indigo-500 transition-all uppercase tracking-normal">
                       {label}
                     </button>
                   ))}
                 </div>
 
                 <button onClick={fetchSupabaseData} disabled={isLoading}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-normal transition-all border ${
                     isLoading ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95'
                   }`}>
                   <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
@@ -734,8 +768,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
             <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-[var(--border)]">
               <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2.5 rounded-2xl border border-[var(--border)] shadow-sm">
                 <Users size={14} className="text-indigo-500" />
-                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">TEAM FILTER:</span>
-                <select className="bg-transparent text-[10px] font-black text-indigo-500 outline-none cursor-pointer uppercase tracking-widest"
+                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">TEAM FILTER:</span>
+                <select className="bg-transparent text-[10px] font-black text-indigo-500 outline-none cursor-pointer uppercase tracking-normal"
                   value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}>
                   {teamOptions.map(t => <option key={t} value={t} className="bg-[var(--bg-dark)]">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
                 </select>
@@ -743,15 +777,15 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
               <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2.5 rounded-2xl border border-[var(--border)] shadow-sm">
                 <TableIcon size={14} className="text-indigo-500" />
-                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">GROUP BY:</span>
-                <select className="bg-transparent text-[10px] font-black text-indigo-500 outline-none cursor-pointer uppercase tracking-widest"
+                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">GROUP BY:</span>
+                <select className="bg-transparent text-[10px] font-black text-indigo-500 outline-none cursor-pointer uppercase tracking-normal"
                   value={groupBy} onChange={e => setGroupBy(e.target.value)}>
                   {['none', 'project', 'user'].map(g => <option key={g} value={g} className="bg-[var(--bg-dark)] uppercase">{g.toUpperCase()}</option>)}
                 </select>
               </div>
 
               <div className="ml-auto flex items-center gap-3">
-                <div className="px-4 py-2.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                <div className="px-4 py-2.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">
                   {filteredData.length} RECORDS DETECTED
                 </div>
               </div>
@@ -792,7 +826,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex flex-wrap items-center gap-3 p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10"
                   >
-                    <span className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mr-2">Select Week:</span>
+                    <span className="text-xs font-black text-indigo-400 uppercase tracking-normal mr-2">Select Week:</span>
                     {weeks.map((w, i) => {
                       const startStr = w.start.toISOString().split('T')[0];
                       const endStr = w.end.toISOString().split('T')[0];
@@ -806,7 +840,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         <button
                           key={i}
                           onClick={() => setDateRange({ start: startStr, end: endStr })}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-normal transition-all border ${
                             isActive
                               ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
                               : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border)] hover:border-indigo-500/30 hover:text-indigo-500'
@@ -847,7 +881,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         </div>
 
                         <div className="space-y-4">
-                          <label className="text-xs font-black text-indigo-400 uppercase tracking-widest">Filter Type</label>
+                          <label className="text-xs font-black text-indigo-400 uppercase tracking-normal">Filter Type</label>
                           <select 
                             className="input bg-[var(--bg-surface)] border-[var(--border)] text-sm font-bold h-12 text-[var(--text-main)]"
                             value={filters.field}
@@ -860,7 +894,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         </div>
 
                         <div className="space-y-4">
-                          <label className="text-xs font-black text-emerald-400 uppercase tracking-widest flex justify-between">
+                          <label className="text-xs font-black text-emerald-400 uppercase tracking-normal flex justify-between">
                             Select Values
                             <span className="text-xs bg-emerald-500/20 px-2 py-0.5 rounded-full">{filters.values.length}</span>
                           </label>
@@ -882,7 +916,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         </div>
 
                         <div className="space-y-4">
-                          <label className="text-xs font-black text-violet-400 uppercase tracking-widest">Quick Presets</label>
+                          <label className="text-xs font-black text-violet-400 uppercase tracking-normal">Quick Presets</label>
                           <div className="grid grid-cols-2 gap-2">
                             {[
                               { label: 'This Week', start: () => {
@@ -920,7 +954,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                             setSearchQuery('');
                             setDateRange({ start: '', end: '' });
                           }}
-                          className="btn btn-secondary w-full py-4 text-xs font-bold uppercase tracking-widest border-white/10"
+                          className="btn btn-secondary w-full py-4 text-xs font-bold uppercase tracking-normal border-white/10"
                         >
                           Reset Filters
                         </button>
@@ -990,6 +1024,13 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     const end = new Date(dateRange.end); end.setHours(23,59,59,999);
                     if (d && d > end) return null;
                   }
+                  const dateStart = processDate(t.date_start);
+                  const dateEnd = processDate(t.date_end);
+                  const dateComplete = processDate(t.date_complete);
+                  const dateChecked = processDate(t.date_checked);
+                  const dateStarted = processDate(t.date_started);
+                  const createdAt = processDate(t.created_at);
+
                   return {
                     id: t.id,
                     project: parts[0]?.trim() || '-',
@@ -1003,11 +1044,11 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     date_complete: t.date_complete,
                     date_checked: t.date_checked,
                     area: t.area || '-',
-                    t1: calcHours(t.date_end, t.date_start),
-                    t2a: calcHours(t.date_complete, t.date_accepted),
-                    t2b: calcHours(t.date_complete, t.date_started),
-                    t4a: calcHours(t.date_checked, t.date_accepted),
-                    t4b: calcHours(t.date_checked, t.date_started),
+                    t1: getEffectiveDuration(dateStart, dateEnd),
+                    t2: getEffectiveDuration(dateStart, dateComplete),
+                    t3: getEffectiveDuration(dateStart, dateChecked),
+                    t4: getEffectiveDuration(dateStarted, dateChecked),
+                    t5: getEffectiveDuration(createdAt, dateChecked),
                   };
                 }).filter(Boolean);
 
@@ -1041,7 +1082,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                       <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse" style={{ minWidth: '1800px' }}>
                           <thead className="sticky top-0 z-10">
-                            <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
+                            <tr className="text-[10px] font-black uppercase tracking-normal border-b border-[var(--border)] bg-[var(--bg-header)]">
                               <th rowSpan={2} className="px-3 py-3 text-amber-500 border-r border-b border-[var(--border)] sticky left-0 z-20 min-w-[200px] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
                                 <div className="flex flex-col gap-2">
                                   <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('project')}>
@@ -1094,9 +1135,11 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               <th rowSpan={2} className="px-3 py-3 bg-[var(--bg-header)] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] min-w-[80px]" onClick={() => handleSort('area')}>
                                 area {renderSortIcon('area')}
                               </th>
-                              <th className="px-3 py-3 bg-emerald-500/10 text-emerald-500 text-center border-r border-b border-[var(--border)]">PLAN TIME</th>
-                              <th colSpan={2} className="px-3 py-3 bg-emerald-500/15 text-emerald-500 text-center border-r border-b border-[var(--border)]">USER COMPLETE</th>
-                              <th colSpan={2} className="px-3 py-3 bg-lime-500/10 text-lime-500 text-center border-b border-[var(--border)]">TASK COMPLETE</th>
+                              <th className="px-3 py-3 bg-emerald-500/10 text-emerald-500 text-center border-r border-b border-[var(--border)]">T1</th>
+                              <th className="px-3 py-3 bg-indigo-500/10 text-indigo-500 text-center border-r border-b border-[var(--border)]">T2</th>
+                              <th className="px-3 py-3 bg-violet-500/10 text-violet-500 text-center border-r border-b border-[var(--border)]">T3</th>
+                              <th className="px-3 py-3 bg-amber-500/10 text-amber-500 text-center border-r border-b border-[var(--border)]">T4</th>
+                              <th className="px-3 py-3 bg-rose-500/10 text-rose-500 text-center border-b border-[var(--border)]">T5</th>
                             </tr>
                             <tr className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
                               <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[100px]" onClick={() => handleSort('creator')}>create_by {renderSortIcon('creator')}</th>
@@ -1109,15 +1152,15 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_complete')}>date_complete {renderSortIcon('date_complete')}</th>
                               <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_checked')}>date_checked {renderSortIcon('date_checked')}</th>
                               <th className="px-3 py-2 bg-emerald-500/5 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t1')}><span className="text-emerald-500">[t1] {renderSortIcon('t1')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">end−start</span></th>
-                              <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t2a')}><span className="text-emerald-500">[t2] {renderSortIcon('t2a')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">comp−accept</span></th>
-                              <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t2b')}><span className="text-emerald-500">[t2] {renderSortIcon('t2b')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">comp−start</span></th>
-                              <th className="px-3 py-2 bg-lime-500/5 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t4a')}><span className="text-lime-500">[t4] {renderSortIcon('t4a')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">check−accept</span></th>
-                              <th className="px-3 py-2 bg-lime-500/5 border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t4b')}><span className="text-lime-500">[t4] {renderSortIcon('t4b')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">check−start</span></th>
+                              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t2')}><span className="text-indigo-500">[t2] {renderSortIcon('t2')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">comp−start</span></th>
+                              <th className="px-3 py-2 bg-violet-500/5 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t3')}><span className="text-violet-500">[t3] {renderSortIcon('t3')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">check−start</span></th>
+                              <th className="px-3 py-2 bg-amber-500/5 border-r border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t4')}><span className="text-amber-500">[t4] {renderSortIcon('t4')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">check−started</span></th>
+                              <th className="px-3 py-2 bg-rose-500/5 border-b border-[var(--border)] text-center min-w-[65px]" onClick={() => handleSort('t5')}><span className="text-rose-500">[t5] {renderSortIcon('t5')}</span><br/><span className="text-[8px] text-[var(--text-muted)] normal-case">check−create</span></th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[var(--border)]">
                             {tableRows.length === 0 ? (
-                              <tr><td colSpan={16} className="px-8 py-16 text-center text-[var(--text-muted)] font-black uppercase tracking-widest text-sm">No tasks found</td></tr>
+                              <tr><td colSpan={16} className="px-8 py-16 text-center text-[var(--text-muted)] font-black uppercase tracking-normal text-sm">No tasks found</td></tr>
                             ) : tableRows.map((r, i) => (
                               <tr key={r.id || i} className="group hover:bg-[var(--bg-header)] transition-all text-[11px]" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
                                 <td className="px-3 py-2.5 sticky left-0 z-10 border-r border-b border-[var(--border)] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
@@ -1136,11 +1179,11 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fmtDt(r.date_complete)}</td>
                                 <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fmtDt(r.date_checked)}</td>
                                 <td className="px-3 py-2.5 text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] font-semibold" style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{r.area}</td>
-                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${tc(r.t1)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fh(r.t1)}</td>
-                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${tc(r.t2a)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fh(r.t2a)}</td>
-                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${tc(r.t2b)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fh(r.t2b)}</td>
-                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${tc(r.t4a)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{fh(r.t4a)}</td>
-                                <td className={`px-3 py-2.5 text-center font-black border-b border-[var(--border)] ${tc(r.t4b)}`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)' }}>{fh(r.t4b)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-emerald-500`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{formatDur(r.t1)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-indigo-500`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{formatDur(r.t2)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-violet-500`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{formatDur(r.t3)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-amber-500`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)', borderRightColor: 'rgba(0,0,0,0.1)' }}>{formatDur(r.t4)}</td>
+                                <td className={`px-3 py-2.5 text-center font-black border-b border-[var(--border)] text-rose-500`} style={{ borderBottomColor: 'rgba(0,0,0,0.1)' }}>{formatDur(r.t5)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1160,7 +1203,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                             key={m}
                             disabled={m === 'time3' && (view === 'userTasks' || view === 'userPivot')}
                             onClick={() => setSelectedMetric(m)}
-                            className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                            className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-normal transition-all ${
                               selectedMetric === m ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 
                               (m === 'time3' && (view === 'userTasks' || view === 'userPivot')) ? 'opacity-20 cursor-not-allowed text-[var(--text-muted)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                             }`}
@@ -1169,14 +1212,14 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                           </button>
                         ))}
                       </div>
-                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{filteredData.length} ENTRIES</span>
+                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">{filteredData.length} ENTRIES</span>
                     </div>
                   </div>
                   <div className="glass-panel overflow-hidden border border-[var(--border)] shadow-xl bg-[var(--bg-card)]">
                     <div className="overflow-x-auto custom-scrollbar">
                       <table className="w-full text-left text-sm border-collapse">
                         <thead className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--bg-header)]">
-                          <tr className="text-[var(--text-muted)] font-black uppercase text-[10px] tracking-widest whitespace-nowrap">
+                          <tr className="text-[var(--text-muted)] font-black uppercase text-[10px] tracking-normal whitespace-nowrap">
                             <th className="p-5 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>
                               <div className="flex flex-col gap-2">
                                 <span>Project</span>
@@ -1258,20 +1301,20 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                           <button 
                             key={m}
                             onClick={() => setSelectedMetric(m)}
-                            className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedMetric === m ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                            className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-normal transition-all ${selectedMetric === m ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                           >
                             {m}
                           </button>
                         ))}
                       </div>
-                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{filteredUserData.length} USER ENTRIES</span>
+                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">{filteredUserData.length} USER ENTRIES</span>
                     </div>
                   </div>
                   <div className="glass-panel overflow-hidden border border-[var(--border)] shadow-xl bg-[var(--bg-card)]">
                     <div className="overflow-x-auto custom-scrollbar">
                       <table className="w-full text-left text-sm border-collapse">
                         <thead className="sticky top-0 z-10 border-b border-[var(--border)]">
-                          <tr className="text-[var(--text-muted)] font-black uppercase text-[10px] tracking-widest whitespace-nowrap bg-[var(--bg-header)]">
+                          <tr className="text-[var(--text-muted)] font-black uppercase text-[10px] tracking-normal whitespace-nowrap bg-[var(--bg-header)]">
                             <th className="p-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>
                               <div className="flex flex-col gap-2">
                                 <span>Project</span>
@@ -1352,7 +1395,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         <button 
                           key={m.id}
                           onClick={() => setSelectedMetric(m.id)}
-                          className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedMetric === m.id ? 'bg-indigo-500 text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                          className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-normal transition-all ${selectedMetric === m.id ? 'bg-indigo-500 text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                         >
                           {m.label}
                         </button>
@@ -1360,12 +1403,12 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     </div>
                     
                     <div className="flex gap-1 p-1 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-sm items-center">
-                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase px-3 tracking-widest">GROUP:</span>
+                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase px-3 tracking-normal">GROUP:</span>
                       {['none', 'project', 'user'].map(g => (
                         <button 
                           key={g}
                           onClick={() => setGroupBy(g)}
-                          className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${groupBy === g ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                          className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-normal transition-all ${groupBy === g ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                         >
                           {g}
                         </button>
@@ -1376,7 +1419,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     <div className="overflow-x-auto custom-scrollbar">
                       <table className="w-full text-left border-collapse" style={{ minWidth: '1200px' }}>
                         <thead className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--bg-header)]">
-                          <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)]">
+                          <tr className="text-[10px] font-black uppercase tracking-normal border-b border-[var(--border)]">
                             <th rowSpan={2} className="px-3 py-3 text-amber-500 border-r border-b border-[var(--border)] sticky left-0 z-20 min-w-[200px] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
                               NAME
                             </th>
@@ -1391,12 +1434,12 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         </thead>
                         <tbody className="divide-y divide-[var(--border)]">
                           {Object.entries(groupedWeeklyData).length === 0 ? (
-                            <tr><td colSpan={9} className="px-8 py-16 text-center text-[var(--text-muted)] font-black uppercase tracking-widest text-sm">No tasks found</td></tr>
+                            <tr><td colSpan={9} className="px-8 py-16 text-center text-[var(--text-muted)] font-black uppercase tracking-normal text-sm">No tasks found</td></tr>
                           ) : Object.entries(groupedWeeklyData).map(([groupName, rows], gIdx) => (
                             <React.Fragment key={gIdx}>
                               {groupBy !== 'none' && (
                                 <tr className="bg-[var(--bg-header)] border-y border-[var(--border)]">
-                                  <td colSpan={9} className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 sticky left-0 z-10 backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
+                                  <td colSpan={9} className="px-4 py-3 text-[10px] font-black uppercase tracking-normal text-amber-500 sticky left-0 z-10 backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
                                     {groupBy === 'project' ? 'PROJECT: ' : 'USER: '} <span className="text-[var(--text-contrast)]">{groupName}</span>
                                   </td>
                                 </tr>
@@ -1443,13 +1486,13 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     <div className="flex gap-2 p-1 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-sm">
                       <button 
                         onClick={() => setAnalyticsMode('project')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${analyticsMode === 'project' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-normal transition-all ${analyticsMode === 'project' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                       >
                         <TableIcon size={14} /> PROJECT MODE
                       </button>
                       <button 
                         onClick={() => setAnalyticsMode('user')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${analyticsMode === 'user' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-normal transition-all ${analyticsMode === 'user' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                       >
                         <Users size={14} /> USER MODE
                       </button>
@@ -1460,7 +1503,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         <button 
                           key={g}
                           onClick={() => setAnalyticsGranularity(g)}
-                          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${analyticsGranularity === g ? 'bg-[var(--bg-header)] text-indigo-500' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-normal transition-all ${analyticsGranularity === g ? 'bg-[var(--bg-header)] text-indigo-500' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                         >
                           BY {g.toUpperCase()}
                         </button>
@@ -1470,7 +1513,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] lg:col-span-2 shadow-xl">
-                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-normal flex items-center gap-3">
                         <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
                         {analyticsGranularity.toUpperCase()}LY PERFORMANCE TREND
                       </h3>
@@ -1492,7 +1535,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
                   <div className="glass-panel p-6 border border-[var(--border)] bg-[var(--bg-card)] shadow-xl">
                     <div className="flex items-center justify-between mb-8">
-                      <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] flex items-center gap-3">
+                      <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal flex items-center gap-3">
                         <div className="w-1.5 h-4 bg-amber-500 rounded-full" />
                         {analyticsGranularity.toUpperCase()}LY AGGREGATE TABLE
                       </h3>
@@ -1500,7 +1543,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
-                          <tr className="text-[var(--text-muted)] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
+                          <tr className="text-[var(--text-muted)] font-black uppercase tracking-normal border-b border-[var(--border)] bg-[var(--bg-header)]">
                             <th className="py-4 px-6 border-r border-[var(--border)]">Period</th>
                             <th className="py-4 px-6 text-center border-r border-[var(--border)]">Total Logs</th>
                             <th className="py-4 px-6 text-center border-r border-[var(--border)]">Total Time 1</th>
@@ -1523,7 +1566,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 flex flex-col items-center bg-[var(--bg-card)] border border-[var(--border)] shadow-xl">
-                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-normal flex items-center gap-3">
                         <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
                         Project Time Distribution (Time 1)
                       </h3>
@@ -1540,13 +1583,13 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         />
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                           <span className="text-3xl font-black text-[var(--text-contrast)]">{projectStats.length}</span>
-                          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-black">Projects</span>
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-normal font-black">Projects</span>
                         </div>
                       </div>
                     </motion.div>
                     
                     <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl">
-                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-normal flex items-center gap-3">
                         <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
                         User Workload (Time 1)
                       </h3>
@@ -1569,19 +1612,21 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                     {/* Project Summary */}
                     <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] overflow-hidden shadow-xl">
-                      <h3 className="font-black text-indigo-500 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                      <h3 className="font-black text-indigo-500 mb-8 uppercase text-[10px] tracking-normal flex items-center gap-3">
                         <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
                         Summary by Project
                       </h3>
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs border-collapse">
                           <thead>
-                            <tr className="text-[var(--text-muted)] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
+                            <tr className="text-[var(--text-muted)] font-black uppercase tracking-normal border-b border-[var(--border)] bg-[var(--bg-header)]">
                               <th className="py-4 px-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Project</th>
                               <th className="py-4 px-4 text-center border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Tasks</th>
                               <th className="py-4 px-4 text-center text-emerald-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 1</th>
                               <th className="py-4 px-4 text-center text-indigo-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 2</th>
-                              {analyticsMode === 'leader' && <th className="py-4 px-4 text-center text-violet-500">Time 3</th>}
+                              <th className="py-4 px-4 text-center text-violet-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 3</th>
+                              <th className="py-4 px-4 text-center text-amber-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 4</th>
+                              <th className="py-4 px-4 text-center text-rose-500">Time 5</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[var(--border)]">
@@ -1591,7 +1636,9 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 <td className="py-4 px-4 text-center text-indigo-500 font-black border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.uniqueTasks}</td>
                                 <td className="py-4 px-4 text-center text-emerald-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime1}</td>
                                 <td className="py-4 px-4 text-center text-indigo-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime2}</td>
-                                {analyticsMode === 'leader' && <td className="py-4 px-4 text-center text-violet-500 font-bold">{s.totalTime3}</td>}
+                                <td className="py-4 px-4 text-center text-violet-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime3}</td>
+                                <td className="py-4 px-4 text-center text-amber-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime4}</td>
+                                <td className="py-4 px-4 text-center text-rose-500 font-bold">{s.totalTime5}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1601,19 +1648,18 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
                     {/* User Summary */}
                     <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] overflow-hidden shadow-xl">
-                      <h3 className="font-black text-emerald-500 mb-8 uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                      <h3 className="font-black text-emerald-500 mb-8 uppercase text-[10px] tracking-normal flex items-center gap-3">
                         <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
                         Summary by Created By
                       </h3>
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs border-collapse">
                           <thead>
-                            <tr className="text-[var(--text-muted)] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
+                            <tr className="text-[var(--text-muted)] font-black uppercase tracking-normal border-b border-[var(--border)] bg-[var(--bg-header)]">
                               <th className="py-4 px-4 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>User</th>
                               <th className="py-4 px-4 text-center border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Projects</th>
-                              <th className="py-4 px-4 text-center text-emerald-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 1</th>
-                              <th className="py-4 px-4 text-center text-indigo-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 2</th>
-                              {analyticsMode === 'leader' && <th className="py-4 px-4 text-center text-violet-500">Time 3</th>}
+                              <th className="py-4 px-4 text-center text-amber-500 border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.1)' }}>Time 4</th>
+                              <th className="py-4 px-4 text-center text-rose-500">Time 5</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[var(--border)]">
@@ -1621,9 +1667,8 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               <tr key={s.name} className="group hover:bg-[var(--bg-header)] transition-all" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
                                 <td className="py-4 px-4 font-black text-[var(--text-contrast)] font-mono border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.name}</td>
                                 <td className="py-4 px-4 text-center text-emerald-500 font-black border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.uniqueProjects}</td>
-                                <td className="py-4 px-4 text-center text-emerald-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime1}</td>
-                                <td className="py-4 px-4 text-center text-indigo-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime2}</td>
-                                {analyticsMode === 'leader' && <td className="py-4 px-4 text-center text-violet-500 font-bold">{s.totalTime3}</td>}
+                                <td className="py-4 px-4 text-center text-amber-500 font-bold border-r border-[var(--border)]" style={{ borderRightColor: 'rgba(0,0,0,0.05)' }}>{s.totalTime4}</td>
+                                <td className="py-4 px-4 text-center text-rose-500 font-bold">{s.totalTime5}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1639,23 +1684,23 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-12 glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-              <h3 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Time Calculation Methodology</h3>
+              <h3 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-normal">Time Calculation Methodology</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div className="space-y-6">
-                <h4 className="text-[11px] font-black text-indigo-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                <h4 className="text-[11px] font-black text-indigo-500 uppercase tracking-normal flex items-center gap-2">
                   <FileText size={14} /> Leader View Formulas
                 </h4>
                 <div className="space-y-4">
                   {[
-                    { label: 'TIME 1', formula: 'Date End - Date Start', desc: 'Baseline vs Planned Timeline' },
-                    { label: 'TIME 2', formula: 'Date Complete - Date Start', desc: 'Actual Execution vs Planned Start' },
-                    { label: 'TIME 3', formula: 'Date Checked - Date Start', desc: 'Final Approval vs Planned Start' }
+                    { label: 'TIME 1', formula: 'Date End - Date Start', desc: 'Baseline vs Planned Timeline', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { label: 'TIME 2', formula: 'Date Complete - Date Start', desc: 'Actual Execution vs Planned Start', color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+                    { label: 'TIME 3', formula: 'Date Checked - Date Start', desc: 'Final Approval vs Planned Start', color: 'text-violet-500', bg: 'bg-violet-500/10' }
                   ].map(f => (
-                    <div key={f.label} className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border)] hover:border-indigo-500/30 transition-all">
+                    <div key={f.label} className={`bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border)] hover:border-indigo-500/30 transition-all`}>
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-xs font-black text-[var(--text-contrast)]">{f.label}</span>
-                        <code className="text-xs text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
+                        <code className={`text-xs ${f.color} ${f.bg} px-2 py-0.5 rounded-md font-mono`}>{f.formula}</code>
                       </div>
                       <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tight">{f.desc}</p>
                     </div>
@@ -1664,18 +1709,18 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
               </div>
 
               <div className="space-y-6">
-                <h4 className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                <h4 className="text-[11px] font-black text-emerald-500 uppercase tracking-normal flex items-center gap-2">
                   <Users size={14} /> User View Formulas
                 </h4>
                 <div className="space-y-4">
                   {[
-                    { label: 'TIME 4', formula: 'Date Checked - Date Started', desc: 'Actual Working Duration' },
-                    { label: 'TIME 5', formula: 'Date Checked - Created At', desc: 'Total Task Lifecycle (Creation to Approval)' }
+                    { label: 'TIME 4', formula: 'Date Checked - Date Started', desc: 'Actual Working Duration', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                    { label: 'TIME 5', formula: 'Date Checked - Created At', desc: 'Total Task Lifecycle (Creation to Approval)', color: 'text-rose-500', bg: 'bg-rose-500/10' }
                   ].map(f => (
-                    <div key={f.label} className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border)] hover:border-emerald-500/30 transition-all">
+                    <div key={f.label} className={`bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border)] hover:border-emerald-500/30 transition-all`}>
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-xs font-black text-[var(--text-contrast)]">{f.label}</span>
-                        <code className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md font-mono">{f.formula}</code>
+                        <code className={`text-xs ${f.color} ${f.bg} px-2 py-0.5 rounded-md font-mono`}>{f.formula}</code>
                       </div>
                       <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tight">{f.desc}</p>
                     </div>
@@ -1688,7 +1733,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   <div className="p-2 bg-rose-500/10 rounded-lg text-rose-500">
                     <Clock size={14} />
                   </div>
-                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest">
+                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-normal">
                     Working Hours: <span className="text-rose-500">09:00 - 12:30</span> & <span className="text-rose-500">13:30 - 18:00</span>
                   </p>
                 </div>
@@ -1696,7 +1741,7 @@ const CSVProcessor = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-500">
                     <Database size={14} />
                   </div>
-                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest">
+                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-normal">
                     Multi-day tasks only count <span className="text-indigo-500">8 working hours</span> per day.
                   </p>
                 </div>

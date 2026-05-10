@@ -211,29 +211,29 @@ const AnnualLeave = () => {
               <Landmark size={20} />
             </div>
             <div>
-              <h2 className="text-xs font-black text-[var(--text-main)] uppercase tracking-widest">VN Annual Leave</h2>
-              <p className="text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Management Dashboard</p>
+              <h2 className="text-xs font-black text-indigo-500 uppercase tracking-widest">VN Annual Leave</h2>
+              <p className="text-[8px] text-[var(--text-muted)] font-black uppercase tracking-widest mt-0.5">Management Dashboard</p>
             </div>
           </div>
 
           <div className="h-10 w-px bg-[var(--glass-border)]" />
 
-          <div className="flex items-center gap-2 p-1 bg-[var(--bg-surface)] rounded-xl border border-[var(--glass-border)]">
+          <div className="flex items-center gap-2 p-1 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
             <button 
               onClick={() => setViewMode('individual')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'individual' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'individual' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
             >
               <User size={14} /> Individual
             </button>
             <button 
               onClick={() => setViewMode('summary')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
             >
               <LayoutGrid size={14} /> Team Summary
             </button>
             <button 
               onClick={() => setViewMode('analytics')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'analytics' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'analytics' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
             >
               <TrendingUp size={14} /> Analytics
             </button>
@@ -241,8 +241,8 @@ const AnnualLeave = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2.5 rounded-xl border border-[var(--glass-border)]">
-            <Users size={14} className="text-[var(--text-muted)]" />
+          <div className="flex items-center gap-3 bg-indigo-500/5 px-4 py-2.5 rounded-xl border border-indigo-500/10">
+            <Users size={14} className="text-indigo-400" />
             <select 
               className="bg-transparent text-[11px] font-black text-indigo-500 outline-none cursor-pointer uppercase"
               value={selectedTeam}
@@ -379,10 +379,10 @@ const AnnualLeave = () => {
             </div>
           </div>
 
-          <div className="glass-panel overflow-hidden border-[var(--glass-border)] bg-[var(--bg-card)] backdrop-blur-xl">
+          <div className="glass-panel overflow-hidden border border-[var(--glass-border)] bg-[var(--bg-card)] backdrop-blur-xl shadow-2xl">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-white/[0.03] text-sm font-black text-[var(--text-muted)] uppercase tracking-[0.2em] border-b border-[var(--glass-border)]">
+                <tr className="bg-indigo-500/5 text-sm font-black text-[var(--text-muted)] uppercase tracking-[0.2em] border-b border-[var(--glass-border)]">
                   <th className="px-8 py-5">User Intelligence</th>
                   <th className="px-8 py-5">Team</th>
                   <th className="px-8 py-5 text-center">Seniority</th>
@@ -393,8 +393,13 @@ const AnnualLeave = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
-                {summaryData.map(u => (
-                  <tr key={u.id} className="group hover:bg-indigo-500/5 transition-all cursor-pointer" onClick={() => { setSelectedUser(u.name); setViewMode('individual'); }}>
+                {summaryData.map((u, i) => (
+                  <tr 
+                    key={u.id} 
+                    className="group hover:bg-indigo-500/10 transition-all cursor-pointer" 
+                    style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}
+                    onClick={() => { setSelectedUser(u.name); setViewMode('individual'); }}
+                  >
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-[var(--bg-surface)] flex items-center justify-center text-indigo-500 font-black border border-[var(--glass-border)] group-hover:scale-110 transition-transform">
@@ -576,9 +581,9 @@ const AnnualLeave = () => {
 
               {/* History Log */}
               <div className="glass-panel overflow-hidden border-[var(--glass-border)] bg-[var(--bg-card)]">
-                <div className="px-6 py-4 border-b border-[var(--glass-border)] bg-white/[0.02] flex justify-between items-center">
+                <div className="px-6 py-4 border-b border-[var(--glass-border)] bg-indigo-500/5 flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <List className="text-[var(--text-muted)]" size={14} />
+                    <List className="text-indigo-400" size={14} />
                     <h3 className="text-sm font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Leave History {new Date().getFullYear()}</h3>
                   </div>
                   <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-500/20">
@@ -599,7 +604,7 @@ const AnnualLeave = () => {
                     </div>
                   ) : (
                     <table className="w-full text-left border-collapse">
-                      <thead className="bg-white/[0.01] text-xs font-black uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--glass-border)] sticky top-0 z-10 backdrop-blur-md">
+                      <thead className="bg-indigo-500/5 text-xs font-black uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--glass-border)] sticky top-0 z-10 backdrop-blur-md">
                         <tr>
                           <th className="px-6 py-4">Date</th>
                           <th className="px-6 py-4 text-center">Amount</th>
@@ -609,13 +614,14 @@ const AnnualLeave = () => {
                       </thead>
                       <tbody className="divide-y divide-white/[0.02]">
                         <AnimatePresence initial={false}>
-                          {currentYearEntries.map(entry => (
+                          {currentYearEntries.map((entry, i) => (
                             <motion.tr 
                               key={entry.id}
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
                               exit={{ opacity: 0, x: 10 }}
-                              className={`group hover:bg-white/[0.02] transition-colors ${entry.type === 'HOLIDAY' ? 'bg-amber-500/[0.02]' : ''}`}
+                              className={`group hover:bg-indigo-500/5 transition-colors ${entry.type === 'HOLIDAY' ? 'bg-amber-500/10' : ''}`}
+                              style={{ backgroundColor: entry.type === 'HOLIDAY' ? undefined : (i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)') }}
                             >
                               <td className="px-6 py-4">
                                 <span className="text-xs font-black text-[var(--text-main)]">

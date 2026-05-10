@@ -18,6 +18,7 @@ import Planning from './components/Planning'
 import Settings from './components/Settings'
 import BambooBackground from './components/BambooBackground'
 import OrgChart from './components/OrgChart'
+import Workflows from './components/Workflows'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
@@ -366,7 +367,10 @@ return (
             mobileOpen={mobileSidebarOpen}
             setMobileOpen={setMobileSidebarOpen}
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            setActiveTab={(id) => {
+              console.log('App: Setting active tab to', id);
+              setActiveTab(id);
+            }}
           />
 
           <motion.div 
@@ -433,6 +437,8 @@ return (
                       <Planning reportData={reportData} weekDates={weekDates} />
                     ) : activeTab === 'organization' ? (
                       <OrgChart />
+                    ) : activeTab === 'workflows' ? (
+                      <Workflows />
                     ) : activeTab === 'settings' ? (
                       <Settings 
                         theme={theme} setTheme={setTheme} 
@@ -445,7 +451,7 @@ return (
                         </div>
                         <div>
                           <h2 className="text-2xl font-black text-white uppercase italic tracking-tight">Coming Soon</h2>
-                          <p className="text-slate-500 font-bold text-sm mt-2">This module is under development.</p>
+                          <p className="text-indigo-400 font-black uppercase tracking-[0.4em] text-[10px] mt-2">Module: {activeTab}</p>
                         </div>
                       </div>
                     )}
