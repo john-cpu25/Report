@@ -566,64 +566,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Live Operative Roster Table */}
-        <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[2.5rem] overflow-hidden">
-          <div className="p-8 border-b border-[var(--glass-border)]">
-            <h3 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Live Operative Roster</h3>
-            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Status: <span className="text-orange-500">Orange (Any Task Status &gt; 3)</span> | <span className="text-emerald-500">Green (Normal)</span></p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-white/5">
-                  <th className="px-8 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-r border-[var(--glass-border)] w-48">Team</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Name</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCapacity.map((team) => (
-                  <React.Fragment key={team.name}>
-                    {team.members.map((member, mIdx) => (
-                      <tr key={`${team.name}-${member.name}`} className="border-b border-[var(--glass-border)] hover:bg-white/[0.02] transition-colors">
-                        {mIdx === 0 && (
-                          <td 
-                            rowSpan={team.members.length} 
-                            className="px-8 py-6 align-top border-r border-[var(--glass-border)]"
-                          >
-                            <p className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight">{team.name}</p>
-                            <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase mt-1">[{team.total}] Members</p>
-                          </td>
-                        )}
-                        <td className="px-8 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${
-                              member.isActive 
-                                ? 'bg-orange-500 shadow-orange-500/40 animate-pulse' 
-                                : 'bg-emerald-500 shadow-emerald-500/40'
-                            }`} />
-                            <span className="text-sm font-bold text-[var(--text-main)]">{member.name}</span>
-                            {member.taskCount > 0 && (
-                              <span className="text-[10px] font-black bg-white/5 px-2 py-0.5 rounded-md text-[var(--text-muted)] border border-white/5">
-                                {member.taskCount} Tasks
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-8 py-4 text-right">
-                          <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${member.isActive ? 'bg-orange-500/10 text-orange-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                            {member.isActive ? `BUSY: ${member.projectName}` : 'FREE'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
+        {/* Main Team Summary Cards (Focus Mode) */}
         <div className="grid grid-cols-1 gap-4">
           {filteredCapacity.map((team, idx) => (
             <motion.div
@@ -748,28 +691,47 @@ const Dashboard = () => {
                 </button>
               </div>
 
-              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                {detailView.users.map((user, i) => (
-                  <motion.div 
-                    key={user}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="flex items-center gap-4 p-4 bg-white/5 border border-[var(--glass-border)] rounded-2xl"
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
-                      detailView.type === 'free' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                    }`}>
-                      {user.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-black text-[var(--text-main)] uppercase">{user}</p>
-                      <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
-                        {detailView.type === 'free' ? 'Status: READY' : 'Status: ACTIVE'}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="overflow-x-auto max-h-[60vh]">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-white/5">
+                      <th className="px-4 py-3 text-[10px] font-black text-white/50 uppercase tracking-widest">Member</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-white/50 uppercase tracking-widest text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detailView.users.map((userName, i) => {
+                      // Find member info from filteredCapacity
+                      const teamData = filteredCapacity.find(t => t.name === detailView.team);
+                      const member = teamData?.members.find(m => m.name === userName);
+                      
+                      return (
+                        <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02]">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-2 h-2 rounded-full ${
+                                member?.isActive ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.4)] animate-pulse' : 'bg-emerald-500'
+                              }`} />
+                              <span className="text-sm font-bold text-white">{userName}</span>
+                              {member?.taskCount > 0 && (
+                                <span className="text-[10px] font-black text-white/30 ml-2">
+                                  {member.taskCount} Tasks
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${
+                              member?.isActive ? 'bg-orange-500/10 text-orange-500' : 'bg-emerald-500/10 text-emerald-500'
+                            }`}>
+                              {member?.isActive ? 'Busy' : 'Free'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
 
               <button 
