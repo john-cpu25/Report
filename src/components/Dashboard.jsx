@@ -244,7 +244,8 @@ const Dashboard = () => {
       if (!teamData[normalizedTeam]) {
         teamData[normalizedTeam] = {
           name: normalizedTeam, total: 0, active: 0, free: 0, projects: {}, members: [],
-          busyMembers: [], freeMembers: []
+          busyMembers: [], freeMembers: [],
+          projectBreakdown: {} // { projectName: { total: 0, statuses: { [status]: count } } }
         };
       }
       
@@ -283,6 +284,37 @@ const Dashboard = () => {
         teamObj.free++;
         teamObj.freeMembers.push(memberName);
       }
+    });
+
+    // Populate projectBreakdown
+    tasks.forEach(t => {
+      const dateVal = t.created_at || t.date_start;
+      const taskDate = processDate(dateVal);
+      if (!taskDate) return;
+      const isToday = taskDate.getFullYear() === todayY && taskDate.getMonth() === todayM && taskDate.getDate() === todayD;
+      if (!isToday) return;
+
+      const rawUserId = t.user_id || t.USER_ID || t.user || t.USER || '';
+      const userIdSlug = slugify(rawUserId);
+      const user = users.find(u => slugify(u.id) === userIdSlug || slugify(u.name) === userIdSlug || slugify(u.email) === userIdSlug);
+      if (!user) return;
+
+      const team = (user.team || 'Unassigned').toUpperCase();
+      const isPtReo = team.includes('PT') && (team.includes('REO') || team.includes('&'));
+      const isModeling = team.includes('MODELING') || team.includes('MODELLING') || team.includes('STR');
+      if (!isPtReo && !isModeling) return;
+      const normalizedTeam = isPtReo ? 'PT & REO TEAM' : 'STR MODELING TEAM';
+      const teamObj = teamData[normalizedTeam];
+
+      const rawName = t.name || t.NAME || t.task || '';
+      const projectName = rawName.split(':')[0]?.trim() || 'General';
+      const status = parseInt(t.status || t.STATUS || 0);
+
+      if (!teamObj.projectBreakdown[projectName]) {
+        teamObj.projectBreakdown[projectName] = { total: 0, statuses: {} };
+      }
+      teamObj.projectBreakdown[projectName].total++;
+      teamObj.projectBreakdown[projectName].statuses[status] = (teamObj.projectBreakdown[projectName].statuses[status] || 0) + 1;
     });
 
     // Sort members within each team
@@ -514,20 +546,49 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Secondary Row: Active Projects Tags */}
-                {Object.keys(team.projects).length > 0 && (
-                  <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-[var(--glass-border)]">
-                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Active Projects:</span>
-                    {Object.entries(team.projects).map(([proj, users]) => (
-                      <div 
-                        key={proj}
-                        onClick={() => setDetailView({ type: 'project', team: team.name, projectName: proj, users })}
-                        className="px-3 py-1.5 bg-indigo-500/5 border border-indigo-500/20 rounded-none cursor-pointer hover:bg-indigo-500/10 transition-all flex items-center gap-2"
-                      >
-                        <span className="text-[10px] font-black text-indigo-400 uppercase">{proj}</span>
-                        <span className="text-[10px] font-black text-white bg-indigo-500/40 px-1.5 py-0.5">{users.length}</span>
-                      </div>
-                    ))}
+                {/* Secondary Row: Active Projects Breakdown */}
+                {Object.keys(team.projectBreakdown).length > 0 && (
+                  <div className="pt-6 border-t border-[var(--glass-border)]">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-1 h-3 bg-indigo-500" />
+                      <span className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-widest">Active Project Analysis:</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {Object.entries(team.projectBreakdown).map(([proj, data]) => (
+                        <div 
+                          key={proj}
+                          className="bg-white/5 border border-[var(--glass-border)] p-3 hover:border-indigo-500/20 transition-all"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-black text-indigo-400 uppercase truncate" title={proj}>{proj}</span>
+                            <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 text-[10px] font-black border border-indigo-500/30">
+                              {data.total}
+                            </span>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-1.5">
+                            {[
+                              { s: 3, label: 'NEW', color: 'bg-indigo-500/10 text-indigo-400' },
+                              { s: 6, label: 'START', color: 'bg-blue-500/10 text-blue-400' },
+                              { s: 7, label: 'ACCEPTED', color: 'bg-violet-500/10 text-violet-400' },
+                              { s: 4, label: 'CHECKED', color: 'bg-emerald-500/10 text-emerald-400' },
+                              { s: 5, label: 'RECHECK', color: 'bg-rose-500/10 text-rose-400' },
+                              { s: 0, label: 'DONE', color: 'bg-slate-500/10 text-slate-400' },
+                            ].map(status => {
+                              const count = data.statuses[status.s] || 0;
+                              if (count === 0) return null;
+                              return (
+                                <div key={status.s} className={`flex items-center gap-1.5 px-2 py-0.5 ${status.color} text-[8px] font-black uppercase border border-current opacity-60`}>
+                                  <span>{status.label}</span>
+                                  <span className="opacity-100">{count}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
