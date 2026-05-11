@@ -144,12 +144,21 @@ const Dashboard = () => {
   const capacityStats = useMemo(() => {
     if (!users.length) return [];
 
-    // Map of users to their most recent task in the fetched tasks
-    const userLatestTask = {};
+    // Map of users to their active tasks count
+    const userActiveTasks = {};
+    const userProjectsMap = {}; // userId -> Set of projects
+    
     tasks.forEach(t => {
       const userId = (t.user_id || t.user || '').toString().toLowerCase().trim();
-      if (!userLatestTask[userId] || new Date(t.created_at) > new Date(userLatestTask[userId].created_at)) {
-        userLatestTask[userId] = t;
+      const isActiveTask = !t.date_checked || !t.date_complete;
+      
+      if (isActiveTask) {
+        userActiveTasks[userId] = (userActiveTasks[userId] || 0) + 1;
+        
+        const rawName = t.name || '';
+        const projectName = rawName.split(':')[0]?.trim() || 'General';
+        if (!userProjectsMap[userId]) userProjectsMap[userId] = new Set();
+        userProjectsMap[userId].add(projectName);
       }
     });
 
@@ -175,24 +184,28 @@ const Dashboard = () => {
       const uName = (u.name || '').toString().toLowerCase().trim();
       const uEmail = (u.email || '').toString().toLowerCase().trim();
       
-      const latestTask = userLatestTask[uId] || userLatestTask[uName] || userLatestTask[uEmail];
+      const activeCount = userActiveTasks[uId] || userActiveTasks[uName] || userActiveTasks[uEmail] || 0;
       
-      // Determine if active: Has a task that is not checked/complete, or just very recent
-      const isActive = latestTask && (!latestTask.date_checked || !latestTask.date_complete);
+      // Threshold: 0-3 is FREE, > 3 is BUSY
+      const isBusy = activeCount > 3;
       
+      const userProjects = userProjectsMap[uId] || userProjectsMap[uName] || userProjectsMap[uEmail] || new Set();
+
       const memberInfo = {
         name: u.name || u.email,
-        isActive,
-        projectName: isActive ? (latestTask.name || '').split(':')[0]?.trim() || 'General' : null
+        isActive: isBusy, // User is marked "Active/Busy" (Red) if count > 3
+        taskCount: activeCount,
+        projectName: Array.from(userProjects).join(', ') || null
       };
 
       teamObj.members.push(memberInfo);
 
-      if (isActive) {
+      if (isBusy) {
         teamObj.active++;
-        const projectName = memberInfo.projectName;
-        if (!teamObj.projects[projectName]) teamObj.projects[projectName] = [];
-        teamObj.projects[projectName].push(u.name || u.email);
+        userProjects.forEach(proj => {
+          if (!teamObj.projects[proj]) teamObj.projects[proj] = [];
+          teamObj.projects[proj].push(u.name || u.email);
+        });
       } else {
         teamObj.free++;
         teamObj.freeMembers.push(u.name || u.email);
@@ -551,6 +564,11 @@ const Dashboard = () => {
                           <div className="flex items-center gap-3">
                             <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${member.isActive ? 'bg-rose-500 shadow-rose-500/40' : 'bg-emerald-500 shadow-emerald-500/40'}`} />
                             <span className="text-sm font-bold text-[var(--text-main)]">{member.name}</span>
+                            {member.taskCount > 0 && (
+                              <span className="text-[10px] font-black bg-white/5 px-2 py-0.5 rounded-md text-[var(--text-muted)] border border-white/5">
+                                {member.taskCount} Tasks
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-8 py-4 text-right">
