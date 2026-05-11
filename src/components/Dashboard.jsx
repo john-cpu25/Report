@@ -168,9 +168,13 @@ const Dashboard = () => {
       }
     });
 
-    const teamData = {};
     users.forEach(u => {
       const team = u.team || 'Unassigned';
+      
+      // STRICT FILTER: ONLY PT&REO AND MODELLING
+      const isTargetTeam = team === 'PT & REO TEAM' || team === 'STR MODELING TEAM';
+      if (!isTargetTeam) return;
+
       if (!teamData[team]) {
         teamData[team] = {
           name: team,
@@ -231,8 +235,8 @@ const Dashboard = () => {
   }, [capacityStats, selectedCapacityTeam]);
 
   const teamList = useMemo(() => {
-    return ['ALL', ...new Set(users.map(u => u.team).filter(Boolean))].sort();
-  }, [users]);
+    return ['ALL', 'PT & REO TEAM', 'STR MODELING TEAM'];
+  }, []);
 
   const barOptions = {
     responsive: true,
