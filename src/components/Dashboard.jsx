@@ -170,15 +170,20 @@ const Dashboard = () => {
 
     const teamData = {};
     users.forEach(u => {
-      const team = u.team || 'Unassigned';
+      const team = (u.team || 'Unassigned').toUpperCase();
       
-      // STRICT FILTER: ONLY PT&REO AND MODELLING
-      const isTargetTeam = team === 'PT & REO TEAM' || team === 'STR MODELING TEAM';
-      if (!isTargetTeam) return;
+      // FLEXIBLE FILTER: KEYWORD MATCHING
+      const isPtReo = team.includes('PT') && (team.includes('REO') || team.includes('&'));
+      const isModeling = team.includes('MODELING') || team.includes('MODELLING') || team.includes('STR');
+      
+      if (!isPtReo && !isModeling) return;
+      
+      // Normalize name for UI
+      const normalizedTeam = isPtReo ? 'PT & REO TEAM' : 'STR MODELING TEAM';
 
-      if (!teamData[team]) {
-        teamData[team] = {
-          name: team,
+      if (!teamData[normalizedTeam]) {
+        teamData[normalizedTeam] = {
+          name: normalizedTeam,
           total: 0,
           active: 0,
           free: 0,
@@ -187,7 +192,7 @@ const Dashboard = () => {
         };
       }
       
-      const teamObj = teamData[team];
+      const teamObj = teamData[normalizedTeam];
       teamObj.total++;
       
       const uId = (u.id || '').toString().toLowerCase().trim();
