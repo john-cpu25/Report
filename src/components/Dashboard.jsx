@@ -39,7 +39,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
   const [timeRange, setTimeRange] = useState('MONTH');
+  const [selectedCapacityTeam, setSelectedCapacityTeam] = useState('ALL');
+  const [detailView, setDetailView] = useState(null); // { type: 'project' | 'free', team: string, projectName?: string }
 
   useEffect(() => {
     fetchData();
@@ -48,9 +51,13 @@ const Dashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data: projData, error: projError } = await supabase
-        .from('NMK_Project')
-        .select('*');
+      const [projRes, userRes] = await Promise.all([
+        supabase.from('NMK_Project').select('*'),
+        supabase.from('NMK_User').select('*')
+      ]);
+
+      if (projRes.error) throw projRes.error;
+      if (userRes.error) throw userRes.error;
       
       const now = new Date();
       let startDate = new Date();
@@ -58,14 +65,16 @@ const Dashboard = () => {
       else if (timeRange === 'MONTH') startDate.setMonth(now.getMonth() - 1);
       else if (timeRange === 'YEAR') startDate.setFullYear(now.getFullYear() - 1);
 
+      // Fetch tasks for the range
       const { data: taskData, error: taskError } = await supabase
         .from('NMK_Task')
         .select('*')
         .gte('created_at', startDate.toISOString());
 
-      if (projError || taskError) throw projError || taskError;
+      if (taskError) throw taskError;
       
-      setProjects(projData || []);
+      setProjects(projRes.data || []);
+      setUsers(userRes.data || []);
       setTasks(taskData || []);
     } catch (err) {
       console.error('Dashboard Fetch Error:', err);
@@ -131,6 +140,64 @@ const Dashboard = () => {
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
   }, [tasks]);
+
+  const capacityStats = useMemo(() => {
+    if (!users.length) return [];
+
+    // Map of users to their most recent task in the fetched tasks
+    const userLatestTask = {};
+    tasks.forEach(t => {
+      const userId = t.user_id || t.user; // Some tables use name, some use id
+      if (!userLatestTask[userId] || new Date(t.created_at) > new Date(userLatestTask[userId].created_at)) {
+        userLatestTask[userId] = t;
+      }
+    });
+
+    const teamData = {};
+    users.forEach(u => {
+      const team = u.team || 'Unassigned';
+      if (!teamData[team]) {
+        teamData[team] = {
+          name: team,
+          total: 0,
+          active: 0,
+          free: 0,
+          projects: {}, // { "Project Name": [UserNames] }
+          freeMembers: []
+        };
+      }
+      
+      const teamObj = teamData[team];
+      teamObj.total++;
+      
+      const latestTask = userLatestTask[u.id] || userLatestTask[u.name] || userLatestTask[u.email];
+      
+      // Determine if active: Has a task that is not checked/complete, or just very recent
+      const isActive = latestTask && (!latestTask.date_checked || !latestTask.date_complete);
+      
+      if (isActive) {
+        teamObj.active++;
+        const rawName = latestTask.name || '';
+        const projectName = rawName.split(':')[0]?.trim() || 'General';
+        if (!teamObj.projects[projectName]) teamObj.projects[projectName] = [];
+        teamObj.projects[projectName].push(u.name || u.email);
+      } else {
+        teamObj.free++;
+        teamObj.freeMembers.push(u.name || u.email);
+      }
+    });
+
+    return Object.values(teamData).sort((a, b) => b.total - a.total);
+  }, [users, tasks]);
+
+  const filteredCapacity = useMemo(() => {
+    if (selectedCapacityTeam === 'ALL') return capacityStats;
+    return capacityStats.filter(t => t.name === selectedCapacityTeam);
+  }, [capacityStats, selectedCapacityTeam]);
+
+  const teamList = useMemo(() => {
+    return ['ALL', ...new Set(users.map(u => u.team).filter(Boolean))].sort();
+  }, [users]);
 
   const barOptions = {
     responsive: true,
@@ -382,6 +449,200 @@ const Dashboard = () => {
           <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-[var(--bg-dark)] to-transparent pointer-events-none" />
         </div>
       </div>
+
+      {/* Team Capacity Section */}
+      <div className="w-full space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+            <div>
+              <h2 className="text-xl font-black text-[var(--text-main)] uppercase tracking-tight">Team Capacity & Pulse</h2>
+              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Real-time Operative Deployment</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--glass-border)]">
+            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase px-2">Filter:</span>
+            {teamList.map(team => (
+              <button
+                key={team}
+                onClick={() => setSelectedCapacityTeam(team)}
+                className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all ${
+                  selectedCapacityTeam === team 
+                  ? 'bg-indigo-500 text-white' 
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                {team}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Global Capacity Summary */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl">
+            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Total Operatives</p>
+            <p className="text-2xl font-black text-white mt-1">{capacityStats.reduce((acc, t) => acc + t.total, 0)}</p>
+          </div>
+          <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl">
+            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Global Daily Capacity</p>
+            <p className="text-2xl font-black text-white mt-1">{capacityStats.reduce((acc, t) => acc + t.total, 0) * 8}h</p>
+          </div>
+          <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl">
+            <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Current Availability</p>
+            <p className="text-2xl font-black text-white mt-1">{capacityStats.reduce((acc, t) => acc + t.free, 0)}</p>
+          </div>
+          <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl">
+            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Active Deployments</p>
+            <p className="text-2xl font-black text-white mt-1">{capacityStats.reduce((acc, t) => acc + t.active, 0)}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          {filteredCapacity.map((team, idx) => (
+            <motion.div
+              key={team.name}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-3xl p-6 hover:border-indigo-500/30 transition-all group"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                {/* Team Info */}
+                <div className="flex items-center gap-4 min-w-[200px]">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                    <Users size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase">{team.name}</h3>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{team.total} Members Total</p>
+                  </div>
+                </div>
+
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Total & Hours Info */}
+                  <div className="p-3 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-indigo-400 uppercase">Daily Capacity</span>
+                      <span className="text-xs font-black text-white bg-indigo-500 px-2 py-0.5 rounded-lg">{team.total * 8}h</span>
+                    </div>
+                    <p className="text-[9px] font-bold text-indigo-400/70 uppercase mt-1">{team.total} Members × 8h</p>
+                  </div>
+
+                  {Object.entries(team.projects).map(([proj, users]) => (
+                    <div 
+                      key={proj}
+                      onClick={() => setDetailView({ type: 'project', team: team.name, projectName: proj, users })}
+                      className="p-3 bg-white/5 border border-[var(--glass-border)] rounded-2xl cursor-pointer hover:bg-indigo-500/10 transition-all"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black text-[var(--text-main)] uppercase truncate max-w-[100px]">{proj}</span>
+                        <span className="text-xs font-black text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded-lg">{users.length}</span>
+                      </div>
+                      <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase mt-1">Involved</p>
+                    </div>
+                  ))}
+                  
+                  {/* FREE Status */}
+                  <div 
+                    onClick={() => setDetailView({ type: 'free', team: team.name, users: team.freeMembers })}
+                    className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl cursor-pointer hover:bg-emerald-500/10 transition-all"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-emerald-400 uppercase">Available / FREE</span>
+                      <span className="text-xs font-black text-white bg-emerald-500 px-2 py-0.5 rounded-lg">{team.free}</span>
+                    </div>
+                    <p className="text-[9px] font-bold text-emerald-500/70 uppercase mt-1">System Capacity</p>
+                  </div>
+                </div>
+
+                {/* Capacity Meter */}
+                <div className="lg:w-48 space-y-2">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase">Utilization</span>
+                    <span className="text-sm font-black text-[var(--text-main)]">{Math.round((team.active / team.total) * 100)}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(team.active / team.total) * 100}%` }}
+                      className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {detailView && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDetailView(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg bg-[var(--bg-card)] border border-[var(--glass-border)] rounded-[2.5rem] p-8 shadow-2xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">
+                    {detailView.type === 'free' ? 'Available Operatives' : `Project: ${detailView.projectName}`}
+                  </h2>
+                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{detailView.team} Team</p>
+                </div>
+                <button 
+                  onClick={() => setDetailView(null)}
+                  className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[var(--text-muted)] transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {detailView.users.map((user, i) => (
+                  <motion.div 
+                    key={user}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex items-center gap-4 p-4 bg-white/5 border border-[var(--glass-border)] rounded-2xl"
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
+                      detailView.type === 'free' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'
+                    }`}>
+                      {user.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-[var(--text-main)] uppercase">{user}</p>
+                      <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+                        {detailView.type === 'free' ? 'Status: READY' : 'Status: ACTIVE'}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <button 
+                onClick={() => setDetailView(null)}
+                className="mt-8 w-full py-4 bg-indigo-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:scale-[1.02] transition-all"
+              >
+                Close Intelligence View
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
