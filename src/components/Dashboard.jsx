@@ -147,7 +147,7 @@ const Dashboard = () => {
     // Map of users to their most recent task in the fetched tasks
     const userLatestTask = {};
     tasks.forEach(t => {
-      const userId = t.user_id || t.user; // Some tables use name, some use id
+      const userId = (t.user_id || t.user || '').toString().toLowerCase().trim();
       if (!userLatestTask[userId] || new Date(t.created_at) > new Date(userLatestTask[userId].created_at)) {
         userLatestTask[userId] = t;
       }
@@ -163,14 +163,19 @@ const Dashboard = () => {
           active: 0,
           free: 0,
           projects: {}, // { "Project Name": [UserNames] }
-          freeMembers: []
+          freeMembers: [],
+          members: []
         };
       }
       
       const teamObj = teamData[team];
       teamObj.total++;
       
-      const latestTask = userLatestTask[u.id] || userLatestTask[u.name] || userLatestTask[u.email];
+      const uId = (u.id || '').toString().toLowerCase().trim();
+      const uName = (u.name || '').toString().toLowerCase().trim();
+      const uEmail = (u.email || '').toString().toLowerCase().trim();
+      
+      const latestTask = userLatestTask[uId] || userLatestTask[uName] || userLatestTask[uEmail];
       
       // Determine if active: Has a task that is not checked/complete, or just very recent
       const isActive = latestTask && (!latestTask.date_checked || !latestTask.date_complete);
@@ -181,7 +186,6 @@ const Dashboard = () => {
         projectName: isActive ? (latestTask.name || '').split(':')[0]?.trim() || 'General' : null
       };
 
-      if (!teamObj.members) teamObj.members = [];
       teamObj.members.push(memberInfo);
 
       if (isActive) {
@@ -193,6 +197,11 @@ const Dashboard = () => {
         teamObj.free++;
         teamObj.freeMembers.push(u.name || u.email);
       }
+    });
+
+    // Sort members within each team
+    Object.values(teamData).forEach(team => {
+      team.members.sort((a, b) => a.name.localeCompare(b.name));
     });
 
     return Object.values(teamData).sort((a, b) => b.total - a.total);
@@ -487,23 +496,25 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Global Capacity Summary */}
+        {/* Global/Filtered Capacity Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl">
-            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Total Operatives</p>
-            <p className="text-2xl font-black text-white mt-1">{capacityStats.reduce((acc, t) => acc + t.total, 0)}</p>
+            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">
+              {selectedCapacityTeam === 'ALL' ? 'Total Operatives' : 'Team Members'}
+            </p>
+            <p className="text-2xl font-black text-white mt-1">{filteredCapacity.reduce((acc, t) => acc + t.total, 0)}</p>
           </div>
           <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl">
-            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Global Daily Capacity</p>
-            <p className="text-2xl font-black text-white mt-1">{capacityStats.reduce((acc, t) => acc + t.total, 0) * 8}h</p>
+            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Daily Capacity</p>
+            <p className="text-2xl font-black text-white mt-1">{filteredCapacity.reduce((acc, t) => acc + t.total, 0) * 8}h</p>
           </div>
           <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl">
-            <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Current Availability</p>
-            <p className="text-2xl font-black text-white mt-1">{capacityStats.reduce((acc, t) => acc + t.free, 0)}</p>
+            <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Availability</p>
+            <p className="text-2xl font-black text-white mt-1">{filteredCapacity.reduce((acc, t) => acc + t.free, 0)}</p>
           </div>
           <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl">
             <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Active Deployments</p>
-            <p className="text-2xl font-black text-white mt-1">{capacityStats.reduce((acc, t) => acc + t.active, 0)}</p>
+            <p className="text-2xl font-black text-white mt-1">{filteredCapacity.reduce((acc, t) => acc + t.active, 0)}</p>
           </div>
         </div>
 
