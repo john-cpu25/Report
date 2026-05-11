@@ -34,6 +34,7 @@ Tài liệu này giải thích cách tổ chức mã nguồn và luồng dữ li
 - **Auth Integration**: Sắp tới sẽ bọc toàn bộ `App.jsx` trong một `AuthProvider`.
 - **Refactoring**: Các file lớn như `CSVProcessor.jsx` nên được tách nhỏ thành các sub-components trong `/src/components/CSVProcessor/`.
 - **State Management**: Nếu số lượng tab tăng lên, cân nhắc sử dụng `React Context` để tránh việc truyền props quá nhiều tầng (Prop Drilling).
+- AAA
 
 ---
 *Vị trí file này: /core/project_structure.md*
