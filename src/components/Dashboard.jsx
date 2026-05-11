@@ -565,20 +565,10 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Workflow Automation integrated here or kept below */}
-          <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-6 flex flex-col shadow-xl">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-1.5 h-6 bg-yellow-400 rounded-none" />
-              <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight">Process Flow</h2>
-            </div>
-            <div className="h-32 flex items-center justify-center grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all">
-              <WorkflowAnimation />
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Activity Heatmap & Feed */}
+      {/* Activity Heatmap & Process Flow */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
         {/* Mock Activity Heatmap */}
         <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-8">
@@ -612,39 +602,23 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Direct Intelligence Stream */}
-        <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-8 overflow-hidden relative group h-full">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-1.5 h-6 bg-rose-500 rounded-none" />
-              <div>
-                <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Direct Intelligence Stream</h2>
-                <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Live System Updates</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-              <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Live</span>
+        {/* Process Flow (Moved here) */}
+        <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-8 flex flex-col shadow-xl">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-1.5 h-6 bg-rose-500 rounded-none" />
+            <div>
+              <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Process Flow</h2>
+              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Live System Automation</p>
             </div>
           </div>
 
-          <div className="space-y-4">
-            {tasks.slice(0, 4).map((task, idx) => (
-              <div key={task.id} className="flex gap-4 items-start pb-4 border-b border-[var(--glass-border)] last:border-0">
-                <div className="p-2 bg-[var(--bg-surface)] rounded-none text-[var(--text-muted)]">
-                  <Clock size={14} />
-                </div>
-                <div>
-                  <p className="text-[11px] text-[var(--text-main)] font-bold leading-tight">
-                    <span className="text-indigo-400 font-black">@{task.user}</span> committed new task to <span className="text-yellow-400 font-black">#{task.project}</span>
-                  </p>
-                  <p className="text-[9px] text-[var(--text-muted)] font-black uppercase mt-1">2 MINUTES AGO</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex-grow flex items-center justify-center min-h-[300px]">
+            <WorkflowAnimation />
           </div>
 
-          <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-[var(--bg-dark)] to-transparent pointer-events-none" />
+          <button className="mt-6 w-full py-3 bg-white/5 hover:bg-indigo-500/10 rounded-none text-[9px] font-black text-[var(--text-main)] uppercase tracking-widest transition-all border border-white/5">
+            Configure Automation Engine
+          </button>
         </div>
       </div>
 
