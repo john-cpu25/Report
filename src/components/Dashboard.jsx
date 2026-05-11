@@ -103,10 +103,31 @@ const Dashboard = () => {
   }, [projects, tasks]);
 
   const chartData = useMemo(() => {
-    // Project activity distribution
+    const now = new Date();
+    const todayY = now.getFullYear();
+    const todayM = now.getMonth();
+    const todayD = now.getDate();
+
     const counts = {};
     tasks.forEach(t => {
-      counts[t.project] = (counts[t.project] || 0) + 1;
+      // Filter for tasks of the day
+      const dateVal = t.created_at || t.date_start;
+      const taskDate = processDate(dateVal);
+      if (!taskDate) return;
+
+      const isToday = taskDate.getFullYear() === todayY && 
+                      taskDate.getMonth() === todayM && 
+                      taskDate.getDate() === todayD;
+      
+      if (!isToday) return;
+
+      // Extract project name from task name (e.g., "Project A: Task 1")
+      const rawName = t.name || t.NAME || t.task || '';
+      const projectName = rawName.split(':')[0]?.trim();
+      
+      if (projectName) {
+        counts[projectName] = (counts[projectName] || 0) + 1;
+      }
     });
 
     const topProjects = Object.entries(counts)
