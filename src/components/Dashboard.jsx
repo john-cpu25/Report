@@ -471,8 +471,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Detailed Team Cards */}
-        <div className="grid grid-cols-1 gap-4">
+        {/* Detailed Team Cards - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredCapacity.map((team, idx) => (
             <motion.div
               key={team.name}
@@ -482,9 +482,9 @@ const Dashboard = () => {
               className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-6 hover:border-indigo-500/30 transition-all group"
             >
               <div className="flex flex-col gap-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                  {/* Team Info - Fixed width for alignment */}
-                  <div className="flex items-center gap-4 w-full lg:w-72 shrink-0">
+                <div className="flex flex-col gap-6">
+                  {/* Team Info */}
+                  <div className="flex items-center gap-4 w-full shrink-0 border-b border-white/5 pb-4">
                     <div className="w-12 h-12 rounded-none bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
                       <Users size={24} />
                     </div>
@@ -530,8 +530,8 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  {/* Utilization Meter - Fixed width */}
-                  <div className="w-full lg:w-48 shrink-0 space-y-2">
+                  {/* Utilization Meter */}
+                  <div className="w-full space-y-2 bg-white/5 p-4 border border-white/5">
                     <div className="flex justify-between items-end">
                       <span className="text-[9px] font-black text-[var(--text-muted)] uppercase">Utilization</span>
                       <span className="text-sm font-black text-[var(--text-main)]">{Math.round((team.active / team.total) * 100)}%</span>
@@ -554,7 +554,7 @@ const Dashboard = () => {
                       <span className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-widest">Active Project Analysis:</span>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                       {Object.entries(team.projectBreakdown).map(([proj, data]) => (
                         <div 
                           key={proj}
