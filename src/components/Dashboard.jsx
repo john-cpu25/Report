@@ -149,13 +149,19 @@ const Dashboard = () => {
     const userProjectsMap = {}; // userId -> Set of projects
     
     tasks.forEach(t => {
-      const userId = (t.user_id || t.user || '').toString().toLowerCase().trim();
-      const isActiveTask = !t.date_checked || !t.date_complete;
+      // Robustly get user identifier from task
+      const rawUserId = t.user_id || t.USER_ID || t.user || t.USER || '';
+      const userId = rawUserId.toString().toLowerCase().trim();
       
-      if (isActiveTask) {
+      // A task is active if both date_checked and date_complete are missing/empty
+      const isComplete = (t.date_complete && t.date_complete.toString().trim() !== '') || 
+                         (t.date_checked && t.date_checked.toString().trim() !== '');
+      const isActiveTask = !isComplete;
+      
+      if (isActiveTask && userId) {
         userActiveTasks[userId] = (userActiveTasks[userId] || 0) + 1;
         
-        const rawName = t.name || '';
+        const rawName = t.name || t.NAME || t.task || '';
         const projectName = rawName.split(':')[0]?.trim() || 'General';
         if (!userProjectsMap[userId]) userProjectsMap[userId] = new Set();
         userProjectsMap[userId].add(projectName);
@@ -171,8 +177,7 @@ const Dashboard = () => {
           total: 0,
           active: 0,
           free: 0,
-          projects: {}, // { "Project Name": [UserNames] }
-          freeMembers: [],
+          projects: {}, 
           members: []
         };
       }
@@ -184,6 +189,7 @@ const Dashboard = () => {
       const uName = (u.name || '').toString().toLowerCase().trim();
       const uEmail = (u.email || '').toString().toLowerCase().trim();
       
+      // Try to match task counts by ID, Name or Email
       const activeCount = userActiveTasks[uId] || userActiveTasks[uName] || userActiveTasks[uEmail] || 0;
       
       // Threshold: 0-3 is FREE, > 3 is BUSY
@@ -193,7 +199,7 @@ const Dashboard = () => {
 
       const memberInfo = {
         name: u.name || u.email,
-        isActive: isBusy, // User is marked "Active/Busy" (Red) if count > 3
+        isActive: isBusy,
         taskCount: activeCount,
         projectName: Array.from(userProjects).join(', ') || null
       };
@@ -208,7 +214,6 @@ const Dashboard = () => {
         });
       } else {
         teamObj.free++;
-        teamObj.freeMembers.push(u.name || u.email);
       }
     });
 
