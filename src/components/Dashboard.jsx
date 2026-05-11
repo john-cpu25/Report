@@ -65,11 +65,12 @@ const Dashboard = () => {
       else if (timeRange === 'MONTH') startDate.setMonth(now.getMonth() - 1);
       else if (timeRange === 'YEAR') startDate.setFullYear(now.getFullYear() - 1);
 
-      // Fetch tasks for the range
+      // Fetch tasks - get all tasks that are not complete to ensure accurate capacity
+      // We remove the created_at filter to catch long-running tasks
       const { data: taskData, error: taskError } = await supabase
         .from('NMK_Task')
         .select('*')
-        .gte('created_at', startDate.toISOString());
+        .order('created_at', { ascending: false });
 
       if (taskError) throw taskError;
       
@@ -144,27 +145,28 @@ const Dashboard = () => {
   const capacityStats = useMemo(() => {
     if (!users.length) return [];
 
-    // Map of users to their active tasks count
+    const slugify = (str) => (str || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+
     const userActiveTasks = {};
     const userProjectsMap = {}; // userId -> Set of projects
     
     tasks.forEach(t => {
       // Robustly get user identifier from task
       const rawUserId = t.user_id || t.USER_ID || t.user || t.USER || '';
-      const userId = rawUserId.toString().toLowerCase().trim();
+      const userIdSlug = slugify(rawUserId);
       
       // A task is active if both date_checked and date_complete are missing/empty
       const isComplete = (t.date_complete && t.date_complete.toString().trim() !== '') || 
                          (t.date_checked && t.date_checked.toString().trim() !== '');
       const isActiveTask = !isComplete;
       
-      if (isActiveTask && userId) {
-        userActiveTasks[userId] = (userActiveTasks[userId] || 0) + 1;
+      if (isActiveTask && userIdSlug) {
+        userActiveTasks[userIdSlug] = (userActiveTasks[userIdSlug] || 0) + 1;
         
         const rawName = t.name || t.NAME || t.task || '';
         const projectName = rawName.split(':')[0]?.trim() || 'General';
-        if (!userProjectsMap[userId]) userProjectsMap[userId] = new Set();
-        userProjectsMap[userId].add(projectName);
+        if (!userProjectsMap[userIdSlug]) userProjectsMap[userIdSlug] = new Set();
+        userProjectsMap[userIdSlug].add(projectName);
       }
     });
 
@@ -172,40 +174,32 @@ const Dashboard = () => {
     users.forEach(u => {
       const team = (u.team || 'Unassigned').toUpperCase();
       
-      // FLEXIBLE FILTER: KEYWORD MATCHING
       const isPtReo = team.includes('PT') && (team.includes('REO') || team.includes('&'));
       const isModeling = team.includes('MODELING') || team.includes('MODELLING') || team.includes('STR');
-      
       if (!isPtReo && !isModeling) return;
       
-      // Normalize name for UI
       const normalizedTeam = isPtReo ? 'PT & REO TEAM' : 'STR MODELING TEAM';
 
       if (!teamData[normalizedTeam]) {
         teamData[normalizedTeam] = {
-          name: normalizedTeam,
-          total: 0,
-          active: 0,
-          free: 0,
-          projects: {}, 
-          members: []
+          name: normalizedTeam, total: 0, active: 0, free: 0, projects: {}, members: []
         };
       }
       
       const teamObj = teamData[normalizedTeam];
       teamObj.total++;
       
-      const uId = (u.id || '').toString().toLowerCase().trim();
-      const uName = (u.name || '').toString().toLowerCase().trim();
-      const uEmail = (u.email || '').toString().toLowerCase().trim();
+      const uIdSlug = slugify(u.id);
+      const uNameSlug = slugify(u.name);
+      const uEmailSlug = slugify(u.email);
       
-      // Try to match task counts by ID, Name or Email
-      const activeCount = userActiveTasks[uId] || userActiveTasks[uName] || userActiveTasks[uEmail] || 0;
+      // Try to match task counts by slugified ID, Name or Email
+      const activeCount = userActiveTasks[uIdSlug] || userActiveTasks[uNameSlug] || userActiveTasks[uEmailSlug] || 0;
       
       // Threshold: 0-3 is FREE, > 3 is BUSY
       const isBusy = activeCount > 3;
       
-      const userProjects = userProjectsMap[uId] || userProjectsMap[uName] || userProjectsMap[uEmail] || new Set();
+      const userProjects = userProjectsMap[uIdSlug] || userProjectsMap[uNameSlug] || userProjectsMap[uEmailSlug] || new Set();
 
       const memberInfo = {
         name: u.name || u.email,
