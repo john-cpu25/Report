@@ -15,6 +15,7 @@ import {
   Clock
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { processDate } from '../utils/csvHelpers';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -146,11 +147,27 @@ const Dashboard = () => {
     if (!users.length) return [];
 
     const slugify = (str) => (str || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const now = new Date();
+    const todayY = now.getFullYear();
+    const todayM = now.getMonth();
+    const todayD = now.getDate();
 
     const userActiveTasks = {};
     const userProjectsMap = {}; // userId -> Set of projects
     
     tasks.forEach(t => {
+      // Filter for tasks of the day using standard processDate
+      const dateVal = t.created_at || t.date_start;
+      const taskDate = processDate(dateVal);
+      if (!taskDate) return;
+
+      // Check if it's today (Local Time)
+      const isToday = taskDate.getFullYear() === todayY && 
+                      taskDate.getMonth() === todayM && 
+                      taskDate.getDate() === todayD;
+      
+      if (!isToday) return;
+
       // Robustly get user identifier from task
       const rawUserId = t.user_id || t.USER_ID || t.user || t.USER || '';
       const userIdSlug = slugify(rawUserId);
@@ -203,7 +220,7 @@ const Dashboard = () => {
 
       const memberInfo = {
         name: u.name || u.email,
-        isActive: isBusy,
+        isActive: isBusy, // true if count > 3
         taskCount: activeCount,
         projectName: Array.from(userProjects).join(', ') || null
       };
@@ -544,7 +561,7 @@ const Dashboard = () => {
         <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[2.5rem] overflow-hidden">
           <div className="p-8 border-b border-[var(--glass-border)]">
             <h3 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Live Operative Roster</h3>
-            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Status: <span className="text-rose-500">Red (Busy)</span> | <span className="text-emerald-500">Green (Free)</span></p>
+            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Status: <span className="text-orange-500">Orange (Busy &gt; 3)</span> | <span className="text-emerald-500">Green (Free 0-3)</span></p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -571,7 +588,11 @@ const Dashboard = () => {
                         )}
                         <td className="px-8 py-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${member.isActive ? 'bg-rose-500 shadow-rose-500/40' : 'bg-emerald-500 shadow-emerald-500/40'}`} />
+                            <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${
+                              member.isActive 
+                                ? 'bg-orange-500 shadow-orange-500/40 animate-pulse' 
+                                : 'bg-emerald-500 shadow-emerald-500/40'
+                            }`} />
                             <span className="text-sm font-bold text-[var(--text-main)]">{member.name}</span>
                             {member.taskCount > 0 && (
                               <span className="text-[10px] font-black bg-white/5 px-2 py-0.5 rounded-md text-[var(--text-muted)] border border-white/5">
@@ -581,7 +602,7 @@ const Dashboard = () => {
                           </div>
                         </td>
                         <td className="px-8 py-4 text-right">
-                          <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${member.isActive ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                          <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${member.isActive ? 'bg-orange-500/10 text-orange-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
                             {member.isActive ? `BUSY: ${member.projectName}` : 'FREE'}
                           </span>
                         </td>
