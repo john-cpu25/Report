@@ -472,7 +472,15 @@ const Dashboard = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center p-3 bg-indigo-500/5 border border-indigo-500/10">
                     <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Daily Capacity</span>
-                    <span className="text-xs font-black text-white bg-indigo-500 px-2 py-0.5">{team.total * 8}h</span>
+                    <motion.div 
+                      animate={{ rotateY: [0, 360] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                      className="perspective-1000"
+                    >
+                      <span className="text-xs font-black text-white bg-indigo-600 px-2 py-0.5 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] inline-block">
+                        {team.total * 8}h
+                      </span>
+                    </motion.div>
                   </div>
 
                   <div 
@@ -480,7 +488,9 @@ const Dashboard = () => {
                     className="flex justify-between items-center p-3 bg-orange-500/5 border border-orange-500/10 cursor-pointer hover:bg-orange-500/10 transition-all"
                   >
                     <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest">Active / Busy</span>
-                    <span className="text-xs font-black text-white bg-orange-500 px-2 py-0.5">{team.active}</span>
+                    <span className="text-xs font-black text-white bg-orange-700 px-2 py-0.5 shadow-[2px_2px_0px_rgba(0,0,0,0.5)]">
+                      {team.active}
+                    </span>
                   </div>
 
                   <div 
@@ -488,7 +498,9 @@ const Dashboard = () => {
                     className="flex justify-between items-center p-3 bg-emerald-500/5 border border-emerald-500/10 cursor-pointer hover:bg-emerald-500/10 transition-all"
                   >
                     <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Available / Free</span>
-                    <span className="text-xs font-black text-white bg-emerald-500 px-2 py-0.5">{team.free}</span>
+                    <span className="text-xs font-black text-white bg-emerald-700 px-2 py-0.5 shadow-[2px_2px_0px_rgba(0,0,0,0.5)]">
+                      {team.free}
+                    </span>
                   </div>
                 </div>
 
