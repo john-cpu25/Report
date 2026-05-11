@@ -153,6 +153,7 @@ const Dashboard = () => {
     const todayD = now.getDate();
 
     const userActiveTasks = {};
+    const userIsBusyMap = {}; // userId -> boolean (has status > 3)
     const userProjectsMap = {}; // userId -> Set of projects
     
     tasks.forEach(t => {
@@ -161,23 +162,28 @@ const Dashboard = () => {
       const taskDate = processDate(dateVal);
       if (!taskDate) return;
 
-      // Check if it's today (Local Time)
       const isToday = taskDate.getFullYear() === todayY && 
                       taskDate.getMonth() === todayM && 
                       taskDate.getDate() === todayD;
       
       if (!isToday) return;
 
-      // Robustly get user identifier from task
       const rawUserId = t.user_id || t.USER_ID || t.user || t.USER || '';
       const userIdSlug = slugify(rawUserId);
-      
-      // A task is active if both date_checked and date_complete are missing/empty
+      if (!userIdSlug) return;
+
+      // Check if this specific task has status > 3
+      const taskStatus = parseInt(t.status || t.STATUS || 0);
+      if (taskStatus > 3) {
+        userIsBusyMap[userIdSlug] = true;
+      }
+
+      // Count tasks that are not complete
       const isComplete = (t.date_complete && t.date_complete.toString().trim() !== '') || 
                          (t.date_checked && t.date_checked.toString().trim() !== '');
       const isActiveTask = !isComplete;
       
-      if (isActiveTask && userIdSlug) {
+      if (isActiveTask) {
         userActiveTasks[userIdSlug] = (userActiveTasks[userIdSlug] || 0) + 1;
         
         const rawName = t.name || t.NAME || t.task || '';
@@ -210,11 +216,10 @@ const Dashboard = () => {
       const uNameSlug = slugify(u.name);
       const uEmailSlug = slugify(u.email);
       
-      // Try to match task counts by slugified ID, Name or Email
-      const activeCount = userActiveTasks[uIdSlug] || userActiveTasks[uNameSlug] || userActiveTasks[uEmailSlug] || 0;
+      // A user is BUSY if they have ANY task with status > 3
+      const isBusy = userIsBusyMap[uIdSlug] || userIsBusyMap[uNameSlug] || userIsBusyMap[uEmailSlug] || false;
       
-      // Threshold: 0-3 is FREE, > 3 is BUSY
-      const isBusy = activeCount > 3;
+      const activeCount = userActiveTasks[uIdSlug] || userActiveTasks[uNameSlug] || userActiveTasks[uEmailSlug] || 0;
       
       const userProjects = userProjectsMap[uIdSlug] || userProjectsMap[uNameSlug] || userProjectsMap[uEmailSlug] || new Set();
 
@@ -561,7 +566,7 @@ const Dashboard = () => {
         <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[2.5rem] overflow-hidden">
           <div className="p-8 border-b border-[var(--glass-border)]">
             <h3 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Live Operative Roster</h3>
-            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Status: <span className="text-orange-500">Orange (Busy &gt; 3)</span> | <span className="text-emerald-500">Green (Free 0-3)</span></p>
+            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Status: <span className="text-orange-500">Orange (Any Task Status &gt; 3)</span> | <span className="text-emerald-500">Green (Normal)</span></p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
