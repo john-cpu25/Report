@@ -39,8 +39,7 @@ export const AppProvider = ({ children }) => {
     day: format(new Date(), 'EEEE'),
     status: 'WIP',
     eta: '',
-    etaMode: '', 
-    showProjectGroups: true
+    etaMode: ''
   });
 
   // Data Analyst Persistence States

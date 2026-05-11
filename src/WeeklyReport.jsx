@@ -51,7 +51,8 @@ const WeeklyReport = ({ exportExcel }) => {
     updateDayTime, updateMarkup, bulkUpdateMarkup,
     allProjects,
     isSidebarOpen, setIsSidebarOpen,
-    sidebarCollapsed
+    sidebarCollapsed,
+    showProjectGroups
   } = useApp();
   const [newProjectName, setNewProjectName] = React.useState('')
   const [showAddProject, setShowAddProject] = React.useState(false)
@@ -91,11 +92,10 @@ const WeeklyReport = ({ exportExcel }) => {
     if (focusedProject) {
       result = result.filter(r => r.project === focusedProject)
     }
-
-    if (sortConfig.key || formData.showProjectGroups) {
+    if (sortConfig.key || showProjectGroups) {
       result.sort((a, b) => {
         // If grouping is enabled, project is always the primary sort
-        if (formData.showProjectGroups && a.project !== b.project) {
+        if (showProjectGroups && a.project !== b.project) {
           return a.project < b.project ? -1 : 1
         }
         
@@ -123,7 +123,7 @@ const WeeklyReport = ({ exportExcel }) => {
       })
     }
     return result
-  }, [reportData, formData.team, sortConfig, formData.showProjectGroups, focusedProject, visibleStatuses])
+  }, [reportData, formData.team, sortConfig, showProjectGroups, focusedProject, visibleStatuses])
 
   const groupedData = React.useMemo(() => {
     return filteredReportData.reduce((acc, task) => {
@@ -558,7 +558,7 @@ const WeeklyReport = ({ exportExcel }) => {
               ))}
             </div>
 
-            {formData.showProjectGroups && (
+            {showProjectGroups && (
               <div className="flex items-center gap-3">
                 <button 
                   onClick={expandAll}
@@ -755,7 +755,7 @@ const WeeklyReport = ({ exportExcel }) => {
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]">
                   <AnimatePresence>
-                    {formData.showProjectGroups ? (
+                    {showProjectGroups ? (
                       Object.entries(groupedData).map(([projectName, tasks]) => {
                         const isCollapsed = collapsedProjects[projectName]
                         return (
