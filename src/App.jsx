@@ -24,6 +24,7 @@ import Settings from './components/Settings'
 import BambooBackground from './components/BambooBackground'
 import OrgChart from './components/OrgChart'
 import Workflows from './components/Workflows'
+import AdminPanel from './components/AdminPanel'
 
 function App() {
   const {
@@ -109,6 +110,8 @@ function App() {
                       <OrgChart />
                     ) : activeTab === 'workflows' ? (
                       <Workflows />
+                    ) : activeTab === 'admin' ? (
+                      <AdminPanel />
                     ) : activeTab === 'settings' ? (
                       <Settings theme={theme} setTheme={setTheme} background={background} setBackground={setBackground} />
                     ) : (
