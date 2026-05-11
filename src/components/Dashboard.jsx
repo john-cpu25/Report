@@ -582,6 +582,12 @@ const Dashboard = () => {
                   <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
                     <Users size={24} />
                   </div>
+                  <div>
+                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase">{team.name}</h3>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{team.total} Members Total</p>
+                  </div>
+                </div>
+
                 {/* Projects Stats */}
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   {/* Total & Hours Info */}
