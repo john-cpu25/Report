@@ -416,236 +416,165 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Team Capacity & Operative Deployment (Primary Focus) */}
-      <div className="w-full space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-1.5 h-6 bg-emerald-500 rounded-none" />
-            <div>
-              <h2 className="text-xl font-black text-[var(--text-main)] uppercase tracking-tight">Team Capacity & Pulse</h2>
-              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Real-time Operative Deployment</p>
+      {/* UNIFIED OPERATIONAL GRID: Team Capacity & Project Pulse */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+        
+        {/* Left/Center Area: Team Capacity (8 Columns) */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-1.5 h-6 bg-emerald-500 rounded-none" />
+              <div>
+                <h2 className="text-xl font-black text-[var(--text-main)] uppercase tracking-tight">Team Capacity & Pulse</h2>
+                <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Real-time Operative Deployment</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 bg-[var(--bg-card)] p-1 rounded-none border border-[var(--glass-border)]">
+              <span className="text-[9px] font-black text-[var(--text-muted)] uppercase px-2">Filter:</span>
+              {teamList.map(team => (
+                <button
+                  key={team}
+                  onClick={() => setSelectedCapacityTeam(team)}
+                  className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-none transition-all ${
+                    selectedCapacityTeam === team 
+                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                  }`}
+                >
+                  {team}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-[var(--bg-card)] p-1 rounded-none border border-[var(--glass-border)]">
-            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase px-2">Filter:</span>
-            {teamList.map(team => (
-              <button
-                key={team}
-                onClick={() => setSelectedCapacityTeam(team)}
-                className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-none transition-all ${
-                  selectedCapacityTeam === team 
-                  ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                }`}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredCapacity.map((team, idx) => (
+              <motion.div
+                key={team.name}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-6 hover:border-indigo-500/30 transition-all group flex flex-col gap-6"
               >
-                {team}
-              </button>
+                {/* Team Info Header */}
+                <div className="flex items-center gap-4 w-full bg-indigo-500/5 border border-indigo-500/10 p-4">
+                  <div className="w-10 h-10 bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-[var(--text-main)] uppercase tracking-tight">{team.name}</h3>
+                    <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{team.total} Members Total</p>
+                  </div>
+                </div>
+
+                {/* Stat Blocks - Vertical Stack */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-3 bg-indigo-500/5 border border-indigo-500/10">
+                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Daily Capacity</span>
+                    <span className="text-xs font-black text-white bg-indigo-500 px-2 py-0.5">{team.total * 8}h</span>
+                  </div>
+
+                  <div 
+                    onClick={() => setDetailView({ type: 'busy', team: team.name, users: team.busyMembers })}
+                    className="flex justify-between items-center p-3 bg-orange-500/5 border border-orange-500/10 cursor-pointer hover:bg-orange-500/10 transition-all"
+                  >
+                    <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest">Active / Busy</span>
+                    <span className="text-xs font-black text-white bg-orange-500 px-2 py-0.5">{team.active}</span>
+                  </div>
+
+                  <div 
+                    onClick={() => setDetailView({ type: 'free', team: team.name, users: team.freeMembers })}
+                    className="flex justify-between items-center p-3 bg-emerald-500/5 border border-emerald-500/10 cursor-pointer hover:bg-emerald-500/10 transition-all"
+                  >
+                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Available / Free</span>
+                    <span className="text-xs font-black text-white bg-emerald-500 px-2 py-0.5">{team.free}</span>
+                  </div>
+                </div>
+
+                {/* Utilization */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Utilization</span>
+                    <span className="text-sm font-black text-[var(--text-main)]">{Math.round((team.active / team.total) * 100)}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-white/5 border border-white/5 overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(team.active / team.total) * 100}%` }}
+                      className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Active Project Analysis - Below Stats */}
+                <div className="pt-4 border-t border-[var(--glass-border)]">
+                  <div className="flex items-center gap-3 mb-4 bg-white/5 p-2 border-l-2 border-indigo-500">
+                    <span className="text-[9px] font-black text-[var(--text-main)] uppercase tracking-widest">Active Project Analysis:</span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 overflow-y-auto custom-scrollbar pr-1" style={{ maxHeight: '180px' }}>
+                    {Object.entries(team.projectBreakdown).map(([proj, data]) => (
+                      <div key={proj} className="bg-white/5 border border-white/5 p-3 hover:border-indigo-500/20 transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-black text-indigo-400 uppercase truncate" title={proj}>{proj}</span>
+                          <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 text-[9px] font-black border border-indigo-500/20">{data.total}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {[
+                            { s: 3, label: 'NEW', color: 'bg-indigo-500/10 text-indigo-400' },
+                            { s: 6, label: 'START', color: 'bg-blue-500/10 text-blue-400' },
+                            { s: 4, label: 'CHECKED', color: 'bg-emerald-500/10 text-emerald-400' },
+                          ].map(status => {
+                            const count = data.statuses[status.s] || 0;
+                            if (count === 0) return null;
+                            return (
+                              <div key={status.s} className={`px-1.5 py-0.5 ${status.color} text-[7px] font-black uppercase border border-current`}>
+                                {status.label} {count}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
 
-        {/* Global/Filtered Capacity Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-indigo-500/10 border border-indigo-500/20 p-6 rounded-none relative overflow-hidden group">
-            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest relative z-10">
-              {selectedCapacityTeam === 'ALL' ? 'Total Operatives' : 'Team Members'}
-            </p>
-            <p className="text-3xl font-black text-white mt-1 relative z-10">{filteredCapacity.reduce((acc, t) => acc + t.total, 0)}</p>
-            <Users className="absolute -bottom-2 -right-2 text-indigo-500/10 w-16 h-16" />
-          </div>
-          <div className="bg-indigo-500/10 border border-indigo-500/20 p-6 rounded-none relative overflow-hidden group">
-            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest relative z-10">Daily Capacity</p>
-            <p className="text-3xl font-black text-white mt-1 relative z-10">{filteredCapacity.reduce((acc, t) => acc + t.total, 0) * 8}h</p>
-            <Clock className="absolute -bottom-2 -right-2 text-indigo-500/10 w-16 h-16" />
-          </div>
-          <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-none relative overflow-hidden group">
-            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest relative z-10">Availability</p>
-            <p className="text-3xl font-black text-white mt-1 relative z-10">{filteredCapacity.reduce((acc, t) => acc + t.free, 0)}</p>
-            <Activity className="absolute -bottom-2 -right-2 text-emerald-500/10 w-16 h-16" />
-          </div>
-          <div className="bg-rose-500/10 border border-rose-500/20 p-6 rounded-none relative overflow-hidden group">
-            <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest relative z-10">Active Deployments</p>
-            <p className="text-3xl font-black text-white mt-1 relative z-10">{filteredCapacity.reduce((acc, t) => acc + t.active, 0)}</p>
-            <Zap className="absolute -bottom-2 -right-2 text-rose-500/10 w-16 h-16" />
-          </div>
-        </div>
-
-        {/* Detailed Team Cards - Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredCapacity.map((team, idx) => (
-            <motion.div
-              key={team.name}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-6 hover:border-indigo-500/30 transition-all group"
-            >
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                {/* LEFT COLUMN: Team Info & Metrics */}
-                <div className="space-y-4">
-                  {/* Team Header */}
-                  <div className="flex items-center gap-4 w-full bg-indigo-500/5 border border-indigo-500/10 p-4">
-                    <div className="w-12 h-12 bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
-                      <Users size={24} />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-black text-[var(--text-main)] uppercase tracking-tight">{team.name}</h3>
-                      <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{team.total} Members Total</p>
-                    </div>
-                  </div>
-
-                  {/* Vertical Metric Blocks */}
-                  <div className="space-y-3">
-                    {/* Daily Capacity */}
-                    <div className="p-4 bg-indigo-500/5 border border-indigo-500/20">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Daily Capacity</span>
-                        <span className="text-sm font-black text-white bg-indigo-500 px-3 py-1">{team.total * 8}h</span>
-                      </div>
-                      <p className="text-[9px] font-bold text-indigo-400/60 uppercase mt-1">{team.total} Members × 8h</p>
-                    </div>
-
-                    {/* BUSY Status */}
-                    <div 
-                      onClick={() => setDetailView({ type: 'busy', team: team.name, users: team.busyMembers })}
-                      className="p-4 bg-orange-500/5 border border-orange-500/20 cursor-pointer hover:bg-orange-500/10 transition-all"
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">ACTIVE / BUSY</span>
-                        <span className="text-sm font-black text-white bg-orange-500 px-3 py-1">{team.active}</span>
-                      </div>
-                      <p className="text-[9px] font-bold text-orange-500/60 uppercase mt-1">High Workload</p>
-                    </div>
-
-                    {/* FREE Status */}
-                    <div 
-                      onClick={() => setDetailView({ type: 'free', team: team.name, users: team.freeMembers })}
-                      className="p-4 bg-emerald-500/5 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/10 transition-all"
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Available / FREE</span>
-                        <span className="text-sm font-black text-white bg-emerald-500 px-3 py-1">{team.free}</span>
-                      </div>
-                      <p className="text-[9px] font-bold text-emerald-500/60 uppercase mt-1">System Capacity</p>
-                    </div>
-
-                    {/* Utilization Meter */}
-                    <div className="p-4 bg-white/5 border border-white/5">
-                      <div className="flex justify-between items-end mb-3">
-                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Utilization</span>
-                        <span className="text-lg font-black text-[var(--text-main)]">{Math.round((team.active / team.total) * 100)}%</span>
-                      </div>
-                      <div className="w-full h-3 bg-white/5 border border-white/5 overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(team.active / team.total) * 100}%` }}
-                          className="h-full bg-gradient-to-r from-indigo-500 via-indigo-400 to-emerald-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* RIGHT COLUMN: Active Project Analysis */}
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-3 mb-6 bg-white/5 p-3 border-l-4 border-indigo-500">
-                    <span className="text-[11px] font-black text-[var(--text-main)] uppercase tracking-[0.2em]">Active Project Analysis:</span>
-                  </div>
-                  
-                  <div className="flex-grow overflow-y-auto custom-scrollbar pr-2" style={{ maxHeight: '420px' }}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {Object.entries(team.projectBreakdown).length > 0 ? (
-                        Object.entries(team.projectBreakdown).map(([proj, data]) => (
-                          <div 
-                            key={proj}
-                            className="bg-white/5 border border-[var(--glass-border)] p-4 hover:border-indigo-500/20 transition-all"
-                          >
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="text-[11px] font-black text-indigo-400 uppercase truncate" title={proj}>{proj}</span>
-                              <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-[10px] font-black border border-indigo-500/30">
-                                {data.total}
-                              </span>
-                            </div>
-                            
-                            <div className="flex flex-wrap gap-1.5">
-                              {[
-                                { s: 3, label: 'NEW', color: 'bg-indigo-500/10 text-indigo-400' },
-                                { s: 6, label: 'START', color: 'bg-blue-500/10 text-blue-400' },
-                                { s: 7, label: 'ACCEPTED', color: 'bg-violet-500/10 text-violet-400' },
-                                { s: 4, label: 'CHECKED', color: 'bg-emerald-500/10 text-emerald-400' },
-                                { s: 5, label: 'RECHECK', color: 'bg-rose-500/10 text-rose-400' },
-                                { s: 0, label: 'DONE', color: 'bg-slate-500/10 text-slate-400' },
-                              ].map(status => {
-                                const count = data.statuses[status.s] || 0;
-                                if (count === 0) return null;
-                                return (
-                                  <div key={status.s} className={`flex items-center gap-1.5 px-2 py-0.5 ${status.color} text-[8px] font-black uppercase border border-current`}>
-                                    <span>{status.label}</span>
-                                    <span className="opacity-100">{count}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="col-span-full h-40 flex items-center justify-center border border-dashed border-white/10 opacity-30 italic text-xs">
-                          No Active Deployment Data
-                        </div>
-                      )}
-                    </div>
-                  </div>
+        {/* Right Area: Project Distribution Chart (4 Columns) */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-6 flex flex-col h-full shadow-xl">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-1.5 h-6 bg-indigo-500 rounded-none" />
+                <div>
+                  <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Project Activity</h2>
+                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Task Volume Distribution</p>
                 </div>
               </div>
-
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 w-full">
-        {/* Project Pulse Chart */}
-        <div className="xl:col-span-2 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-8 space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-1.5 h-6 bg-indigo-500 rounded-none" />
-              <div>
-                <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Project Activity Distribution</h2>
-                <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Task Volume per Core Project</p>
-              </div>
             </div>
-            <div className="p-3 bg-[var(--bg-surface)] rounded-none text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer transition-colors">
-              <ArrowUpRight size={20} />
-            </div>
-          </div>
-          
-          <div className="h-[400px] w-full flex items-center justify-center">
-            {tasks.length > 0 ? (
-              <Bar data={chartData} options={barOptions} />
-            ) : (
-              <p className="text-[var(--text-muted)] font-bold italic">No data available for this range.</p>
-            )}
-          </div>
-        </div>
-
-        {/* System Workflow Automation */}
-        <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-8 flex flex-col h-full">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-1.5 h-6 bg-yellow-400 rounded-none" />
-            <div>
-              <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">System Workflow</h2>
-              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Live Process Automation</p>
+            
+            <div className="flex-grow flex items-center justify-center min-h-[300px]">
+              {tasks.length > 0 ? (
+                <Bar data={chartData} options={{...barOptions, maintainAspectRatio: false}} />
+              ) : (
+                <p className="text-[var(--text-muted)] font-bold italic">No data available.</p>
+              )}
             </div>
           </div>
 
-          <div className="flex-grow flex items-center justify-center min-h-[300px]">
-            <WorkflowAnimation />
+          {/* Workflow Automation integrated here or kept below */}
+          <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-6 flex flex-col shadow-xl">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-1.5 h-6 bg-yellow-400 rounded-none" />
+              <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight">Process Flow</h2>
+            </div>
+            <div className="h-32 flex items-center justify-center grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all">
+              <WorkflowAnimation />
+            </div>
           </div>
-
-          <button className="mt-8 w-full py-4 bg-[var(--bg-surface)] hover:bg-indigo-500/10 rounded-none text-[10px] font-black text-[var(--text-main)] uppercase tracking-widest transition-all border border-[var(--glass-border)]">
-            Configure Automation
-          </button>
         </div>
       </div>
 
