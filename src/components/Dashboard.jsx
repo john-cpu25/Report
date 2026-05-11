@@ -512,7 +512,7 @@ const Dashboard = () => {
                   <div className="flex items-center gap-3 mb-4 bg-white/5 p-2 border-l-2 border-indigo-500">
                     <span className="text-[9px] font-black text-[var(--text-main)] uppercase tracking-widest">Active Project Analysis:</span>
                   </div>
-                  <div className="grid grid-cols-1 gap-2 overflow-y-auto custom-scrollbar pr-1" style={{ maxHeight: '180px' }}>
+                  <div className="grid grid-cols-1 gap-2 overflow-y-auto custom-scrollbar pr-1" style={{ maxHeight: '250px' }}>
                     {Object.entries(team.projectBreakdown).map(([proj, data]) => (
                       <div key={proj} className="bg-white/5 border border-white/5 p-3 hover:border-indigo-500/20 transition-all">
                         <div className="flex items-center justify-between mb-2">
