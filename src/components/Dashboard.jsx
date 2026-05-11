@@ -138,17 +138,47 @@ const Dashboard = () => {
       labels: topProjects.map(p => p[0]),
       datasets: [
         {
-          label: 'Task Volume',
+          label: 'Tasks Today',
           data: topProjects.map(p => p[1]),
-          backgroundColor: 'rgba(99, 102, 241, 0.5)',
-          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99, 102, 241, 0.7)',
+          borderColor: '#818cf8',
           borderWidth: 2,
-          borderRadius: 8,
-          hoverBackgroundColor: 'rgba(99, 102, 241, 0.8)',
+          borderRadius: 6,
+          hoverBackgroundColor: '#6366f1',
+          barThickness: 40,
         }
       ]
     };
   }, [tasks]);
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1e1b4b',
+        titleFont: { size: 12, weight: 'bold' },
+        bodyFont: { size: 11 },
+        padding: 12,
+        cornerRadius: 12,
+        displayColors: false,
+      }
+    },
+    scales: {
+      y: { 
+        beginAtZero: true,
+        title: { display: true, text: 'NUMBER OF TASKS', color: '#6366f1', font: { size: 9, weight: '900' } },
+        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, 
+        ticks: { color: '#94a3b8', font: { size: 10, weight: 'bold' } } 
+      },
+      x: { 
+        title: { display: true, text: 'CORE PROJECTS', color: '#6366f1', font: { size: 9, weight: '900' } },
+        grid: { display: false }, 
+        ticks: { color: '#94a3b8', font: { size: 10, weight: 'bold' }, maxRotation: 45, minRotation: 45 } 
+      }
+    }
+  };
 
   const leaderboard = useMemo(() => {
     const userCounts = {};
@@ -284,37 +314,6 @@ const Dashboard = () => {
   const teamList = useMemo(() => {
     return ['ALL', 'PT & REO TEAM', 'STR MODELING TEAM'];
   }, []);
-
-  const barOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: {
-      duration: 1000,
-      easing: 'easeOutQuart'
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#0f172a',
-        titleFont: { size: 10, weight: 'bold' },
-        bodyFont: { size: 10 },
-        padding: 12,
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1,
-      }
-    },
-    scales: {
-      y: { 
-        beginAtZero: true,
-        grid: { color: 'var(--border)' }, 
-        ticks: { color: 'var(--text-muted)', font: { size: 9, weight: 'bold' } } 
-      },
-      x: { 
-        grid: { display: false }, 
-        ticks: { color: 'var(--text-muted)', font: { size: 9, weight: 'bold' } } 
-      }
-    }
-  };
 
   if (loading) return (
     <div className="h-[60vh] flex items-center justify-center">
