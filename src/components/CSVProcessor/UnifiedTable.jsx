@@ -1,86 +1,21 @@
 import React from 'react';
-import { processDate, getEffectiveDuration, formatDuration, formatDateTime } from '../../utils/csvHelpers';
-import { calculateTaskMetrics } from '../../utils/performanceEngine';
+import { formatDuration } from '../../utils/csvHelpers';
 
 const UnifiedTable = ({ 
-  rawTasks, 
-  userMap, 
-  userTeamMap, 
-  selectedTeam, 
-  searchQuery, 
+  data, 
   columnFilters, 
   setColumnFilters,
-  dateRange,
   sortConfig,
   handleSort,
   columnOptions
 }) => {
-
-  const fmtDt = (val) => {
-    const d = processDate(val);
-    if (!d) return '';
-    const mo = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const h = String(d.getHours()).padStart(2, '0');
-    const mi = String(d.getMinutes()).padStart(2, '0');
-    return `${day}/${mo} ${h}:${mi}`;
-  };
 
   const renderSortIcon = (key) => {
     if (sortConfig.key !== key) return null;
     return <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
   };
 
-  const tableRows = rawTasks.map(t => {
-    const rawName = t.name || '';
-    const parts = rawName.toString().split(':');
-    const creator = userMap[t.create_by] || userMap[t.create_by?.toLowerCase()] || t.create_by || '-';
-    const user = userMap[t.user_id] || userMap[t.user_id?.toLowerCase()] || t.user_id || '-';
-    const creatorTeam = userTeamMap[t.create_by] || userTeamMap[t.create_by?.toLowerCase()] || '-';
-    const userTeam = userTeamMap[t.user_id] || userTeamMap[t.user_id?.toLowerCase()] || '-';
-    
-    if (selectedTeam !== 'ALL' && creatorTeam !== selectedTeam && userTeam !== selectedTeam) return null;
-    
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const name = (parts[1] || '').toLowerCase();
-      const proj = (parts[0] || '').toLowerCase();
-      if (!name.includes(q) && !proj.includes(q) && !creator.toLowerCase().includes(q) && !user.toLowerCase().includes(q)) return null;
-    }
-    
-    if (columnFilters.project && !(parts[0] || '').toLowerCase().includes(columnFilters.project.toLowerCase())) return null;
-    if (columnFilters.taskName && !(parts[1] || '').toLowerCase().includes(columnFilters.taskName.toLowerCase())) return null;
-    if (columnFilters.creator && !creator.toLowerCase().includes(columnFilters.creator.toLowerCase())) return null;
-    if (columnFilters.user && !user.toLowerCase().includes(columnFilters.user.toLowerCase())) return null;
-    
-    if (dateRange.start) {
-      const d = processDate(t.created_at);
-      if (d && d < new Date(dateRange.start)) return null;
-    }
-    if (dateRange.end) {
-      const d = processDate(t.created_at);
-      const end = new Date(dateRange.end); end.setHours(23,59,59,999);
-      if (d && d > end) return null;
-    }
-
-    const metrics = calculateTaskMetrics(t);
-
-    return {
-      id: t.id,
-      project: parts[0]?.trim() || '-',
-      taskName: parts[1]?.trim() || '-',
-      creator, user,
-      created_at: t.created_at,
-      date_start: t.date_start,
-      date_end: t.date_end,
-      date_accepted: t.date_accepted,
-      date_started: t.date_started,
-      date_complete: t.date_complete,
-      date_checked: t.date_checked,
-      area: t.area || '-',
-      ...metrics
-    };
-  }).filter(Boolean);
+  const tableRows = [...data];
 
   if (sortConfig.key) {
     tableRows.sort((a, b) => {
@@ -98,18 +33,18 @@ const UnifiedTable = ({
   }
 
   return (
-    <div className="glass-panel overflow-hidden border border-[var(--border)] shadow-xl bg-[var(--bg-card)]">
+    <div className="glass-panel overflow-hidden border border-[var(--border)] shadow-xl bg-[var(--bg-card)] rounded-none">
       <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full text-left border-collapse" style={{ minWidth: '1800px' }}>
           <thead className="sticky top-0 z-10">
-            <tr className="text-[10px] font-black uppercase tracking-normal border-b border-[var(--border)] bg-[var(--bg-header)]">
+            <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
               <th rowSpan={2} className="px-3 py-3 text-amber-500 border-r border-b border-[var(--border)] sticky left-0 z-20 min-w-[200px] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('project')}>
                     <span>NAME {renderSortIcon('project')}</span>
                   </div>
                   <select 
-                    className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md px-2 py-1 text-[10px] font-bold outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full text-[var(--text-main)]"
+                    className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-none px-2 py-1 text-[10px] font-bold outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full text-[var(--text-main)]"
                     value={columnFilters.project}
                     onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
                   >
@@ -129,16 +64,16 @@ const UnifiedTable = ({
               <th className="px-3 py-3 bg-amber-500/10 text-amber-500 text-center border-r border-b border-[var(--border)]">T4</th>
               <th className="px-3 py-3 bg-rose-500/10 text-rose-500 text-center border-b border-[var(--border)]">T5</th>
             </tr>
-            <tr className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
-              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[100px]" onClick={() => handleSort('creator')}>create_by {renderSortIcon('creator')}</th>
-              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('created_at')}>created_at {renderSortIcon('created_at')}</th>
-              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_start')}>date_start {renderSortIcon('date_start')}</th>
-              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_end')}>date_end {renderSortIcon('date_end')}</th>
-              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[100px]" onClick={() => handleSort('user')}>user_id {renderSortIcon('user')}</th>
-              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_accepted')}>date_accepted {renderSortIcon('date_accepted')}</th>
-              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_started')}>date_started {renderSortIcon('date_started')}</th>
-              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_complete')}>date_complete {renderSortIcon('date_complete')}</th>
-              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('date_checked')}>date_checked {renderSortIcon('date_checked')}</th>
+            <tr className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
+              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[100px]" onClick={() => handleSort('createdBy')}>create_by {renderSortIcon('createdBy')}</th>
+              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('createdAt')}>created_at {renderSortIcon('createdAt')}</th>
+              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateStart')}>date_start {renderSortIcon('dateStart')}</th>
+              <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateEnd')}>date_end {renderSortIcon('dateEnd')}</th>
+              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[100px]" onClick={() => handleSort('userName')}>user_id {renderSortIcon('userName')}</th>
+              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateAccepted')}>date_accepted {renderSortIcon('dateAccepted')}</th>
+              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateStarted')}>date_started {renderSortIcon('dateStarted')}</th>
+              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateComplete')}>date_complete {renderSortIcon('dateComplete')}</th>
+              <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateChecked')}>date_checked {renderSortIcon('dateChecked')}</th>
               <th className="px-3 py-2 bg-emerald-500/5 border-r border-b border-[var(--border)] text-center">T1</th>
               <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)] text-center">T2</th>
               <th className="px-3 py-2 bg-violet-500/5 border-r border-b border-[var(--border)] text-center">T3</th>
@@ -157,21 +92,21 @@ const UnifiedTable = ({
                     <span className="font-bold text-[var(--text-contrast)] group-hover:text-emerald-500 transition-colors line-clamp-1">{r.taskName}</span>
                   </div>
                 </td>
-                <td className="px-3 py-2.5 text-indigo-500/80 font-bold border-r border-b border-[var(--border)]">{r.creator}</td>
-                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDt(r.created_at)}</td>
-                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDt(r.date_start)}</td>
-                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDt(r.date_end)}</td>
-                <td className="px-3 py-2.5 text-sky-500/80 font-bold border-r border-b border-[var(--border)]">{r.user}</td>
-                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDt(r.date_accepted)}</td>
-                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDt(r.date_started)}</td>
-                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDt(r.date_complete)}</td>
-                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDt(r.date_checked)}</td>
+                <td className="px-3 py-2.5 text-indigo-500/80 font-bold border-r border-b border-[var(--border)]">{r.createdBy}</td>
+                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.createdAtStr}</td>
+                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateStartStr}</td>
+                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateEndStr}</td>
+                <td className="px-3 py-2.5 text-sky-500/80 font-bold border-r border-b border-[var(--border)]">{r.userName}</td>
+                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateAcceptedStr}</td>
+                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateStartedStr}</td>
+                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateCompleteStr}</td>
+                <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateCheckedStr}</td>
                 <td className="px-3 py-2.5 text-[var(--text-muted)] text-center border-r border-b border-[var(--border)]">{r.area}</td>
-                <td className="px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-emerald-500">{formatDuration(r.t1)}</td>
-                <td className="px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-indigo-500">{formatDuration(r.t2)}</td>
-                <td className="px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-violet-500">{formatDuration(r.t3)}</td>
-                <td className="px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-amber-500">{formatDuration(r.t4)}</td>
-                <td className="px-3 py-2.5 text-center font-black border-b border-[var(--border)] text-rose-500">{formatDuration(r.t5)}</td>
+                <td className="px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-emerald-500">{r.time1Str}</td>
+                <td className="px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-indigo-500">{r.time2Str}</td>
+                <td className="px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-violet-500">{r.time3Str}</td>
+                <td className="px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] text-amber-500">{r.time4Str}</td>
+                <td className="px-3 py-2.5 text-center font-black border-b border-[var(--border)] text-rose-500">{r.time5Str}</td>
               </tr>
             ))}
           </tbody>

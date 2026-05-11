@@ -43,6 +43,12 @@ export const AppProvider = ({ children }) => {
     showProjectGroups: true
   });
 
+  // Data Analyst Persistence States
+  const [analystTasks, setAnalystTasks] = useState([]);
+  const [analystUserMap, setAnalystUserMap] = useState({});
+  const [analystUserTeamMap, setAnalystUserTeamMap] = useState({});
+  const [lastAnalystFetch, setLastAnalystFetch] = useState(null);
+
   // Effects for Persistance
   useEffect(() => {
     localStorage.setItem('appTheme', theme);
@@ -220,6 +226,10 @@ export const AppProvider = ({ children }) => {
     formData, setFormData,
     allProjects,
     weekDates,
+    analystTasks, setAnalystTasks,
+    analystUserMap, setAnalystUserMap,
+    analystUserTeamMap, setAnalystUserTeamMap,
+    lastAnalystFetch, setLastAnalystFetch,
     handleAddTask, deleteRow, moveRow, updateStatus, updateDayTime, updateMarkup, bulkUpdateMarkup
   };
 
