@@ -175,10 +175,18 @@ const Dashboard = () => {
       // Determine if active: Has a task that is not checked/complete, or just very recent
       const isActive = latestTask && (!latestTask.date_checked || !latestTask.date_complete);
       
+      const memberInfo = {
+        name: u.name || u.email,
+        isActive,
+        projectName: isActive ? (latestTask.name || '').split(':')[0]?.trim() || 'General' : null
+      };
+
+      if (!teamObj.members) teamObj.members = [];
+      teamObj.members.push(memberInfo);
+
       if (isActive) {
         teamObj.active++;
-        const rawName = latestTask.name || '';
-        const projectName = rawName.split(':')[0]?.trim() || 'General';
+        const projectName = memberInfo.projectName;
         if (!teamObj.projects[projectName]) teamObj.projects[projectName] = [];
         teamObj.projects[projectName].push(u.name || u.email);
       } else {
@@ -493,9 +501,58 @@ const Dashboard = () => {
             <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Current Availability</p>
             <p className="text-2xl font-black text-white mt-1">{capacityStats.reduce((acc, t) => acc + t.free, 0)}</p>
           </div>
-          <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl">
-            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Active Deployments</p>
+          <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl">
+            <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Active Deployments</p>
             <p className="text-2xl font-black text-white mt-1">{capacityStats.reduce((acc, t) => acc + t.active, 0)}</p>
+          </div>
+        </div>
+
+        {/* Live Operative Roster Table */}
+        <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[2.5rem] overflow-hidden">
+          <div className="p-8 border-b border-[var(--glass-border)]">
+            <h3 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Live Operative Roster</h3>
+            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Status: <span className="text-rose-500">Red (Busy)</span> | <span className="text-emerald-500">Green (Free)</span></p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-white/5">
+                  <th className="px-8 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-r border-[var(--glass-border)] w-48">Team</th>
+                  <th className="px-8 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Name</th>
+                  <th className="px-8 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCapacity.map((team) => (
+                  <React.Fragment key={team.name}>
+                    {team.members.map((member, mIdx) => (
+                      <tr key={`${team.name}-${member.name}`} className="border-b border-[var(--glass-border)] hover:bg-white/[0.02] transition-colors">
+                        {mIdx === 0 && (
+                          <td 
+                            rowSpan={team.members.length} 
+                            className="px-8 py-6 align-top border-r border-[var(--glass-border)]"
+                          >
+                            <p className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight">{team.name}</p>
+                            <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase mt-1">[{team.total}] Members</p>
+                          </td>
+                        )}
+                        <td className="px-8 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${member.isActive ? 'bg-rose-500 shadow-rose-500/40' : 'bg-emerald-500 shadow-emerald-500/40'}`} />
+                            <span className="text-sm font-bold text-[var(--text-main)]">{member.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-4 text-right">
+                          <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${member.isActive ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                            {member.isActive ? `BUSY: ${member.projectName}` : 'FREE'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -514,12 +571,7 @@ const Dashboard = () => {
                   <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
                     <Users size={24} />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-black text-[var(--text-main)] uppercase">{team.name}</h3>
-                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{team.total} Members Total</p>
-                  </div>
-                </div>
-
+                {/* Projects Stats */}
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   {/* Total & Hours Info */}
                   <div className="p-3 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
@@ -534,15 +586,16 @@ const Dashboard = () => {
                     <div 
                       key={proj}
                       onClick={() => setDetailView({ type: 'project', team: team.name, projectName: proj, users })}
-                      className="p-3 bg-white/5 border border-[var(--glass-border)] rounded-2xl cursor-pointer hover:bg-indigo-500/10 transition-all"
+                      className="p-3 bg-rose-500/5 border border-rose-500/20 rounded-2xl cursor-pointer hover:bg-rose-500/10 transition-all"
                     >
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-[var(--text-main)] uppercase truncate max-w-[100px]">{proj}</span>
-                        <span className="text-xs font-black text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded-lg">{users.length}</span>
+                        <span className="text-[10px] font-black text-rose-500 uppercase truncate max-w-[100px]">{proj}</span>
+                        <span className="text-xs font-black text-white bg-rose-500 px-2 py-0.5 rounded-lg">{users.length}</span>
                       </div>
-                      <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase mt-1">Involved</p>
+                      <p className="text-[9px] font-bold text-rose-500/70 uppercase mt-1">Active</p>
                     </div>
                   ))}
+
                   
                   {/* FREE Status */}
                   <div 
@@ -619,7 +672,7 @@ const Dashboard = () => {
                     className="flex items-center gap-4 p-4 bg-white/5 border border-[var(--glass-border)] rounded-2xl"
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
-                      detailView.type === 'free' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'
+                      detailView.type === 'free' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
                     }`}>
                       {user.charAt(0).toUpperCase()}
                     </div>
