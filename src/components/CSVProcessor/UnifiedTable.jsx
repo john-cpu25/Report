@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { processDate, getEffectiveDuration, formatDuration, formatDateTime } from '../../utils/csvHelpers';
+import { calculateTaskMetrics } from '../../utils/performanceEngine';
 
 const UnifiedTable = ({ 
   rawTasks, 
@@ -19,10 +19,10 @@ const UnifiedTable = ({
   const fmtDt = (val) => {
     const d = processDate(val);
     if (!d) return '';
-    const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(d.getUTCDate()).padStart(2, '0');
-    const h = String(d.getUTCHours()).padStart(2, '0');
-    const mi = String(d.getUTCMinutes()).padStart(2, '0');
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
     return `${day}/${mo} ${h}:${mi}`;
   };
 
@@ -63,12 +63,7 @@ const UnifiedTable = ({
       if (d && d > end) return null;
     }
 
-    const dateStart = processDate(t.date_start);
-    const dateEnd = processDate(t.date_end);
-    const dateComplete = processDate(t.date_complete);
-    const dateChecked = processDate(t.date_checked);
-    const dateStarted = processDate(t.date_started);
-    const createdAt = processDate(t.created_at);
+    const metrics = calculateTaskMetrics(t);
 
     return {
       id: t.id,
@@ -83,11 +78,7 @@ const UnifiedTable = ({
       date_complete: t.date_complete,
       date_checked: t.date_checked,
       area: t.area || '-',
-      t1: getEffectiveDuration(dateStart, dateEnd),
-      t2: getEffectiveDuration(dateStart, dateComplete),
-      t3: getEffectiveDuration(dateStart, dateChecked),
-      t4: getEffectiveDuration(dateStarted, dateChecked),
-      t5: getEffectiveDuration(createdAt, dateChecked),
+      ...metrics
     };
   }).filter(Boolean);
 

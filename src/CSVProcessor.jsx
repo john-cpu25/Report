@@ -8,6 +8,7 @@ import { Doughnut, Bar, Line } from 'react-chartjs-2'
 
 // Utilities
 import { processDate, getEffectiveDuration, formatDuration, formatDateTime, formatDate } from './utils/csvHelpers'
+import { calculateTaskMetrics } from './utils/performanceEngine'
 
 // Sub-components
 import DataUploader from './components/CSVProcessor/DataUploader'
@@ -94,28 +95,23 @@ const CSVProcessor = () => {
       setUserTeamMap(uTeamMap)
 
       const leaderProcessed = tasksData.map(row => {
+        const metrics = calculateTaskMetrics(row)
         const createdAt = processDate(row.created_at)
         const dateStart = processDate(row.date_start)
-        const dateEnd = processDate(row.date_end)
-        const dateComplete = processDate(row.date_complete)
-        const dateChecked = processDate(row.date_checked)
-        const dateStarted = processDate(row.date_started)
         const rawName = row.name || ''
         const parts = rawName.toString().split(':')
-        const time1 = getEffectiveDuration(dateStart, dateEnd)
-        const time2 = getEffectiveDuration(dateStart, dateComplete)
-        const time3 = getEffectiveDuration(dateStart, dateChecked)
         
         return {
           project: parts[0]?.trim() || '-',
           taskName: parts[1]?.trim() || '-',
           createdBy: uMap[row.create_by] || uMap[row.create_by?.toLowerCase()] || row.create_by || '-',
           day: formatDate(createdAt || dateStart),
-          createdAt, dateStart, dateEnd, dateComplete, dateChecked, dateStarted,
-          time1, time2, time3,
-          time1Str: formatDuration(time1),
-          time2Str: formatDuration(time2),
-          time3Str: formatDuration(time3),
+          ...metrics,
+          time1Str: formatDuration(metrics.t1),
+          time2Str: formatDuration(metrics.t2),
+          time3Str: formatDuration(metrics.t3),
+          time4Str: formatDuration(metrics.t4),
+          time5Str: formatDuration(metrics.t5),
           dateObj: createdAt || dateStart,
           team: uTeamMap[row.create_by] || uTeamMap[row.create_by?.toLowerCase()] || '-'
         }
@@ -124,31 +120,27 @@ const CSVProcessor = () => {
       setRawTasks(tasksData || [])
 
       const userProcessed = tasksData.map(row => {
+        const metrics = calculateTaskMetrics(row)
         const createdAt = processDate(row.created_at)
-        const dateStart = processDate(row.date_start)
-        const dateEnd = processDate(row.date_end)
-        const dateComplete = processDate(row.date_complete)
-        const dateChecked = processDate(row.date_checked)
         const dateStarted = processDate(row.date_started)
+        const dateChecked = processDate(row.date_checked)
         const rawName = row.name || ''
         const parts = rawName.toString().split(':')
-        const time1 = getEffectiveDuration(dateStart, dateEnd)
-        const time2 = getEffectiveDuration(dateStart, dateComplete)
-        const time3 = getEffectiveDuration(dateStart, dateChecked)
         
         return {
           userId: row.user_id,
           userName: uMap[row.user_id] || uMap[row.user_id?.toLowerCase()] || row.user_id || '-',
           project: parts[0]?.trim() || '-',
           taskName: parts[1]?.trim() || '-',
-          createdAt, dateStart, dateEnd, dateComplete, dateChecked, dateStarted,
+          ...metrics,
           createdAtStr: formatDateTime(createdAt),
           dateStartedStr: formatDateTime(dateStarted),
           dateCheckedStr: formatDateTime(dateChecked),
-          time1, time2, time3,
-          time1Str: formatDuration(time1),
-          time2Str: formatDuration(time2),
-          time3Str: formatDuration(time3),
+          time1Str: formatDuration(metrics.t1),
+          time2Str: formatDuration(metrics.t2),
+          time3Str: formatDuration(metrics.t3),
+          time4Str: formatDuration(metrics.t4),
+          time5Str: formatDuration(metrics.t5),
           dateObj: createdAt,
           team: uTeamMap[row.user_id] || uTeamMap[row.user_id?.toLowerCase()] || '-'
         }
@@ -316,12 +308,13 @@ const CSVProcessor = () => {
       let key = ''
       if (analyticsGranularity === 'week') {
         const d = new Date(r.dateObj)
-        d.setUTCDate(d.getUTCDate() - d.getUTCDay() + 1)
-        key = `Week ${d.getUTCDate()}/${d.getUTCMonth()+1}`
+        // Adjust to local Monday
+        d.setDate(d.getDate() - (d.getDay() === 0 ? 6 : d.getDay() - 1))
+        key = `Week ${d.getDate()}/${d.getMonth()+1}`
       } else if (analyticsGranularity === 'year') {
-        key = `${r.dateObj.getUTCFullYear()}`
+        key = `${r.dateObj.getFullYear()}`
       } else {
-        key = `${r.dateObj.getUTCFullYear()}-${String(r.dateObj.getUTCMonth() + 1).padStart(2, '0')}`
+        key = `${r.dateObj.getFullYear()}-${String(r.dateObj.getMonth() + 1).padStart(2, '0')}`
       }
       if (!mMap.has(key)) mMap.set(key, { logs: 0, t1: 0, t2: 0 })
       const m = mMap.get(key)
@@ -425,6 +418,41 @@ const CSVProcessor = () => {
                   <t.icon size={14} strokeWidth={3} />
                   {t.label}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Time Metrics Legend */}
+          <div className="glass-panel p-6 bg-indigo-500/5 border-indigo-500/20 shadow-lg relative overflow-hidden group">
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-all duration-700" />
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-400 shadow-lg shadow-indigo-500/10">
+                <Database size={16} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em]">Calculation Logic</h3>
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Working Hours: 09:00 - 18:00 (GMT+7)</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {[
+                { id: 'T1', label: 'Target Duration', formula: 'date_start → date_end', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                { id: 'T2', label: 'Actual Completion', formula: 'date_start → date_complete', color: 'text-sky-500', bg: 'bg-sky-500/10' },
+                { id: 'T3', label: 'Full Cycle', formula: 'date_start → date_checked', color: 'text-violet-500', bg: 'bg-violet-500/10' },
+                { id: 'T4', label: 'Pure Processing', formula: 'date_started → date_checked', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                { id: 'T5', label: 'System Lead Time', formula: 'created_at → date_checked', color: 'text-rose-500', bg: 'bg-rose-500/10' }
+              ].map(m => (
+                <div key={m.id} className="relative p-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/[0.08] transition-all duration-300 group/item">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`flex items-center justify-center w-6 h-6 rounded-lg ${m.bg} ${m.color} text-[10px] font-black`}>{m.id}</span>
+                    <span className="text-[10px] font-black text-[var(--text-contrast)] uppercase tracking-widest">{m.label}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] text-[var(--text-muted)] font-mono bg-black/20 p-1.5 rounded-md border border-white/5 inline-block group-hover/item:border-indigo-500/20 transition-colors">
+                      {m.formula}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
           </div>

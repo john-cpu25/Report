@@ -7,6 +7,7 @@ import {
 import { format, parseISO, startOfDay, endOfDay, startOfWeek, isWithinInterval } from 'date-fns';
 import { supabase } from '../supabaseClient';
 import { calculateWorkingMinutes, formatMinutes, calculateTaskMetrics } from '../utils/performanceEngine';
+import { processDate, formatDateTime } from '../utils/csvHelpers';
 
 const PerformanceReview = () => {
   const [tasks, setTasks] = useState([]);
@@ -27,34 +28,6 @@ const PerformanceReview = () => {
   useEffect(() => {
     localStorage.setItem('perfManualData', JSON.stringify(manualData));
   }, [manualData]);
-
-  // --- DATE PROCESSING ---
-  function processDate(val) {
-    if (!val) return null;
-    if (val instanceof Date) return val;
-    if (typeof val === 'number') return new Date((val - 25569) * 86400 * 1000);
-    let str = val.toString().trim();
-    if (/^\d{5}(\.\d+)?$/.test(str)) {
-      const num = parseFloat(str);
-      return new Date((num - 25569) * 86400 * 1000);
-    }
-    if (str.startsWith('0001')) return null;
-    try {
-      let s = str.replace(' ', 'T');
-      if (s.match(/[+-]\d{2}$/)) s += ':00';
-      let date = new Date(s);
-      if (isNaN(date.getTime())) {
-        if (!s.includes('Z') && !s.match(/[+-]\d{2}/)) date = new Date(s + 'Z');
-      }
-      if (isNaN(date.getTime())) {
-        let sNoMs = s.replace(/\.\d+(?=[+-Z]|$)/, '');
-        date = new Date(sNoMs);
-      }
-      if (isNaN(date.getTime())) return new Date(str);
-      if (isNaN(date.getTime())) return null;
-      return new Date(date.getTime() + 7 * 60 * 60 * 1000);
-    } catch (e) { return null; }
-  }
 
   function fmtDate(val) {
     const d = processDate(val);
@@ -106,6 +79,7 @@ const PerformanceReview = () => {
   // --- TABLE DATA ---
   const tableData = useMemo(() => {
     return tasks.map(t => {
+      const metrics = calculateTaskMetrics(t);
       const creator = userMap[t.create_by];
       const user = userMap[t.user_id];
       if (selectedTeam !== 'ALL') {
@@ -121,11 +95,12 @@ const PerformanceReview = () => {
         ...t,
         creatorName: creator?.displayName || t.create_by || '-',
         userName: user?.displayName || t.user_id || '-',
-        t1: calcHours(t.date_end, t.date_start),
-        t2a: calcHours(t.date_complete, t.date_accepted),
-        t2b: calcHours(t.date_complete, t.date_started),
-        t4a: calcHours(t.date_checked, t.date_accepted),
-        t4b: calcHours(t.date_checked, t.date_started),
+        ...metrics,
+        t1: metrics.t1 / 60,
+        t2: metrics.t2 / 60,
+        t3: metrics.t3 / 60,
+        t4: metrics.t4 / 60,
+        t5: metrics.t5 / 60,
         checkTime: checkTime
       };
     }).filter(Boolean);
@@ -157,7 +132,7 @@ const PerformanceReview = () => {
 
       const date = processDate(t.created_at || t.date_start);
       if (date) {
-        const dow = DOW_MAP[date.getUTCDay()];
+        const dow = DOW_MAP[date.getDay()];
         if (dow) {
           userGroups[uName].tasks[taskKey].days[dow].push(t);
         }
@@ -199,9 +174,9 @@ const PerformanceReview = () => {
 
     // Accumulate from tasks
     tableData.forEach(t => {
-      // User project time
+      // User project time (T2 is Actual Completion: start -> complete)
       if (summary[t.userName]) {
-        summary[t.userName].projectTime += t.t2b || 0;
+        summary[t.userName].projectTime += t.t2 || 0;
       }
       // Leader check time
       if (summary[t.creatorName]) {
@@ -217,7 +192,7 @@ const PerformanceReview = () => {
       // Calculate efficiency: Total Plan Time / Total Actual Time for the user's tasks
       const userTasks = tableData.filter(t => t.userName === s.name);
       const totalPlan = userTasks.reduce((sum, t) => sum + (t.t1 || 0), 0);
-      const totalActual = userTasks.reduce((sum, t) => sum + (t.t2b || 0), 0);
+      const totalActual = userTasks.reduce((sum, t) => sum + (t.t2 || 0), 0);
       const efficiency = totalActual > 0 ? (totalPlan / totalActual) * 100 : 100;
 
       return {
@@ -235,11 +210,11 @@ const PerformanceReview = () => {
   const stats = useMemo(() => {
     const total = tableData.length;
     const withT1 = tableData.filter(t => t.t1 !== null);
-    const withT2 = tableData.filter(t => t.t2b !== null);
-    const withT4 = tableData.filter(t => t.t4b !== null);
+    const withT2 = tableData.filter(t => t.t2 !== null);
+    const withT4 = tableData.filter(t => t.t4 !== null);
     const avgT1 = withT1.length ? (withT1.reduce((s, t) => s + t.t1, 0) / withT1.length) : 0;
-    const avgT2 = withT2.length ? (withT2.reduce((s, t) => s + t.t2b, 0) / withT2.length) : 0;
-    const avgT4 = withT4.length ? (withT4.reduce((s, t) => s + t.t4b, 0) / withT4.length) : 0;
+    const avgT2 = withT2.length ? (withT2.reduce((s, t) => s + t.t2, 0) / withT2.length) : 0;
+    const avgT4 = withT4.length ? (withT4.reduce((s, t) => s + t.t4, 0) / withT4.length) : 0;
     return { total, avgT1, avgT2, avgT4, completed: withT4.length };
   }, [tableData]);
 
@@ -355,9 +330,11 @@ const PerformanceReview = () => {
                       <th colSpan={4} className="px-3 py-3 bg-indigo-500/10 text-indigo-500 text-center border-r border-b border-[var(--border)]">MANAGER / LEADER</th>
                       <th colSpan={5} className="px-3 py-3 bg-sky-500/10 text-sky-500 text-center border-r border-b border-[var(--border)]">USER</th>
                       <th rowSpan={2} className="px-3 py-3 bg-[var(--bg-surface)] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] min-w-[80px]">area</th>
-                      <th className="px-3 py-3 bg-emerald-500/10 text-emerald-500 text-center border-r border-b border-[var(--border)]">PLAN TIME</th>
-                      <th colSpan={2} className="px-3 py-3 bg-emerald-500/15 text-emerald-500 text-center border-r border-b border-[var(--border)]">USER COMPLETE</th>
-                      <th colSpan={2} className="px-3 py-3 bg-lime-500/10 text-lime-500 text-center border-b border-[var(--border)]">TASK COMPLETE</th>
+                      <th className="px-3 py-3 bg-emerald-500/10 text-emerald-500 text-center border-r border-b border-[var(--border)]">T1</th>
+                      <th className="px-3 py-3 bg-sky-500/10 text-sky-500 text-center border-r border-b border-[var(--border)]">T2</th>
+                      <th className="px-3 py-3 bg-violet-500/10 text-violet-500 text-center border-r border-b border-[var(--border)]">T3</th>
+                      <th className="px-3 py-3 bg-amber-500/10 text-amber-500 text-center border-r border-b border-[var(--border)]">T4</th>
+                      <th className="px-3 py-3 bg-rose-500/10 text-rose-500 text-center border-b border-[var(--border)]">T5</th>
                     </tr>
                     <tr className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
                       <th className="px-3 py-2 bg-indigo-500/5 border-r border-b border-[var(--border)]">create_by</th>
@@ -369,11 +346,11 @@ const PerformanceReview = () => {
                       <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)]">date_started</th>
                       <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)]">date_complete</th>
                       <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)]">date_checked</th>
-                      <th className="px-3 py-2 bg-emerald-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]">[t1]</th>
-                      <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[70px]">[t2]</th>
-                      <th className="px-3 py-2 bg-emerald-500/8 border-r border-b border-[var(--border)] text-center min-w-[70px]">[t2]</th>
-                      <th className="px-3 py-2 bg-lime-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]">[t4]</th>
-                      <th className="px-3 py-2 bg-lime-500/5 border-b border-[var(--border)] text-center min-w-[70px]">[t4]</th>
+                      <th className="px-3 py-2 bg-emerald-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]">T1</th>
+                      <th className="px-3 py-2 bg-sky-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]">T2</th>
+                      <th className="px-3 py-2 bg-violet-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]">T3</th>
+                      <th className="px-3 py-2 bg-amber-500/5 border-r border-b border-[var(--border)] text-center min-w-[70px]">T4</th>
+                      <th className="px-3 py-2 bg-rose-500/5 border-b border-[var(--border)] text-center min-w-[70px]">T5</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border)]">
@@ -395,10 +372,10 @@ const PerformanceReview = () => {
                         <td className="px-3 py-2.5 text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{fmtDate(t.date_checked)}</td>
                         <td className="px-3 py-2.5 text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] font-semibold">{t.area || '-'}</td>
                         <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t1)}`}>{fh(t.t1)}</td>
-                        <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t2a)}`}>{fh(t.t2a)}</td>
-                        <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t2b)}`}>{fh(t.t2b)}</td>
-                        <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t4a)}`}>{fh(t.t4a)}</td>
-                        <td className={`px-3 py-2.5 text-center font-black border-b border-[var(--border)] ${timeColor(t.t4b)}`}>{fh(t.t4b)}</td>
+                        <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t2)}`}>{fh(t.t2)}</td>
+                        <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t3)}`}>{fh(t.t3)}</td>
+                        <td className={`px-3 py-2.5 text-center font-black border-r border-b border-[var(--border)] ${timeColor(t.t4)}`}>{fh(t.t4)}</td>
+                        <td className={`px-3 py-2.5 text-center font-black border-b border-[var(--border)] ${timeColor(t.t5)}`}>{fh(t.t5)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -412,10 +389,10 @@ const PerformanceReview = () => {
               <div className="flex items-center justify-between glass-panel p-4 border-[var(--border)]">
                 <h3 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Weekly Distribution</h3>
                 <div className="flex gap-2 p-1 bg-[var(--bg-surface)] rounded-xl border border-[var(--border)]">
-                  {['t1', 't2b', 't4b'].map(m => (
+                  {['t1', 't2', 't4'].map(m => (
                     <button key={m} onClick={() => setActiveMetric(m)}
                       className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${activeMetric === m ? 'bg-indigo-500 text-white' : 'text-[var(--text-muted)]'}`}>
-                      {m === 't1' ? 'Plan' : m === 't2b' ? 'User' : 'Task'}
+                      {m === 't1' ? 'Plan' : m === 't2' ? 'User' : 'Task'}
                     </button>
                   ))}
                 </div>

@@ -15,7 +15,7 @@ export const processDate = (val) => {
     if (s.match(/[+-]\d{2}$/)) s += ':00';
     let date = new Date(s);
     if (isNaN(date.getTime())) {
-      if (!s.includes('Z') && !s.match(/[+-]\d{2}/)) date = new Date(s + 'Z');
+      if (!s.includes('Z') && !s.match(/[+-]\d{2}/)) date = new Date(s + '+07:00');
     }
     if (isNaN(date.getTime())) {
       let sNoMs = s.replace(/\.\d+(?=[+-Z]|$)/, '');
@@ -37,18 +37,18 @@ export const formatDuration = (totalMinutes) => {
 
 export const formatDate = (date) => {
   if (!date) return '-';
-  const d = String(date.getUTCDate()).padStart(2, '0');
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const y = date.getUTCFullYear();
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
   return `${d}/${m}/${y}`;
 };
 
 export const formatDateTime = (date) => {
   if (!date) return '-';
-  const y = date.getUTCFullYear();
-  const mo = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(date.getUTCDate()).padStart(2, '0');
-  const h = String(date.getUTCHours()).padStart(2, '0');
-  const mi = String(date.getUTCMinutes()).padStart(2, '0');
+  const y = date.getFullYear();
+  const mo = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const h = String(date.getHours()).padStart(2, '0');
+  const mi = String(date.getMinutes()).padStart(2, '0');
   return `${y}-${mo}-${d} ${h}:${mi}`;
 };
