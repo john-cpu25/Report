@@ -481,117 +481,124 @@ const Dashboard = () => {
               transition={{ delay: idx * 0.05 }}
               className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-6 hover:border-indigo-500/30 transition-all group"
             >
-              <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-6">
-                  {/* Team Info */}
-                  <div className="flex items-center gap-4 w-full shrink-0 border-b border-white/5 pb-4">
-                    <div className="w-12 h-12 rounded-none bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                {/* LEFT COLUMN: Team Info & Metrics */}
+                <div className="space-y-4">
+                  {/* Team Header */}
+                  <div className="flex items-center gap-4 w-full bg-indigo-500/5 border border-indigo-500/10 p-4">
+                    <div className="w-12 h-12 bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
                       <Users size={24} />
                     </div>
                     <div>
-                      <h3 className="text-lg font-black text-[var(--text-main)] uppercase">{team.name}</h3>
+                      <h3 className="text-xl font-black text-[var(--text-main)] uppercase tracking-tight">{team.name}</h3>
                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{team.total} Members Total</p>
                     </div>
                   </div>
 
-                  {/* Core Metrics Grid - Fixed columns for vertical alignment */}
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Vertical Metric Blocks */}
+                  <div className="space-y-3">
                     {/* Daily Capacity */}
-                    <div className="p-3 bg-indigo-500/5 border border-indigo-500/20 rounded-none">
+                    <div className="p-4 bg-indigo-500/5 border border-indigo-500/20">
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-indigo-400 uppercase">Daily Capacity</span>
-                        <span className="text-xs font-black text-white bg-indigo-500 px-2 py-0.5 rounded-none">{team.total * 8}h</span>
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Daily Capacity</span>
+                        <span className="text-sm font-black text-white bg-indigo-500 px-3 py-1">{team.total * 8}h</span>
                       </div>
-                      <p className="text-[9px] font-bold text-indigo-400/70 uppercase mt-1">{team.total} Members × 8h</p>
+                      <p className="text-[9px] font-bold text-indigo-400/60 uppercase mt-1">{team.total} Members × 8h</p>
                     </div>
 
                     {/* BUSY Status */}
                     <div 
                       onClick={() => setDetailView({ type: 'busy', team: team.name, users: team.busyMembers })}
-                      className="p-3 bg-orange-500/5 border border-orange-500/20 rounded-none cursor-pointer hover:bg-orange-500/10 transition-all"
+                      className="p-4 bg-orange-500/5 border border-orange-500/20 cursor-pointer hover:bg-orange-500/10 transition-all"
                     >
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-orange-500 uppercase">ACTIVE / BUSY</span>
-                        <span className="text-xs font-black text-white bg-orange-500 px-2 py-0.5 rounded-none">{team.active}</span>
+                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">ACTIVE / BUSY</span>
+                        <span className="text-sm font-black text-white bg-orange-500 px-3 py-1">{team.active}</span>
                       </div>
-                      <p className="text-[9px] font-bold text-orange-500/70 uppercase mt-1">High Workload</p>
+                      <p className="text-[9px] font-bold text-orange-500/60 uppercase mt-1">High Workload</p>
                     </div>
 
                     {/* FREE Status */}
                     <div 
                       onClick={() => setDetailView({ type: 'free', team: team.name, users: team.freeMembers })}
-                      className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-none cursor-pointer hover:bg-emerald-500/10 transition-all"
+                      className="p-4 bg-emerald-500/5 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/10 transition-all"
                     >
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-emerald-400 uppercase">Available / FREE</span>
-                        <span className="text-xs font-black text-white bg-emerald-500 px-2 py-0.5 rounded-none">{team.free}</span>
+                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Available / FREE</span>
+                        <span className="text-sm font-black text-white bg-emerald-500 px-3 py-1">{team.free}</span>
                       </div>
-                      <p className="text-[9px] font-bold text-emerald-500/70 uppercase mt-1">System Capacity</p>
+                      <p className="text-[9px] font-bold text-emerald-500/60 uppercase mt-1">System Capacity</p>
                     </div>
-                  </div>
 
-                  {/* Utilization Meter */}
-                  <div className="w-full space-y-2 bg-white/5 p-4 border border-white/5">
-                    <div className="flex justify-between items-end">
-                      <span className="text-[9px] font-black text-[var(--text-muted)] uppercase">Utilization</span>
-                      <span className="text-sm font-black text-[var(--text-main)]">{Math.round((team.active / team.total) * 100)}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-white/5 rounded-none overflow-hidden border border-white/5">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(team.active / team.total) * 100}%` }}
-                        className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500"
-                      />
+                    {/* Utilization Meter */}
+                    <div className="p-4 bg-white/5 border border-white/5">
+                      <div className="flex justify-between items-end mb-3">
+                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Utilization</span>
+                        <span className="text-lg font-black text-[var(--text-main)]">{Math.round((team.active / team.total) * 100)}%</span>
+                      </div>
+                      <div className="w-full h-3 bg-white/5 border border-white/5 overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(team.active / team.total) * 100}%` }}
+                          className="h-full bg-gradient-to-r from-indigo-500 via-indigo-400 to-emerald-500"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Secondary Row: Active Projects Breakdown */}
-                {Object.keys(team.projectBreakdown).length > 0 && (
-                  <div className="pt-6 border-t border-[var(--glass-border)]">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-1 h-3 bg-indigo-500" />
-                      <span className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-widest">Active Project Analysis:</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {Object.entries(team.projectBreakdown).map(([proj, data]) => (
-                        <div 
-                          key={proj}
-                          className="bg-white/5 border border-[var(--glass-border)] p-3 hover:border-indigo-500/20 transition-all"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-black text-indigo-400 uppercase truncate" title={proj}>{proj}</span>
-                            <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 text-[10px] font-black border border-indigo-500/30">
-                              {data.total}
-                            </span>
+                {/* RIGHT COLUMN: Active Project Analysis */}
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3 mb-6 bg-white/5 p-3 border-l-4 border-indigo-500">
+                    <span className="text-[11px] font-black text-[var(--text-main)] uppercase tracking-[0.2em]">Active Project Analysis:</span>
+                  </div>
+                  
+                  <div className="flex-grow overflow-y-auto custom-scrollbar pr-2" style={{ maxHeight: '420px' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {Object.entries(team.projectBreakdown).length > 0 ? (
+                        Object.entries(team.projectBreakdown).map(([proj, data]) => (
+                          <div 
+                            key={proj}
+                            className="bg-white/5 border border-[var(--glass-border)] p-4 hover:border-indigo-500/20 transition-all"
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-[11px] font-black text-indigo-400 uppercase truncate" title={proj}>{proj}</span>
+                              <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-[10px] font-black border border-indigo-500/30">
+                                {data.total}
+                              </span>
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-1.5">
+                              {[
+                                { s: 3, label: 'NEW', color: 'bg-indigo-500/10 text-indigo-400' },
+                                { s: 6, label: 'START', color: 'bg-blue-500/10 text-blue-400' },
+                                { s: 7, label: 'ACCEPTED', color: 'bg-violet-500/10 text-violet-400' },
+                                { s: 4, label: 'CHECKED', color: 'bg-emerald-500/10 text-emerald-400' },
+                                { s: 5, label: 'RECHECK', color: 'bg-rose-500/10 text-rose-400' },
+                                { s: 0, label: 'DONE', color: 'bg-slate-500/10 text-slate-400' },
+                              ].map(status => {
+                                const count = data.statuses[status.s] || 0;
+                                if (count === 0) return null;
+                                return (
+                                  <div key={status.s} className={`flex items-center gap-1.5 px-2 py-0.5 ${status.color} text-[8px] font-black uppercase border border-current`}>
+                                    <span>{status.label}</span>
+                                    <span className="opacity-100">{count}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                          
-                          <div className="flex flex-wrap gap-1.5">
-                            {[
-                              { s: 3, label: 'NEW', color: 'bg-indigo-500/10 text-indigo-400' },
-                              { s: 6, label: 'START', color: 'bg-blue-500/10 text-blue-400' },
-                              { s: 7, label: 'ACCEPTED', color: 'bg-violet-500/10 text-violet-400' },
-                              { s: 4, label: 'CHECKED', color: 'bg-emerald-500/10 text-emerald-400' },
-                              { s: 5, label: 'RECHECK', color: 'bg-rose-500/10 text-rose-400' },
-                              { s: 0, label: 'DONE', color: 'bg-slate-500/10 text-slate-400' },
-                            ].map(status => {
-                              const count = data.statuses[status.s] || 0;
-                              if (count === 0) return null;
-                              return (
-                                <div key={status.s} className={`flex items-center gap-1.5 px-2 py-0.5 ${status.color} text-[8px] font-black uppercase border border-current opacity-60`}>
-                                  <span>{status.label}</span>
-                                  <span className="opacity-100">{count}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
+                        ))
+                      ) : (
+                        <div className="col-span-full h-40 flex items-center justify-center border border-dashed border-white/10 opacity-30 italic text-xs">
+                          No Active Deployment Data
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
+
             </motion.div>
           ))}
         </div>
