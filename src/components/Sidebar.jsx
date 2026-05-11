@@ -33,7 +33,7 @@ const Sidebar = () => {
     setActiveTab
   } = useApp();
 
-  const sections = [
+  const mainSections = [
     {
       title: 'MAIN',
       items: [
@@ -43,27 +43,27 @@ const Sidebar = () => {
         { id: 'report', label: 'Weekly Planner', icon: CalendarClock },
         { id: 'processor', label: 'Data Analyst', icon: BarChart3 },
         { id: 'leave', label: 'Annual Leave', icon: Battery },
+        { id: 'review', label: 'Review', icon: CheckCircle2 },
       ]
     },
     {
       title: 'WORKFLOW',
       items: [
         { id: 'planning', label: 'Planning', icon: ListTodo },
-        { id: 'wip', label: 'Work In Progress', icon: Wrench },
         { id: 'issues', label: 'Issues', icon: AlertCircle },
-        { id: 'review', label: 'Review', icon: CheckCircle2 },
         { id: 'workflows', label: 'Procedures', icon: WorkflowIcon },
-      ]
-    },
-    {
-      title: 'SYSTEM',
-      items: [
-        { id: 'settings', label: 'Settings', icon: Settings },
-        { id: 'export', label: 'Export Data', icon: FileOutput },
-        { id: 'admin', label: 'Admin Panel', icon: ShieldCheck },
       ]
     }
   ]
+
+  const systemSection = {
+    title: 'SYSTEM',
+    items: [
+      { id: 'settings', label: 'Settings', icon: Settings },
+      { id: 'export', label: 'Export Data', icon: FileOutput },
+      { id: 'admin', label: 'Admin Panel', icon: ShieldCheck },
+    ]
+  }
 
   const sidebarVariants = {
     expanded: { width: 260 },
@@ -76,7 +76,7 @@ const Sidebar = () => {
         {!collapsed && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
             <div className="w-1.5 h-5 bg-indigo-500 rounded-full" />
-            <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Navigation</span>
+            <span className="text-[12px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Navigation</span>
           </motion.div>
         )}
         <button onClick={() => setCollapsed(!collapsed)} className="hidden lg:flex p-1.5 rounded-lg hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-colors">
@@ -84,15 +84,15 @@ const Sidebar = () => {
         </button>
       </div>
 
-      <div className="flex-grow overflow-y-auto custom-scrollbar px-3 space-y-8 pb-20">
-        {sections.map((section, idx) => (
+      <div className="flex-grow overflow-y-auto custom-scrollbar px-3 space-y-8 pb-10">
+        {mainSections.map((section, idx) => (
           <div key={section.title} className="space-y-2">
             {!collapsed && (
-              <motion.h3 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-3 text-[9px] font-black text-[var(--text-muted)] opacity-60 uppercase tracking-[0.2em] mb-2">
+              <motion.h3 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-3 text-[11px] font-black text-[var(--text-muted)] opacity-60 uppercase tracking-[0.2em] mb-2">
                 {section.title}
               </motion.h3>
             )}
-            <div className="space-y-1">
+            <div className="space-y-3">
               {section.items.map(item => (
                 <NavItem
                   key={item.id}
@@ -107,18 +107,42 @@ const Sidebar = () => {
                 />
               ))}
             </div>
-            {idx < sections.length - 1 && !collapsed && (
+            {idx < mainSections.length - 1 && !collapsed && (
               <div className="mx-3 h-[1px] bg-white/[0.03] mt-6" />
             )}
           </div>
         ))}
       </div>
 
+      {/* System Section at the bottom */}
+      <div className="px-3 mt-auto space-y-2 pb-6 border-t border-white/5 pt-6">
+        {!collapsed && (
+          <motion.h3 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-3 text-[11px] font-black text-[var(--text-muted)] opacity-60 uppercase tracking-[0.2em] mb-2">
+            {systemSection.title}
+          </motion.h3>
+        )}
+        <div className="space-y-2">
+          {systemSection.items.map(item => (
+            <NavItem
+              key={item.id}
+              icon={item.icon}
+              label={item.label}
+              active={activeTab === item.id}
+              collapsed={collapsed}
+              onClick={() => {
+                setActiveTab(item.id);
+                if (mobileOpen) setMobileOpen(false);
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
       {!collapsed && (
         <div className="px-6 mt-8">
           <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
-            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Version</p>
-            <p className="text-[11px] font-bold text-[var(--text-muted)]">Intelligence v4.7.0</p>
+            <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest mb-1">Version</p>
+            <p className="text-[13px] font-bold text-[var(--text-muted)]">Intelligence v4.7.0</p>
           </div>
         </div>
       )}
