@@ -205,7 +205,8 @@ const Dashboard = () => {
 
       if (!teamData[normalizedTeam]) {
         teamData[normalizedTeam] = {
-          name: normalizedTeam, total: 0, active: 0, free: 0, projects: {}, members: []
+          name: normalizedTeam, total: 0, active: 0, free: 0, projects: {}, members: [],
+          busyMembers: [], freeMembers: []
         };
       }
       
@@ -223,9 +224,10 @@ const Dashboard = () => {
       
       const userProjects = userProjectsMap[uIdSlug] || userProjectsMap[uNameSlug] || userProjectsMap[uEmailSlug] || new Set();
 
+      const memberName = u.name || u.email;
       const memberInfo = {
-        name: u.name || u.email,
-        isActive: isBusy, // true if count > 3
+        name: memberName,
+        isActive: isBusy,
         taskCount: activeCount,
         projectName: Array.from(userProjects).join(', ') || null
       };
@@ -234,12 +236,14 @@ const Dashboard = () => {
 
       if (isBusy) {
         teamObj.active++;
+        teamObj.busyMembers.push(memberName);
         userProjects.forEach(proj => {
           if (!teamObj.projects[proj]) teamObj.projects[proj] = [];
-          teamObj.projects[proj].push(u.name || u.email);
+          teamObj.projects[proj].push(memberName);
         });
       } else {
         teamObj.free++;
+        teamObj.freeMembers.push(memberName);
       }
     });
 
@@ -667,6 +671,18 @@ const Dashboard = () => {
                   ))}
 
                   
+                  {/* BUSY Status */}
+                  <div 
+                    onClick={() => setDetailView({ type: 'busy', team: team.name, users: team.busyMembers })}
+                    className="p-3 bg-orange-500/5 border border-orange-500/20 rounded-2xl cursor-pointer hover:bg-orange-500/10 transition-all"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-orange-500 uppercase">ACTIVE / BUSY</span>
+                      <span className="text-xs font-black text-white bg-orange-500 px-2 py-0.5 rounded-lg">{team.active}</span>
+                    </div>
+                    <p className="text-[9px] font-bold text-orange-500/70 uppercase mt-1">High Workload</p>
+                  </div>
+
                   {/* FREE Status */}
                   <div 
                     onClick={() => setDetailView({ type: 'free', team: team.name, users: team.freeMembers })}
