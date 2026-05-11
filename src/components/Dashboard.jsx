@@ -168,6 +168,7 @@ const Dashboard = () => {
       }
     });
 
+    const teamData = {};
     users.forEach(u => {
       const team = u.team || 'Unassigned';
       
