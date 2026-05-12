@@ -8,7 +8,7 @@ import { LogLevel } from "@azure/msal-browser";
 export const msalConfig = {
     auth: {
         clientId: "60a161a5-0c4e-46a2-8213-be1854293ba3", // Client ID chính thức (Dùng cho cả Deploy và Localhost)
-        authority: "https://login.microsoftonline.com/a60065a4-334a-4a94-84d3-7d58dec03aea", 
+        authority: "https://login.microsoftonline.com/rincovitch.com.au", // Sử dụng tên miền thay cho UUID để tăng độ tương thích
         redirectUri: window.location.href.split('?')[0].split('#')[0],
     },
     cache: {
