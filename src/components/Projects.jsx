@@ -188,7 +188,7 @@ const Projects = () => {
 
           {/* Right Column: Main Project Portfolio */}
           <div className="lg:col-span-9">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[15px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-[15px]">
               <AnimatePresence mode="popLayout">
                 {filteredProjects.map((project, idx) => (
                   <motion.div
