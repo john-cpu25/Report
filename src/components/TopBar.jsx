@@ -33,7 +33,7 @@ const TopBar = () => {
           <div className="flex items-center gap-3">
              <RincovitchLogo size={36} />
              <h1 className="text-[28px] font-black text-[var(--text-main)] uppercase tracking-tighter leading-none">
-               RINCOVITCH OPERATIONS
+               RINCOVITCH
              </h1>
           </div>
         </div>
