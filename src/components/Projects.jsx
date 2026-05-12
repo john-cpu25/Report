@@ -126,35 +126,99 @@ const Projects = () => {
           <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Syncing Supabase Database...</p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start">
-          <div className="lg:col-span-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px] p-[10px]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start p-[10px]">
+          {/* Left Column: Top Projects (My Top Projects) */}
+          <div className="lg:col-span-3 flex flex-col gap-[10px]">
+             <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] shadow-sm relative overflow-hidden">
+                <div className="flex items-center gap-[10px] p-[10px] mb-[10px]">
+                  <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+                  <div>
+                    <h2 className="text-[14px] font-black text-white tracking-tight uppercase">Top Projects</h2>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">High Activity</p>
+                  </div>
+                </div>
+
+                <div className="flex bg-[var(--bg-surface)] p-[5px] rounded-[8px] border border-[var(--border)] mb-[15px]">
+                  {['WEEK', 'MONTH', 'YEAR'].map(filter => (
+                    <button
+                      key={filter}
+                      onClick={() => setTimeFilter(filter)}
+                      className={`flex-1 py-[8px] text-[9px] font-black uppercase tracking-widest rounded-[6px] transition-all ${
+                        timeFilter === filter 
+                          ? 'bg-indigo-600 text-white shadow-lg' 
+                          : 'text-slate-500 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-[8px]">
+                  {top10Projects.map((proj, idx) => (
+                    <motion.div 
+                      key={proj.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      onClick={() => setSelectedId(proj.id)}
+                      className="relative flex items-center h-[40px] w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[4px] cursor-pointer overflow-hidden group hover:border-indigo-500 transition-all"
+                    >
+                      <div 
+                        className="w-[4px] h-full"
+                        style={{ backgroundColor: proj.color || '#6366f1' }}
+                      />
+                      <div className="flex-grow px-[12px] flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {idx < 3 && <Crown size={12} className="text-yellow-500" />}
+                          <span className="text-[12px] font-black text-[var(--text-main)] truncate max-w-[120px] uppercase">
+                            {proj.key}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-black text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded">
+                          {proj.taskCount}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+             </div>
+          </div>
+
+          {/* Right Column: Main Project Portfolio */}
+          <div className="lg:col-span-9">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px]">
               <AnimatePresence mode="popLayout">
                 {filteredProjects.map((project, idx) => (
                   <motion.div
                     key={project.id}
                     layoutId={`card-${project.id}`}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ delay: idx * 0.02 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: idx * 0.01 }}
                     onClick={() => setSelectedId(project.id)}
                     className="relative flex items-center h-[45px] w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[4px] cursor-pointer overflow-hidden group hover:border-indigo-500 transition-all shadow-sm"
                   >
-                    {/* Left Rank Badge (Legends of Runeterra Style) */}
-                    <div className="flex items-center justify-center w-[45px] h-full bg-indigo-600/90 text-white z-10 border-r border-white/5 shadow-[5px_0_15px_rgba(0,0,0,0.3)]">
+                    {/* Left Rank Badge - Colored by Supabase Data */}
+                    <div 
+                      className="flex items-center justify-center w-[45px] h-full text-white z-10 border-r border-white/5 shadow-[5px_0_15px_rgba(0,0,0,0.3)] transition-colors"
+                      style={{ backgroundColor: `${project.color || '#4f46e5'}ee` }}
+                    >
                       <div className="w-6 h-6 rounded-full border-2 border-white/20 flex items-center justify-center text-[11px] font-black shadow-inner">
                         {project.index || idx + 1}
                       </div>
                     </div>
 
-                    {/* Gradient Overlay for Premium Feel */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/0 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    
-                    {/* Background Pattern/Art Mockup */}
+                    {/* Gradient Overlay based on Supabase Color */}
                     <div 
-                      className="absolute right-0 top-0 w-1/2 h-full opacity-10 pointer-events-none skew-x-[-20deg] translate-x-4"
+                      className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity"
+                      style={{ background: `linear-gradient(90deg, transparent, ${project.color || '#6366f1'})` }}
+                    />
+                    
+                    {/* Background Pattern */}
+                    <div 
+                      className="absolute right-0 top-0 w-1/2 h-full opacity-5 pointer-events-none skew-x-[-20deg] translate-x-4 transition-transform group-hover:translate-x-2"
                       style={{ background: `linear-gradient(90deg, transparent, ${project.color || '#6366f1'})` }}
                     />
 
