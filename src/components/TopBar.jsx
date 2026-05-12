@@ -3,8 +3,10 @@ import React from 'react'
 import { Menu, Filter, Bell, Search, User, Plus } from 'lucide-react'
 import RincovitchLogo from '../RincovitchLogo'
 import { useApp } from '../context/AppContext'
+import { useAuth } from '../context/AuthContext'
 
 const TopBar = () => {
+  const { user } = useAuth();
   const {
     sidebarCollapsed, setSidebarCollapsed,
     mobileSidebarOpen, setMobileSidebarOpen,
@@ -93,8 +95,12 @@ const TopBar = () => {
                 <User size={18} />
               </div>
               <div className="text-left hidden sm:block">
-                <p className="text-[10px] font-black text-[var(--text-main)] leading-none">ADMIN</p>
-                <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Superuser</p>
+                <p className="text-[10px] font-black text-[var(--text-main)] leading-none uppercase">
+                  {user?.name || user?.displayName || 'USER'}
+                </p>
+                <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+                  {user?.role || user?.team || 'Guest'}
+                </p>
               </div>
             </button>
           </div>

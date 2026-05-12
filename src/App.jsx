@@ -7,12 +7,14 @@ import * as XLSX from 'xlsx'
 
 // Context
 import { useApp } from './context/AppContext'
+import { useAuth } from './context/AuthContext'
 
 // Components
 import WeeklyReport from './WeeklyReport'
 import CSVProcessor from './CSVProcessor'
 import CelestialBackground from './CelestialBackground'
 import Preloader from './Preloader'
+import Login from './components/Login'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import AnnualLeave from './components/AnnualLeave'
@@ -43,7 +45,14 @@ function App() {
     handleAddTask, deleteRow, moveRow, updateStatus, updateDayTime, updateMarkup, bulkUpdateMarkup
   } = useApp();
 
+  const { user, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true)
+
+  if (authLoading) return null;
+
+  if (!user) {
+    return <Login />;
+  }
 
   const exportExcel = async () => {
     if (reportData.length === 0) return
