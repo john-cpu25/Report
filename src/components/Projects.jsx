@@ -229,8 +229,11 @@ const Projects = () => {
 
                     {/* Bottom: Colored Details Area (1/3 height) - High Breathing Room Padding */}
                     <div 
-                      className="h-1/3 p-[20px] flex flex-col gap-[10px] text-white overflow-hidden relative"
-                      style={{ backgroundColor: project.color || '#1e293b' }}
+                      className="h-1/3 flex flex-col gap-[10px] text-white overflow-hidden relative"
+                      style={{ 
+                        backgroundColor: project.color || '#1e293b',
+                        padding: '20px'
+                      }}
                     >
                       <div className="flex gap-[50px] items-start leading-none">
                         <span className="w-24 text-[11px] font-black uppercase shrink-0">NAME :</span>
