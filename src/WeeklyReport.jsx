@@ -227,13 +227,9 @@ const WeeklyReport = ({ exportExcel }) => {
   }
 
   return (
-    <div className="relative min-h-screen">
-      {/* Sidebar Overlay */}
-      <AnimatePresence>
-      </AnimatePresence>
-
-      <div className="w-full mx-auto px-4 md:px-6 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div className="relative min-h-screen p-[10px]">
+      <div className="w-full mx-auto pb-[10px]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start">
 
 
         {/* Sidebar Form (Integrated in Grid on Desktop, Slider on Tablet/Mobile) */}
@@ -248,290 +244,235 @@ const WeeklyReport = ({ exportExcel }) => {
               className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[55] lg:hidden"
             />
           )}
-          {isSidebarOpen && (
             <motion.aside 
               key="entry-form-aside"
               initial={{ x: -400, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -400, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-20 bottom-0 w-[320px] lg:w-[360px] z-[51] p-4 lg:p-6 overflow-y-auto custom-scrollbar bg-slate-950/80 backdrop-blur-2xl border-r border-white/10 shadow-[20px_0_50px_rgba(0,0,0,0.5)]"
+              className="fixed left-0 top-[80px] bottom-0 w-[320px] lg:w-[360px] z-[51] p-[10px] overflow-y-auto custom-scrollbar bg-slate-950/90 backdrop-blur-2xl border-r border-white/10 shadow-2xl"
               style={{ 
                 left: typeof window !== 'undefined' && window.innerWidth >= 1024 
-                  ? (sidebarCollapsed ? 72 : 260) 
+                  ? (sidebarCollapsed ? 100 : 260) 
                   : 0 
               }}
             >
-              <div className="p-1 h-full">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                <h2 className="text-lg font-black text-[var(--text-contrast)] tracking-tight uppercase">Entry Form</h2>
-              </div>
-              <button 
-                type="button"
-                onClick={() => setShowAddProject(!showAddProject)}
-                className="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg text-indigo-400 transition-all"
-                title="Add New Project"
-              >
-                <Plus size={18} />
-              </button>
-            </div>
-            
-            {showAddProject && (
-              <motion.div 
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                className="mb-6 p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/10 space-y-3"
-              >
-                <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Add New Project</p>
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    className="input bg-slate-950/60 text-[11px] h-9" 
-                    placeholder="Project Name..."
-                    value={newProjectName}
-                    onChange={e => setNewProjectName(e.target.value.toUpperCase())}
-                  />
+              <div className="flex flex-col gap-[10px]">
+                <div className="flex items-center justify-between p-[10px] bg-[var(--bg-card)] rounded-[8px] border border-[var(--border)] m-[10px]">
+                  <div className="flex items-center gap-[10px]">
+                    <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+                    <h2 className="text-[24px] font-black text-[var(--text-main)] tracking-tight uppercase">Entry Form</h2>
+                  </div>
                   <button 
                     type="button"
-                    onClick={() => {
-                      if (newProjectName) {
-                        addCustomProject(newProjectName)
-                        setFormData({...formData, project: newProjectName})
-                        setNewProjectName('')
-                        setShowAddProject(false)
-                      }
-                    }}
-                    className="px-3 bg-indigo-500 rounded-lg text-white font-bold text-xs"
+                    onClick={() => setShowAddProject(!showAddProject)}
+                    className="p-[10px] bg-indigo-500/10 hover:bg-indigo-500/20 rounded-[8px] text-indigo-400 transition-all"
                   >
-                    ADD
+                    <Plus size={18} />
                   </button>
                 </div>
-              </motion.div>
-            )}
-            
-            <form onSubmit={(e) => { handleAddTask(e); setIsSidebarOpen(false); }} className="space-y-4">
-              <div className="space-y-2">
-                <label>Project Name</label>
-                <select 
-                  className="input bg-[var(--bg-surface)] border-[var(--border)] text-xs font-bold text-[var(--text-main)]"
-                  value={formData.project}
-                  onChange={e => setFormData({...formData, project: e.target.value})}
-                  required
-                >
-                  <option value="" disabled className="bg-[var(--bg-dark)]">Select Project...</option>
-                  {allProjects.map(p => <option key={p} value={p} className="bg-[var(--bg-dark)]">{p}</option>)}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label>Floor / Level</label>
-                  <label className="flex items-center gap-2 cursor-pointer !mb-0">
-                    <input 
-                      type="checkbox" 
-                      className="w-3.5 h-3.5 rounded border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
-                      checked={formData.showLevel}
-                      onChange={e => setFormData({...formData, showLevel: e.target.checked, level: e.target.checked ? formData.level : ''})}
-                    />
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Show</span>
-                  </label>
-                </div>
-                {formData.showLevel && (
-                  <input 
-                    type="text" className="input bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-main)]" placeholder="e.g. 1, 12, P1..."
-                    value={formData.level}
-                    onChange={e => setFormData({...formData, level: e.target.value})}
-                    required={formData.showLevel}
-                  />
-                )}
-              </div>
-              <div className="space-y-3">
-                <label>Standard Workflow</label>
-                <div className="flex items-center justify-center gap-6 mb-4">
-                  {[
-                    { id: 'STR MODELING TEAM', img: '/Report/assets/logos/str.png', color: 'indigo' },
-                    { id: 'PT & REO TEAM', img: '/Report/assets/logos/pt.png', color: 'orange' },
-                    { id: 'MTO TEAM', img: '/Report/assets/logos/mto.png', color: 'violet' }
-                  ].map(team => (
-                    <button
-                      key={team.id}
-                      type="button"
-                      onClick={() => setFormData({...formData, team: team.id, tasks: []})}
-                      className={`p-1 rounded-xl transition-all duration-500 relative group/team ${
-                        formData.team === team.id 
-                          ? `ring-2 ring-${team.color}-500 bg-${team.color}-500/10 shadow-lg shadow-${team.color}-500/20 scale-110 z-10` 
-                          : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:bg-white/5'
-                      }`}
-                      title={team.id}
-                    >
-                      <img src={team.img} alt={team.id} className="w-8 h-8 rounded-lg object-contain shadow-xl" />
-                      {formData.team === team.id && (
-                        <motion.div 
-                          layoutId="team-indicator-sidebar"
-                          className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-${team.color}-500 shadow-[0_0_8px_#6366f1]`}
-                        />
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {/* Column 1 */}
-                  <div className="space-y-2">
-                    {currentWorkflow.col1.map(t => (
-                      <label key={t} className="flex items-center gap-2 cursor-pointer group py-0.5">
-                        <input 
-                          type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer shrink-0"
-                          checked={formData.tasks.includes(t)}
-                          onChange={e => {
-                            const newTasks = e.target.checked 
-                              ? [...formData.tasks, t]
-                              : formData.tasks.filter(x => x !== t)
-                            setFormData({...formData, tasks: newTasks})
-                          }}
-                        />
-                        <span className="text-[10px] font-medium text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-wider leading-none">{t}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {/* Column 2 */}
-                  <div className="space-y-2">
-                    {currentWorkflow.col2.map(t => (
-                      <label key={t} className="flex items-center gap-2 cursor-pointer group py-0.5">
-                        <input 
-                          type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer shrink-0"
-                          checked={formData.tasks.includes(t)}
-                          onChange={e => {
-                            const newTasks = e.target.checked 
-                              ? [...formData.tasks, t]
-                              : formData.tasks.filter(x => x !== t)
-                            setFormData({...formData, tasks: newTasks})
-                          }}
-                        />
-                        <span className="text-[10px] font-medium text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-wider leading-none">{t}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {/* Column 3 */}
-                  <div className="space-y-2">
-                    {currentWorkflow.col3.map(t => (
-                      <label key={t} className="flex items-center gap-2 cursor-pointer group py-0.5">
-                        <input 
-                          type="checkbox" className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 transition-all cursor-pointer shrink-0"
-                          checked={formData.tasks.includes(t)}
-                          onChange={e => {
-                            const newTasks = e.target.checked 
-                              ? [...formData.tasks, t]
-                              : formData.tasks.filter(x => x !== t)
-                            setFormData({...formData, tasks: newTasks})
-                          }}
-                        />
-                        <span className="text-[10px] font-medium text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-wider leading-none">{t}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label>Additional Note</label>
-                <input 
-                  type="text" className="input bg-slate-950/40 border-white/10" placeholder="Custom comments..."
-                  value={formData.note}
-                  onChange={e => setFormData({...formData, note: e.target.value})}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label>Report Date</label>
-                  <input 
-                    type="date" className="input bg-slate-950/40 border-white/10 text-xs p-2.5 min-h-[42px] appearance-none"
-                    value={selectedDate}
-                    onChange={e => setSelectedDate(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label>Day</label>
-                  <input 
-                    type="text" className="input bg-slate-950/40 border-white/10 text-xs font-black p-2.5 min-h-[42px] opacity-60 cursor-not-allowed uppercase tracking-wider"
-                    value={formData.day}
-                    readOnly
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label>Status</label>
-                  <select 
-                    className="input bg-slate-950/40 border-white/10 text-[10px] font-bold p-2"
-                    value={formData.status}
-                    onChange={e => setFormData({...formData, status: e.target.value})}
+                
+                {showAddProject && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    className="p-[10px] bg-indigo-500/5 rounded-[8px] border border-indigo-500/10 flex flex-col gap-[10px] m-[10px]"
                   >
-                    {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANNING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label>ETA Time</label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {[
-                      { mode: 'MO', label: 'MO' },
-                      { mode: 'AF', label: 'AF' },
-                      { mode: 'CUSTOM', label: 'CUSTOM' },
-                    ].map(opt => (
-                      <button
-                        key={opt.mode}
+                    <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">New Project Protocol</p>
+                    <div className="flex gap-[10px]">
+                      <input 
+                        type="text" 
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none" 
+                        placeholder="PROJECT KEY..."
+                        value={newProjectName}
+                        onChange={e => setNewProjectName(e.target.value.toUpperCase())}
+                      />
+                      <button 
                         type="button"
-                        onClick={() => handleEtaMode(opt.mode)}
-                        className={`px-2 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all border ${
-                          formData.etaMode === opt.mode
-                            ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-lg shadow-indigo-500/10'
-                            : 'bg-slate-950/40 text-slate-500 border-white/5 hover:border-white/15 hover:text-slate-300'
-                        }`}
+                        onClick={() => {
+                          if (newProjectName) {
+                            addCustomProject(newProjectName)
+                            setFormData({...formData, project: newProjectName})
+                            setNewProjectName('')
+                            setShowAddProject(false)
+                          }
+                        }}
+                        className="px-[15px] bg-indigo-500 rounded-[8px] text-white font-black text-[12px] uppercase"
                       >
-                        {opt.label}
+                        ADD
                       </button>
-                    ))}
+                    </div>
+                  </motion.div>
+                )}
+            
+                <form onSubmit={(e) => { handleAddTask(e); setIsSidebarOpen(false); }} className="flex flex-col gap-[10px] p-[10px]">
+                  <div className="flex flex-col gap-[5px]">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Project Portfolio</label>
+                    <select 
+                      className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none"
+                      value={formData.project}
+                      onChange={e => setFormData({...formData, project: e.target.value})}
+                      required
+                    >
+                      <option value="" disabled>Select Project...</option>
+                      {allProjects.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
                   </div>
-                  {(formData.etaMode === 'CUSTOM' || formData.etaMode === 'OVERTIME') && (
-                    <input 
-                      type="time" 
-                      className={`input bg-slate-950/40 border-white/10 font-bold p-2 mt-1.5 text-xs ${
-                        formData.etaMode === 'OVERTIME' ? 'border-rose-500/20 text-rose-300' : ''
-                      }`}
-                      value={formData.eta}
-                      min={formData.etaMode === 'OVERTIME' ? '18:00' : undefined}
-                      onChange={e => setFormData({...formData, eta: e.target.value})}
-                    />
-                  )}
-                </div>
-              </div>
 
-              <button type="submit" className="btn btn-primary w-full mt-4 py-3 text-xs tracking-widest shadow-xl">
-                SUBMIT TO LOG
-              </button>
-              <button type="button" onClick={exportExcel} className="btn w-full mt-2 py-3 text-xs tracking-widest shadow-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white flex justify-center items-center gap-2 border border-indigo-500/20 transition-all">
-                <FileSpreadsheet size={16} />
-                EXPORT FINAL XLSX
-              </button>
-              <button 
-                type="button" 
-                onClick={() => setShowBatchModal(true)} 
-                className="btn w-full mt-2 py-3 text-xs tracking-widest shadow-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 hover:text-white flex justify-center items-center gap-2 border border-orange-500/20 transition-all"
-              >
-                <Layout size={16} />
-                BATCH ADD TASKS
-              </button>
-            </form>
+                  <div className="flex flex-col gap-[5px]">
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Level / Zone</label>
+                      <label className="flex items-center gap-[10px] cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 rounded-[4px] border border-[var(--border)] bg-[var(--bg-surface)] text-indigo-500"
+                          checked={formData.showLevel}
+                          onChange={e => setFormData({...formData, showLevel: e.target.checked, level: e.target.checked ? formData.level : ''})}
+                        />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Visible</span>
+                      </label>
+                    </div>
+                    {formData.showLevel && (
+                      <input 
+                        type="text" 
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none" 
+                        placeholder="e.g. L12, P1..."
+                        value={formData.level}
+                        onChange={e => setFormData({...formData, level: e.target.value})}
+                        required={formData.showLevel}
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)]">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Workflow Engine</label>
+                    <div className="flex items-center justify-center gap-[15px] py-[5px]">
+                      {[
+                        { id: 'STR MODELING TEAM', img: '/Report/assets/logos/str.png', color: 'indigo' },
+                        { id: 'PT & REO TEAM', img: '/Report/assets/logos/pt.png', color: 'orange' },
+                        { id: 'MTO TEAM', img: '/Report/assets/logos/mto.png', color: 'violet' }
+                      ].map(team => (
+                        <button
+                          key={team.id}
+                          type="button"
+                          onClick={() => setFormData({...formData, team: team.id, tasks: []})}
+                          className={`p-[5px] rounded-[8px] transition-all relative ${
+                            formData.team === team.id 
+                              ? `ring-2 ring-indigo-500 bg-indigo-500/10 scale-110` 
+                              : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0'
+                          }`}
+                        >
+                          <img src={team.img} alt={team.id} className="w-8 h-8 rounded-[4px] object-contain" />
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-[5px]">
+                      {Object.values(currentWorkflow).flat().map(t => (
+                        <label key={t} className="flex items-center gap-[5px] cursor-pointer p-[5px] hover:bg-white/5 rounded-[4px] transition-all">
+                          <input 
+                            type="checkbox" 
+                            className="w-4 h-4 rounded-[4px] border border-[var(--border)] bg-[var(--bg-dark)] text-indigo-500"
+                            checked={formData.tasks.includes(t)}
+                            onChange={e => {
+                              const newTasks = e.target.checked 
+                                ? [...formData.tasks, t]
+                                : formData.tasks.filter(x => x !== t)
+                              setFormData({...formData, tasks: newTasks})
+                            }}
+                          />
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter truncate">{t}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-[5px]">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Additional Note</label>
+                    <input 
+                      type="text" 
+                      className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none" 
+                      placeholder="CUSTOM COMMENTS..."
+                      value={formData.note}
+                      onChange={e => setFormData({...formData, note: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-[10px]">
+                    <div className="flex flex-col gap-[5px]">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Report Date</label>
+                      <input 
+                        type="date" 
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[12px] font-bold text-white outline-none"
+                        value={selectedDate}
+                        onChange={e => setSelectedDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-[5px]">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Status</label>
+                      <select 
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[12px] font-bold text-white outline-none"
+                        value={formData.status}
+                        onChange={e => setFormData({...formData, status: e.target.value})}
+                      >
+                        {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-[5px]">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">ETA Protocol</label>
+                    <div className="grid grid-cols-3 gap-[5px]">
+                      {['MO', 'AF', 'CUSTOM'].map(opt => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => handleEtaMode(opt)}
+                          className={`py-[10px] rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all border ${
+                            formData.etaMode === opt
+                              ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
+                              : 'bg-[var(--bg-surface)] text-slate-500 border-[var(--border)] hover:border-white/20'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                    {(formData.etaMode === 'CUSTOM') && (
+                      <input 
+                        type="time" 
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none mt-[5px]"
+                        value={formData.eta}
+                        onChange={e => setFormData({...formData, eta: e.target.value})}
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-[10px] pt-[10px]">
+                    <button type="submit" className="w-full py-[15px] bg-indigo-600 hover:bg-indigo-500 text-white rounded-[8px] text-[14px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all">
+                      SUBMIT TO LOG
+                    </button>
+                    <div className="grid grid-cols-2 gap-[10px]">
+                      <button type="button" onClick={exportExcel} className="flex items-center justify-center gap-[10px] py-[10px] bg-white/5 hover:bg-white/10 text-slate-300 rounded-[8px] text-[10px] font-black uppercase border border-white/10 transition-all">
+                        <FileSpreadsheet size={14} /> EXPORT
+                      </button>
+                      <button type="button" onClick={() => setShowBatchModal(true)} className="flex items-center justify-center gap-[10px] py-[10px] bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-[8px] text-[10px] font-black uppercase border border-orange-500/20 transition-all">
+                        <Layout size={14} /> BATCH ADD
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </motion.aside>
             </div>
           </motion.aside>
           )}
         </AnimatePresence>
 
         {/* Main Table */}
-        <div className="lg:col-span-9 space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-2xl border border-white/5 w-fit">
+        <div className="lg:col-span-9 flex flex-col gap-[10px]">
+          <div className="flex items-center justify-between gap-[10px] p-[10px]">
+            <div className="flex items-center gap-[10px] bg-slate-900/50 p-[10px] rounded-[8px] border border-white/5 w-fit shadow-inner">
               {[
                 { id: 'STR MODELING TEAM', img: '/Report/assets/logos/str.png', color: 'indigo' },
                 { id: 'PT & REO TEAM', img: '/Report/assets/logos/pt.png', color: 'orange' },
@@ -540,42 +481,36 @@ const WeeklyReport = ({ exportExcel }) => {
                 <button 
                   key={`filter-${team.id}`}
                   onClick={() => setFormData({...formData, team: team.id})}
-                  className={`p-1 rounded-xl transition-all duration-500 relative group/btn ${
+                  className={`p-[5px] rounded-[8px] transition-all duration-500 relative group/btn ${
                     formData.team === team.id 
-                      ? `ring-2 ring-${team.color}-500 bg-${team.color}-500/10 shadow-lg shadow-${team.color}-500/20 scale-110 z-10` 
-                      : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:bg-white/5 hover:scale-105'
+                      ? `ring-2 ring-indigo-500 bg-indigo-500/10 scale-110 shadow-lg shadow-indigo-500/20` 
+                      : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105'
                   }`}
                   title={team.id}
                 >
-                  <img src={team.img} alt={team.id} className="w-8 h-8 rounded-lg object-contain shadow-xl" />
-                  {formData.team === team.id && (
-                    <motion.div 
-                      layoutId="team-indicator-main"
-                      className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-${team.color}-500 shadow-[0_0_12px_#6366f1]`}
-                    />
-                  )}
+                  <img src={team.img} alt={team.id} className="w-8 h-8 rounded-[4px] object-contain" />
                 </button>
               ))}
             </div>
 
             {showProjectGroups && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-[10px] p-[10px]">
                 <button 
                   onClick={expandAll}
-                  className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/5 transition-all"
+                  className="px-[15px] py-[10px] bg-white/5 hover:bg-white/10 rounded-[8px] text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/5 transition-all"
                 >
                   Expand All
                 </button>
                 <button 
                   onClick={collapseAll}
-                  className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/5 transition-all"
+                  className="px-[15px] py-[10px] bg-white/5 hover:bg-white/10 rounded-[8px] text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/5 transition-all"
                 >
                   Collapse All
                 </button>
                 {focusedProject && (
                   <button 
                     onClick={() => setFocusedProject(null)}
-                    className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl text-[10px] font-black text-rose-400 uppercase tracking-widest border border-rose-500/20 transition-all flex items-center gap-2"
+                    className="px-[15px] py-[10px] bg-rose-500/10 hover:bg-rose-500/20 rounded-[8px] text-[10px] font-black text-rose-400 uppercase tracking-widest border border-rose-500/20 transition-all flex items-center gap-[10px]"
                   >
                     <X size={14} />
                     Reset Focus
@@ -585,15 +520,15 @@ const WeeklyReport = ({ exportExcel }) => {
             )}
           </div>
 
-          <div className="glass-panel overflow-hidden border-[var(--border)] shadow-2xl bg-[var(--bg-card)]">
+          <div className="bg-[var(--bg-card)] rounded-[8px] border border-[var(--border)] shadow-2xl overflow-hidden m-[10px]">
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-[var(--bg-header)] text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] border-b border-[var(--border)]">
-                    <th className="px-4 py-4 w-12">
+                    <th className="p-[10px] w-12 text-center">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 rounded border-white/10 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
+                        className="w-4 h-4 rounded-[4px] border border-[var(--border)] bg-slate-900 text-indigo-500 focus:ring-0 cursor-pointer"
                         checked={selectedRows.size === filteredReportData.length && filteredReportData.length > 0}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -604,34 +539,34 @@ const WeeklyReport = ({ exportExcel }) => {
                         }}
                       />
                     </th>
-                    <th className="px-4 py-4 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('project')}>
-                      <div className="flex items-center gap-2">
+                    <th className="p-[10px] cursor-pointer hover:bg-white/[0.05] transition-all group" onClick={() => handleSort('project')}>
+                      <div className="flex items-center gap-[10px]">
                         Project
                         <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
                           {sortConfig.key === 'project' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover:opacity-50"/>}
                         </div>
                       </div>
                     </th>
-                    <th className="px-4 py-4 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('task')}>
-                      <div className="flex items-center gap-2">
-                        Task Details
+                    <th className="p-[10px] cursor-pointer hover:bg-white/[0.05] transition-all group" onClick={() => handleSort('task')}>
+                      <div className="flex items-center gap-[10px]">
+                        Task Analysis
                         <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
                           {sortConfig.key === 'task' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover:opacity-50"/>}
                         </div>
                       </div>
                     </th>
-                    <th className="px-4 py-4 cursor-pointer hover:bg-white/[0.05] transition-colors group" onClick={() => handleSort('markupTime')}>
-                      <div className="flex items-center gap-2">
-                        Markup Time
+                    <th className="p-[10px] cursor-pointer hover:bg-white/[0.05] transition-all group" onClick={() => handleSort('markupTime')}>
+                      <div className="flex items-center gap-[10px]">
+                        Timestamp
                         <div className="text-slate-600 group-hover:text-slate-400 transition-colors">
                           {sortConfig.key === 'markupTime' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover:opacity-50"/>}
                         </div>
                       </div>
                     </th>
-                    <th className="px-4 py-4 relative">
-                      <div className="flex items-center justify-between gap-2">
+                    <th className="p-[10px] relative">
+                      <div className="flex items-center justify-between gap-[10px]">
                         <div 
-                          className="flex items-center gap-2 cursor-pointer hover:text-slate-300 transition-colors group/header"
+                          className="flex items-center gap-[10px] cursor-pointer hover:text-slate-300 transition-colors group/header"
                           onClick={() => handleSort('status')}
                         >
                           Status
@@ -639,118 +574,23 @@ const WeeklyReport = ({ exportExcel }) => {
                             {sortConfig.key === 'status' ? (sortConfig.direction === 'asc' ? <ArrowUp size={12}/> : <ArrowDown size={12}/>) : <ArrowUp size={12} className="opacity-0 group-hover/header:opacity-50"/>}
                           </div>
                         </div>
-                        
-                        {/* Status Filter Trigger */}
-                        <div className="relative">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowStatusFilter(!showStatusFilter);
-                            }}
-                            className={`p-1.5 rounded-md transition-all ${
-                              visibleStatuses.length < ALL_STATUSES.length 
-                                ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]' 
-                                : 'text-slate-600 hover:text-slate-400 hover:bg-white/5'
-                            }`}
-                            title="Filter Statuses"
-                          >
-                            <Filter size={14} fill={visibleStatuses.length < ALL_STATUSES.length ? "currentColor" : "none"} />
-                          </button>
-
-                          <AnimatePresence>
-                            {showStatusFilter && (
-                              <>
-                                {/* Click-away overlay */}
-                                <div 
-                                  className="fixed inset-0 z-[60]" 
-                                  onClick={() => setShowStatusFilter(false)}
-                                />
-                                <motion.div
-                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                  className="absolute right-0 top-full mt-2 w-56 z-[70] glass-panel bg-slate-900/95 backdrop-blur-xl border-white/10 shadow-2xl p-2"
-                                >
-                                  <div className="p-2 border-b border-white/5 mb-2 flex items-center justify-between">
-                                    <span className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Filter Status</span>
-                                    <div className="flex gap-2">
-                                      <button 
-                                        onClick={() => setVisibleStatuses(ALL_STATUSES)}
-                                        className="text-xs font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest"
-                                      >
-                                        All
-                                      </button>
-                                      <button 
-                                        onClick={() => setVisibleStatuses([])}
-                                        className="text-xs font-black text-slate-500 hover:text-slate-400 uppercase tracking-widest"
-                                      >
-                                        None
-                                      </button>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="space-y-1 max-h-[300px] overflow-y-auto custom-scrollbar p-1">
-                                    {ALL_STATUSES.map(s => {
-                                      const isSelected = visibleStatuses.includes(s);
-                                      const colors = getStatusColor(s);
-                                      return (
-                                        <label 
-                                          key={s} 
-                                          className={`flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer transition-all ${
-                                            isSelected ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-transparent border border-transparent hover:bg-white/5'
-                                          }`}
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            if (isSelected) {
-                                              setVisibleStatuses(visibleStatuses.filter(x => x !== s));
-                                            } else {
-                                              setVisibleStatuses([...visibleStatuses, s]);
-                                            }
-                                          }}
-                                        >
-                                          <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${colors.bg.replace('/10', '')} shadow-[0_0_8px_currentColor]`} />
-                                            <span className={`text-[11px] font-bold uppercase tracking-widest truncate ${isSelected ? 'text-white' : 'text-slate-400'}`}>
-                                              {s}
-                                            </span>
-                                          </div>
-                                          
-                                          <div className={`w-8 h-4 rounded-full relative transition-all duration-300 flex-shrink-0 ${
-                                            isSelected ? 'bg-indigo-500' : 'bg-slate-800'
-                                          }`}>
-                                            <div className={`absolute top-0.5 bottom-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-300 ${
-                                              isSelected ? 'left-[18px]' : 'left-0.5'
-                                            }`} />
-                                          </div>
-                                        </label>
-                                      );
-                                    })}
-                                  </div>
-                                  
-                                  <div className="mt-2 p-2 border-t border-white/5 flex justify-end">
-                                    <button 
-                                      onClick={() => setShowStatusFilter(false)}
-                                      className="px-3 py-1.5 bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-md hover:bg-indigo-600 transition-all"
-                                    >
-                                      Apply Filter
-                                    </button>
-                                  </div>
-                                </motion.div>
-                              </>
-                            )}
-                          </AnimatePresence>
-                        </div>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setShowStatusFilter(!showStatusFilter); }}
+                          className={`p-[5px] rounded-[4px] transition-all ${visibleStatuses.length < ALL_STATUSES.length ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:text-slate-400'}`}
+                        >
+                          <Filter size={12} />
+                        </button>
                       </div>
                     </th>
                     {DAYS_OF_WEEK.map((d, i) => (
-                      <th key={d} className="px-4 py-4 text-center border-l border-[var(--border)] bg-white/[0.01]">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[var(--text-main)] font-black text-[10px] uppercase tracking-wider">{d === 'Wednesday' ? 'We' : d.substring(0, 2)}</span>
-                          <span className="text-[9px] font-bold text-[var(--text-muted)] tracking-tight opacity-50">{weekDates[i]}</span>
+                      <th key={d} className="p-[10px] text-center border-l border-[var(--border)]">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase tracking-wider">{d.substring(0, 2)}</span>
+                          <span className="text-[9px] font-bold text-slate-500 opacity-50">{weekDates[i]}</span>
                         </div>
                       </th>
                     ))}
-                    <th className="px-4 py-4 text-center">Actions</th>
+                    <th className="p-[10px] text-center">CMD</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]">
@@ -762,49 +602,37 @@ const WeeklyReport = ({ exportExcel }) => {
                           <React.Fragment key={projectName}>
                             {/* Project Header Row */}
                             <tr 
-                              className={`sticky top-0 z-20 bg-[var(--table-sticky)] backdrop-blur-md border-y-2 border-indigo-500/20 cursor-pointer group/header hover:bg-indigo-500/5 transition-all ${focusedProject === projectName ? 'ring-1 ring-indigo-500 ring-inset' : ''}`}
-                              onClick={() => toggleCollapse(projectName)}
-                            >
-                              <td colSpan={9} className="p-0">
-                                <div className="flex items-center justify-between px-4 py-3">
-                                  <div className="flex items-center gap-4">
-                                    <motion.div 
-                                      animate={{ rotate: isCollapsed ? 0 : 90 }}
-                                      className="text-indigo-500"
-                                    >
-                                      <ArrowDown size={14} strokeWidth={3} />
-                                    </motion.div>
-                                    <div className="w-2 h-6 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.4)]"></div>
-                                    <div>
-                                      <div className="flex items-center gap-3">
-                                        <span className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-[0.3em] leading-none">{projectName}</span>
-                                        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-500 text-[10px] font-black rounded-md uppercase tracking-widest border border-indigo-500/30">
-                                          {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
-                                        </span>
+                                className={`sticky top-0 z-20 bg-[var(--table-sticky)] backdrop-blur-md border-y-2 border-indigo-500/20 cursor-pointer group/header hover:bg-indigo-500/5 transition-all ${focusedProject === projectName ? 'ring-1 ring-indigo-500 ring-inset' : ''}`}
+                                onClick={() => toggleCollapse(projectName)}
+                              >
+                                <td colSpan={9} className="p-0">
+                                  <div className="flex items-center justify-between p-[10px]">
+                                    <div className="flex items-center gap-[10px]">
+                                      <motion.div animate={{ rotate: isCollapsed ? 0 : 90 }} className="text-indigo-500">
+                                        <ArrowDown size={14} />
+                                      </motion.div>
+                                      <div className="w-1.5 h-6 bg-indigo-500 rounded-full shadow-lg"></div>
+                                      <div className="flex flex-col">
+                                        <div className="flex items-center gap-[10px]">
+                                          <span className="text-[14px] font-black text-white uppercase tracking-[0.2em] leading-none">{projectName}</span>
+                                          <span className="px-[10px] py-[2px] bg-indigo-500/20 text-indigo-400 text-[10px] font-black rounded-[4px] uppercase border border-indigo-500/30">
+                                            {tasks.length} UNIT{tasks.length > 1 ? 'S' : ''}
+                                          </span>
+                                        </div>
                                       </div>
-                                      <p className="text-[10px] font-bold text-indigo-500/60 uppercase tracking-widest mt-1 opacity-60">Project Milestone Group</p>
+                                    </div>
+                                    <div className="flex items-center gap-[10px]">
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); setFocusedProject(focusedProject === projectName ? null : projectName); }}
+                                        className={`px-[15px] py-[10px] rounded-[8px] text-[10px] font-black uppercase tracking-widest border transition-all ${focusedProject === projectName ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-white/5 text-slate-500 border-white/5 hover:border-indigo-500/30 hover:text-indigo-400'}`}
+                                      >
+                                        {focusedProject === projectName ? 'EXIT FOCUS' : 'FOCUS'}
+                                      </button>
+                                      <Filter size={14} className={`transition-colors ${isCollapsed ? 'text-slate-600' : 'text-indigo-400'}`} />
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-4">
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setFocusedProject(focusedProject === projectName ? null : projectName)
-                                      }}
-                                      className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all border ${
-                                        focusedProject === projectName 
-                                          ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20' 
-                                          : 'bg-white/5 text-slate-400 border-white/5 hover:border-indigo-500/30 hover:text-indigo-400'
-                                      }`}
-                                    >
-                                      {focusedProject === projectName ? 'Exit Focus' : 'Focus Project'}
-                                    </button>
-                                    <div className="h-[1px] w-16 bg-gradient-to-r from-indigo-500/50 to-transparent"></div>
-                                    <Filter size={14} className={`transition-colors ${isCollapsed ? 'text-slate-600' : 'text-indigo-400'}`} />
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
+                                </td>
+                              </tr>
                             
                             {/* Task Rows */}
                             {!isCollapsed && tasks.map((row, index) => (
@@ -816,10 +644,10 @@ const WeeklyReport = ({ exportExcel }) => {
                                 className="hover:bg-[var(--bg-header)] transition-all group border-b border-[var(--border)]"
                                 style={{ backgroundColor: index % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}
                               >
-                                <td className="px-3 py-3">
+                                <td className="p-[10px] text-center">
                                   <input 
                                     type="checkbox" 
-                                    className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-surface)] text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
+                                    className="w-4 h-4 rounded-[4px] border border-[var(--border)] bg-[var(--bg-surface)] text-indigo-500 focus:ring-0 cursor-pointer"
                                     checked={selectedRows.has(row.id)}
                                     onChange={(e) => {
                                       const next = new Set(selectedRows)
@@ -829,13 +657,13 @@ const WeeklyReport = ({ exportExcel }) => {
                                     }}
                                   />
                                 </td>
-                                <td className="px-3 py-3">
-                                  <span className="text-indigo-400 text-[10px] font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase">{row.project}</span>
+                                <td className="p-[10px]">
+                                  <span className="text-indigo-400 text-[10px] font-black uppercase tracking-tighter">{row.project}</span>
                                 </td>
-                                <td className="px-3 py-3">
-                                  <div className="text-[10px] font-bold text-[var(--text-main)] tracking-tight leading-relaxed">{row.task}</div>
+                                <td className="p-[10px]">
+                                  <div className="text-[10px] font-bold text-white tracking-tight uppercase leading-relaxed">{row.task}</div>
                                 </td>
-                                <td className="px-3 py-3">
+                                <td className="p-[10px]">
                                   <MarkupCell 
                                     id={row.id}
                                     markupDate={row.markupDate}
@@ -849,55 +677,35 @@ const WeeklyReport = ({ exportExcel }) => {
                                     }}
                                   />
                                 </td>
-                                <td className="px-3 py-3">
+                                <td className="p-[10px]">
                                   <select 
-                                    className={`text-[10px] font-black py-1 px-2 rounded-lg border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${
-                                      row.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5' :
-                                      row.status === 'PENDING' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-slate-500/5' :
-                                      row.status === 'TMR' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20 shadow-orange-500/5' :
-                                      row.status === 'URGENT' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-rose-500/5' :
-                                      row.status === 'PLANNING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-amber-500/5' :
-                                      row.status === 'HIGH PRIORITY' ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-violet-500/5' :
-                                      row.status === 'ISSUE' ? 'bg-red-500/10 text-red-400 border border-red-500/20 shadow-red-500/5' :
-                                      'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-indigo-500/5'
-                                    }`}
+                                    className={`text-[10px] font-black py-[5px] px-[10px] rounded-[8px] border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${getStatusColor(row.status).bg} ${getStatusColor(row.status).text}`}
                                     value={row.status}
                                     onChange={(e) => updateStatus(row.id, e.target.value)}
                                   >
-                                    {['WIP', 'DONE', 'PENDING', 'TMR', 'PLANNING', 'URGENT', 'HIGH PRIORITY', 'ISSUE'].map(s => <option key={s} value={s}>{s}</option>)}
+                                    {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                                   </select>
                                 </td>
                                 {DAYS_OF_WEEK.map(d => {
                                   const isEditing = editingCell && editingCell.id === row.id && editingCell.day === d
                                   return (
-                                    <td key={d} className="px-2 py-2 text-center">
+                                    <td key={d} className="p-[5px] text-center">
                                       {isEditing ? (
                                         <input
                                           type="time"
-                                          className="bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-main)] text-[10px] font-bold p-1 w-20 mx-auto text-center rounded-lg"
+                                          className="bg-[var(--bg-surface)] border border-[var(--border)] text-white text-[10px] font-bold p-[5px] w-20 mx-auto text-center rounded-[8px] outline-none"
                                           defaultValue={row.days[d] || ''}
                                           autoFocus
-                                          onBlur={(e) => {
-                                            updateDayTime(row.id, d, e.target.value)
-                                            setEditingCell(null)
-                                          }}
+                                          onBlur={(e) => { updateDayTime(row.id, d, e.target.value); setEditingCell(null); }}
                                           onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                              updateDayTime(row.id, d, e.target.value)
-                                              setEditingCell(null)
-                                            }
-                                            if (e.key === 'Escape') setEditingCell(null)
+                                            if (e.key === 'Enter') { updateDayTime(row.id, d, e.target.value); setEditingCell(null); }
+                                            if (e.key === 'Escape') setEditingCell(null);
                                           }}
                                         />
                                       ) : (
                                         <span 
-                                          className={`text-[10px] font-black tracking-tight cursor-pointer px-2 py-0.5 rounded-md transition-all hover:bg-white/10 ${
-                                            row.days[d] 
-                                              ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20' 
-                                              : 'text-slate-600'
-                                          }`}
+                                          className={`text-[10px] font-black tracking-tighter cursor-pointer px-[10px] py-[5px] rounded-[8px] transition-all hover:bg-white/10 ${row.days[d] ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20' : 'text-slate-600'}`}
                                           onClick={() => setEditingCell({ id: row.id, day: d })}
-                                          title="Click to edit"
                                         >
                                           {row.days[d] || '—'}
                                         </span>
@@ -905,11 +713,11 @@ const WeeklyReport = ({ exportExcel }) => {
                                     </td>
                                   )
                                 })}
-                                <td className="p-4">
-                                  <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
-                                    <button onClick={() => moveRow(row.id, -1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowUp size={14} strokeWidth={3} /></button>
-                                    <button onClick={() => moveRow(row.id, 1)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-all"><ArrowDown size={14} strokeWidth={3} /></button>
-                                    <button onClick={() => deleteRow(row.id)} className="p-2 bg-rose-500/5 hover:bg-rose-500/20 rounded-lg text-rose-500/50 hover:text-rose-500 transition-all"><Trash2 size={14} strokeWidth={3} /></button>
+                                <td className="p-[10px]">
+                                  <div className="flex items-center justify-center gap-[5px] opacity-0 group-hover:opacity-100 transition-all">
+                                    <button onClick={() => moveRow(row.id, -1)} className="p-[10px] bg-white/5 hover:bg-indigo-500/20 rounded-[8px] text-slate-500 hover:text-indigo-400 transition-all"><ArrowUp size={12} /></button>
+                                    <button onClick={() => moveRow(row.id, 1)} className="p-[10px] bg-white/5 hover:bg-indigo-500/20 rounded-[8px] text-slate-500 hover:text-indigo-400 transition-all"><ArrowDown size={12} /></button>
+                                    <button onClick={() => deleteRow(row.id)} className="p-[10px] bg-rose-500/5 hover:bg-rose-500/20 rounded-[8px] text-rose-500/50 hover:text-rose-500 transition-all"><Trash2 size={12} /></button>
                                   </div>
                                 </td>
                               </motion.tr>
@@ -1181,12 +989,12 @@ const WeeklyReport = ({ exportExcel }) => {
               </div>
 
               {/* Workflow Automation Visual */}
-              <div className="pt-6 border-t border-white/5">
-                <div className="flex items-center gap-2 mb-4">
+              <div className="pt-[10px] border-t border-white/5 m-[10px]">
+                <div className="flex items-center gap-[10px] mb-[10px]">
                   <Zap size={14} className="text-yellow-400" />
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Workflow</h3>
                 </div>
-                <div className="bg-slate-950/40 rounded-2xl p-4 border border-white/5">
+                <div className="bg-slate-950/40 rounded-[8px] p-[10px] border border-white/5">
                   <WorkflowAnimation />
                 </div>
               </div>
@@ -1195,51 +1003,45 @@ const WeeklyReport = ({ exportExcel }) => {
       </div>
 
       {/* Bottom Dashboard / Project Distribution */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
-        <div className="glass-panel p-6 border-white/5 shadow-2xl lg:col-span-9 relative overflow-hidden">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] pb-[10px]">
+        <div className="bg-[var(--bg-card)] p-[10px] border border-[var(--border)] rounded-[8px] shadow-2xl lg:col-span-9 relative overflow-hidden m-[10px]">
           <KamehamehaAnimation />
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-6 bg-orange-500 rounded-full"></div>
-              <h2 className="text-sm font-black text-white tracking-tight uppercase">Workforce Distribution</h2>
+          <div className="relative z-10 p-[10px]">
+            <div className="flex items-center justify-between mb-[10px]">
+              <div className="flex items-center gap-[10px]">
+                <div className="w-1.5 h-6 bg-orange-500 rounded-full"></div>
+                <h2 className="text-[24px] font-black text-white tracking-tight uppercase italic">Workforce Distribution</h2>
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Weekly Analysis</span>
             </div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Weekly Overview</span>
-          </div>
-          
-          <div className="flex flex-wrap gap-4">
-            {Array.from(new Set(filteredReportData.map(r => r.project))).map((proj, i) => {
-              const count = filteredReportData.filter(r => r.project === proj).length
-              return (
-                <div key={proj} className="px-6 py-4 bg-[var(--bg-surface)] rounded-2xl border border-[var(--glass-border)] flex flex-col gap-1 hover:border-indigo-500/30 transition-all group">
-                  <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{proj}</span>
-                  <span className="text-2xl font-black text-[var(--text-contrast)] group-hover:text-indigo-500 transition-colors">{count} <span className="text-xs text-[var(--text-muted)] not-italic uppercase tracking-tight">tasks</span></span>
-                </div>
-              )
-            })}
-            {filteredReportData.length === 0 && <p className="text-slate-500 text-sm py-4">No data available for distribution analysis.</p>}
+            
+            <div className="flex flex-wrap gap-[10px]">
+              {Array.from(new Set(filteredReportData.map(r => r.project))).map((proj, i) => {
+                const count = filteredReportData.filter(r => r.project === proj).length
+                return (
+                  <div key={proj} className="px-[15px] py-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)] flex flex-col gap-[5px] hover:border-indigo-500/30 transition-all group">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{proj}</span>
+                    <span className="text-[24px] font-black text-white group-hover:text-indigo-400 transition-colors leading-none">{count} <span className="text-[10px] text-slate-600 not-italic uppercase">tasks</span></span>
+                  </div>
+                )
+              })}
+              {filteredReportData.length === 0 && <p className="text-slate-500 text-[14px] font-bold p-[10px]">Waiting for operational data...</p>}
+            </div>
           </div>
         </div>
-      </div>
 
-        <div className="glass-panel p-6 border-white/5 shadow-2xl bg-indigo-500/5 overflow-hidden relative group lg:col-span-3">
-          <div className="relative z-10">
-            <h3 className="text-sm font-black text-white uppercase mb-4">System Update</h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed mb-6">
+        <div className="bg-indigo-500/5 p-[10px] border border-indigo-500/20 rounded-[8px] shadow-2xl overflow-hidden relative group lg:col-span-3 m-[10px]">
+          <div className="relative z-10 p-[10px]">
+            <h3 className="text-[14px] font-black text-white uppercase mb-[10px] italic">System Update</h3>
+            <p className="text-[10px] text-slate-400 leading-relaxed mb-[15px] font-bold uppercase">
               The reporting system is now synced with the local database. Your progress is automatically saved to local storage.
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-indigo-500 rounded-xl text-white shadow-lg">
-                <FileSpreadsheet size={16} />
+                            <FileSpreadsheet size={16} />
               </div>
               <div>
-                <p className="text-[11px] font-black text-white">v2.1 Stable</p>
-                <p className="text-[10px] text-indigo-400 font-bold uppercase">Ready for export</p>
+                <p className="text-[12px] font-black text-white">v2.1 Stable</p>
+                <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Ready for export</p>
               </div>
             </div>
-          </div>
-          <div className="absolute -right-8 -bottom-8 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Layout size={160} />
           </div>
         </div>
       </section>
@@ -1247,282 +1049,108 @@ const WeeklyReport = ({ exportExcel }) => {
       {/* Batch Add Modal */}
       <AnimatePresence>
         {showBatchModal && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-[10px]">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowBatchModal(false)} className="absolute inset-0 bg-[#0B0F1A]/90 backdrop-blur-xl" />
               <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowBatchModal(false)}
-                className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
-              />
-              <motion.div 
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative w-full max-w-3xl glass-panel p-8 border-[var(--glass-border)] shadow-2xl bg-[var(--bg-dark)] overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="relative w-full max-w-3xl bg-[var(--bg-card)] p-[20px] rounded-[8px] border border-[var(--border)] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
               >
-                <div className="absolute -right-12 -top-12 p-24 opacity-[0.03] pointer-events-none">
-                  <Layout size={240} />
-                </div>
-
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6 relative z-10">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-orange-500/10 rounded-2xl text-orange-400 border border-orange-500/20">
+                <div className="flex items-center justify-between mb-[20px] relative z-10 p-[10px]">
+                  <div className="flex items-center gap-[15px]">
+                    <div className="p-[10px] bg-orange-500/10 rounded-[8px] text-orange-400 border border-orange-500/20">
                       <Layout size={24} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-white tracking-tight uppercase">Batch Add Tasks</h2>
-                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Power Tool — Create multiple rows instantly</p>
+                      <h2 className="text-[30px] font-black text-white tracking-tight uppercase italic leading-none">Batch Engine</h2>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-1">Mass Operational Deployment</p>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => setShowBatchModal(false)}
-                    className="p-2 hover:bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all"
-                  >
-                    <X size={24} />
-                  </button>
+                  <button onClick={() => setShowBatchModal(false)} className="p-[10px] text-slate-500 hover:text-white transition-all text-[24px]">✕</button>
                 </div>
 
-                <div className="space-y-5 relative z-10">
-                  {/* Row 1: Projects (Multi-select) */}
-                  <div className="space-y-3 p-4 bg-white/[0.03] rounded-2xl border border-white/5">
+                <div className="space-y-[15px] relative z-10 p-[10px]">
+                  {/* Row 1: Projects */}
+                  <div className="space-y-[10px] p-[10px] bg-white/[0.03] rounded-[8px] border border-white/5">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Projects</p>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          type="button"
-                          onClick={() => setBatchProjects([...allProjects])}
-                          className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-widest rounded-lg border border-indigo-500/20 transition-all"
-                        >
-                          All
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setBatchProjects([])}
-                          className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 text-xs font-black uppercase tracking-widest rounded-lg border border-white/5 transition-all"
-                        >
-                          Clear
-                        </button>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Target Portfolio</p>
+                      <div className="flex items-center gap-[10px]">
+                        <button type="button" onClick={() => setBatchProjects([...allProjects])} className="px-[10px] py-[5px] bg-indigo-500 text-white text-[10px] font-black uppercase rounded-[4px]">ALL</button>
+                        <button type="button" onClick={() => setBatchProjects([])} className="px-[10px] py-[5px] bg-white/5 text-slate-500 text-[10px] font-black uppercase rounded-[4px]">CLEAR</button>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar p-1">
+                    <div className="flex flex-wrap gap-[5px] max-h-32 overflow-y-auto custom-scrollbar">
                       {allProjects.map(p => {
                         const isSelected = batchProjects.includes(p)
                         return (
-                          <button
-                            key={p}
-                            type="button"
-                            onClick={() => {
-                              setBatchProjects(prev => 
-                                isSelected ? prev.filter(x => x !== p) : [...prev, p]
-                              )
-                            }}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all border ${
-                              isSelected
-                                ? 'bg-indigo-500/20 text-indigo-500 border-indigo-500/30'
-                                : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-[var(--text-main)]'
-                            }`}
-                          >
-                            {p}
-                          </button>
+                          <button key={p} type="button" onClick={() => setBatchProjects(prev => isSelected ? prev.filter(x => x !== p) : [...prev, p])} className={`px-[10px] py-[5px] rounded-[4px] text-[10px] font-black uppercase border transition-all ${isSelected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 text-slate-500 border-white/5'}`}>{p}</button>
                         )
                       })}
                     </div>
                   </div>
 
                   {/* Row 2: Levels */}
-                  <div className="space-y-2 p-4 bg-white/[0.03] rounded-2xl border border-white/5">
+                  <div className="space-y-[10px] p-[10px] bg-white/[0.03] rounded-[8px] border border-white/5">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Level / Floor (Multi-input)</p>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="w-3.5 h-3.5 rounded border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
-                          checked={batchLevelEnabled}
-                          onChange={e => { setBatchLevelEnabled(e.target.checked); if (!e.target.checked) setBatchLevelsText('') }}
-                        />
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Enable Multi-Level</span>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Level Mapping</p>
+                      <label className="flex items-center gap-[10px] cursor-pointer">
+                        <input type="checkbox" className="w-4 h-4 rounded-[4px] bg-slate-900 border-white/10" checked={batchLevelEnabled} onChange={e => { setBatchLevelEnabled(e.target.checked); if (!e.target.checked) setBatchLevelsText('') }} />
+                        <span className="text-[10px] font-black text-slate-500 uppercase">Multi-Level Mode</span>
                       </label>
                     </div>
-                    {batchLevelEnabled ? (
-                      <div className="space-y-2">
-                        <input 
-                          type="text" className="input bg-slate-950/60 border-white/10 w-full text-xs" 
-                          placeholder="Separate levels by comma: 1, 2, 3, Roof, B1..."
-                          value={batchLevelsText}
-                          onChange={e => setBatchLevelsText(e.target.value)}
-                        />
-                        <p className="text-xs text-slate-500">Example: 1, 2, 5, 10, Roof</p>
-                      </div>
-                    ) : (
-                      <div className="input bg-slate-950/30 border-white/5 text-slate-600 cursor-not-allowed flex items-center text-xs">Level Disabled (Tasks will be created with no level)</div>
+                    {batchLevelEnabled && (
+                      <input type="text" className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none" placeholder="1, 2, 3, Roof..." value={batchLevelsText} onChange={e => setBatchLevelsText(e.target.value)} />
                     )}
                   </div>
 
                   {/* Workflow Selection */}
-                  <div className="space-y-3 p-4 bg-white/[0.03] rounded-2xl border border-white/5">
+                  <div className="space-y-[10px] p-[10px] bg-white/[0.03] rounded-[8px] border border-white/5">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Standard Workflow</p>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          type="button"
-                          onClick={() => setBatchWorkflows([...currentWorkflow.col1, ...currentWorkflow.col2, ...currentWorkflow.col3])}
-                          className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-widest rounded-lg border border-indigo-500/20 transition-all"
-                        >
-                          Select All
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setBatchWorkflows([])}
-                          className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-400 text-xs font-black uppercase tracking-widest rounded-lg border border-white/5 transition-all"
-                        >
-                          Clear
-                        </button>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Work Process Matrix</p>
+                      <div className="flex items-center gap-[10px]">
+                        <button type="button" onClick={() => setBatchWorkflows([...currentWorkflow.col1, ...currentWorkflow.col2, ...currentWorkflow.col3])} className="px-[10px] py-[5px] bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase rounded-[4px]">ALL</button>
+                        <button type="button" onClick={() => setBatchWorkflows([])} className="px-[10px] py-[5px] bg-white/5 text-slate-500 text-[10px] font-black uppercase rounded-[4px]">CLEAR</button>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-[5px]">
                       {[...currentWorkflow.col1, ...currentWorkflow.col2, ...currentWorkflow.col3].map(wf => {
                         const isSelected = batchWorkflows.includes(wf)
                         return (
-                          <button
-                            key={wf}
-                            type="button"
-                            onClick={() => {
-                              setBatchWorkflows(prev => 
-                                isSelected ? prev.filter(x => x !== wf) : [...prev, wf]
-                              )
-                            }}
-                            className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
-                              isSelected
-                                ? 'bg-indigo-500/20 text-indigo-500 border-indigo-500/30 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/30'
-                                : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--glass-border)] hover:border-indigo-500/15 hover:text-[var(--text-main)]'
-                            }`}
-                          >
-                            {wf}
-                          </button>
+                          <button key={wf} type="button" onClick={() => setBatchWorkflows(prev => isSelected ? prev.filter(x => x !== wf) : [...prev, wf])} className={`px-[10px] py-[5px] rounded-[4px] text-[10px] font-black uppercase border transition-all ${isSelected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 text-slate-500 border-white/5'}`}>{wf}</button>
                         )
                       })}
                     </div>
-                    {batchWorkflows.length > 0 && (
-                      <p className="text-xs text-indigo-400/60 font-bold">
-                        Each task line × {batchWorkflows.length} workflow{batchWorkflows.length > 1 ? 's' : ''} = cross-product generation
-                      </p>
-                    )}
                   </div>
 
                   {/* Task Input */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Task Details (One per line)</label>
-                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border ${
-                        batchValidation.totalTasks > 0 
-                          ? 'text-orange-400 bg-orange-500/10 border-orange-500/20'
-                          : 'text-slate-600 bg-white/5 border-white/5'
-                      }`}>
-                        {batchValidation.totalTasks} task{batchValidation.totalTasks !== 1 ? 's' : ''} will be created
-                      </span>
+                  <div className="space-y-[10px]">
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Deployment Matrix (One per line)</label>
+                      <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-[10px] py-[2px] rounded-[4px] border border-orange-500/20">{batchValidation.totalTasks} UNITS</span>
                     </div>
                     <textarea 
-                      className="w-full h-40 bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-2xl p-6 text-sm font-medium text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all custom-scrollbar outline-none"
-                      placeholder={'E.g.\nREO BTM ALL\nREO TOP ALL\nSHEAR REO\nCORE WALL REO'}
+                      className="w-full h-40 bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[15px] text-[14px] font-bold text-white outline-none focus:ring-2 focus:ring-orange-500/20 custom-scrollbar"
+                      placeholder="REO BTM ALL&#10;REO TOP ALL"
                       value={batchTasksText}
                       onChange={(e) => setBatchTasksText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && batchValidation.isValid) {
-                          e.preventDefault()
-                          const tasks = generateTasks({
-                            projectIds: batchProjects,
-                            levelEnabled: batchLevelEnabled,
-                            levels: batchLevelsText.split(',').map(l => l.trim()).filter(l => l !== ""),
-                            workflows: batchWorkflows,
-                            rawLines: batchTasksText,
-                            team: formData.team,
-                            day: formData.day,
-                            eta: formData.eta,
-                            status: "PLANNING"
-                          });
-                          if (tasks.length > 0) {
-                            handleAddTask(null, tasks, { isDirectBatch: true });
-                            setBatchTasksText('')
-                            setBatchWorkflows([])
-                            setShowBatchModal(false)
-                          }
-                        }
-                      }}
                     />
-                    <p className="text-[10px] text-slate-500 px-2 flex justify-between">
-                      <span>Note: Each line × selected workflows = individual task entries.</span>
-                      <span className="text-indigo-400/50">Ctrl + Enter to deploy</span>
-                    </p>
                   </div>
 
-                  {/* Preview */}
-                  {batchValidation.isValid && (
-                    <div className="space-y-2 p-4 bg-white/[0.02] rounded-2xl border border-white/5 max-h-32 overflow-y-auto custom-scrollbar">
-                      <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Preview (first 10 generated tasks)</p>
-                      {(() => {
-                        const lines = batchTasksText.split('\n').filter(t => t.trim())
-                        const effectiveLines = lines.length > 0 ? lines.slice(0, 3) : [""]
-                        const levels = batchLevelsText.split(',').map(l => l.trim()).filter(l => l !== "").slice(0, 1)
-                        const effectiveLevels = batchLevelEnabled ? (levels.length > 0 ? levels : []) : [null]
-
-                        return batchProjects.slice(0, 1).flatMap(proj => 
-                          effectiveLevels.flatMap(level =>
-                            effectiveLines.flatMap(line => 
-                              batchWorkflows.map(wf => ({ proj, level, task: `${line.trim()} ${wf}`.trim() }))
-                            )
-                          )
-                        ).slice(0, 10).map((item, i) => (
-                          <div key={i} className="text-[11px] text-slate-400 font-mono py-0.5 flex items-center gap-2">
-                            <span className="text-indigo-500/40 text-xs">{String(i+1).padStart(2, '0')}</span>
-                            <span className="text-indigo-300/80">{item.proj}</span>
-                            <span className="text-slate-600">›</span>
-                            {batchLevelEnabled && item.level && <><span className="text-violet-400">L{item.level}</span><span className="text-slate-600">›</span></>}
-                            <span className="text-slate-200">{item.task || '(no detail)'}</span>
-                          </div>
-                        ))
-                      })()}
-                      {batchValidation.totalTasks > 10 && <p className="text-xs text-slate-600">...and {batchValidation.totalTasks - 10} more</p>}
-                    </div>
-                  )}
-
                   {/* Actions */}
-                  <div className="flex gap-4 pt-2">
-                    <button 
-                      onClick={() => setShowBatchModal(false)}
-                      className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black text-xs tracking-[0.2em] rounded-2xl transition-all border border-white/5"
-                    >
-                      CANCEL
-                    </button>
+                  <div className="flex gap-[10px] pt-[10px]">
+                    <button onClick={() => setShowBatchModal(false)} className="flex-1 py-[15px] bg-white/5 hover:bg-white/10 text-slate-500 font-black text-[12px] uppercase rounded-[8px] border border-white/10 transition-all">CANCEL</button>
                     <button 
                       disabled={!batchValidation.isValid}
                       onClick={() => {
                         const tasks = generateTasks({
-                          projectIds: batchProjects,
-                          levelEnabled: batchLevelEnabled,
-                          levels: batchLevelsText.split(',').map(l => l.trim()).filter(l => l !== ""),
-                          workflows: batchWorkflows,
-                          rawLines: batchTasksText,
-                          team: formData.team,
-                          day: formData.day,
-                          eta: formData.eta,
-                          status: "Planning"
+                          projectIds: batchProjects, levelEnabled: batchLevelEnabled, levels: batchLevelsText.split(',').map(l => l.trim()).filter(l => l !== ""),
+                          workflows: batchWorkflows, rawLines: batchTasksText, team: formData.team, day: formData.day, eta: formData.eta, status: "PLANNING"
                         });
-                        if (tasks.length > 0) {
-                          handleAddTask(null, tasks, { isDirectBatch: true });
-                          setBatchTasksText('')
-                          setBatchWorkflows([])
-                          setShowBatchModal(false)
-                        }
+                        if (tasks.length > 0) { handleAddTask(null, tasks, { isDirectBatch: true }); setBatchTasksText(''); setBatchWorkflows([]); setShowBatchModal(false); }
                       }}
-                      className={`flex-[2] px-12 py-4 font-black text-xs tracking-[0.2em] rounded-2xl transition-all shadow-xl ${
-                        !batchValidation.isValid
-                          ? 'bg-[var(--bg-surface)] text-[var(--text-muted)] cursor-not-allowed'
-                          : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/20'
-                      }`}
+                      className={`flex-[2] py-[15px] font-black text-[12px] uppercase rounded-[8px] transition-all shadow-xl ${!batchValidation.isValid ? 'bg-slate-800 text-slate-600' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-600/20'}`}
                     >
-                      DEPLOY {batchValidation.totalTasks} TASK{batchValidation.totalTasks !== 1 ? 'S' : ''}
+                      DEPLOY {batchValidation.totalTasks} TASKS
                     </button>
                   </div>
                 </div>
@@ -1535,55 +1163,22 @@ const WeeklyReport = ({ exportExcel }) => {
       {/* Bulk Edit Bar */}
       <AnimatePresence>
         {selectedRows.size > 0 && (
-          <motion.div 
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[80] w-[90%] max-w-2xl"
-          >
-            <div className="glass-panel p-4 bg-indigo-500/10 border-indigo-500/20 shadow-[0_0_50px_rgba(99,102,241,0.2)] flex items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="bg-indigo-500 text-white p-2 rounded-xl shadow-lg shadow-indigo-500/20">
-                  <Layout size={20} />
-                </div>
+          <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-[20px] left-1/2 -translate-x-1/2 z-[80] w-[90%] max-w-2xl m-[10px]">
+            <div className="bg-indigo-600/90 backdrop-blur-xl p-[10px] border border-indigo-400/30 rounded-[8px] shadow-2xl flex items-center justify-between gap-[15px]">
+              <div className="flex items-center gap-[10px] p-[10px]">
+                <div className="bg-white text-indigo-600 p-[10px] rounded-[8px] shadow-lg"><Layout size={20} /></div>
                 <div>
-                  <p className="text-xs font-black text-white uppercase tracking-widest leading-none">{selectedRows.size} Rows Selected</p>
-                  <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter mt-1">Bulk Action Mode</p>
+                  <p className="text-[14px] font-black text-white uppercase tracking-tight leading-none">{selectedRows.size} ROWS SELECTED</p>
+                  <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-widest mt-1">Bulk Command Active</p>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3 flex-grow max-w-sm">
-                <div className="w-1/2">
-                  <MarkupDateInput 
-                    value={bulkMarkup.date} 
-                    onChange={(val) => setBulkMarkup(prev => ({ ...prev, date: val }))}
-                  />
-                </div>
-                <div className="w-1/2">
-                  <MarkupTimeInput 
-                    value={bulkMarkup.time} 
-                    onChange={(val) => setBulkMarkup(prev => ({ ...prev, time: val }))}
-                  />
-                </div>
+              <div className="flex items-center gap-[10px] flex-grow max-w-sm">
+                <div className="w-1/2"><MarkupDateInput value={bulkMarkup.date} onChange={(val) => setBulkMarkup(prev => ({ ...prev, date: val }))} /></div>
+                <div className="w-1/2"><MarkupTimeInput value={bulkMarkup.time} onChange={(val) => setBulkMarkup(prev => ({ ...prev, time: val }))} /></div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => {
-                    bulkUpdateMarkup(Array.from(selectedRows), bulkMarkup);
-                    setSelectedRows(new Set());
-                    setBulkMarkup({ date: null, time: null });
-                  }}
-                  className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl transition-all shadow-lg shadow-indigo-500/20"
-                >
-                  APPLY
-                </button>
-                <button 
-                  onClick={() => setSelectedRows(new Set())}
-                  className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl transition-all"
-                >
-                  <X size={20} />
-                </button>
+              <div className="flex items-center gap-[10px]">
+                <button onClick={() => { bulkUpdateMarkup(Array.from(selectedRows), bulkMarkup); setSelectedRows(new Set()); setBulkMarkup({ date: null, time: null }); }} className="px-[20px] py-[10px] bg-white text-indigo-600 font-black text-[12px] uppercase rounded-[8px] transition-all shadow-lg shadow-white/10">APPLY</button>
+                <button onClick={() => setSelectedRows(new Set())} className="p-[10px] text-white/50 hover:text-white transition-all">✕</button>
               </div>
             </div>
           </motion.div>

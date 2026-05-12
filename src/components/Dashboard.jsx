@@ -562,14 +562,14 @@ const Dashboard = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-10 sm:grid-cols-12 gap-2 p-[10px]">
+          <div className="grid grid-cols-10 sm:grid-cols-12 gap-[10px] p-[10px]">
             {Array.from({ length: 60 }).map((_, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.005 }}
-                className={`aspect-square rounded-[4px] border border-white/5 ${
+                className={`aspect-square rounded-[8px] border border-white/5 ${
                   Math.random() > 0.8 ? 'bg-indigo-500/60 shadow-[0_0_15px_rgba(99,102,241,0.2)]' :
                   Math.random() > 0.5 ? 'bg-indigo-500/30' :
                   Math.random() > 0.2 ? 'bg-indigo-500/10' :

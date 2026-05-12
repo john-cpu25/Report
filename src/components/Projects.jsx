@@ -96,25 +96,25 @@ const Projects = () => {
   );
 
   return (
-    <div className="w-full mx-auto space-y-8 pb-20 px-4 sm:px-6">
+    <div className="w-full mx-auto space-y-[10px] pb-[10px]">
       {/* Header Intelligence */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--glass-border)] shadow-2xl">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-8 bg-indigo-500 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.6)]" />
-            <h1 className="text-3xl font-black text-[var(--text-main)] uppercase tracking-tight">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px] bg-[var(--bg-card)] p-[10px] rounded-[8px] border border-[var(--border)] shadow-sm m-[10px]">
+        <div className="flex flex-col gap-[5px]">
+          <div className="flex items-center gap-[10px]">
+            <div className="w-1.5 h-8 bg-indigo-500 rounded-full" />
+            <h1 className="text-[30px] font-black text-[var(--text-main)] uppercase tracking-tight">
               Project <span className="text-indigo-400">Intelligence</span>
             </h1>
           </div>
-          <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-5">Global Portfolio Management System</p>
+          <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-[15px]">Global Portfolio Management System</p>
         </div>
 
         <div className="relative group max-w-md w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
+          <Search className="absolute left-[15px] top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
           <input 
             type="text" 
             placeholder="FILTER PROJECTS..." 
-            className="w-full bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-[var(--text-main)] focus:border-indigo-500/50 focus:bg-[var(--bg-card)] transition-all outline-none shadow-2xl placeholder:text-[var(--text-muted)]"
+            className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] py-[10px] pl-[45px] pr-[15px] text-[14px] font-bold text-[var(--text-main)] focus:border-indigo-500/50 transition-all outline-none placeholder:text-[var(--text-muted)]"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
@@ -127,9 +127,9 @@ const Projects = () => {
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Syncing Supabase Database...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start">
           <div className="lg:col-span-9">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[10px]">
               <AnimatePresence mode="popLayout">
             {filteredProjects.map((project) => (
               <motion.div
@@ -138,68 +138,63 @@ const Projects = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                whileHover={{ y: -8, transition: { duration: 0.2 } }}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
                 onClick={() => setSelectedId(project.id)}
-                className={`group relative cursor-pointer glass-panel overflow-hidden border-[var(--glass-border)] transition-all ${
+                className={`group relative cursor-pointer bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] m-[10px] transition-all shadow-sm ${
                   selectedId === project.id 
-                    ? 'ring-2 ring-indigo-500 shadow-[0_0_40px_rgba(99,102,241,0.2)] bg-indigo-500/5' 
+                    ? 'ring-2 ring-indigo-500 bg-indigo-500/5' 
                     : 'hover:bg-indigo-500/5 hover:border-indigo-500/20'
                 }`}
               >
                 {/* Accent Color Strip */}
                 <div 
                   className="absolute top-0 left-0 w-full h-1 z-10"
-                  style={{ backgroundColor: project.color || '#6366f1', boxShadow: `0 0 15px ${project.color || '#6366f1'}` }}
+                  style={{ backgroundColor: project.color || '#6366f1' }}
                 />
 
-                <div className="pt-12 pl-12 pr-8 pb-8 space-y-6">
+                <div className="flex flex-col gap-[10px] pt-[20px]">
                   {/* Top Row: Key & Version */}
-                  <div className="flex justify-between items-start gap-4">
+                  <div className="flex justify-between items-start gap-[10px]">
                     <div 
-                      className="px-4 py-2 rounded-xl bg-[var(--bg-dark)] border border-[var(--glass-border)] text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] shadow-inner break-words leading-relaxed"
+                      className="px-[10px] py-[5px] rounded-[4px] bg-[var(--bg-surface)] border border-[var(--border)] text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] break-words"
                       title={project.name}
                     >
                       {project.name || 'N/A'}
                     </div>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface)] text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider shrink-0 border border-[var(--glass-border)]">
-                      <Cpu size={10} />
+                    <div className="flex items-center gap-1.5 px-[10px] py-[5px] rounded-[4px] bg-[var(--bg-surface)] text-[10px] font-bold text-[var(--text-muted)] uppercase border border-[var(--border)]">
+                      <Cpu size={12} />
                       {project.revit_version || '2024'}
                     </div>
                   </div>
 
                   {/* Project Identity */}
-                  <div className="space-y-1">
-                    <h3 className="text-2xl font-black text-[var(--text-main)] uppercase group-hover:text-indigo-500 transition-colors truncate" title={project.key}>
+                  <div className="space-y-[5px]">
+                    <h3 className="text-[24px] font-black text-[var(--text-main)] uppercase group-hover:text-indigo-500 transition-colors truncate" title={project.key}>
                       {project.key}
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Active System</span>
+                    <div className="flex items-center gap-[10px]">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Active System</span>
                     </div>
                   </div>
 
-                  {/* Meta Stats (Placeholder/Mock) */}
-                  <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
-                    <div className="space-y-1">
-                      <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Team Size</p>
+                  {/* Meta Stats */}
+                  <div className="grid grid-cols-2 gap-[10px] pt-[10px] border-t border-white/5">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Team</p>
                       <div className="flex items-center gap-1.5">
-                        <Users size={12} className="text-slate-500" />
-                        <span className="text-xs font-black text-slate-300">12</span>
+                        <Users size={14} className="text-slate-500" />
+                        <span className="text-[14px] font-black text-[var(--text-main)]">12</span>
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Tasks</p>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Tasks</p>
                       <div className="flex items-center gap-1.5">
-                        <Database size={12} className="text-slate-500" />
-                        <span className="text-xs font-black text-slate-300">{project.taskCount}+</span>
+                        <Database size={14} className="text-slate-500" />
+                        <span className="text-[14px] font-black text-[var(--text-main)]">{project.taskCount}+</span>
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Decorative Bottom Graphic */}
-                <div className="absolute bottom-0 right-0 p-4 opacity-5 group-hover:opacity-20 transition-opacity">
-                  <Box size={80} strokeWidth={1} />
                 </div>
               </motion.div>
             ))}
@@ -208,29 +203,27 @@ const Projects = () => {
           </div>
           
           <div className="lg:col-span-3">
-            <div className="sticky top-6">
-              <div className="glass-panel p-6 border-[var(--glass-border)] shadow-2xl relative overflow-hidden bg-[var(--bg-card)]">
-                <div className="absolute top-0 right-0 p-8 opacity-5">
-                  <Sparkles size={80} />
+            <div className="sticky top-[10px]">
+              <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] shadow-sm relative overflow-hidden m-[10px]">
+                <div className="absolute top-0 right-0 p-[20px] opacity-5">
+                  <Sparkles size={60} />
                 </div>
                 
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                      <div>
-                        <h2 className="text-sm font-black text-white tracking-tight uppercase">Top 10 Projects</h2>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">High Activity</p>
-                      </div>
+                <div className="relative z-10 flex flex-col gap-[10px]">
+                  <div className="flex items-center gap-[10px] p-[10px]">
+                    <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+                    <div>
+                      <h2 className="text-[14px] font-black text-white tracking-tight uppercase">Top 10 Projects</h2>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">High Activity</p>
                     </div>
                   </div>
 
-                  <div className="flex bg-[var(--bg-surface)] p-1 rounded-xl mb-6 border border-[var(--glass-border)]">
+                  <div className="flex bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)]">
                     {['WEEK', 'MONTH', 'YEAR'].map(filter => (
                       <button
                         key={filter}
                         onClick={() => setTimeFilter(filter)}
-                        className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                        className={`flex-1 py-[10px] text-[10px] font-black uppercase tracking-widest rounded-[8px] transition-all ${
                           timeFilter === filter 
                             ? 'bg-indigo-500 text-white shadow-lg' 
                             : 'text-slate-500 hover:text-white hover:bg-white/5'
@@ -241,79 +234,33 @@ const Projects = () => {
                     ))}
                   </div>
 
-                  <div className="max-h-[600px] overflow-y-auto custom-scrollbar pr-2 relative">
-                    <div className="flex flex-col gap-3 pb-8">
-                      {top10Projects.map((proj, idx) => {
-                        const isTop3 = idx < 3;
-                        let crownColor = '';
-                        let glowColor = '';
-                        if (idx === 0) {
-                          crownColor = 'text-yellow-400';
-                          glowColor = 'rgba(250, 204, 21, 0.2)';
-                        } else if (idx === 1) {
-                          crownColor = 'text-slate-300';
-                          glowColor = 'rgba(203, 213, 225, 0.2)';
-                        } else if (idx === 2) {
-                          crownColor = 'text-amber-600';
-                          glowColor = 'rgba(217, 119, 6, 0.2)';
-                        }
-
-                        return (
-                          <motion.div 
-                            key={proj.id}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            onClick={() => setSelectedId(proj.id)}
-                            className={`bg-[var(--bg-surface)] hover:bg-indigo-500/10 border border-[var(--glass-border)] hover:border-indigo-500/30 transition-all rounded-xl p-4 cursor-pointer group flex flex-col gap-2 relative overflow-hidden`}
-                            style={isTop3 ? {
-                              boxShadow: `inset 0 0 20px ${glowColor}`,
-                              border: `1px solid ${glowColor.replace('0.2', '0.4')}`
-                            } : {}}
-                          >
-                            {isTop3 && (
-                              <motion.div 
-                                className="absolute inset-0 pointer-events-none"
-                                animate={{ 
-                                  backgroundColor: [glowColor, 'rgba(0,0,0,0)', glowColor],
-                                }}
-                                transition={{ 
-                                  duration: 2, 
-                                  repeat: Infinity, 
-                                  ease: "easeInOut" 
-                                }}
-                              />
-                            )}
-                            <div 
-                              className="absolute left-0 top-0 w-1 h-full"
-                              style={{ backgroundColor: proj.color || '#6366f1' }}
-                            />
-                            <div className="flex justify-between items-start pl-4 relative z-10">
-                              <div className="flex items-center gap-2">
-                                {isTop3 && (
-                                  <motion.div
-                                    animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                    className="shrink-0"
-                                  >
-                                    <Crown size={16} className={`${crownColor} drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]`} fill="currentColor" />
-                                  </motion.div>
-                                )}
-                                  <span className="text-sm font-black text-[var(--text-main)] group-hover:text-indigo-500 transition-colors pr-2 break-words leading-tight">
-                                    {proj.key}
-                                  </span>
-                                </div>
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase whitespace-nowrap transition-all ${
-                                isTop3 ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-indigo-500/20 text-indigo-400'
-                              }`}>
-                                {proj.taskCount} T
-                              </span>
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase pl-4 break-words leading-relaxed relative z-10">{proj.name}</p>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
+                  <div className="max-h-[600px] overflow-y-auto custom-scrollbar pr-[5px] flex flex-col gap-[10px]">
+                    {top10Projects.map((proj, idx) => (
+                      <motion.div 
+                        key={proj.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        onClick={() => setSelectedId(proj.id)}
+                        className="bg-[var(--bg-surface)] hover:bg-indigo-500/10 border border-[var(--border)] hover:border-indigo-500/30 transition-all rounded-[8px] p-[10px] cursor-pointer group flex flex-col gap-[10px] relative overflow-hidden"
+                      >
+                        <div 
+                          className="absolute left-0 top-0 w-1 h-full"
+                          style={{ backgroundColor: proj.color || '#6366f1' }}
+                        />
+                        <div className="flex justify-between items-center pl-[10px]">
+                          <div className="flex items-center gap-[10px]">
+                            {idx < 3 && <Crown size={14} className="text-yellow-500" />}
+                            <span className="text-[14px] font-black text-[var(--text-main)] group-hover:text-indigo-500 truncate max-w-[120px]">
+                              {proj.key}
+                            </span>
+                          </div>
+                          <span className="px-[10px] py-[5px] rounded-[4px] text-[10px] font-black bg-indigo-500/20 text-indigo-400">
+                            {proj.taskCount} T
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -325,115 +272,92 @@ const Projects = () => {
       {/* Selected Project Detail Modal */}
       <AnimatePresence>
         {selectedId && selectedProject && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-[10px]">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedId(null)}
-              className="absolute inset-0 bg-slate-950/90 backdrop-blur-2xl"
+              className="absolute inset-0 bg-[#0B0F1A]/80 backdrop-blur-xl"
             />
             
             <motion.div
               layoutId={`card-${selectedId}`}
-              className="relative w-full max-w-5xl bg-[var(--bg-dark)] border border-[var(--glass-border)] rounded-none overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.8)]"
+              className="relative w-full max-w-5xl bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] overflow-hidden shadow-2xl flex flex-col lg:flex-row"
             >
               <div 
-                className="absolute top-0 left-0 w-full h-2 z-10"
-                style={{ backgroundColor: selectedProject.color || '#6366f1', boxShadow: `0 0 30px ${selectedProject.color || '#6366f1'}` }}
+                className="absolute top-0 left-0 w-full h-1 z-10"
+                style={{ backgroundColor: selectedProject.color || '#6366f1' }}
               />
 
-              <div className="flex flex-col lg:flex-row h-full relative">
-                {/* Left: Visual Branding */}
-                <div className="lg:w-2/5 relative bg-indigo-600 px-10 pb-10 flex flex-col overflow-hidden min-h-[600px]">
-                  {/* EXPLICIT SPACER TO FORCE CONTENT DOWN */}
-                  <div className="h-40 shrink-0 w-full" />
-                  
-                  <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                    <Box size={400} className="absolute -top-20 -left-20" />
+              {/* Left Content Area */}
+              <div className="lg:w-2/5 p-[20px] bg-indigo-600/10 flex flex-col gap-[20px] border-r border-[var(--border)]">
+                <div className="space-y-[10px]">
+                  <div className="inline-flex items-center gap-[10px] px-[10px] py-[5px] bg-indigo-500/20 rounded-[8px] border border-indigo-500/30">
+                    <Sparkles size={14} className="text-yellow-400" />
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Active Analysis</span>
                   </div>
+                  <h2 className="text-[30px] font-black text-[var(--text-main)] leading-tight uppercase">
+                    {selectedProject.key}
+                  </h2>
+                  <p className="text-[14px] font-bold text-[var(--text-muted)]">
+                    {selectedProject.name}
+                  </p>
+                </div>
 
-                  <div className="relative z-10 space-y-6 flex-grow">
-                    <div className="inline-flex items-center gap-3 px-4 py-2 bg-white/10 rounded-none border border-white/20 backdrop-blur-md">
-                      <Sparkles size={14} className="text-yellow-300" />
-                      <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">Priority High-Level</span>
-                    </div>
-
-                    <div className="space-y-3">
-                      <p className="text-[9px] font-black text-indigo-200 uppercase tracking-[0.3em]">Project Identity</p>
-                      <h2 className="text-4xl lg:text-5xl font-black text-white leading-tight break-words uppercase tracking-tight">
-                        {selectedProject.key}
-                      </h2>
-                      <p className="text-indigo-100 text-[11px] font-bold leading-relaxed opacity-90 max-w-[200px] break-words">
-                        {selectedProject.name}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="relative z-10 mt-auto pt-8">
-                    <div className="bg-white/10 rounded-none p-6 border border-white/20 backdrop-blur-sm">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-none bg-white/20 flex items-center justify-center">
-                          <Users size={24} className="text-white" />
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-black text-indigo-100/60 uppercase tracking-widest">Performance</p>
-                          <p className="text-xl font-black text-white">85% OPTIMIZED</p>
-                        </div>
+                <div className="mt-auto grid grid-cols-1 gap-[10px]">
+                  <div className="bg-[var(--bg-surface)] p-[15px] rounded-[8px] border border-[var(--border)]">
+                    <div className="flex items-center gap-[10px]">
+                      <Users size={20} className="text-indigo-400" />
+                      <div>
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Efficiency</p>
+                        <p className="text-[14px] font-black text-[var(--text-main)]">92% PERFORMANCE</p>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Right: Detailed Data */}
-                <div className="lg:w-3/5 px-10 pb-10 md:px-14 md:pb-14 flex flex-col space-y-10 bg-[var(--bg-dark)] relative">
-                  {/* EXPLICIT SPACER TO FORCE CONTENT DOWN */}
-                  <div className="h-40 shrink-0 w-full" />
+              {/* Right Content Area */}
+              <div className="lg:w-3/5 p-[20px] flex flex-col gap-[20px] bg-[var(--bg-card)] relative">
+                <button 
+                  onClick={() => setSelectedId(null)}
+                  className="absolute top-[20px] right-[20px] w-10 h-10 flex items-center justify-center bg-[var(--bg-surface)] hover:bg-rose-500/10 hover:text-rose-500 rounded-[8px] text-[var(--text-muted)] transition-all"
+                >
+                  ✕
+                </button>
 
-                  <button 
-                    onClick={() => setSelectedId(null)}
-                    className="absolute top-12 right-12 w-12 h-12 rounded-none bg-white/5 border border-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all active:scale-90 z-30"
-                  >
-                    <ArrowRight className="rotate-180" size={24} />
+                <div className="space-y-[10px]">
+                  <div className="flex items-center gap-[10px] text-indigo-400">
+                    <Layers size={18} />
+                    <span className="text-[14px] font-black uppercase tracking-widest">Technical Brief</span>
+                  </div>
+                  <p className="text-[14px] text-[var(--text-muted)] leading-relaxed">
+                    {selectedProject.description || "Core Rincovitch BIM coordination protocol. Focus on high-fidelity modeling and cross-disciplinary synchronization."}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
+                  <div className="flex items-center gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)]">
+                    <Cpu size={24} className="text-indigo-400" />
+                    <div>
+                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">Platform</p>
+                      <p className="text-[14px] font-black text-[var(--text-main)]">REVIT {selectedProject.revit_version || '2024'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)]">
+                    <User size={24} className="text-emerald-400" />
+                    <div>
+                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">Lead</p>
+                      <p className="text-[14px] font-black text-[var(--text-main)]">NM KHANG</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-auto">
+                  <button className="w-full py-[15px] bg-indigo-600 hover:bg-indigo-500 text-white rounded-[8px] text-[14px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all">
+                    Access Project Protocol
                   </button>
-
-                  <div className="space-y-5">
-                    <div className="flex items-center gap-3 text-indigo-400">
-                      <Layers size={18} />
-                      <span className="text-[10px] font-black uppercase tracking-[0.3em]">Project Brief</span>
-                    </div>
-                    <p className="text-slate-300 text-lg leading-relaxed font-medium max-w-xl">
-                      {selectedProject.description || "This BIM architectural project is focused on high-precision structural modeling and coordination using Revit system protocols. Part of the core Rincovitch portfolio for 2026."}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="flex items-center gap-4 p-5 bg-white/[0.02] rounded-none border border-white/5">
-                      <div className="w-12 h-12 rounded-none bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-                        <Cpu size={24} />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase">Platform</p>
-                        <p className="text-white font-black text-lg">REVIT {selectedProject.revit_version || '2024'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 p-5 bg-white/[0.02] rounded-none border border-white/5">
-                      <div className="w-12 h-12 rounded-none bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                        <User size={24} />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">Lead Manager</p>
-                        <p className="text-[var(--text-main)] font-black text-lg">NM KHANG</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-12">
-                    <button className="group flex items-center gap-4 px-12 py-6 bg-indigo-500 text-white rounded-none font-black uppercase tracking-widest shadow-[0_20px_50px_rgba(99,102,241,0.3)] hover:bg-indigo-400 transition-all active:scale-95 w-full md:w-auto justify-center">
-                      Open Project Dashboard 
-                      <ExternalLink size={24} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </div>
                 </div>
               </div>
             </motion.div>

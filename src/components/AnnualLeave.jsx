@@ -202,46 +202,46 @@ const AnnualLeave = () => {
   }, [filteredUsersByTeam]);
 
   return (
-    <div className="w-full space-y-8 pb-12">
+    <div className="w-full space-y-[10px] pb-12">
       {/* Control Header */}
-      <div className="glass-panel p-4 border-[var(--glass-border)] bg-[var(--bg-card)] flex flex-wrap items-center justify-between gap-6">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+      <div className="bg-[var(--bg-card)] p-[10px] border border-[var(--border)] rounded-[8px] flex flex-wrap items-center justify-between gap-[10px] m-[10px] shadow-sm">
+        <div className="flex items-center gap-[10px]">
+          <div className="flex items-center gap-[10px]">
+            <div className="p-[10px] rounded-[8px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               <Landmark size={20} />
             </div>
             <div>
-              <h2 className="text-xs font-black text-indigo-500 uppercase tracking-widest">VN Annual Leave</h2>
-              <p className="text-[8px] text-[var(--text-muted)] font-black uppercase tracking-widest mt-0.5">Management Dashboard</p>
+              <h2 className="text-[14px] font-black text-indigo-500 uppercase tracking-widest leading-none">VN Annual Leave</h2>
+              <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest mt-1">Management Dashboard</p>
             </div>
           </div>
 
-          <div className="h-10 w-px bg-[var(--glass-border)]" />
+          <div className="h-10 w-px bg-[var(--border)]" />
 
-          <div className="flex items-center gap-2 p-1 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
+          <div className="flex items-center gap-[10px] p-[10px] bg-indigo-500/5 rounded-[8px] border border-indigo-500/10">
             <button 
               onClick={() => setViewMode('individual')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'individual' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
+              className={`flex items-center gap-[10px] px-[15px] py-[10px] rounded-[8px] text-[14px] font-black uppercase tracking-widest transition-all ${viewMode === 'individual' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
             >
               <User size={14} /> Individual
             </button>
             <button 
               onClick={() => setViewMode('summary')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
+              className={`flex items-center gap-[10px] px-[15px] py-[10px] rounded-[8px] text-[14px] font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
             >
               <LayoutGrid size={14} /> Team Summary
             </button>
             <button 
               onClick={() => setViewMode('analytics')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'analytics' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
+              className={`flex items-center gap-[10px] px-[15px] py-[10px] rounded-[8px] text-[14px] font-black uppercase tracking-widest transition-all ${viewMode === 'analytics' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
             >
               <TrendingUp size={14} /> Analytics
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3 bg-indigo-500/5 px-4 py-2.5 rounded-xl border border-indigo-500/10">
+        <div className="flex items-center gap-[10px]">
+          <div className="flex items-center gap-[10px] bg-indigo-500/5 px-[15px] py-[10px] rounded-[8px] border border-indigo-500/10">
             <Users size={14} className="text-indigo-400" />
             <select 
               className="bg-transparent text-[11px] font-black text-indigo-500 outline-none cursor-pointer uppercase"
@@ -253,7 +253,7 @@ const AnnualLeave = () => {
           </div>
 
           {viewMode === 'individual' && (
-            <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2.5 rounded-xl border border-[var(--glass-border)]">
+            <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] px-[15px] py-[10px] rounded-[8px] border border-[var(--border)]">
               <User size={14} className="text-[var(--text-muted)]" />
               <select 
                 className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer min-w-[150px]"
@@ -271,21 +271,21 @@ const AnnualLeave = () => {
       </div>
 
       {viewMode === 'analytics' ? (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-          <div className="flex justify-between items-end">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-[10px] m-[10px]">
+          <div className="flex justify-between items-end p-[10px]">
             <div>
-              <h2 className="text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">Leave <span className="text-indigo-400">Analytics</span></h2>
-              <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Visual distribution of team energy & leave utilization</p>
+              <h2 className="text-[30px] font-black text-[var(--text-main)] uppercase tracking-tight italic leading-none">Leave <span className="text-indigo-400">Analytics</span></h2>
+              <p className="text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2">Visual distribution of team energy & leave utilization</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[2.5rem] p-8">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
-                <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-widest">Leave Distribution (Days)</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-[10px]">
+            <div className="lg:col-span-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[20px] shadow-sm">
+              <div className="flex items-center gap-[10px] mb-[20px]">
+                <div className="w-1.5 h-6 bg-indigo-500 rounded-[8px]" />
+                <h3 className="text-[14px] font-black text-[var(--text-main)] uppercase tracking-widest">Leave Distribution (Days)</h3>
               </div>
-              <div className="h-[500px]">
+              <div className="h-[400px]">
                 <Bar 
                   data={{
                     labels: summaryData.slice(0, 15).map(u => u.name),
@@ -294,7 +294,7 @@ const AnnualLeave = () => {
                         label: 'Used',
                         data: summaryData.slice(0, 15).map(u => u.used),
                         backgroundColor: 'rgba(99, 102, 241, 0.8)',
-                        borderRadius: 6,
+                        borderRadius: 4,
                       },
                       {
                         label: 'Remaining',
@@ -302,7 +302,7 @@ const AnnualLeave = () => {
                         backgroundColor: 'rgba(255, 255, 255, 0.05)',
                         borderColor: 'rgba(255, 255, 255, 0.1)',
                         borderWidth: 1,
-                        borderRadius: 6,
+                        borderRadius: 4,
                       }
                     ]
                   }}
@@ -321,33 +321,33 @@ const AnnualLeave = () => {
               </div>
             </div>
 
-            <div className="space-y-6">
-              <div className="bg-indigo-500/10 border border-indigo-500/20 p-8 rounded-[2rem] text-center">
-                <div className="w-16 h-16 bg-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400 mx-auto mb-4 border border-indigo-500/20">
+            <div className="space-y-[10px]">
+              <div className="bg-indigo-500/10 border border-indigo-500/20 p-[20px] rounded-[8px] text-center shadow-sm">
+                <div className="w-16 h-16 bg-indigo-500/20 rounded-[8px] flex items-center justify-center text-indigo-400 mx-auto mb-[15px] border border-indigo-500/20">
                   <Landmark size={32} />
                 </div>
-                <h4 className="text-sm font-black text-[var(--text-main)] uppercase tracking-[0.2em] mb-2">Total Team Reserve</h4>
-                <p className="text-4xl font-black text-[var(--text-main)]">
+                <h4 className="text-[14px] font-black text-[var(--text-main)] uppercase tracking-[0.2em] mb-2">Total Team Reserve</h4>
+                <p className="text-[30px] font-black text-[var(--text-main)]">
                   {summaryData.reduce((s, u) => s + u.remaining, 0)}
                 </p>
                 <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Available Days Remaining</p>
               </div>
 
-              <div className="bg-[var(--bg-card)] border border-[var(--glass-border)] p-8 rounded-[2rem]">
-                <h4 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest mb-6 flex items-center gap-2">
+              <div className="bg-[var(--bg-card)] border border-[var(--border)] p-[20px] rounded-[8px] shadow-sm">
+                <h4 className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-[20px] flex items-center gap-[10px]">
                   <AlertCircle size={14} className="text-rose-400" />
                   Critical Attention
                 </h4>
-                <div className="space-y-4">
-                  {summaryData.filter(u => u.remaining < 3).slice(0, 3).map(u => (
-                    <div key={u.id} className="flex items-center justify-between p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-400 text-[10px] font-black">
+                <div className="space-y-[10px]">
+                  {summaryData.filter(u => u.remaining < 3).slice(0, 5).map(u => (
+                    <div key={u.id} className="flex items-center justify-between p-[10px] bg-rose-500/5 border border-rose-500/10 rounded-[8px]">
+                      <div className="flex items-center gap-[10px]">
+                        <div className="w-8 h-8 rounded-[8px] bg-rose-500/20 flex items-center justify-center text-rose-400 text-[10px] font-black border border-rose-500/20">
                           {u.name[0]}
                         </div>
-                        <span className="text-xs font-black text-[var(--text-main)] uppercase">{u.name}</span>
+                        <span className="text-[12px] font-black text-[var(--text-main)] uppercase tracking-tight">{u.name}</span>
                       </div>
-                      <span className="text-xs font-black text-rose-400">{u.remaining}D Left</span>
+                      <span className="text-[12px] font-black text-rose-400">{u.remaining}D Left</span>
                     </div>
                   ))}
                   {summaryData.filter(u => u.remaining < 3).length === 0 && (
@@ -359,37 +359,37 @@ const AnnualLeave = () => {
           </div>
         </motion.div>
       ) : viewMode === 'summary' ? (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          <div className="flex justify-between items-end">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-[10px] m-[10px]">
+          <div className="flex justify-between items-end p-[10px]">
             <div>
-              <h2 className="text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">Team <span className="text-indigo-400">Overview</span></h2>
-              <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Aggregate leave statistics for Vietnam operations</p>
+              <h2 className="text-[30px] font-black text-[var(--text-main)] uppercase tracking-tight italic leading-none">Team <span className="text-indigo-400">Overview</span></h2>
+              <p className="text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2">Aggregate leave statistics for Vietnam operations</p>
             </div>
-            <div className="flex gap-4">
-              <div className="bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--glass-border)] text-center min-w-[120px]">
-                <p className="text-sm font-black text-[var(--text-muted)] uppercase mb-1">Total Users</p>
-                <p className="text-xl font-black text-[var(--text-main)]">{summaryData.length}</p>
+            <div className="flex gap-[10px]">
+              <div className="bg-[var(--bg-card)] p-[15px] rounded-[8px] border border-[var(--border)] text-center min-w-[120px] shadow-sm">
+                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase mb-1">Total Users</p>
+                <p className="text-[24px] font-black text-[var(--text-main)]">{summaryData.length}</p>
               </div>
-              <div className="bg-indigo-500/10 p-4 rounded-2xl border border-indigo-500/20 text-center min-w-[120px]">
-                <p className="text-sm font-black text-indigo-400 uppercase mb-1">Avg Used</p>
-                <p className="text-xl font-black text-[var(--text-main)]">
+              <div className="bg-indigo-500/10 p-[15px] rounded-[8px] border border-indigo-500/20 text-center min-w-[120px] shadow-sm">
+                <p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Avg Used</p>
+                <p className="text-[24px] font-black text-[var(--text-main)]">
                   {summaryData.length ? (summaryData.reduce((s, u) => s + u.used, 0) / summaryData.length).toFixed(1) : 0}D
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="glass-panel overflow-hidden border border-[var(--glass-border)] bg-[var(--bg-card)] backdrop-blur-xl shadow-2xl">
+          <div className="bg-[var(--bg-card)] overflow-hidden border border-[var(--border)] shadow-xl rounded-[8px]">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-indigo-500/5 text-sm font-black text-[var(--text-muted)] uppercase tracking-[0.2em] border-b border-[var(--glass-border)]">
-                  <th className="px-8 py-5">User Intelligence</th>
-                  <th className="px-8 py-5">Team</th>
-                  <th className="px-8 py-5 text-center">Seniority</th>
-                  <th className="px-8 py-5 text-center">Allowance</th>
-                  <th className="px-8 py-5 text-center">Used</th>
-                  <th className="px-8 py-5 text-center">Remaining</th>
-                  <th className="px-8 py-5 text-right">Status</th>
+                <tr className="bg-indigo-500/5 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] border-b border-[var(--border)]">
+                  <th className="px-[20px] py-[15px]">User Intelligence</th>
+                  <th className="px-[20px] py-[15px]">Team</th>
+                  <th className="px-[20px] py-[15px] text-center">Seniority</th>
+                  <th className="px-[20px] py-[15px] text-center">Allowance</th>
+                  <th className="px-[20px] py-[15px] text-center">Used</th>
+                  <th className="px-[20px] py-[15px] text-center">Remaining</th>
+                  <th className="px-[20px] py-[15px] text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
@@ -400,29 +400,29 @@ const AnnualLeave = () => {
                     style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}
                     onClick={() => { setSelectedUser(u.name); setViewMode('individual'); }}
                   >
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-[var(--bg-surface)] flex items-center justify-center text-indigo-500 font-black border border-[var(--glass-border)] group-hover:scale-110 transition-transform">
+                    <td className="px-[20px] py-[15px]">
+                      <div className="flex items-center gap-[15px]">
+                        <div className="w-10 h-10 rounded-[8px] bg-[var(--bg-surface)] flex items-center justify-center text-indigo-500 font-black border border-[var(--border)] group-hover:scale-110 transition-transform">
                           {u.name[0]}
                         </div>
-                        <div className="font-black text-[var(--text-main)] group-hover:text-indigo-500 transition-colors">{u.name}</div>
+                        <div className="text-[14px] font-black text-[var(--text-main)] group-hover:text-indigo-500 transition-colors uppercase tracking-tight">{u.name}</div>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <span className="px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--glass-border)] text-xs font-black text-[var(--text-muted)] uppercase tracking-widest">{u.team}</span>
+                    <td className="px-[20px] py-[15px]">
+                      <span className="px-[10px] py-[5px] rounded-[4px] bg-[var(--bg-surface)] border border-[var(--border)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{u.team}</span>
                     </td>
-                    <td className="px-8 py-6 text-center text-xs font-bold text-[var(--text-muted)]">{u.seniority} Yrs</td>
-                    <td className="px-8 py-6 text-center">
-                      <span className="text-sm font-black text-indigo-500">{u.allowance}</span>
+                    <td className="px-[20px] py-[15px] text-center text-[12px] font-bold text-[var(--text-muted)]">{u.seniority} Yrs</td>
+                    <td className="px-[20px] py-[15px] text-center">
+                      <span className="text-[14px] font-black text-indigo-500">{u.allowance}</span>
                     </td>
-                    <td className="px-8 py-6 text-center">
-                      <span className="text-sm font-black text-emerald-400">{u.used}</span>
+                    <td className="px-[20px] py-[15px] text-center">
+                      <span className="text-[14px] font-black text-emerald-400">{u.used}</span>
                     </td>
-                    <td className="px-8 py-6 text-center">
-                      <span className={`text-sm font-black ${u.remaining < 3 ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{u.remaining}</span>
+                    <td className="px-[20px] py-[15px] text-center">
+                      <span className={`text-[14px] font-black ${u.remaining < 3 ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{u.remaining}</span>
                     </td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="w-24 h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden ml-auto">
+                    <td className="px-[20px] py-[15px] text-right">
+                      <div className="w-24 h-2 bg-[var(--bg-surface)] rounded-[8px] overflow-hidden ml-auto">
                         <div 
                           className="h-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]" 
                           style={{ width: `${Math.min(100, (u.used / u.allowance) * 100)}%` }}
@@ -436,71 +436,71 @@ const AnnualLeave = () => {
           </div>
         </motion.div>
       ) : (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-[10px] m-[10px]">
           {/* Header Section */}
-          <div className="flex flex-col md:flex-row gap-6 items-start">
+          <div className="flex flex-col md:flex-row gap-[10px] items-start p-[10px]">
             <div className="flex-grow space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-8 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
-                <h1 className="text-3xl font-black text-[var(--text-main)] uppercase tracking-tight">
+              <div className="flex items-center gap-[10px]">
+                <div className="w-2 h-8 bg-indigo-500 rounded-[8px] shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+                <h1 className="text-[30px] font-black text-[var(--text-main)] uppercase tracking-tight italic">
                   {selectedUser.split(' ')[0]}'s <span className="text-indigo-400">Leave</span>
                 </h1>
               </div>
-              <p className="text-[var(--text-muted)] font-bold text-xs uppercase tracking-[0.2em] ml-5">Energy & Wellness Intelligence</p>
+              <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.2em] ml-5">Energy & Wellness Intelligence</p>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-[10px]">
               <button 
                 onClick={handleInsertHolidays}
-                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-sm font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all active:scale-95"
+                className="flex items-center gap-[10px] px-[20px] py-[10px] rounded-[8px] bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[12px] font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all active:scale-95"
               >
                 <Landmark size={14} /> Insert VN Holidays
               </button>
               
-              <div className="glass-panel p-4 flex items-center gap-6 border-[var(--glass-border)] bg-[var(--bg-card)]">
+              <div className="bg-[var(--bg-card)] p-[15px] flex items-center gap-[15px] border border-[var(--border)] rounded-[8px] shadow-sm">
                 <div className="space-y-1">
-                  <label className="!mb-0 text-xs font-black text-[var(--text-muted)] uppercase">Work Start</label>
+                  <label className="!mb-0 text-[10px] font-black text-[var(--text-muted)] uppercase">Work Start</label>
                   <input 
                     type="date" 
-                    className="bg-transparent border-none text-indigo-400 font-black text-sm p-0 focus:ring-0 cursor-pointer"
+                    className="bg-transparent border-none text-indigo-400 font-black text-[14px] p-0 focus:ring-0 cursor-pointer"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
                   />
                 </div>
-                <div className="w-[1px] h-10 bg-[var(--glass-border)]" />
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <div className="w-[1px] h-10 bg-[var(--border)]" />
+                <div className="flex items-center gap-[10px]">
+                  <div className="p-[10px] rounded-[8px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                     <Award size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Seniority</p>
-                    <p className="text-lg font-black text-[var(--text-main)]">{seniority} {seniority === 1 ? 'YEAR' : 'YEARS'}</p>
+                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Seniority</p>
+                    <p className="text-[24px] font-black text-[var(--text-main)]">{seniority} {seniority === 1 ? 'YEAR' : 'YEARS'}</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] p-[10px]">
             {/* Left Column: Stats & Animation */}
-            <div className="lg:col-span-4 space-y-6">
-              <div className="glass-panel p-6 border-[var(--glass-border)] bg-gradient-to-br from-slate-900/80 to-indigo-950/20">
+            <div className="lg:col-span-4 space-y-[10px]">
+              <div className="bg-[var(--bg-card)] p-[20px] border border-[var(--border)] rounded-[8px] shadow-sm bg-gradient-to-br from-slate-900/80 to-indigo-950/20">
                 <EnergyBar used={usedDays} total={totalAllowance} />
               </div>
 
-              <div className="glass-panel p-5 border-indigo-500/10 bg-indigo-500/5 space-y-4">
-                <div className="flex items-center gap-2 text-indigo-400">
+              <div className="p-[20px] border border-indigo-500/20 bg-indigo-500/5 space-y-[15px] rounded-[8px] shadow-sm">
+                <div className="flex items-center gap-[10px] text-indigo-400">
                   <Info size={16} />
-                  <h4 className="text-sm font-black uppercase tracking-widest">Policy Overview</h4>
+                  <h4 className="text-[14px] font-black uppercase tracking-widest">Policy Overview</h4>
                 </div>
-                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed font-medium">
-                  Hợp đồng lao động tại <span className="text-indigo-300 font-bold">Việt Nam</span>. 
-                  Dựa trên thâm niên <span className="text-indigo-300 font-bold">{seniority} năm</span>, 
-                  bạn được hưởng quỹ nghỉ phép <span className="text-indigo-300 font-bold">{totalAllowance} ngày</span>/năm.
+                <p className="text-[12px] text-[var(--text-muted)] leading-relaxed font-bold">
+                  Hợp đồng lao động tại <span className="text-indigo-300 font-black">Việt Nam</span>. 
+                  Dựa trên thâm niên <span className="text-indigo-300 font-black">{seniority} năm</span>, 
+                  bạn được hưởng quỹ nghỉ phép <span className="text-indigo-300 font-black">{totalAllowance} ngày</span>/năm.
                 </p>
-                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--glass-border)] flex items-start gap-3">
+                <div className="p-[15px] rounded-[8px] bg-[var(--bg-surface)] border border-[var(--border)] flex items-start gap-[10px]">
                   <AlertCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
-                  <p className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider leading-normal">
+                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-wider leading-normal">
                     {totalAllowance === 15 ? 'Đã đạt mức tối đa 15 ngày phép/năm.' : 'Làm việc trên 1 năm sẽ được tăng lên 15 ngày.'}
                   </p>
                 </div>
@@ -508,37 +508,37 @@ const AnnualLeave = () => {
             </div>
 
             {/* Right Column: Form & History */}
-            <div className="lg:col-span-8 space-y-6">
+            <div className="lg:col-span-8 space-y-[10px]">
               {/* Entry Form */}
-              <div className="glass-panel p-6 border-[var(--glass-border)]">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
+              <div className="bg-[var(--bg-card)] p-[20px] border border-[var(--border)] rounded-[8px] shadow-sm">
+                <div className="flex items-center justify-between mb-[20px]">
+                  <div className="flex items-center gap-[10px]">
                     <Clock className="text-indigo-400" size={18} />
-                    <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-widest">Book Leave Request</h3>
+                    <h3 className="text-[14px] font-black text-[var(--text-main)] uppercase tracking-widest">Book Leave Request</h3>
                   </div>
-                  <div className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-black text-indigo-400 uppercase tracking-widest">
+                  <div className="px-[10px] py-[5px] rounded-[4px] bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black text-indigo-400 uppercase tracking-widest">
                     Create Entry
                   </div>
                 </div>
 
-                <form onSubmit={handleAddLeave} className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  <div className="md:col-span-4 space-y-2">
-                    <label className="text-sm font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Leave Date</label>
+                <form onSubmit={handleAddLeave} className="grid grid-cols-1 md:grid-cols-12 gap-[10px]">
+                  <div className="md:col-span-4 space-y-[5px]">
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Leave Date</label>
                     <div className="relative">
                       <input 
                         type="date" 
-                        className="input pl-10 h-12 bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--glass-border)]"
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] pl-[35px] text-[14px] font-bold text-white outline-none"
                         value={formData.date}
                         onChange={e => setFormData({ ...formData, date: e.target.value })}
                         required
                       />
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+                      <Calendar className="absolute left-[10px] top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
                     </div>
                   </div>
 
-                  <div className="md:col-span-3 space-y-2">
-                    <label className="text-sm font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Duration</label>
-                    <div className="grid grid-cols-2 gap-2">
+                  <div className="md:col-span-3 space-y-[5px]">
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Duration</label>
+                    <div className="grid grid-cols-2 gap-[10px]">
                       {[
                         { val: 1, label: 'Full Day' },
                         { val: 0.5, label: '1/2 Day' }
@@ -547,10 +547,10 @@ const AnnualLeave = () => {
                           key={opt.val}
                           type="button"
                           onClick={() => setFormData({ ...formData, amount: opt.val })}
-                          className={`h-12 rounded-xl text-sm font-black uppercase tracking-widest transition-all border ${
+                          className={`h-[40px] rounded-[8px] text-[12px] font-black uppercase tracking-widest transition-all border ${
                             formData.amount === opt.val
                               ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
-                              : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--glass-border)] hover:border-indigo-500/10'
+                              : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border)] hover:border-indigo-500/10'
                           }`}
                         >
                           {opt.label}
@@ -559,11 +559,11 @@ const AnnualLeave = () => {
                     </div>
                   </div>
 
-                  <div className="md:col-span-3 space-y-2">
-                    <label className="text-sm font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Reason / Note</label>
+                  <div className="md:col-span-3 space-y-[5px]">
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Reason / Note</label>
                     <input 
                       type="text" 
-                      className="input h-12 bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--glass-border)]" 
+                      className="w-full h-[40px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] px-[15px] text-[14px] font-bold text-white outline-none" 
                       placeholder="Optional note..." 
                       value={formData.note}
                       onChange={e => setFormData({ ...formData, note: e.target.value })}
@@ -571,7 +571,7 @@ const AnnualLeave = () => {
                   </div>
 
                   <div className="md:col-span-2 flex items-end">
-                    <button type="submit" className="btn btn-primary w-full h-12 gap-2 shadow-lg shadow-indigo-500/20">
+                    <button type="submit" className="w-full h-[40px] bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[12px] uppercase rounded-[8px] transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-[10px]">
                       <Plus size={16} />
                       ADD
                     </button>
@@ -580,36 +580,36 @@ const AnnualLeave = () => {
               </div>
 
               {/* History Log */}
-              <div className="glass-panel overflow-hidden border-[var(--glass-border)] bg-[var(--bg-card)]">
-                <div className="px-6 py-4 border-b border-[var(--glass-border)] bg-indigo-500/5 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
+              <div className="bg-[var(--bg-card)] overflow-hidden border border-[var(--border)] rounded-[8px] shadow-sm">
+                <div className="px-[20px] py-[15px] border-b border-[var(--border)] bg-indigo-500/5 flex justify-between items-center">
+                  <div className="flex items-center gap-[10px]">
                     <List className="text-indigo-400" size={14} />
-                    <h3 className="text-sm font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Leave History {new Date().getFullYear()}</h3>
+                    <h3 className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Leave History {new Date().getFullYear()}</h3>
                   </div>
-                  <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-500/20">
+                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-[15px] py-[5px] rounded-[8px] border border-indigo-500/20">
                     {currentYearEntries.length} Records Found
                   </span>
                 </div>
                 
-                <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
+                <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                   {currentYearEntries.length === 0 ? (
-                    <div className="p-16 text-center space-y-4">
-                    <div className="w-20 h-20 rounded-3xl bg-[var(--bg-surface)] border border-[var(--glass-border)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
+                    <div className="p-[40px] text-center space-y-[15px]">
+                      <div className="w-20 h-20 rounded-[8px] bg-[var(--bg-surface)] border border-[var(--border)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
                         <Calendar size={40} />
                       </div>
                       <div>
-                        <p className="text-sm font-black text-[var(--text-muted)] uppercase tracking-widest">No Leave Records</p>
-                        <p className="text-sm text-[var(--text-muted)] font-bold mt-1 uppercase tracking-wider">Lịch sử nghỉ phép sẽ hiển thị ở đây.</p>
+                        <p className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">No Leave Records</p>
+                        <p className="text-[12px] text-[var(--text-muted)] font-bold mt-1 uppercase tracking-wider italic">Lịch sử nghỉ phép sẽ hiển thị ở đây.</p>
                       </div>
                     </div>
                   ) : (
                     <table className="w-full text-left border-collapse">
-                      <thead className="bg-indigo-500/5 text-xs font-black uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--glass-border)] sticky top-0 z-10 backdrop-blur-md">
+                      <thead className="bg-indigo-500/5 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--border)] sticky top-0 z-10 backdrop-blur-md">
                         <tr>
-                          <th className="px-6 py-4">Date</th>
-                          <th className="px-6 py-4 text-center">Amount</th>
-                          <th className="px-6 py-4">Note / Type</th>
-                          <th className="px-6 py-4 text-right">Action</th>
+                          <th className="px-[20px] py-[15px]">Date</th>
+                          <th className="px-[20px] py-[15px] text-center">Amount</th>
+                          <th className="px-[20px] py-[15px]">Note / Type</th>
+                          <th className="px-[20px] py-[15px] text-right">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.02]">
@@ -623,18 +623,18 @@ const AnnualLeave = () => {
                               className={`group hover:bg-indigo-500/5 transition-colors ${entry.type === 'HOLIDAY' ? 'bg-amber-500/10' : ''}`}
                               style={{ backgroundColor: entry.type === 'HOLIDAY' ? undefined : (i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)') }}
                             >
-                              <td className="px-6 py-4">
-                                <span className="text-xs font-black text-[var(--text-main)]">
+                              <td className="px-[20px] py-[15px]">
+                                <span className="text-[12px] font-black text-[var(--text-main)] uppercase tracking-tight">
                                   {format(parseISO(entry.date), 'EEEE, MMM dd, yyyy')}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 text-center">
+                              <td className="px-[20px] py-[15px] text-center">
                                 {entry.type === 'HOLIDAY' ? (
-                                  <span className="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                  <span className="px-[10px] py-[5px] rounded-[4px] text-[10px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
                                     HOLIDAY
                                   </span>
                                 ) : (
-                                  <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${
+                                  <span className={`px-[10px] py-[5px] rounded-[4px] text-[10px] font-black uppercase tracking-widest border ${
                                     entry.amount === 1 
                                       ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' 
                                       : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
@@ -643,15 +643,15 @@ const AnnualLeave = () => {
                                   </span>
                                 )}
                               </td>
-                              <td className="px-6 py-4">
-                                <span className={`text-[11px] font-bold ${entry.type === 'HOLIDAY' ? 'text-amber-400/70' : 'text-[var(--text-muted)]'} group-hover:text-slate-300 transition-colors uppercase tracking-tight`}>
+                              <td className="px-[20px] py-[15px]">
+                                <span className={`text-[12px] font-bold ${entry.type === 'HOLIDAY' ? 'text-amber-400/70' : 'text-[var(--text-muted)]'} group-hover:text-slate-300 transition-colors uppercase tracking-tight`}>
                                   {entry.note || '—'}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 text-right">
+                              <td className="px-[20px] py-[15px] text-right">
                                 <button 
                                   onClick={() => deleteEntry(entry.id)}
-                                  className="p-2 text-slate-700 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all active:scale-90"
+                                  className="p-[10px] text-slate-700 hover:text-rose-400 hover:bg-rose-500/10 rounded-[8px] transition-all active:scale-90"
                                 >
                                   <Trash2 size={14} />
                                 </button>

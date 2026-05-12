@@ -260,100 +260,95 @@ const OrgChart = () => {
   }
 
   return (
-    <div className="relative min-h-[90vh] flex flex-col bg-slate-950/40 rounded-[3rem] border border-white/5 overflow-hidden">
+    <div className="relative min-h-[90vh] flex flex-col bg-slate-950/40 rounded-[8px] border border-white/5 overflow-hidden m-[10px]">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/5 blur-[120px] rounded-full" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/5 blur-[120px] rounded-full" />
       </div>
 
-      <div className="relative z-20 flex items-center justify-between p-10">
-        <div className="flex items-center gap-6">
-          <div className="p-4 bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl text-white shadow-2xl shadow-orange-500/20">
-            <CustomBee size={32} />
+      <div className="relative z-20 flex flex-col md:flex-row items-center justify-between p-[10px] gap-[10px]">
+        <div className="flex items-center gap-[10px] p-[10px]">
+          <div className="p-[10px] bg-gradient-to-br from-amber-500 to-orange-600 rounded-[8px] text-white shadow-lg shadow-orange-500/20">
+            <CustomBee size={24} />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic leading-none">Beehive Intelligence</h1>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-2">Strategic Colony Management</p>
+            <h1 className="text-[30px] font-black text-white tracking-tighter uppercase italic leading-none">Beehive Intelligence</h1>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-[5px]">Strategic Colony Management</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 shadow-inner">
+        <div className="flex flex-wrap items-center gap-[10px] p-[10px]">
+          <div className="flex bg-white/5 p-[10px] rounded-[8px] border border-white/10 shadow-inner gap-[10px]">
             {[
               { id: 'mindmap', icon: <GitGraph size={14} />, label: 'Mindmap' },
               { id: 'honeycomb', icon: <CustomBee size={14} />, label: 'Beehive' },
               { id: 'team', icon: <LayoutGrid size={14} />, label: 'Teams' }
             ].map(mode => (
-              <button key={mode.id} onClick={() => setViewMode(mode.id)} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === mode.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-white'}`}>{mode.icon} {mode.label}</button>
+              <button key={mode.id} onClick={() => setViewMode(mode.id)} className={`flex items-center gap-[10px] px-[10px] py-[10px] rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === mode.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-white'}`}>{mode.icon} {mode.label}</button>
             ))}
           </div>
-          <div className="relative group"><Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors" size={16} /><input type="text" placeholder="Scan colony..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-xs font-bold text-white outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500/30 transition-all w-64" /></div>
+          <div className="relative group p-[10px]">
+            <Search className="absolute left-[25px] top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors" size={16} />
+            <input type="text" placeholder="Scan colony..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-white/5 border border-white/10 rounded-[8px] py-[10px] pl-[45px] pr-[15px] text-[14px] font-bold text-white outline-none focus:ring-2 focus:ring-cyan-500/10 transition-all w-64" />
+          </div>
         </div>
       </div>
 
-      <div className="relative flex-grow overflow-auto custom-scrollbar p-10 select-none">
+      <div className="relative flex-grow overflow-auto custom-scrollbar p-[10px] select-none">
         {viewMode === 'mindmap' ? (
-          <div className="flex justify-center min-w-max pb-40">
+          <div className="flex justify-center min-w-max pb-40 p-[10px]">
             {orgData.map(rootNode => (<OrgNode key={rootNode.id} node={rootNode} onSelect={setSelectedNode} onEdit={setEditingNode} onAdd={setAddingToNode} onDelete={(id) => setOrgData(findAndDelete(orgData, id))} isSelected={selectedNode} />))}
           </div>
         ) : viewMode === 'honeycomb' ? (
-          <div className="max-w-7xl mx-auto pb-40 px-10 space-y-20">
+          <div className="max-w-7xl mx-auto pb-40 px-[10px] space-y-[20px]">
             {[
               { id: 'queen', label: 'Queen Bee', nodes: rawFlatNodes.filter(n => n.name === "Vũ Đỗ") },
               { id: 'managers', label: 'Bee Managers', nodes: rawFlatNodes.filter(n => managersNames.includes(n.name)) },
               { id: 'leaders', label: 'Bee Leaders', nodes: rawFlatNodes.filter(n => leadersNames.includes(n.name)) },
               { id: 'workers', label: 'Bee Workers', nodes: rawFlatNodes.filter(n => !managersNames.includes(n.name) && !leadersNames.includes(n.name) && n.name !== "Vũ Đỗ") }
             ].map((tier) => tier.nodes.length > 0 && (
-              <div key={tier.id} className="relative">
-                <div className="flex items-center gap-4 mb-6"><div className="h-[1px] flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" /><span className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500 whitespace-nowrap">{tier.label}</span><div className="h-[1px] flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" /></div>
-                <div className="flex flex-wrap justify-center gap-x-2 gap-y-12">{tier.nodes.map((node, i) => (<div key={node.id} className={i % 2 !== 0 ? 'mt-18' : ''}><HexNode node={node} onClick={setSelectedNode} {...getBeeStyles(node)} /></div>))}</div>
+              <div key={tier.id} className="relative p-[10px]">
+                <div className="flex items-center gap-[10px] mb-[10px]"><div className="h-[1px] flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" /><span className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500 whitespace-nowrap">{tier.label}</span><div className="h-[1px] flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" /></div>
+                <div className="flex flex-wrap justify-center gap-x-[10px] gap-y-[10px]">{tier.nodes.map((node, i) => (<div key={node.id} className={i % 2 !== 0 ? 'mt-[10px]' : ''}><HexNode node={node} onClick={setSelectedNode} {...getBeeStyles(node)} /></div>))}</div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="max-w-7xl mx-auto pb-40 px-10 space-y-32">
+          <div className="max-w-7xl mx-auto pb-40 px-[10px] space-y-[20px]">
             {/* Engineer Team Section */}
-            <div className="relative border-l-2 border-indigo-500/20 pl-12">
-              <div className="flex items-center gap-6 mb-12">
-                <div className="p-3 bg-indigo-500/20 rounded-2xl text-indigo-400 border border-indigo-500/30 font-black text-xs">ENGINEER COMMAND</div>
+            <div className="relative border-l-2 border-indigo-500/20 pl-[10px] m-[10px]">
+              <div className="flex items-center gap-[10px] mb-[10px] p-[10px]">
+                <div className="p-[10px] bg-indigo-500/20 rounded-[8px] text-indigo-400 border border-indigo-500/30 font-black text-[10px]">ENGINEER COMMAND</div>
                 <HexNode node={engineerTeam.leader} onClick={setSelectedNode} {...getBeeStyles(engineerTeam.leader)} />
               </div>
-              <div className="space-y-16">
+              <div className="space-y-[10px] p-[10px]">
                 <div>
-                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-8 ml-2">Slab Engineer</h4>
-                  <div className="space-y-12">
-                    <div className="flex flex-wrap gap-x-4">
-                      {engineerTeam.slab.slice(0, 3).map((node, i) => (<div key={node.id} className={i % 2 !== 0 ? 'mt-12' : ''}><HexNode node={node} onClick={setSelectedNode} {...getBeeStyles(node)} /></div>))}
-                    </div>
-                    <div className="flex flex-wrap gap-x-4">
-                      {engineerTeam.slab.slice(3, 6).map((node, i) => (<div key={node.id} className={i % 2 !== 0 ? 'mt-12' : ''}><HexNode node={node} onClick={setSelectedNode} {...getBeeStyles(node)} /></div>))}
-                    </div>
-                    <div className="flex flex-wrap gap-x-4">
-                      {engineerTeam.slab.slice(6, 8).map((node, i) => (<div key={node.id} className={i % 2 !== 0 ? 'mt-12' : ''}><HexNode node={node} onClick={setSelectedNode} {...getBeeStyles(node)} /></div>))}
-                    </div>
+                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-[10px]">Slab Engineer</h4>
+                  <div className="flex flex-wrap gap-[10px]">
+                    {engineerTeam.slab.map(node => (<HexNode key={node.id} node={node} onClick={setSelectedNode} {...getBeeStyles(node)} />))}
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-8 ml-2">Lateral Engineer</h4>
-                  <div className="flex flex-wrap gap-4">{engineerTeam.lateral.map(node => (<HexNode key={node.id} node={node} onClick={setSelectedNode} {...getBeeStyles(node)} />))}</div>
+                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-[10px]">Lateral Engineer</h4>
+                  <div className="flex flex-wrap gap-[10px]">{engineerTeam.lateral.map(node => (<HexNode key={node.id} node={node} onClick={setSelectedNode} {...getBeeStyles(node)} />))}</div>
                 </div>
               </div>
             </div>
 
             {/* Drafter Team Section */}
-            <div className="relative border-l-2 border-purple-500/20 pl-12">
-              <div className="flex items-center gap-6 mb-12">
-                <div className="p-3 bg-purple-500/20 rounded-2xl text-purple-400 border border-purple-500/30 font-black text-xs">DRAFTER COMMAND</div>
+            <div className="relative border-l-2 border-purple-500/20 pl-[10px] m-[10px]">
+              <div className="flex items-center gap-[10px] mb-[10px] p-[10px]">
+                <div className="p-[10px] bg-purple-500/20 rounded-[8px] text-purple-400 border border-purple-500/30 font-black text-[10px]">DRAFTER COMMAND</div>
                 <HexNode node={drafterTeam.leader} onClick={setSelectedNode} {...getBeeStyles(drafterTeam.leader)} />
               </div>
-              <div className="space-y-16">
+              <div className="space-y-[10px] p-[10px]">
                 <div>
-                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-8 ml-2">Modeling - Arch</h4>
-                  <div className="flex flex-wrap gap-x-4 gap-y-12">{drafterTeam.modeling.map((node, i) => (<div key={node.id} className={i % 2 !== 0 ? 'mt-12' : ''}><HexNode node={node} onClick={setSelectedNode} {...getBeeStyles(node)} /></div>))}</div>
+                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-[10px]">Modeling - Arch</h4>
+                  <div className="flex flex-wrap gap-[10px]">{drafterTeam.modeling.map(node => (<HexNode key={node.id} node={node} onClick={setSelectedNode} {...getBeeStyles(node)} />))}</div>
                 </div>
                 <div>
-                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-8 ml-2">PT & REO - MTO</h4>
-                  <div className="flex flex-wrap gap-x-4 gap-y-12">{drafterTeam.ptreo.map((node, i) => (<div key={node.id} className={i % 2 !== 0 ? 'mt-12' : ''}><HexNode node={node} onClick={setSelectedNode} {...getBeeStyles(node)} /></div>))}</div>
+                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-[10px]">PT & REO - MTO</h4>
+                  <div className="flex flex-wrap gap-[10px]">{drafterTeam.ptreo.map(node => (<HexNode key={node.id} node={node} onClick={setSelectedNode} {...getBeeStyles(node)} />))}</div>
                 </div>
               </div>
             </div>
@@ -363,17 +358,43 @@ const OrgChart = () => {
 
       <AnimatePresence>
         {selectedNode && (
-          <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-xl glass-panel p-6 z-50 flex items-center gap-8 border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.8)]"><div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-600/20 border border-white/10 flex items-center justify-center text-white text-2xl font-black">{selectedNode.name.split(' ').map(n => n[0]).join('')}</div><div className="flex-grow"><h3 className="text-xl font-black text-white uppercase italic tracking-tight">{selectedNode.name}</h3><p className="text-xs font-bold text-cyan-400 uppercase tracking-widest mt-1">{selectedNode.position}</p></div><button onClick={() => setSelectedNode(null)} className="p-2 text-slate-500 hover:text-white transition-colors"><X size={20} /></button></motion.div>
+          <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="fixed bottom-[10px] left-1/2 -translate-x-1/2 w-full max-w-xl bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] z-50 flex items-center gap-[10px] shadow-2xl m-[10px]">
+            <div className="w-16 h-16 rounded-full bg-indigo-500/10 border border-white/10 flex items-center justify-center text-white text-[24px] font-black">{selectedNode.name.split(' ').map(n => n[0]).join('')}</div>
+            <div className="flex-grow">
+              <h3 className="text-[24px] font-black text-white uppercase italic tracking-tight">{selectedNode.name}</h3>
+              <p className="text-[14px] font-bold text-cyan-400 uppercase tracking-widest">{selectedNode.position}</p>
+            </div>
+            <button onClick={() => setSelectedNode(null)} className="p-[10px] text-slate-500 hover:text-white transition-colors">✕</button>
+          </motion.div>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
         {(editingNode || addingToNode) && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setEditingNode(null); setAddingToNode(null); }} className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl" />
-            <motion.form onSubmit={editingNode ? handleUpdateNode : handleAddNode} initial={{ scale: 0.9, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 40 }} className="relative w-full max-w-md glass-panel p-10 border-white/10 shadow-2xl bg-slate-900/50">
-              <div className="flex items-center gap-6 mb-10"><div className="p-4 bg-white/5 rounded-3xl text-white border border-white/10 shadow-xl">{editingNode ? <Edit3 size={28} /> : <UserPlus size={28} />}</div><div><h2 className="text-2xl font-black text-white tracking-tighter uppercase italic">{editingNode ? 'Edit Member' : 'Add Member'}</h2><p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Colony Database Update</p></div></div>
-              <div className="space-y-8"><div className="space-y-3"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 ml-1">Identity</label><input name="name" type="text" defaultValue={editingNode?.name || ''} required className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/40 transition-all" /></div><div className="space-y-3"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 ml-1">Position</label><input name="position" type="text" defaultValue={editingNode?.position || ''} required className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm font-bold text-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/40 transition-all" /></div><div className="flex gap-4 pt-6"><button type="button" onClick={() => { setEditingNode(null); setAddingToNode(null); }} className="flex-1 py-5 bg-white/5 hover:bg-white/10 text-slate-400 font-black text-[10px] tracking-[0.3em] rounded-2xl border border-white/10 transition-all">CANCEL</button><button type="submit" className="flex-[2] py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] tracking-[0.3em] rounded-2xl transition-all shadow-2xl shadow-indigo-500/40 flex items-center justify-center gap-3"><Save size={16} /> CONFIRM</button></div></div>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-[10px]">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setEditingNode(null); setAddingToNode(null); }} className="absolute inset-0 bg-[#0B0F1A]/80 backdrop-blur-xl" />
+            <motion.form onSubmit={editingNode ? handleUpdateNode : handleAddNode} initial={{ scale: 0.9, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 40 }} className="relative w-full max-w-md bg-[var(--bg-card)] p-[20px] rounded-[8px] border border-[var(--border)] shadow-2xl">
+              <div className="flex items-center gap-[10px] mb-[20px] p-[10px]">
+                <div className="p-[10px] bg-white/5 rounded-[8px] text-white border border-white/10">{editingNode ? <Edit3 size={24} /> : <UserPlus size={24} />}</div>
+                <div>
+                  <h2 className="text-[24px] font-black text-white tracking-tighter uppercase italic">{editingNode ? 'Edit Member' : 'Add Member'}</h2>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Colony Database Update</p>
+                </div>
+              </div>
+              <div className="space-y-[15px] p-[10px]">
+                <div className="space-y-[5px]">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Identity</label>
+                  <input name="name" type="text" defaultValue={editingNode?.name || ''} required className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] py-[10px] px-[15px] text-[14px] font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" />
+                </div>
+                <div className="space-y-[5px]">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Position</label>
+                  <input name="position" type="text" defaultValue={editingNode?.position || ''} required className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] py-[10px] px-[15px] text-[14px] font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" />
+                </div>
+                <div className="flex gap-[10px] pt-[20px]">
+                  <button type="button" onClick={() => { setEditingNode(null); setAddingToNode(null); }} className="flex-1 py-[10px] bg-white/5 hover:bg-white/10 text-slate-400 font-black text-[10px] tracking-widest rounded-[8px] border border-white/10 transition-all">CANCEL</button>
+                  <button type="submit" className="flex-[2] py-[10px] bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] tracking-widest rounded-[8px] transition-all shadow-lg shadow-indigo-500/40 flex items-center justify-center gap-[10px]"><Save size={16} /> CONFIRM</button>
+                </div>
+              </div>
             </motion.form>
           </div>
         )}

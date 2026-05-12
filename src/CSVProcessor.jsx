@@ -245,44 +245,44 @@ const CSVProcessor = () => {
   return (
     <div className="w-full space-y-6 pb-20 px-4 sm:px-6">
       {isLoading && analystTasks.length === 0 ? (
-        <div className="glass-panel p-20 text-center relative overflow-hidden border-2 border-indigo-500/20">
-          <div className="flex flex-col items-center gap-6">
-            <div className="p-6 bg-indigo-500/10 rounded-none text-indigo-400 animate-pulse">
+        <div className="bg-[var(--bg-card)] p-[20px] text-center relative overflow-hidden border border-indigo-500/20 rounded-[8px] m-[10px]">
+          <div className="flex flex-col items-center gap-[15px]">
+            <div className="p-[15px] bg-indigo-500/10 rounded-[8px] text-indigo-400 animate-pulse">
               <Database size={48} strokeWidth={1.5} />
             </div>
-            <h3 className="text-2xl font-black tracking-tight text-white uppercase">Intelligence System Syncing...</h3>
-            <div className="w-48 h-1 bg-slate-800 rounded-none overflow-hidden">
+            <h3 className="text-[24px] font-black tracking-tight text-white uppercase italic">Intelligence System Syncing...</h3>
+            <div className="w-48 h-1 bg-slate-800 rounded-[8px] overflow-hidden">
               <motion.div animate={{ x: ['-100%', '100%'] }} transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }} className="w-1/2 h-full bg-indigo-500" />
             </div>
           </div>
         </div>
       ) : fetchError && analystTasks.length === 0 ? (
-        <div className="glass-panel p-20 text-center relative overflow-hidden border-2 border-rose-500/20">
-          <div className="flex flex-col items-center gap-6">
-            <div className="p-6 bg-rose-500/10 rounded-none text-rose-400 shadow-2xl shadow-rose-500/20">
+        <div className="bg-[var(--bg-card)] p-[20px] text-center relative overflow-hidden border border-rose-500/20 rounded-[8px] m-[10px]">
+          <div className="flex flex-col items-center gap-[15px]">
+            <div className="p-[15px] bg-rose-500/10 rounded-[8px] text-rose-400 shadow-2xl shadow-rose-500/20">
               <Database size={48} strokeWidth={1.5} />
             </div>
-            <h3 className="text-2xl font-black tracking-tight text-white uppercase">Connection Failed</h3>
+            <h3 className="text-[24px] font-black tracking-tight text-white uppercase italic">Connection Failed</h3>
             <p className="text-rose-400 text-[10px] font-bold uppercase max-w-md mx-auto">{fetchError}</p>
-            <button onClick={() => fetchSupabaseData(false)} className="px-8 py-3 bg-rose-500 text-white font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 transition-all">RETRY SYNC</button>
+            <button onClick={() => fetchSupabaseData(false)} className="px-[20px] py-[10px] bg-rose-500 text-white font-black text-[10px] uppercase tracking-widest rounded-[8px] hover:bg-rose-600 transition-all">RETRY SYNC</button>
           </div>
         </div>
       ) : (
-        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
+        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-[10px]">
           
           {/* Header Controls */}
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-6 glass-panel p-6 border-[var(--border)] bg-[var(--bg-card)] rounded-none">
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-[10px] bg-[var(--bg-card)] p-[10px] border border-[var(--border)] rounded-[8px] shadow-sm m-[10px]">
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-8 bg-indigo-500 rounded-none shadow-[0_0_20px_rgba(99,102,241,0.4)]" />
-                <h1 className="text-3xl font-black text-[var(--text-contrast)] uppercase tracking-tight">
+              <div className="flex items-center gap-[10px]">
+                <div className="w-2 h-8 bg-indigo-500 rounded-[8px] shadow-[0_0_20px_rgba(99,102,241,0.4)]" />
+                <h1 className="text-[30px] font-black text-[var(--text-contrast)] uppercase tracking-tight italic">
                   Data <span className="text-indigo-500">Analyst</span>
                 </h1>
               </div>
               <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-widest ml-5">Cross-Project Performance Intelligence</p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 bg-[var(--bg-surface)] p-2 rounded-none border border-[var(--border)]">
+            <div className="flex flex-wrap items-center gap-[10px] bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)]">
               {[
                 { id: 'unified', icon: TableIcon, label: 'UNIFIED VIEW' },
                 { id: 'analytics', icon: BarChart3, label: 'ANALYTICS' }
@@ -290,7 +290,7 @@ const CSVProcessor = () => {
                 <button
                   key={t.id}
                   onClick={() => setView(t.id)}
-                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-none text-[10px] font-black transition-all duration-300 uppercase tracking-widest ${
+                  className={`flex items-center gap-[10px] px-[15px] py-[10px] rounded-[8px] text-[10px] font-black transition-all duration-300 uppercase tracking-widest ${
                     view === t.id ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5'
                   }`}
                 >
@@ -302,10 +302,9 @@ const CSVProcessor = () => {
           </div>
 
           {/* Time Metrics Legend */}
-          <div className="glass-panel p-6 bg-indigo-500/5 border-indigo-500/20 shadow-lg relative overflow-hidden group rounded-none">
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/5 rounded-none blur-3xl group-hover:bg-indigo-500/10 transition-all duration-700" />
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-indigo-500/20 rounded-none text-indigo-400">
+          <div className="bg-[var(--bg-card)] p-[10px] bg-indigo-500/5 border border-indigo-500/20 shadow-lg relative overflow-hidden group rounded-[8px] m-[10px]">
+            <div className="flex items-center gap-[10px] mb-[10px] p-[10px]">
+              <div className="p-[10px] bg-indigo-500/20 rounded-[8px] text-indigo-400">
                 <Database size={16} strokeWidth={2.5} />
               </div>
               <div className="flex flex-col">
@@ -313,7 +312,7 @@ const CSVProcessor = () => {
                 <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Working Hours: 09:00 - 18:00 (GMT+7)</span>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-[10px]">
               {[
                 { id: 'T1', label: 'Target Duration', formula: 'date_start → date_end', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                 { id: 'T2', label: 'Actual Completion', formula: 'date_start → date_complete', color: 'text-sky-500', bg: 'bg-sky-500/10' },
@@ -321,13 +320,13 @@ const CSVProcessor = () => {
                 { id: 'T4', label: 'Pure Processing', formula: 'date_started → date_checked', color: 'text-amber-500', bg: 'bg-amber-500/10' },
                 { id: 'T5', label: 'System Lead Time', formula: 'created_at → date_checked', color: 'text-rose-500', bg: 'bg-rose-500/10' }
               ].map(m => (
-                <div key={m.id} className="relative p-3 rounded-none border border-white/5 bg-white/5 hover:bg-white/[0.08] transition-all duration-300 group/item">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`flex items-center justify-center w-6 h-6 rounded-none ${m.bg} ${m.color} text-[10px] font-black`}>{m.id}</span>
+                <div key={m.id} className="relative p-[10px] rounded-[8px] border border-white/5 bg-white/5 hover:bg-white/[0.08] transition-all duration-300 group/item">
+                  <div className="flex items-center gap-[10px] mb-[10px]">
+                    <span className={`flex items-center justify-center w-6 h-6 rounded-[8px] ${m.bg} ${m.color} text-[10px] font-black`}>{m.id}</span>
                     <span className="text-[10px] font-black text-[var(--text-contrast)] uppercase tracking-widest">{m.label}</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] text-[var(--text-muted)] font-mono bg-black/20 p-1.5 rounded-none border border-white/5 inline-block group-hover/item:border-indigo-500/20 transition-colors">
+                  <div className="space-y-[5px]">
+                    <p className="text-[9px] text-[var(--text-muted)] font-mono bg-black/20 p-[10px] rounded-[8px] border border-white/5 inline-block group-hover/item:border-indigo-500/20 transition-colors">
                       {m.formula}
                     </p>
                   </div>
@@ -339,8 +338,8 @@ const CSVProcessor = () => {
           <StatCards filteredData={filteredData} />
 
           {/* Action Buttons & Sync Info */}
-          <div className="flex flex-wrap items-center justify-between gap-4 glass-panel p-4 bg-[var(--bg-card)] border-[var(--border)] rounded-none">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-[10px] bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] m-[10px]">
+            <div className="flex items-center gap-[10px]">
               <DataUploader 
                 onDataLoaded={(d) => setAnalystTasks(d)} 
                 isLoading={isLoading} 
@@ -348,12 +347,12 @@ const CSVProcessor = () => {
               <button 
                 onClick={() => fetchSupabaseData(true)} 
                 disabled={isLoading}
-                className={`flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex items-center gap-[10px] px-[20px] py-[10px] bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest rounded-[8px] hover:bg-emerald-600 transition-all ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Database size={14} />
                 {isLoading ? 'SYNCING...' : 'SYNC SUPABASE (FULL)'}
               </button>
-              <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+              <div className="flex items-center gap-[10px] px-[15px] py-[10px] bg-white/5 border border-white/10 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest rounded-[8px]">
                 <div className={`w-2 h-2 rounded-full ${isLoading ? 'bg-amber-500 animate-ping' : 'bg-indigo-500'}`} />
                 SUPABASE LIVE — {analystTasks.length} TASKS
               </div>
@@ -379,8 +378,8 @@ const CSVProcessor = () => {
             isLoading={isLoading}
           />
 
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
-            <div className="flex-1 w-full space-y-6">
+          <div className="flex flex-col lg:flex-row gap-[10px] items-start">
+            <div className="flex-1 w-full space-y-[10px]">
               {view === 'unified' && (
                 <UnifiedTable 
                   data={filteredData}
@@ -393,45 +392,52 @@ const CSVProcessor = () => {
               )}
 
               {view === 'analytics' && (
-                <div className="space-y-6">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[var(--bg-surface)] p-4 rounded-none border border-[var(--border)]">
-                    <div className="flex gap-2 p-1 bg-[var(--bg-card)] rounded-none border border-[var(--border)] shadow-sm">
+                <div className="space-y-[10px]">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-[10px] bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)]">
+                    <select 
+                      className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] px-[10px] py-[5px] text-[10px] font-bold outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full text-[var(--text-main)]"
+                      value={columnFilters.project}
+                      onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
+                    >
+                      <option value="">ALL PROJECTS</option>
+                    </select>
+                    <div className="flex gap-[10px] p-[10px] bg-[var(--bg-card)] rounded-[8px] border border-[var(--border)] shadow-sm">
                       <button 
                         onClick={() => setAnalyticsMode('project')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-none text-[10px] font-black uppercase tracking-widest transition-all ${analyticsMode === 'project' ? 'bg-indigo-500 text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                        className={`flex items-center gap-[10px] px-6 py-2 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${analyticsMode === 'project' ? 'bg-indigo-500 text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                       >
                         PROJECT MODE
                       </button>
                       <button 
                         onClick={() => setAnalyticsMode('user')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-none text-[10px] font-black uppercase tracking-widest transition-all ${analyticsMode === 'user' ? 'bg-emerald-500 text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                        className={`flex items-center gap-[10px] px-6 py-2 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${analyticsMode === 'user' ? 'bg-emerald-500 text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                       >
                         USER MODE
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <motion.div className="glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] lg:col-span-2 rounded-none">
-                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-widest">PERFORMANCE TREND</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-[10px]">
+                    <div className="bg-[var(--bg-card)] border border-[var(--border)] lg:col-span-2 rounded-[8px] p-[20px] m-[10px]">
+                      <h3 className="font-black text-[var(--text-muted)] mb-[20px] uppercase text-[10px] tracking-widest">PERFORMANCE TREND</h3>
                       <div className="w-full h-[300px]">
                         <Line data={periodicChartData} options={{ maintainAspectRatio: false }} />
                       </div>
-                    </motion.div>
+                    </div>
                     
-                    <motion.div className="glass-panel p-8 flex flex-col items-center bg-[var(--bg-card)] border border-[var(--border)] rounded-none">
-                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-widest">Project Distribution</h3>
+                    <div className="p-[20px] flex flex-col items-center bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] m-[10px]">
+                      <h3 className="font-black text-[var(--text-muted)] mb-[20px] uppercase text-[10px] tracking-widest">Project Distribution</h3>
                       <div className="w-full h-[350px]">
                         <Doughnut data={chartData} options={{ maintainAspectRatio: false }} />
                       </div>
-                    </motion.div>
+                    </div>
 
-                    <motion.div className="glass-panel p-8 bg-[var(--bg-card)] border border-[var(--border)] rounded-none">
-                      <h3 className="font-black text-[var(--text-muted)] mb-8 uppercase text-[10px] tracking-widest">Workload Analysis</h3>
+                    <div className="p-[20px] bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] m-[10px]">
+                      <h3 className="font-black text-[var(--text-muted)] mb-[20px] uppercase text-[10px] tracking-widest">Workload Analysis</h3>
                       <div className="w-full h-[350px]">
                         <Bar data={barChartData} options={{ maintainAspectRatio: false }} />
                       </div>
-                    </motion.div>
+                    </div>
                   </div>
                 </div>
               )}

@@ -63,6 +63,49 @@ body {
   min-height: 100vh;
 }
 
+/* Precision Utility Classes (OCD Friendly) */
+.ocd-card {
+  padding: var(--pad-std);
+  margin: var(--mar-std);
+  border-radius: var(--radius-std);
+  border: 1px solid var(--border);
+  background-color: var(--bg-card);
+}
+
+.ocd-button {
+  padding: var(--pad-std);
+  margin: var(--mar-std);
+  border-radius: var(--radius-std);
+  font-size: var(--font-body);
+  font-weight: 700;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-center: center;
+  gap: var(--pad-std);
+}
+
+.ocd-input {
+  padding: var(--pad-std);
+  margin: var(--mar-std);
+  border-radius: var(--radius-std);
+  font-size: var(--font-body);
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface);
+}
+
+.ocd-grid {
+  display: grid;
+  gap: var(--pad-std);
+  padding: var(--pad-std);
+}
+
+.ocd-flex {
+  display: flex;
+  gap: var(--pad-std);
+  padding: var(--pad-std);
+}
+
 @media (min-width: 1920px) {
   html { font-size: 18px; } /* Scale up 12.5% on 1080p ultrawides and 24" */
 }

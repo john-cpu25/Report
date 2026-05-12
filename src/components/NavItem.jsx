@@ -16,7 +16,7 @@ const NavItem = ({
       className={`
         relative transition-all duration-300 group flex items-center justify-center
         ${collapsed 
-          ? 'w-[80px] h-[80px] flex-col gap-2 p-[10px] mx-auto' 
+          ? 'w-[80px] h-[80px] flex-col gap-[10px] p-[10px] mx-auto' 
           : 'w-full h-[40px] flex-row gap-[10px] px-[10px] py-[10px]'
         }
         rounded-[8px] mb-[10px]
@@ -29,10 +29,10 @@ const NavItem = ({
       {/* Icon - Always centered in collapsed, left in expanded */}
       <div className={`
         flex items-center justify-center transition-all duration-300
-        ${collapsed ? 'w-full' : 'w-[20px] h-[20px]'}
+        ${collapsed ? 'w-full h-full' : 'w-[20px] h-[20px]'}
         ${active ? `scale-110 text-${color}-400` : 'group-hover:scale-110 group-hover:text-slate-200'}
       `}>
-        <Icon size={collapsed ? 32 : 18} strokeWidth={active ? 2.5 : 2} />
+        <Icon size={collapsed ? 40 : 18} strokeWidth={active ? 2.5 : 2} />
       </div>
 
       {/* Label - Positioned below icon when collapsed (10px), side by side when expanded (14px) */}

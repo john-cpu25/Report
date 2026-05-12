@@ -91,7 +91,7 @@ function App() {
           >
             <TopBar />
 
-            <main className="flex-grow px-4 md:px-6 lg:px-10 py-8 w-full">
+            <main className="flex-grow p-[10px] w-full">
               <div className="w-full">
                 <AnimatePresence mode="wait">
                   <motion.div
