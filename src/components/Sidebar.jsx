@@ -67,7 +67,7 @@ const Sidebar = () => {
 
   const sidebarVariants = {
     expanded: { width: 260 },
-    collapsed: { width: 100 }
+    collapsed: { width: 80 }
   }
 
   const SidebarContent = () => (

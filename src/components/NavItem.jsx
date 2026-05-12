@@ -16,7 +16,7 @@ const NavItem = ({
       className={`
         relative transition-all duration-300 group flex items-center justify-center
         ${collapsed 
-          ? 'w-[80px] h-[80px] flex-col gap-[10px] p-[10px] mx-auto' 
+          ? 'w-[60px] h-[60px] p-[10px] mx-auto' 
           : 'w-full h-[40px] flex-row gap-[10px] px-[10px] py-[10px]'
         }
         rounded-[8px] mb-[10px]
@@ -32,20 +32,19 @@ const NavItem = ({
         ${collapsed ? 'w-full h-full' : 'w-[20px] h-[20px]'}
         ${active ? `scale-110 text-${color}-400` : 'group-hover:scale-110 group-hover:text-slate-200'}
       `}>
-        <Icon size={collapsed ? 40 : 18} strokeWidth={active ? 2.5 : 2} />
+        <Icon size={collapsed ? 28 : 18} strokeWidth={active ? 2.5 : 2} />
       </div>
 
       {/* Label - Positioned below icon when collapsed (10px), side by side when expanded (14px) */}
-      <span className={`
-        font-bold tracking-tight whitespace-nowrap transition-all duration-300
-        ${collapsed 
-          ? 'text-[10px] uppercase tracking-wider' 
-          : 'text-[14px] flex-grow text-left'
-        }
-        ${active ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)]'}
-      `}>
-        {label}
-      </span>
+      {!collapsed && (
+        <span className={`
+          font-bold tracking-tight whitespace-nowrap transition-all duration-300
+          text-[14px] flex-grow text-left
+          ${active ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)]'}
+        `}>
+          {label}
+        </span>
+      )}
 
       {/* Count Badge - Only in expanded mode */}
       {!collapsed && count !== null && (
