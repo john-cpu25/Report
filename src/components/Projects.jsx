@@ -126,6 +126,7 @@ const Projects = () => {
           <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Syncing Supabase Database...</p>
         </div>
+      ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start p-[10px]">
           {/* Left Column: Top Projects (My Top Projects) */}
           <div className="lg:col-span-3 flex flex-col gap-[10px]">
