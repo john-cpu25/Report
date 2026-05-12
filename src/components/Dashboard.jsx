@@ -12,7 +12,8 @@ import {
   Activity,
   Layers,
   Award,
-  Clock
+  Clock,
+  FolderKanban
 } from 'lucide-react';
 import WorkflowAnimation from '../WorkflowAnimation';
 import { supabase } from '../supabaseClient';
@@ -97,12 +98,12 @@ const Dashboard = () => {
     // Performance (mock calculation based on task density)
     const performance = totalProjects > 0 ? (weeklyTasks / totalProjects * 10).toFixed(1) : 0;
     
-    return [
-      { label: 'Active Projects', value: totalProjects, icon: Layers, color: 'text-indigo-400', bg: 'bg-indigo-400/10' },
-      { label: 'Intelligence Tasks', value: weeklyTasks, icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-      { label: 'Active Agents', value: activeMembers, icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-      { label: 'System Pulse', value: `${performance}%`, icon: Activity, color: 'text-rose-400', bg: 'bg-rose-400/10' },
-    ];
+    return {
+      activeProjects: totalProjects,
+      intelligenceTasks: weeklyTasks,
+      activeAgents: activeMembers,
+      systemPulse: `${performance}%`
+    };
   }, [projects, tasks]);
 
   const chartData = useMemo(() => {
@@ -420,176 +421,164 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Hero Stats - Clean SaaS Style */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[10px] w-full">
-        {stats.map((stat, idx) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="bg-[var(--bg-card)] border border-[var(--border)] p-[10px] rounded-[8px] relative overflow-hidden group hover:border-indigo-500/40 hover:shadow-2xl transition-all duration-500 shadow-sm flex flex-col gap-[10px] m-[10px]"
-          >
-            <div className="flex items-center justify-between p-[10px]">
-              <div className={`p-[10px] ${stat.bg} ${stat.color} rounded-[8px] border border-white/5`}>
-                <stat.icon size={22} />
-              </div>
-              <div className="flex items-center gap-1.5 px-[10px] py-[5px] bg-emerald-500/10 text-emerald-500 rounded-[8px] text-[14px] font-bold">
-                <TrendingUp size={12} />
-                +12.5%
-              </div>
-            </div>
-            
-            <div className="p-[10px]">
-              <p className="text-[14px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">{stat.label}</p>
-              <div className="flex items-baseline gap-2 mt-[10px]">
-                <motion.p 
-                  className="text-[30px] font-black text-[var(--text-main)] tracking-tight"
-                >
-                  {stat.value}
-                </motion.p>
-                <span className="text-[var(--text-dim)] text-[14px] font-medium italic">this {timeRange.toLowerCase()}</span>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* UNIFIED OPERATIONAL GRID: Team Capacity & Project Pulse */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] w-full">
+      {/* Top Grid - 3 Column Layout (Reference Image) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] w-full p-[10px]">
         
-        {/* Left/Center Area: Team Capacity (8 Columns) */}
-        <div className="lg:col-span-8 space-y-[10px]">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px] m-[10px]">
-            <div className="flex items-center gap-[10px]">
-              <div className="w-1.5 h-8 bg-emerald-500 rounded-full" />
-              <div>
-                <h2 className="text-[24px] font-bold text-[var(--text-main)] tracking-tight">Team Pulse</h2>
-                <p className="text-[14px] text-[var(--text-muted)] font-medium">Real-time Operative Deployment</p>
+        {/* Column 1: Vertical Stats Rail */}
+        <div className="lg:col-span-3 flex flex-col gap-[10px]">
+          {[
+            { label: 'Active Projects', value: stats.activeProjects, icon: <FolderKanban size={18} />, trend: '+12.5%', color: 'indigo' },
+            { label: 'Intelligence Tasks', value: stats.intelligenceTasks, icon: <Zap size={18} />, trend: '+12.5%', color: 'yellow' },
+            { label: 'Active Agents', value: stats.activeAgents, icon: <Users size={18} />, trend: '+12.5%', color: 'emerald' },
+            { label: 'System Pulse', value: stats.systemPulse, icon: <Activity size={18} />, trend: '+12.5%', color: 'rose' },
+          ].map((item, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[12px] flex flex-col justify-between shadow-sm relative overflow-hidden h-[110px] group hover:border-indigo-500/30 transition-all"
+            >
+               <div className="flex justify-between items-start">
+                  <div className={`p-1.5 rounded-[6px] bg-indigo-500/10 text-indigo-500`}>
+                    {item.icon}
+                  </div>
+                  <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                    {item.trend}
+                  </span>
+               </div>
+               <div className="mt-1">
+                 <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{item.label}</p>
+                 <div className="flex items-baseline gap-2">
+                   <h3 className="text-[24px] font-black text-[var(--text-main)] tracking-tighter leading-tight">{item.value}</h3>
+                   <span className="text-[10px] text-[var(--text-muted)] italic font-medium">this month</span>
+                 </div>
+               </div>
+            </motion.div>
+          ))}
+        </div>
+        {/* Column 2: Team Pulse (Middle) */}
+        <div className="lg:col-span-5 flex flex-col gap-[10px]">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] shadow-sm flex-grow">
+            <div className="flex items-center justify-between mb-[10px] p-[10px]">
+              <div className="flex items-center gap-[10px]">
+                <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                <div>
+                  <h2 className="text-[16px] font-black text-[var(--text-main)] uppercase tracking-tight">Team Pulse</h2>
+                  <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Real-time Deployment</p>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                {teamList.map(t => (
+                  <button 
+                    key={t}
+                    onClick={() => setSelectedCapacityTeam(t)}
+                    className={`px-2 py-1 text-[8px] font-black rounded-[4px] transition-all border ${
+                      selectedCapacityTeam === t ? 'bg-indigo-600 text-white border-indigo-400' : 'bg-white/5 text-[var(--text-muted)] border-transparent hover:border-white/10'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)]">
-              {teamList.map(team => (
-                <button
-                  key={team}
-                  onClick={() => setSelectedCapacityTeam(team)}
-                  className={`px-[10px] py-[10px] text-[14px] font-bold uppercase tracking-wider rounded-[8px] transition-all ${
-                    selectedCapacityTeam === team 
-                    ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border)]' 
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                  }`}
-                >
-                  {team}
-                </button>
+            <div className="flex flex-col gap-[10px] p-[10px]">
+              {filteredCapacity.map((team, idx) => (
+                <div key={idx} className="bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-[8px] p-[12px] group hover:border-indigo-500/30 transition-all">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-[6px] bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                        <Users size={16} />
+                      </div>
+                      <div>
+                        <h3 className="text-[14px] font-black text-[var(--text-main)] uppercase tracking-tight">{team.name}</h3>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)]">{team.total} MEMBERS</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest mb-1">Active</p>
+                      <p className="text-xl font-black text-[var(--text-main)]">{team.active}</p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mb-1">Available</p>
+                      <p className="text-xl font-black text-[var(--text-main)]">{team.free}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                      <span className="text-indigo-400">Load</span>
+                      <span className="text-[var(--text-main)]">{Math.round((team.active / team.total) * 100)}%</span>
+                    </div>
+                    <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(team.active / team.total) * 100}%` }}
+                        className="h-full bg-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
-            {filteredCapacity.map((team, idx) => (
-              <motion.div
-                key={team.name}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] hover:shadow-xl transition-all duration-300 flex flex-col gap-[10px] shadow-sm group m-[10px]"
-              >
-                {/* Team Info Header */}
-                <div className="flex items-center gap-[10px] p-[10px]">
-                  <div className="w-12 h-12 bg-indigo-500/10 flex items-center justify-center text-indigo-500 rounded-[8px] border border-indigo-500/20">
-                    <Users size={22} />
-                  </div>
-                  <div>
-                    <h3 className="text-[24px] font-extrabold text-[var(--text-main)] tracking-tight">{team.name}</h3>
-                    <p className="text-[14px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">{team.total} Members</p>
-                  </div>
-                </div>
-
-                {/* Status Badges - Row Layout */}
-                <div className="grid grid-cols-2 gap-[10px] p-[10px]">
-                  <div 
-                    onClick={() => setDetailView({ type: 'busy', team: team.name, users: team.busyMembers })}
-                    className="flex flex-col gap-[10px] p-[10px] bg-orange-500/5 border border-orange-500/10 rounded-[8px] cursor-pointer hover:bg-orange-500/10 transition-all"
-                  >
-                    <span className="text-[14px] font-bold text-orange-500 uppercase tracking-widest">Active</span>
-                    <span className="text-[30px] font-black text-[var(--text-main)]">{team.active}</span>
-                  </div>
-
-                  <div 
-                    onClick={() => setDetailView({ type: 'free', team: team.name, users: team.freeMembers })}
-                    className="flex flex-col gap-[10px] p-[10px] bg-emerald-500/5 border border-emerald-500/10 rounded-[8px] cursor-pointer hover:bg-emerald-500/10 transition-all"
-                  >
-                    <span className="text-[14px] font-bold text-emerald-500 uppercase tracking-widest">Available</span>
-                    <span className="text-[30px] font-black text-[var(--text-main)]">{team.free}</span>
-                  </div>
-                </div>
-
-                {/* Utilization Progress */}
-                <div className="space-y-[10px] p-[10px]">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Current Load</span>
-                    <span className="text-[14px] font-black text-[var(--text-main)] bg-[var(--bg-surface)] px-[10px] py-[5px] rounded-[4px]">
-                      {Math.round((team.active / team.total) * 100)}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2.5 bg-[var(--bg-surface)] rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(team.active / team.total) * 100}%` }}
-                      className="h-full bg-indigo-500 rounded-full"
-                    />
-                  </div>
-                </div>
-
-                {/* Project Tags - Clean View */}
-                <div className="p-[10px] pt-0">
-                  <p className="text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] mb-[10px]">Top Active Projects</p>
-                  <div className="flex flex-wrap gap-[10px]">
-                    {Object.entries(team.projectBreakdown).slice(0, 4).map(([proj, data]) => (
-                      <div key={proj} className="px-[10px] py-[10px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] text-[14px] font-bold text-[var(--text-main)] flex items-center gap-[10px] hover:border-indigo-500/30 transition-all">
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                        {proj}
-                        <span className="opacity-40 ml-1">({data.total})</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
         </div>
 
-        {/* Right Area: Project Distribution Chart (4 Columns) */}
+        {/* Column 3: Activity Chart (Right) */}
         <div className="lg:col-span-4 flex flex-col gap-[10px]">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] flex flex-col h-full shadow-sm m-[10px]">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] flex flex-col h-full shadow-sm">
             <div className="flex items-center gap-[10px] mb-[10px] p-[10px]">
-              <div className="w-1.5 h-8 bg-indigo-500 rounded-full" />
+              <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
               <div>
-                <h2 className="text-[24px] font-bold text-[var(--text-main)] tracking-tight">Activity</h2>
-                <p className="text-[14px] text-[var(--text-muted)] font-medium">Task Volume Distribution</p>
+                <h2 className="text-[16px] font-black text-[var(--text-main)] uppercase tracking-tight">Activity</h2>
+                <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Distribution</p>
               </div>
             </div>
             
             <div className="flex-grow flex items-center justify-center min-h-[350px] p-[10px]">
               {tasks.length > 0 ? (
-                <Bar data={chartData} options={{
-                  ...barOptions, 
-                  maintainAspectRatio: false,
-                  scales: {
-                    ...barOptions.scales,
-                    y: { ...barOptions.scales.y, grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false } }
-                  }
-                }} />
+                <Bar 
+                  data={chartData} 
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                      legend: { display: false },
+                      tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleFont: { size: 10, weight: 'bold' },
+                        bodyFont: { size: 12, weight: 'black' },
+                        padding: 10,
+                        cornerRadius: 8,
+                        displayColors: false
+                      }
+                    },
+                    scales: {
+                      x: { 
+                        grid: { display: false },
+                        ticks: { color: '#64748b', font: { size: 8, weight: 'bold' }, maxRotation: 45, minRotation: 45 }
+                      },
+                      y: { 
+                        grid: { color: 'rgba(255,255,255,0.03)' },
+                        ticks: { color: '#64748b', font: { size: 8, weight: 'bold' } }
+                      }
+                    }
+                  }} 
+                />
               ) : (
                 <div className="flex flex-col items-center gap-[10px] text-[var(--text-muted)] opacity-50">
                   <Activity size={48} strokeWidth={1} />
-                  <p className="text-[14px] font-medium italic">No active data streams.</p>
+                  <p className="text-[12px] font-medium italic">No active data streams.</p>
                 </div>
               )}
             </div>
           </div>
         </div>
+
       </div>
 
       {/* Analytics Engine - High Density Overview (Updated per Image 3) */}
