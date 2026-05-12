@@ -221,9 +221,9 @@ const Projects = () => {
                       )}
                     </div>
 
-                    {/* Bottom: Colored Details Area (1/3 height) - Precision Spacing */}
+                    {/* Bottom: Colored Details Area (1/3 height) - High Breathing Room Padding */}
                     <div 
-                      className="h-1/3 p-[10px] flex flex-col gap-[8px] text-white overflow-hidden relative"
+                      className="h-1/3 p-[20px] flex flex-col gap-[10px] text-white overflow-hidden relative"
                       style={{ backgroundColor: project.color || '#1e293b' }}
                     >
                       <div className="flex gap-[50px] items-start leading-none">
