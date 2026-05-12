@@ -235,6 +235,7 @@ const WeeklyReport = ({ exportExcel }) => {
         {/* Sidebar Form (Integrated in Grid on Desktop, Slider on Tablet/Mobile) */}
         <AnimatePresence>
           {isSidebarOpen && (
+            <>
             <motion.div 
               key="mobile-backdrop"
               initial={{ opacity: 0 }}
@@ -243,14 +244,13 @@ const WeeklyReport = ({ exportExcel }) => {
               onClick={() => setIsSidebarOpen(false)}
               className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[55] lg:hidden"
             />
-          )}
             <motion.aside 
               key="entry-form-aside"
               initial={{ x: -400, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -400, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-[80px] bottom-0 w-[320px] lg:w-[360px] z-[51] p-[10px] overflow-y-auto custom-scrollbar bg-slate-950/90 backdrop-blur-2xl border-r border-white/10 shadow-2xl"
+              className="fixed left-0 top-[80px] bottom-0 w-[320px] lg:w-[360px] z-[51] p-[10px] overflow-y-auto custom-scrollbar bg-[var(--bg-main)]/95 backdrop-blur-2xl border-r border-[var(--border)] shadow-2xl"
               style={{ 
                 left: typeof window !== 'undefined' && window.innerWidth >= 1024 
                   ? (sidebarCollapsed ? 100 : 260) 
@@ -264,11 +264,11 @@ const WeeklyReport = ({ exportExcel }) => {
                     <h2 className="text-[24px] font-black text-[var(--text-main)] tracking-tight uppercase">Entry Form</h2>
                   </div>
                 </div>
-                <form onSubmit={(e) => { handleAddTask(e); setIsSidebarOpen(false); }} className="flex flex-col gap-[10px] p-[10px]">
+                <form onSubmit={(e) => { handleAddTask(e); }} className="flex flex-col gap-[10px] p-[10px]">
                   <div className="flex flex-col gap-[5px]">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Project Portfolio</label>
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Project Portfolio</label>
                     <select 
-                      className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none"
+                      className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-[var(--text-main)] outline-none"
                       value={formData.project}
                       onChange={e => setFormData({...formData, project: e.target.value})}
                       required
@@ -280,7 +280,7 @@ const WeeklyReport = ({ exportExcel }) => {
 
                   <div className="flex flex-col gap-[5px]">
                     <div className="flex items-center justify-between px-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Level / Zone</label>
+                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Level / Zone</label>
                       <label className="flex items-center gap-[10px] cursor-pointer">
                         <input 
                           type="checkbox" 
@@ -288,13 +288,13 @@ const WeeklyReport = ({ exportExcel }) => {
                           checked={formData.showLevel}
                           onChange={e => setFormData({...formData, showLevel: e.target.checked, level: e.target.checked ? formData.level : ''})}
                         />
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">Visible</span>
+                        <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Visible</span>
                       </label>
                     </div>
                     {formData.showLevel && (
                       <input 
                         type="text" 
-                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none" 
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-[var(--text-main)] outline-none" 
                         placeholder="e.g. L12, P1..."
                         value={formData.level}
                         onChange={e => setFormData({...formData, level: e.target.value})}
@@ -304,9 +304,9 @@ const WeeklyReport = ({ exportExcel }) => {
                   </div>
 
                   <div className="flex flex-col gap-[5px]">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Task Analysis / Details</label>
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Task Analysis / Details</label>
                     <textarea 
-                      className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none min-h-[100px] custom-scrollbar" 
+                      className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-[var(--text-main)] outline-none min-h-[100px] custom-scrollbar" 
                       placeholder="ENTER TASK DETAILS..."
                       value={formData.tasks.join('\n')}
                       onChange={e => setFormData({...formData, tasks: e.target.value.split('\n')})}
@@ -315,10 +315,10 @@ const WeeklyReport = ({ exportExcel }) => {
                   </div>
 
                   <div className="flex flex-col gap-[5px]">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Additional Note</label>
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Additional Note</label>
                     <input 
                       type="text" 
-                      className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none" 
+                      className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-[var(--text-main)] outline-none" 
                       placeholder="CUSTOM COMMENTS..."
                       value={formData.note}
                       onChange={e => setFormData({...formData, note: e.target.value})}
@@ -327,18 +327,18 @@ const WeeklyReport = ({ exportExcel }) => {
                   
                   <div className="grid grid-cols-2 gap-[10px]">
                     <div className="flex flex-col gap-[5px]">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Report Date</label>
+                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Report Date</label>
                       <input 
                         type="date" 
-                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[12px] font-bold text-white outline-none"
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[12px] font-bold text-[var(--text-main)] outline-none"
                         value={selectedDate}
                         onChange={e => setSelectedDate(e.target.value)}
                       />
                     </div>
                     <div className="flex flex-col gap-[5px]">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Status</label>
+                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Status</label>
                       <select 
-                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[12px] font-bold text-white outline-none"
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[12px] font-bold text-[var(--text-main)] outline-none"
                         value={formData.status}
                         onChange={e => setFormData({...formData, status: e.target.value})}
                       >
@@ -348,7 +348,7 @@ const WeeklyReport = ({ exportExcel }) => {
                   </div>
 
                   <div className="flex flex-col gap-[5px]">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">ETA Protocol</label>
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">ETA Protocol</label>
                     <div className="grid grid-cols-3 gap-[5px]">
                       {['MO', 'AF', 'CUSTOM'].map(opt => (
                         <button
@@ -358,7 +358,7 @@ const WeeklyReport = ({ exportExcel }) => {
                           className={`py-[10px] rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all border ${
                             formData.etaMode === opt
                               ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
-                              : 'bg-[var(--bg-surface)] text-slate-500 border-[var(--border)] hover:border-white/20'
+                              : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--text-muted)]/20'
                           }`}
                         >
                           {opt}
@@ -368,7 +368,7 @@ const WeeklyReport = ({ exportExcel }) => {
                     {(formData.etaMode === 'CUSTOM') && (
                       <input 
                         type="time" 
-                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none mt-[5px]"
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-[var(--text-main)] outline-none mt-[5px]"
                         value={formData.eta}
                         onChange={e => setFormData({...formData, eta: e.target.value})}
                       />
@@ -391,10 +391,8 @@ const WeeklyReport = ({ exportExcel }) => {
                 </form>
               </div>
             </motion.aside>
-
-
-
-
+            </>
+          )}
         </AnimatePresence>
 
         {/* Main Table */}
