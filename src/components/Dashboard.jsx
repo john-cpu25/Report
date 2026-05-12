@@ -345,26 +345,31 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="space-y-8 pb-12 w-full">
-      {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 w-full">
+    <div className="space-y-10 pb-12 w-full max-w-[1600px] mx-auto">
+      {/* Header & Controls - Optimized for Clarity */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 w-full border-b border-[var(--border)] pb-8">
         <div>
-          <h1 className="text-3xl font-black text-[var(--text-main)] uppercase tracking-tighter flex items-center gap-3">
-            <LayoutDashboard className="text-indigo-500" size={32} />
+          <h1 className="text-3xl font-extrabold text-[var(--text-main)] tracking-tight flex items-center gap-4">
+            <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-500">
+              <LayoutDashboard size={28} />
+            </div>
             Command Center
           </h1>
-          <p className="text-[var(--text-muted)] font-bold text-xs uppercase tracking-[0.3em] mt-2">Operational Intelligence System v2.1</p>
+          <p className="text-[var(--text-muted)] font-medium text-sm mt-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Operational Intelligence System • Real-time Data Stream
+          </p>
         </div>
 
-        <div className="flex bg-[var(--bg-card)] p-1.5 rounded-none border border-[var(--glass-border)] backdrop-blur-xl">
+        <div className="flex bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border)] shadow-sm">
           {['WEEK', 'MONTH', 'YEAR'].map(range => (
             <button
               key={range}
               onClick={() => setTimeRange(range)}
-              className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-none transition-all ${
+              className={`px-8 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-300 ${
                 timeRange === range 
-                ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-md border border-[var(--border)]' 
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5'
               }`}
             >
               {range}
@@ -373,72 +378,70 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Hero Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+      {/* Hero Stats - Clean SaaS Style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
         {stats.map((stat, idx) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] p-6 rounded-none relative overflow-hidden group hover:border-indigo-500/30 transition-all shadow-lg"
+            className="bg-[var(--bg-card)] border border-[var(--border)] p-8 rounded-3xl relative overflow-hidden group hover:border-indigo-500/40 hover:shadow-2xl transition-all duration-500 shadow-sm"
           >
-            {/* Pulsing Background Glow */}
-            <motion.div 
-              animate={{ 
-                opacity: [0.05, 0.15, 0.05],
-                scale: [1, 1.2, 1]
-              }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className={`absolute -top-10 -right-10 w-40 h-40 ${stat.bg} rounded-full blur-3xl pointer-events-none`}
-            />
-
-            <div className="flex justify-between items-start relative z-10">
-              <div className={`p-4 ${stat.bg} ${stat.color} rounded-none border border-[var(--glass-border)] shadow-inner`}>
-                <stat.icon size={24} />
+            <div className="flex flex-col gap-6 relative z-10">
+              <div className="flex items-center justify-between">
+                <div className={`p-3.5 ${stat.bg} ${stat.color} rounded-2xl border border-white/5`}>
+                  <stat.icon size={22} />
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[11px] font-bold">
+                  <TrendingUp size={12} />
+                  +12.5%
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-80">{stat.label}</p>
-                <motion.p 
-                  initial={{ scale: 0.5 }}
-                  animate={{ scale: 1 }}
-                  className="text-3xl font-black text-[var(--text-main)] mt-1"
-                >
-                  {stat.value}
-                </motion.p>
+              
+              <div>
+                <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest">{stat.label}</p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <motion.p 
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    className="text-4xl font-black text-[var(--text-main)] tracking-tight"
+                  >
+                    {stat.value}
+                  </motion.p>
+                  <span className="text-[var(--text-dim)] text-xs font-medium italic">this {timeRange.toLowerCase()}</span>
+                </div>
               </div>
             </div>
-            <div className="mt-6 flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase tracking-widest relative z-10">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>System Nominal</span>
-            </div>
+            
+            {/* Subtle Gradient Accent */}
+            <div className={`absolute bottom-0 left-0 w-full h-1 opacity-20 ${stat.bg}`} />
           </motion.div>
         ))}
       </div>
 
       {/* UNIFIED OPERATIONAL GRID: Team Capacity & Project Pulse */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 w-full">
         
         {/* Left/Center Area: Team Capacity (8 Columns) */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="lg:col-span-8 space-y-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="w-1.5 h-6 bg-emerald-500 rounded-none" />
+              <div className="w-1.5 h-8 bg-emerald-500 rounded-full" />
               <div>
-                <h2 className="text-xl font-black text-[var(--text-main)] uppercase tracking-tight">Team Capacity & Pulse</h2>
-                <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Real-time Operative Deployment</p>
+                <h2 className="text-2xl font-bold text-[var(--text-main)] tracking-tight">Team Pulse</h2>
+                <p className="text-sm text-[var(--text-muted)] font-medium">Real-time Operative Deployment</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-[var(--bg-card)] p-1 rounded-none border border-[var(--glass-border)]">
-              <span className="text-[9px] font-black text-[var(--text-muted)] uppercase px-2">Filter:</span>
+            <div className="flex items-center gap-2 bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border)]">
               {teamList.map(team => (
                 <button
                   key={team}
                   onClick={() => setSelectedCapacityTeam(team)}
-                  className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-none transition-all ${
+                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
                     selectedCapacityTeam === team 
-                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
+                    ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border)]' 
                     : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                   }`}
                 >
@@ -448,104 +451,71 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {filteredCapacity.map((team, idx) => (
               <motion.div
                 key={team.name}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-6 hover:border-indigo-500/30 transition-all group flex flex-col gap-6"
+                className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[2rem] p-8 hover:shadow-xl transition-all duration-300 flex flex-col gap-8 shadow-sm group"
               >
                 {/* Team Info Header */}
-                <div className="flex items-center gap-4 w-full bg-indigo-500/5 border border-indigo-500/10 p-4">
-                  <div className="w-10 h-10 bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
-                    <Users size={20} />
+                <div className="flex items-center gap-5">
+                  <div className="w-14 h-14 bg-indigo-500/10 flex items-center justify-center text-indigo-500 rounded-2xl border border-indigo-500/20 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-500">
+                    <Users size={24} />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-[var(--text-main)] uppercase tracking-tight">{team.name}</h3>
-                    <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{team.total} Members Total</p>
+                    <h3 className="text-xl font-extrabold text-[var(--text-main)] tracking-tight">{team.name}</h3>
+                    <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest">{team.total} Members</p>
                   </div>
                 </div>
 
-                {/* Stat Blocks - Vertical Stack */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center p-3 bg-indigo-500/5 border border-indigo-500/10">
-                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Daily Capacity</span>
-                    <motion.div 
-                      animate={{ rotateY: [0, 360] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                      className="perspective-1000"
-                    >
-                      <span className="text-xs font-black text-white bg-indigo-600 px-2 py-0.5 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] inline-block">
-                        {team.total * 8}h
-                      </span>
-                    </motion.div>
-                  </div>
-
+                {/* Status Badges - Row Layout */}
+                <div className="grid grid-cols-2 gap-4">
                   <div 
                     onClick={() => setDetailView({ type: 'busy', team: team.name, users: team.busyMembers })}
-                    className="flex justify-between items-center p-3 bg-orange-500/5 border border-orange-500/10 cursor-pointer hover:bg-orange-500/10 transition-all"
+                    className="flex flex-col gap-1 p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl cursor-pointer hover:bg-orange-500/10 transition-all"
                   >
-                    <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest">Active / Busy</span>
-                    <span className="text-xs font-black text-white bg-orange-700 px-2 py-0.5 shadow-[2px_2px_0px_rgba(0,0,0,0.5)]">
-                      {team.active}
-                    </span>
+                    <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Active</span>
+                    <span className="text-2xl font-black text-[var(--text-main)]">{team.active}</span>
                   </div>
 
                   <div 
                     onClick={() => setDetailView({ type: 'free', team: team.name, users: team.freeMembers })}
-                    className="flex justify-between items-center p-3 bg-emerald-500/5 border border-emerald-500/10 cursor-pointer hover:bg-emerald-500/10 transition-all"
+                    className="flex flex-col gap-1 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl cursor-pointer hover:bg-emerald-500/10 transition-all"
                   >
-                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Available / Free</span>
-                    <span className="text-xs font-black text-white bg-emerald-700 px-2 py-0.5 shadow-[2px_2px_0px_rgba(0,0,0,0.5)]">
-                      {team.free}
-                    </span>
+                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Available</span>
+                    <span className="text-2xl font-black text-[var(--text-main)]">{team.free}</span>
                   </div>
                 </div>
 
-                {/* Utilization */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-end">
-                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Utilization</span>
-                    <span className="text-sm font-black text-[var(--text-main)]">{Math.round((team.active / team.total) * 100)}%</span>
+                {/* Utilization Progress */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Current Load</span>
+                    <span className="text-sm font-black text-[var(--text-main)] bg-[var(--bg-surface)] px-2 py-1 rounded-md">
+                      {Math.round((team.active / team.total) * 100)}%
+                    </span>
                   </div>
-                  <div className="w-full h-2 bg-white/5 border border-white/5 overflow-hidden">
+                  <div className="w-full h-2.5 bg-[var(--bg-surface)] rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${(team.active / team.total) * 100}%` }}
-                      className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500"
+                      className="h-full bg-indigo-500 rounded-full"
                     />
                   </div>
                 </div>
 
-                {/* Active Project Analysis - Below Stats */}
-                <div className="pt-4 border-t border-[var(--glass-border)]">
-                  <div className="flex items-center gap-3 mb-4 bg-white/5 p-2 border-l-2 border-indigo-500">
-                    <span className="text-[9px] font-black text-[var(--text-main)] uppercase tracking-widest">Active Project Analysis:</span>
-                  </div>
-                  <div className="grid grid-cols-1 gap-2 overflow-y-auto custom-scrollbar pr-1" style={{ maxHeight: '250px' }}>
-                    {Object.entries(team.projectBreakdown).map(([proj, data]) => (
-                      <div key={proj} className="bg-white/5 border border-white/5 p-3 hover:border-indigo-500/20 transition-all">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-black text-indigo-400 uppercase truncate" title={proj}>{proj}</span>
-                          <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 text-[9px] font-black border border-indigo-500/20">{data.total}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {[
-                            { s: 3, label: 'NEW', color: 'bg-indigo-500/10 text-indigo-400' },
-                            { s: 6, label: 'START', color: 'bg-blue-500/10 text-blue-400' },
-                            { s: 4, label: 'CHECKED', color: 'bg-emerald-500/10 text-emerald-400' },
-                          ].map(status => {
-                            const count = data.statuses[status.s] || 0;
-                            if (count === 0) return null;
-                            return (
-                              <div key={status.s} className={`px-1.5 py-0.5 ${status.color} text-[7px] font-black uppercase border border-current`}>
-                                {status.label} {count}
-                              </div>
-                            );
-                          })}
-                        </div>
+                {/* Project Tags - Clean View */}
+                <div className="pt-2">
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] mb-4">Top Active Projects</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(team.projectBreakdown).slice(0, 4).map(([proj, data]) => (
+                      <div key={proj} className="px-3 py-1.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg text-[11px] font-bold text-[var(--text-main)] flex items-center gap-2 hover:border-indigo-500/30 transition-all">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                        {proj}
+                        <span className="opacity-40 ml-1">({data.total})</span>
                       </div>
                     ))}
                   </div>
@@ -556,51 +526,58 @@ const Dashboard = () => {
         </div>
 
         {/* Right Area: Project Distribution Chart (4 Columns) */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-6 flex flex-col h-full shadow-xl">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <div className="w-1.5 h-6 bg-indigo-500 rounded-none" />
-                <div>
-                  <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Project Activity</h2>
-                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Task Volume Distribution</p>
-                </div>
+        <div className="lg:col-span-4 flex flex-col gap-8">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[2rem] p-8 flex flex-col h-full shadow-sm">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="w-1.5 h-8 bg-indigo-500 rounded-full" />
+              <div>
+                <h2 className="text-xl font-bold text-[var(--text-main)] tracking-tight">Activity</h2>
+                <p className="text-sm text-[var(--text-muted)] font-medium">Task Volume Distribution</p>
               </div>
             </div>
             
-            <div className="flex-grow flex items-center justify-center min-h-[300px]">
+            <div className="flex-grow flex items-center justify-center min-h-[350px]">
               {tasks.length > 0 ? (
-                <Bar data={chartData} options={{...barOptions, maintainAspectRatio: false}} />
+                <Bar data={chartData} options={{
+                  ...barOptions, 
+                  maintainAspectRatio: false,
+                  scales: {
+                    ...barOptions.scales,
+                    y: { ...barOptions.scales.y, grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false } }
+                  }
+                }} />
               ) : (
-                <p className="text-[var(--text-muted)] font-bold italic">No data available.</p>
+                <div className="flex flex-col items-center gap-4 text-[var(--text-muted)] opacity-50">
+                  <Activity size={48} strokeWidth={1} />
+                  <p className="text-sm font-medium italic">No active data streams.</p>
+                </div>
               )}
             </div>
           </div>
-
         </div>
       </div>
 
       {/* Activity Heatmap & Process Flow */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 w-full">
         {/* Mock Activity Heatmap */}
-        <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-8">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-1.5 h-6 bg-yellow-400 rounded-none" />
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[2rem] p-10 shadow-sm">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-1.5 h-8 bg-yellow-400 rounded-full" />
             <div>
-              <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Intelligence Heatmap</h2>
-              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">System Load over Time</p>
+              <h2 className="text-xl font-bold text-[var(--text-main)] tracking-tight">System Pulse</h2>
+              <p className="text-sm text-[var(--text-muted)] font-medium">Activity Density over 30 Days</p>
             </div>
           </div>
           
-          <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: 35 }).map((_, i) => (
+          <div className="grid grid-cols-10 sm:grid-cols-12 gap-2">
+            {Array.from({ length: 60 }).map((_, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, scale: 0.5 }}
+                initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.01 }}
-                className={`aspect-square rounded-none border border-[var(--glass-border)] ${
-                  Math.random() > 0.8 ? 'bg-indigo-500/60 shadow-[0_0_10px_rgba(99,102,241,0.3)]' :
+                transition={{ delay: i * 0.005 }}
+                className={`aspect-square rounded-md border border-white/5 ${
+                  Math.random() > 0.8 ? 'bg-indigo-500/60 shadow-[0_0_15px_rgba(99,102,241,0.2)]' :
                   Math.random() > 0.5 ? 'bg-indigo-500/30' :
                   Math.random() > 0.2 ? 'bg-indigo-500/10' :
                   'bg-[var(--bg-surface)]'
@@ -608,113 +585,101 @@ const Dashboard = () => {
               />
             ))}
           </div>
-          <div className="flex justify-between mt-4 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+          <div className="flex justify-between mt-6 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">
             <span>Low Intensity</span>
-            <span>Critical Load</span>
+            <span>Peak Activity</span>
           </div>
         </div>
 
-        {/* Process Flow (Moved here) */}
-        <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--glass-border)] rounded-none p-8 flex flex-col shadow-xl">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-1.5 h-6 bg-rose-500 rounded-none" />
+        {/* Process Flow */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[2rem] p-10 flex flex-col shadow-sm">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-1.5 h-8 bg-rose-500 rounded-full" />
             <div>
-              <h2 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight">Process Flow</h2>
-              <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Live System Automation</p>
+              <h2 className="text-xl font-bold text-[var(--text-main)] tracking-tight">Automation Engine</h2>
+              <p className="text-sm text-[var(--text-muted)] font-medium">Live Intelligence Flow</p>
             </div>
           </div>
 
-          <div className="flex-grow flex items-center justify-center min-h-[300px]">
+          <div className="flex-grow flex items-center justify-center min-h-[300px] bg-[var(--bg-surface)]/30 rounded-[1.5rem] border border-[var(--border)]">
             <WorkflowAnimation />
           </div>
 
-          <button className="mt-6 w-full py-3 bg-white/5 hover:bg-indigo-500/10 rounded-none text-[9px] font-black text-[var(--text-main)] uppercase tracking-widest transition-all border border-white/5">
+          <button className="mt-8 w-full py-4 bg-indigo-500/10 hover:bg-indigo-500 text-indigo-500 hover:text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 border border-indigo-500/20">
             Configure Automation Engine
           </button>
         </div>
       </div>
 
-
-      {/* Detail Modal */}
+      {/* Detail Modal - High Clarity UX */}
       <AnimatePresence>
         {detailView && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setDetailView(null)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+              className="absolute inset-0 bg-[#0B0F1A]/80 backdrop-blur-xl"
             />
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg bg-[var(--bg-card)] border border-[var(--glass-border)] rounded-none p-8 shadow-2xl overflow-hidden"
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-[var(--bg-card)] border border-[var(--border)] rounded-[2.5rem] p-10 shadow-2xl overflow-hidden"
             >
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center justify-between mb-10">
                 <div>
-                  <h2 className="text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">
-                    {detailView.type === 'free' ? 'Available Operatives' : `Project: ${detailView.projectName}`}
+                  <h2 className="text-3xl font-extrabold text-[var(--text-main)] tracking-tight">
+                    {detailView.type === 'free' ? 'Available Ops' : 'Busy Ops'}
                   </h2>
-                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{detailView.team} Team</p>
+                  <p className="text-sm text-[var(--text-muted)] font-medium mt-1">{detailView.team} Sector Analysis</p>
                 </div>
                 <button 
                   onClick={() => setDetailView(null)}
-                  className="p-3 bg-white/5 hover:bg-white/10 rounded-none text-[var(--text-muted)] transition-all"
+                  className="w-12 h-12 flex items-center justify-center bg-[var(--bg-surface)] hover:bg-rose-500/10 hover:text-rose-500 rounded-2xl text-[var(--text-muted)] transition-all duration-300"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="overflow-x-auto max-h-[60vh]">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-white/5">
-                      <th className="px-4 py-3 text-[10px] font-black text-white/50 uppercase tracking-widest">Member</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-white/50 uppercase tracking-widest text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {detailView.users.map((userName, i) => {
-                      // Find member info from filteredCapacity
-                      const teamData = filteredCapacity.find(t => t.name === detailView.team);
-                      const member = teamData?.members.find(m => m.name === userName);
-                      
-                      return (
-                        <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02]">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${
-                                member?.isActive ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.4)] animate-pulse' : 'bg-emerald-500'
-                              }`} />
-                              <span className="text-sm font-bold text-white">{userName}</span>
-                              {member?.taskCount > 0 && (
-                                <span className="text-[10px] font-black text-white/30 ml-2">
-                                  {member.taskCount} Tasks
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-none ${
-                              member?.isActive ? 'bg-orange-500/10 text-orange-500' : 'bg-emerald-500/10 text-emerald-500'
-                            }`}>
-                              {member?.isActive ? 'Busy' : 'Free'}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
+                <div className="grid grid-cols-1 gap-4">
+                  {detailView.users.map((userName, i) => {
+                    const teamData = filteredCapacity.find(t => t.name === detailView.team);
+                    const member = teamData?.members.find(m => m.name === userName);
+                    
+                    return (
+                      <div key={i} className="flex items-center justify-between p-5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl group hover:border-indigo-500/30 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-3 h-3 rounded-full ${
+                            member?.isActive ? 'bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.4)] animate-pulse' : 'bg-emerald-500'
+                          }`} />
+                          <div>
+                            <p className="text-base font-bold text-[var(--text-main)]">{userName}</p>
+                            <p className="text-xs text-[var(--text-muted)] font-medium">
+                              {member?.taskCount || 0} active tasks assigned
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                            member?.isActive ? 'bg-orange-500/10 text-orange-500' : 'bg-emerald-500/10 text-emerald-500'
+                          }`}>
+                            {member?.isActive ? 'Deployment' : 'On Standby'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <button 
                 onClick={() => setDetailView(null)}
-                className="mt-8 w-full py-4 bg-indigo-500 text-white rounded-none text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:scale-[1.02] transition-all"
+                className="mt-10 w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-bold uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/20 transition-all active:scale-95"
               >
-                Close Intelligence View
+                Return to Command Center
               </button>
             </motion.div>
           </div>
