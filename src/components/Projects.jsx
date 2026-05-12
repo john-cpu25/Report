@@ -202,47 +202,54 @@ const Projects = () => {
                     className="flex flex-col bg-white border rounded-[8px] overflow-hidden shadow-md cursor-pointer group hover:shadow-xl transition-all h-[400px]"
                     style={{ borderColor: project.color || '#0078d4' }}
                   >
-                    {/* Top: Image/Logo Area (Matching Reference Diamond Logo) */}
-                    <div className="h-1/2 flex items-center justify-center p-[20px] bg-white relative overflow-hidden">
-                      <div className="relative w-32 h-32 rotate-45 flex flex-wrap border-2 border-slate-100 shadow-2xl">
-                        <div className="w-1/2 h-1/2 bg-red-600" />
-                        <div className="w-1/2 h-1/2 bg-slate-300" />
-                        <div className="w-1/2 h-1/2 bg-slate-800" />
-                        <div className="w-1/2 h-1/2 bg-slate-400" />
-                        {/* Center Diamond Cutout */}
-                        <div className="absolute inset-0 m-auto w-6 h-6 bg-white shadow-inner" />
-                      </div>
+                    {/* Top: Image/Logo Area (2/3 height) */}
+                    <div className="h-2/3 flex items-center justify-center bg-white relative overflow-hidden">
+                      {project.image_url ? (
+                        <img 
+                          src={project.image_url} 
+                          alt={project.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="relative w-32 h-32 rotate-45 flex flex-wrap border-2 border-slate-100 shadow-2xl">
+                          <div className="w-1/2 h-1/2 bg-red-600" />
+                          <div className="w-1/2 h-1/2 bg-slate-300" />
+                          <div className="w-1/2 h-1/2 bg-slate-800" />
+                          <div className="w-1/2 h-1/2 bg-slate-400" />
+                          <div className="absolute inset-0 m-auto w-6 h-6 bg-white shadow-inner" />
+                        </div>
+                      )}
                     </div>
 
-                    {/* Bottom: Colored Details Area */}
+                    {/* Bottom: Colored Details Area (1/3 height) - 10px Padding */}
                     <div 
-                      className="h-1/2 p-[15px] flex flex-col gap-[10px] text-white"
+                      className="h-1/3 p-[10px] flex flex-col gap-[8px] text-white overflow-hidden"
                       style={{ backgroundColor: project.color || '#1e293b' }}
                     >
-                      <div className="grid grid-cols-12 gap-1 items-start">
-                        <span className="col-span-4 text-[12px] font-black uppercase">Name :</span>
-                        <span className="col-span-8 text-[12px] font-bold truncate">{project.name || 'N/A'}</span>
+                      <div className="grid grid-cols-12 gap-1 items-start leading-none">
+                        <span className="col-span-4 text-[11px] font-black uppercase">Name :</span>
+                        <span className="col-span-8 text-[11px] font-bold truncate">{project.name || 'N/A'}</span>
                       </div>
                       
-                      <div className="grid grid-cols-12 gap-1 items-start">
-                        <span className="col-span-4 text-[12px] font-black uppercase">CreateAt :</span>
-                        <span className="col-span-8 text-[12px] font-bold">{project.created_at ? new Date(project.created_at).toLocaleDateString('vi-VN') : '24/01/2026'}</span>
+                      <div className="grid grid-cols-12 gap-1 items-start leading-none">
+                        <span className="col-span-4 text-[11px] font-black uppercase">CreateAt :</span>
+                        <span className="col-span-8 text-[11px] font-bold">{project.created_at ? new Date(project.created_at).toLocaleDateString('vi-VN') : '24/01/2026'}</span>
                       </div>
 
-                      <div className="grid grid-cols-12 gap-1 items-start">
-                        <span className="col-span-4 text-[12px] font-black uppercase">Version :</span>
-                        <span className="col-span-8 text-[12px] font-bold">Autodesk Revit {project.revit_version || '2024'}</span>
+                      <div className="grid grid-cols-12 gap-1 items-start leading-none">
+                        <span className="col-span-4 text-[11px] font-black uppercase">Version :</span>
+                        <span className="col-span-8 text-[11px] font-bold">Autodesk Revit {project.revit_version || '2024'}</span>
                       </div>
 
-                      <div className="grid grid-cols-12 gap-1 items-start">
-                        <span className="col-span-4 text-[12px] font-black uppercase">Description :</span>
-                        <span className="col-span-8 text-[10px] font-medium italic opacity-80 line-clamp-3">
+                      <div className="grid grid-cols-12 gap-1 items-start leading-none">
+                        <span className="col-span-4 text-[11px] font-black uppercase">Description :</span>
+                        <span className="col-span-8 text-[10px] font-medium italic opacity-80 line-clamp-2">
                           {project.description || "Core Rincovitch BIM coordination protocol."}
                         </span>
                       </div>
 
                       <div className="mt-auto flex justify-end">
-                        <div className="px-2 py-1 bg-white/20 rounded-[4px] text-[10px] font-black uppercase tracking-widest">
+                        <div className="px-2 py-1 bg-white/20 rounded-[4px] text-[9px] font-black uppercase tracking-widest">
                           {project.taskCount} Tasks
                         </div>
                       </div>
