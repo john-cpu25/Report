@@ -96,28 +96,30 @@ const Projects = () => {
   );
 
   return (
-    <div className="w-full mx-auto space-y-[10px] pb-[10px]">
-      {/* Header Intelligence */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px] bg-[var(--bg-card)] p-[10px] rounded-[8px] border border-[var(--border)] shadow-sm m-[10px]">
-        <div className="flex flex-col gap-[5px]">
-          <div className="flex items-center gap-[10px]">
-            <div className="w-1.5 h-8 bg-indigo-500 rounded-full" />
-            <h1 className="text-[30px] font-black text-[var(--text-main)] uppercase tracking-tight">
-              Project <span className="text-indigo-400">Intelligence</span>
-            </h1>
+    <div className="w-full mx-auto pb-[10px] relative">
+      {/* Header Intelligence - Sticky */}
+      <div className="sticky top-0 z-50 bg-[var(--bg-main)] pt-[10px] pb-[5px]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px] bg-[var(--bg-card)] p-[10px] rounded-[8px] border border-[var(--border)] shadow-md mx-[10px]">
+          <div className="flex flex-col gap-[5px]">
+            <div className="flex items-center gap-[10px]">
+              <div className="w-1.5 h-8 bg-indigo-500 rounded-full" />
+              <h1 className="text-[30px] font-black text-[var(--text-main)] uppercase tracking-tight">
+                Project <span className="text-indigo-400">Intelligence</span>
+              </h1>
+            </div>
+            <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-[15px]">Global Portfolio Management System</p>
           </div>
-          <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-[15px]">Global Portfolio Management System</p>
-        </div>
 
-        <div className="relative group max-w-md w-full">
-          <Search className="absolute left-[15px] top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
-          <input 
-            type="text" 
-            placeholder="FILTER PROJECTS..." 
-            className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] py-[10px] pl-[45px] pr-[15px] text-[14px] font-bold text-[var(--text-main)] focus:border-indigo-500/50 transition-all outline-none placeholder:text-[var(--text-muted)]"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
+          <div className="relative group max-w-md w-full">
+            <Search className="absolute left-[15px] top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
+            <input 
+              type="text" 
+              placeholder="FILTER PROJECTS..." 
+              className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] py-[10px] pl-[45px] pr-[15px] text-[14px] font-bold text-[var(--text-main)] focus:border-indigo-500/50 transition-all outline-none placeholder:text-[var(--text-muted)]"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -128,8 +130,8 @@ const Projects = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start p-[10px]">
-          {/* Left Column: Top Projects (My Top Projects) */}
-          <div className="lg:col-span-3 flex flex-col gap-[10px]">
+          {/* Left Column: Top Projects (Sticky) */}
+          <div className="lg:col-span-3 sticky top-[110px] flex flex-col gap-[10px]">
              <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] shadow-sm relative overflow-hidden">
                 <div className="flex items-center gap-[10px] p-[10px] mb-[10px]">
                   <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
