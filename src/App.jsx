@@ -85,7 +85,7 @@ function App() {
 
           <motion.div 
             layout initial={false}
-            animate={{ marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 ? (sidebarCollapsed ? 72 : 260) : 0 }}
+            animate={{ marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 ? (sidebarCollapsed ? 100 : 260) : 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="flex-1 min-h-screen flex flex-col w-full"
           >

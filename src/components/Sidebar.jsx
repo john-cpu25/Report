@@ -67,32 +67,32 @@ const Sidebar = () => {
 
   const sidebarVariants = {
     expanded: { width: 260 },
-    collapsed: { width: 72 }
+    collapsed: { width: 100 }
   }
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full py-6">
-      <div className={`px-4 mb-8 flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
+    <div className="flex flex-col h-full p-[10px] gap-[10px]">
+      <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} p-[10px] mb-[10px]`}>
         {!collapsed && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-            <div className="w-1.5 h-5 bg-indigo-500 rounded-full" />
-            <span className="text-[12px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Navigation</span>
+            <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
+            <span className="text-[24px] font-black text-[var(--text-main)] uppercase tracking-tight">NAV</span>
           </motion.div>
         )}
-        <button onClick={() => setCollapsed(!collapsed)} className="hidden lg:flex p-1.5 rounded-lg hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-colors">
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        <button onClick={() => setCollapsed(!collapsed)} className="flex p-2 rounded-[8px] hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-colors">
+          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
 
-      <div className="flex-grow overflow-y-auto custom-scrollbar px-3 space-y-8 pb-10">
+      <div className="flex-grow overflow-y-auto custom-scrollbar space-y-[10px]">
         {mainSections.map((section, idx) => (
-          <div key={section.title} className="space-y-2">
+          <div key={section.title} className="space-y-[10px]">
             {!collapsed && (
-              <motion.h3 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-3 text-[11px] font-black text-[var(--text-muted)] opacity-60 uppercase tracking-[0.2em] mb-2">
+              <h3 className="px-[10px] text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-[10px]">
                 {section.title}
-              </motion.h3>
+              </h3>
             )}
-            <div className="space-y-3">
+            <div className="flex flex-col gap-0">
               {section.items.map(item => (
                 <NavItem
                   key={item.id}
@@ -107,21 +107,18 @@ const Sidebar = () => {
                 />
               ))}
             </div>
-            {idx < mainSections.length - 1 && !collapsed && (
-              <div className="mx-3 h-[1px] bg-white/[0.03] mt-6" />
-            )}
           </div>
         ))}
       </div>
 
       {/* System Section at the bottom */}
-      <div className="px-3 mt-auto space-y-2 pb-6 border-t border-white/5 pt-6">
+      <div className="mt-auto space-y-[10px] border-t border-white/5 pt-[10px]">
         {!collapsed && (
-          <motion.h3 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-3 text-[11px] font-black text-[var(--text-muted)] opacity-60 uppercase tracking-[0.2em] mb-2">
+          <h3 className="px-[10px] text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-[10px]">
             {systemSection.title}
-          </motion.h3>
+          </h3>
         )}
-        <div className="space-y-2">
+        <div className="flex flex-col gap-0">
           {systemSection.items.map(item => (
             <NavItem
               key={item.id}

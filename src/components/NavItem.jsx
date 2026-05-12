@@ -14,57 +14,47 @@ const NavItem = ({
     <button
       onClick={onClick}
       className={`
-        relative w-full flex items-center gap-4 px-3 py-4 rounded-none transition-all duration-300 group
+        relative transition-all duration-300 group flex items-center justify-center
+        ${collapsed 
+          ? 'w-[80px] h-[80px] flex-col gap-2 p-[10px] mx-auto' 
+          : 'w-full h-[40px] flex-row gap-[10px] px-[10px] py-[10px]'
+        }
+        rounded-[8px] mb-[10px]
         ${active 
-          ? `bg-${color}-500/10 text-${color}-400 shadow-lg shadow-${color}-500/5` 
-          : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/[0.03]'
+          ? `bg-${color}-500/10 text-${color}-400 shadow-lg shadow-${color}-500/5 border border-${color}-500/20` 
+          : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/[0.05]'
         }
       `}
     >
-      {/* Active Indicator */}
-      {active && (
-        <motion.div
-          layoutId="active-nav-indicator"
-          className={`absolute left-0 w-1 h-6 bg-${color}-500 rounded-none`}
-          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-        />
-      )}
-
+      {/* Icon - Always centered in collapsed, left in expanded */}
       <div className={`
         flex items-center justify-center transition-all duration-300
-        ${collapsed ? 'w-full' : 'w-6'}
-        ${active ? `scale-110 text-${color}-400` : 'group-hover:scale-110 group-hover:text-slate-300'}
+        ${collapsed ? 'w-full' : 'w-[20px] h-[20px]'}
+        ${active ? `scale-110 text-${color}-400` : 'group-hover:scale-110 group-hover:text-slate-200'}
       `}>
-        <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+        <Icon size={collapsed ? 32 : 18} strokeWidth={active ? 2.5 : 2} />
       </div>
 
-      {!collapsed && (
-        <div className="flex-grow flex items-center justify-between overflow-hidden">
-          <span className={`
-            text-[15px] font-bold tracking-tight whitespace-nowrap transition-all duration-300
-            ${active ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)]'}
-          `}>
-            {label}
-          </span>
-          {count !== null && (
-            <span className={`
-              text-[9px] font-black px-1.5 py-0.5 rounded-md
-              ${active ? `bg-${color}-500/20 text-${color}-400` : 'bg-[var(--bg-dark)] text-[var(--text-muted)]'}
-            `}>
-              {count}
-            </span>
-          )}
-        </div>
-      )}
+      {/* Label - Positioned below icon when collapsed (10px), side by side when expanded (14px) */}
+      <span className={`
+        font-bold tracking-tight whitespace-nowrap transition-all duration-300
+        ${collapsed 
+          ? 'text-[10px] uppercase tracking-wider' 
+          : 'text-[14px] flex-grow text-left'
+        }
+        ${active ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)]'}
+      `}>
+        {label}
+      </span>
 
-      {/* Tooltip for collapsed mode */}
-      {collapsed && (
-        <div className="absolute left-full ml-4 px-3 py-2 bg-slate-900 border border-white/10 rounded-lg text-[11px] font-bold text-white whitespace-nowrap opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 transition-all pointer-events-none z-[100] shadow-2xl">
-          {label}
-          {count !== null && <span className="ml-2 text-indigo-400">({count})</span>}
-          {/* Tooltip Arrow */}
-          <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-slate-900 border-l border-b border-white/10 rotate-45" />
-        </div>
+      {/* Count Badge - Only in expanded mode */}
+      {!collapsed && count !== null && (
+        <span className={`
+          text-[9px] font-black px-1.5 py-0.5 rounded-[4px]
+          ${active ? `bg-${color}-500/20 text-${color}-400` : 'bg-[var(--bg-dark)] text-[var(--text-muted)]'}
+        `}>
+          {count}
+        </span>
       )}
     </button>
   )
