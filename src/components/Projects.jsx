@@ -204,7 +204,13 @@ const Projects = () => {
                   >
                     {/* Top: Image/Logo Area (2/3 height) */}
                     <div className="h-2/3 flex items-center justify-center bg-white relative overflow-hidden">
-                      {project.image_url ? (
+                      {project.image ? (
+                        <img 
+                          src={project.image.startsWith('data:image') ? project.image : `data:image/png;base64,${project.image}`} 
+                          alt={project.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      ) : project.image_url ? (
                         <img 
                           src={project.image_url} 
                           alt={project.name}
