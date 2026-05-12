@@ -21,17 +21,19 @@ import {
   Chart as ChartJS, 
   CategoryScale, 
   LinearScale, 
-  BarElement, 
-  Title, 
-  Tooltip, 
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
   Legend 
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale, 
   LinearScale, 
-  BarElement, 
+  BarElement,
+  ArcElement,
   Title, 
   Tooltip, 
   Legend
@@ -550,57 +552,112 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Activity Heatmap & Process Flow */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-[10px] w-full">
-        {/* Mock Activity Heatmap */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] shadow-sm m-[10px]">
-          <div className="flex items-center gap-[10px] mb-[10px] p-[10px]">
-            <div className="w-1.5 h-8 bg-yellow-400 rounded-full" />
-            <div>
-              <h2 className="text-[24px] font-bold text-[var(--text-main)] tracking-tight">System Pulse</h2>
-              <p className="text-[14px] text-[var(--text-muted)] font-medium">Activity Density over 30 Days</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-10 sm:grid-cols-12 gap-[10px] p-[10px]">
-            {Array.from({ length: 60 }).map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.005 }}
-                className={`aspect-square rounded-[8px] border border-white/5 ${
-                  Math.random() > 0.8 ? 'bg-indigo-500/60 shadow-[0_0_15px_rgba(99,102,241,0.2)]' :
-                  Math.random() > 0.5 ? 'bg-indigo-500/30' :
-                  Math.random() > 0.2 ? 'bg-indigo-500/10' :
-                  'bg-[var(--bg-surface)]'
-                }`}
-              />
-            ))}
-          </div>
-          <div className="flex justify-between mt-[10px] p-[10px] text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">
-            <span>Low Intensity</span>
-            <span>Peak Activity</span>
-          </div>
+      {/* Analytics Engine - High Density Overview (Updated per Image 3) */}
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] shadow-sm m-[10px]">
+        {/* Top Filter Bar */}
+        <div className="flex flex-wrap items-center gap-[10px] mb-[20px] p-[10px] bg-[var(--bg-surface)]/30 rounded-[8px] border border-[var(--border)]">
+          <select className="bg-indigo-600 text-white rounded-full px-4 py-2 text-[12px] font-bold outline-none cursor-pointer hover:bg-indigo-500 transition-all appearance-none pr-8 relative">
+            <option>Data analysis</option>
+          </select>
+          <select className="bg-indigo-600 text-white rounded-full px-4 py-2 text-[12px] font-bold outline-none cursor-pointer hover:bg-indigo-500 transition-all">
+            <option>2026</option>
+          </select>
+          <select className="bg-indigo-600 text-white rounded-full px-4 py-2 text-[12px] font-bold outline-none cursor-pointer hover:bg-indigo-500 transition-all">
+            <option>Monthly</option>
+          </select>
+          <select className="bg-indigo-600 text-white rounded-full px-4 py-2 text-[12px] font-bold outline-none cursor-pointer hover:bg-indigo-500 transition-all">
+            <option>Day</option>
+          </select>
         </div>
 
-        {/* Process Flow */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] flex flex-col shadow-sm m-[10px]">
-          <div className="flex items-center gap-[10px] mb-[10px] p-[10px]">
-            <div className="w-1.5 h-8 bg-rose-500 rounded-full" />
-            <div>
-              <h2 className="text-[24px] font-bold text-[var(--text-main)] tracking-tight">Automation Engine</h2>
-              <p className="text-[14px] text-[var(--text-muted)] font-medium">Live Intelligence Flow</p>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-[20px] p-[10px]">
+          {/* Left: Donut Chart */}
+          <div className="lg:col-span-3 flex flex-col items-center justify-center border-r border-[var(--border)] pr-[10px]">
+            <div className="relative w-full h-[200px]">
+              <Doughnut 
+                data={{
+                  labels: ['Complete', 'WIP', 'Issues', 'Pending'],
+                  datasets: [{
+                    data: [35, 25, 15, 25],
+                    backgroundColor: ['#10b981', '#6366f1', '#f43f5e', '#94a3b8'],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                  }]
+                }}
+                options={{
+                  cutout: '75%',
+                  plugins: { legend: { display: false } },
+                  maintainAspectRatio: false
+                }}
+              />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[24px] font-black text-[var(--text-main)]">75%</span>
+                <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Efficiency</span>
+              </div>
+            </div>
+            <div className="mt-[10px] grid grid-cols-2 gap-[10px] w-full">
+               <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                 <span className="text-[10px] font-bold text-[var(--text-muted)]">WIP: 25%</span>
+               </div>
+               <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                 <span className="text-[10px] font-bold text-[var(--text-muted)]">DONE: 35%</span>
+               </div>
             </div>
           </div>
 
-          <div className="flex-grow flex items-center justify-center min-h-[300px] bg-[var(--bg-surface)]/30 rounded-[8px] border border-[var(--border)] m-[10px]">
-            <WorkflowAnimation />
+          {/* Middle: Activity List */}
+          <div className="lg:col-span-5 flex flex-col gap-[10px] border-r border-[var(--border)] pr-[10px]">
+            {[
+              { label: 'System Uptime', value: '99.9%', trend: '+0.05%', sub: 'Global Infrastructure', color: 'bg-emerald-500' },
+              { label: 'Data Accuracy', value: '94.2%', trend: '+1.2%', sub: 'Supabase Sync Flow', color: 'bg-indigo-500' },
+              { label: 'Task Throughput', value: '124/d', trend: '-2.4%', sub: 'Operational Batching', color: 'bg-amber-500', negative: true },
+              { label: 'Response Time', value: '45ms', trend: '+10ms', sub: 'API Edge Network', color: 'bg-rose-500' },
+              { label: 'Resource Load', value: '62%', trend: '+5.0%', sub: 'Computational Intelligence', color: 'bg-violet-500' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-between p-[10px] hover:bg-white/5 rounded-[8px] transition-all group">
+                <div className="flex items-center gap-[10px]">
+                  <div className={`w-3 h-3 rounded-full ${item.color} shadow-lg`} />
+                  <div>
+                    <p className="text-[14px] font-bold text-[var(--text-main)]">{item.label}</p>
+                    <p className="text-[10px] text-[var(--text-muted)] font-medium uppercase tracking-wider">{item.sub}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[14px] font-black text-[var(--text-main)]">{item.value}</p>
+                  <p className={`text-[10px] font-bold ${item.negative ? 'text-rose-500' : 'text-emerald-500'}`}>{item.trend}</p>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <button className="mt-[10px] w-full py-[10px] bg-indigo-500/10 hover:bg-indigo-500 text-indigo-500 hover:text-white rounded-[8px] text-[14px] font-bold uppercase tracking-widest transition-all duration-300 border border-indigo-500/20">
-            Configure Automation Engine
-          </button>
+          {/* Right: Calendar View */}
+          <div className="lg:col-span-4 pl-[10px]">
+            <div className="bg-[var(--bg-surface)]/50 rounded-[8px] p-[10px] border border-[var(--border)] h-full">
+              <div className="flex items-center justify-between mb-[10px]">
+                <button className="p-1 hover:text-indigo-400"><Calendar size={14} /></button>
+                <h4 className="text-[12px] font-black text-[var(--text-main)] uppercase tracking-[0.2em]">AUGUST 2026</h4>
+                <button className="p-1 hover:text-indigo-400"><Activity size={14} /></button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center">
+                {['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'].map(d => (
+                  <div key={d} className="text-[9px] font-black text-indigo-400/60 pb-1">{d}</div>
+                ))}
+                {Array.from({ length: 31 }).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={`aspect-square flex items-center justify-center text-[10px] font-bold rounded-[4px] transition-all cursor-pointer ${
+                      i + 1 === 12 ? 'bg-indigo-500 text-white shadow-lg' : 
+                      Math.random() > 0.7 ? 'bg-indigo-500/10 text-indigo-300' : 'text-slate-500 hover:bg-white/5'
+                    }`}
+                  >
+                    {i + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
