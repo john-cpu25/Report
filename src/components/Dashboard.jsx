@@ -498,28 +498,42 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-3">
-                    <div>
-                      <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest mb-1">Active</p>
-                      <p className="text-xl font-black text-[var(--text-main)]">{team.active}</p>
+                  <div className="grid grid-cols-2 gap-[10px] mb-3">
+                    <div className="bg-orange-500/5 border border-orange-500/10 rounded-[8px] p-[10px]">
+                      <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1">Active</p>
+                      <p className="text-2xl font-black text-[var(--text-main)]">{team.active}</p>
                     </div>
-                    <div>
-                      <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mb-1">Available</p>
-                      <p className="text-xl font-black text-[var(--text-main)]">{team.free}</p>
+                    <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[8px] p-[10px]">
+                      <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Available</p>
+                      <p className="text-2xl font-black text-[var(--text-main)]">{team.free}</p>
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                      <span className="text-indigo-400">Load</span>
+                  <div className="space-y-1 mb-3">
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                      <span className="text-indigo-400">Current Load</span>
                       <span className="text-[var(--text-main)]">{Math.round((team.active / team.total) * 100)}%</span>
                     </div>
-                    <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${(team.active / team.total) * 100}%` }}
                         className="h-full bg-indigo-500"
                       />
+                    </div>
+                  </div>
+
+                  {/* Top Active Projects Section (from Image) */}
+                  <div className="pt-2 border-t border-[var(--border)]">
+                    <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-2">Top Active Projects</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      {Object.entries(team.projectBreakdown || {}).slice(0, 4).map(([proj, data]) => (
+                        <div key={proj} className="flex items-center gap-1.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                          <span className="text-[10px] font-bold text-[var(--text-main)] uppercase">{proj}</span>
+                          <span className="text-[10px] font-bold text-[var(--text-muted)]">({data.total})</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
