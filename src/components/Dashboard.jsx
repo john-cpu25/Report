@@ -327,6 +327,46 @@ const Dashboard = () => {
     return Object.values(teamData).sort((a, b) => b.total - a.total);
   }, [users, tasks]);
 
+  // Daily Operational Metrics (Updated per User Request)
+  const dailyMetrics = useMemo(() => {
+    const now = new Date();
+    const todayY = now.getFullYear();
+    const todayM = now.getMonth();
+    const todayD = now.getDate();
+
+    const tasksToday = tasks.filter(t => {
+      const d = processDate(t.created_at || t.date_start);
+      return d && d.getFullYear() === todayY && d.getMonth() === todayM && d.getDate() === todayD;
+    });
+
+    const completedToday = tasks.filter(t => {
+      const d = processDate(t.date_complete || t.date_checked);
+      return d && d.getFullYear() === todayY && d.getMonth() === todayM && d.getDate() === todayD;
+    });
+
+    const issues = tasksToday.filter(t => t.status === 'ISSUE').length;
+    const wip = tasksToday.filter(t => t.status === 'WIP' || !t.status).length;
+    const others = tasksToday.length - issues - wip;
+    
+    const efficiency = tasksToday.length > 0 ? Math.round((completedToday.length / tasksToday.length) * 100) : 0;
+
+    return {
+      total: tasksToday.length,
+      completed: completedToday.length,
+      issues,
+      wip,
+      others,
+      efficiency,
+      list: [
+        { label: 'Total Tasks', value: tasksToday.length, trend: `+${tasksToday.length}`, sub: 'Today\'s Throughput', color: 'bg-indigo-500' },
+        { label: 'Completed', value: completedToday.length, trend: 'Daily Goal', sub: 'Verified & Logged', color: 'bg-emerald-500' },
+        { label: 'Active WIP', value: wip, trend: 'In Progress', sub: 'Live Operational Flow', color: 'bg-amber-500' },
+        { label: 'Critical Issues', value: issues, trend: 'High Priority', sub: 'Needs Immediate Action', color: 'bg-rose-500', negative: issues > 0 },
+        { label: 'Team Efficiency', value: `${efficiency}%`, trend: 'Performance', sub: 'Completion vs Intake', color: 'bg-violet-500' },
+      ]
+    };
+  }, [tasks]);
+
   const filteredCapacity = useMemo(() => {
     if (selectedCapacityTeam === 'ALL') return capacityStats;
     return capacityStats.filter(t => t.name === selectedCapacityTeam);
@@ -576,9 +616,9 @@ const Dashboard = () => {
             <div className="relative w-full h-[200px]">
               <Doughnut 
                 data={{
-                  labels: ['Complete', 'WIP', 'Issues', 'Pending'],
+                  labels: ['Completed', 'WIP', 'Issues', 'Others'],
                   datasets: [{
-                    data: [35, 25, 15, 25],
+                    data: [dailyMetrics.completed, dailyMetrics.wip, dailyMetrics.issues, dailyMetrics.others],
                     backgroundColor: ['#10b981', '#6366f1', '#f43f5e', '#94a3b8'],
                     borderWidth: 0,
                     hoverOffset: 10
@@ -591,31 +631,25 @@ const Dashboard = () => {
                 }}
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[24px] font-black text-[var(--text-main)]">75%</span>
+                <span className="text-[24px] font-black text-[var(--text-main)]">{dailyMetrics.efficiency}%</span>
                 <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Efficiency</span>
               </div>
             </div>
             <div className="mt-[10px] grid grid-cols-2 gap-[10px] w-full">
                <div className="flex items-center gap-2">
                  <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                 <span className="text-[10px] font-bold text-[var(--text-muted)]">WIP: 25%</span>
+                 <span className="text-[10px] font-bold text-[var(--text-muted)]">WIP: {dailyMetrics.wip}</span>
                </div>
                <div className="flex items-center gap-2">
                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                 <span className="text-[10px] font-bold text-[var(--text-muted)]">DONE: 35%</span>
+                 <span className="text-[10px] font-bold text-[var(--text-muted)]">DONE: {dailyMetrics.completed}</span>
                </div>
             </div>
           </div>
 
           {/* Middle: Activity List */}
           <div className="lg:col-span-5 flex flex-col gap-[10px] border-r border-[var(--border)] pr-[10px]">
-            {[
-              { label: 'System Uptime', value: '99.9%', trend: '+0.05%', sub: 'Global Infrastructure', color: 'bg-emerald-500' },
-              { label: 'Data Accuracy', value: '94.2%', trend: '+1.2%', sub: 'Supabase Sync Flow', color: 'bg-indigo-500' },
-              { label: 'Task Throughput', value: '124/d', trend: '-2.4%', sub: 'Operational Batching', color: 'bg-amber-500', negative: true },
-              { label: 'Response Time', value: '45ms', trend: '+10ms', sub: 'API Edge Network', color: 'bg-rose-500' },
-              { label: 'Resource Load', value: '62%', trend: '+5.0%', sub: 'Computational Intelligence', color: 'bg-violet-500' },
-            ].map((item, i) => (
+            {dailyMetrics.list.map((item, i) => (
               <div key={i} className="flex items-center justify-between p-[10px] hover:bg-white/5 rounded-[8px] transition-all group">
                 <div className="flex items-center gap-[10px]">
                   <div className={`w-3 h-3 rounded-full ${item.color} shadow-lg`} />

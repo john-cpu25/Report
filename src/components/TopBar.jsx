@@ -31,13 +31,10 @@ const TopBar = () => {
             <Menu size={24} />
           </button>
           <div className="flex items-center gap-3">
-             <RincovitchLogo size={32} />
-             <div className="flex flex-col">
-                <h1 className="text-[24px] font-black text-[var(--text-contrast)] uppercase tracking-tighter leading-none italic">
-                  RINCOVITCH <span className="text-indigo-500">OPERATIONS</span>
-                </h1>
-                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] mt-1">Intelligence & Monitoring System</p>
-             </div>
+             <RincovitchLogo size={36} />
+             <h1 className="text-[28px] font-black text-[var(--text-main)] uppercase tracking-tighter leading-none">
+               RINCOVITCH <span className="text-indigo-500">OPERATIONS</span>
+             </h1>
           </div>
         </div>
 
