@@ -226,23 +226,23 @@ const Projects = () => {
                       className="h-1/3 p-[10px] flex flex-col gap-[8px] text-white overflow-hidden relative"
                       style={{ backgroundColor: project.color || '#1e293b' }}
                     >
-                      <div className="flex gap-[15px] items-start leading-none">
-                        <span className="w-20 text-[11px] font-black uppercase shrink-0">NAME :</span>
+                      <div className="flex gap-[50px] items-start leading-none">
+                        <span className="w-24 text-[11px] font-black uppercase shrink-0">NAME :</span>
                         <span className="text-[11px] font-bold truncate">{project.name || 'N/A'}</span>
                       </div>
                       
-                      <div className="flex gap-[15px] items-start leading-none">
-                        <span className="w-20 text-[11px] font-black uppercase shrink-0">CREATEAT :</span>
+                      <div className="flex gap-[50px] items-start leading-none">
+                        <span className="w-24 text-[11px] font-black uppercase shrink-0">CREATEAT :</span>
                         <span className="text-[11px] font-bold">{project.created_at ? new Date(project.created_at).toLocaleDateString('vi-VN') : '24/01/2026'}</span>
                       </div>
 
-                      <div className="flex gap-[15px] items-start leading-none">
-                        <span className="w-20 text-[11px] font-black uppercase shrink-0">VERSION :</span>
+                      <div className="flex gap-[50px] items-start leading-none">
+                        <span className="w-24 text-[11px] font-black uppercase shrink-0">VERSION :</span>
                         <span className="text-[11px] font-bold">Autodesk Revit {project.revit_version || '2024'}</span>
                       </div>
 
-                      <div className="flex gap-[15px] items-start leading-none">
-                        <span className="w-20 text-[11px] font-black uppercase shrink-0">DESCRIPTION :</span>
+                      <div className="flex gap-[50px] items-start leading-none">
+                        <span className="w-24 text-[11px] font-black uppercase shrink-0">DESCRIPTION :</span>
                         <span className="text-[10px] font-medium italic opacity-90 line-clamp-2">
                           {project.description || "Core Rincovitch BIM coordination protocol."}
                         </span>
