@@ -31,11 +31,11 @@ const AdminPanel = () => {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-[10px] animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px]">
         <div>
-          <h2 className="text-3xl font-black text-[var(--text-contrast)] uppercase italic tracking-tighter flex items-center gap-3">
+          <h2 className="text-[30px] font-black text-[var(--text-contrast)] uppercase italic tracking-tighter flex items-center gap-[10px]">
             <ShieldCheck size={32} className="text-indigo-500" />
             Admin <span className="text-indigo-400">Panel</span>
           </h2>
@@ -46,13 +46,13 @@ const AdminPanel = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[10px]">
         {/* Version Info Card */}
         <div className="lg:col-span-1 space-y-6">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="glass-panel p-8 bg-indigo-500/5 border border-indigo-500/10 rounded-none shadow-2xl relative overflow-hidden group"
+            className="ocd-card bg-indigo-500/5 border-indigo-500/10 shadow-2xl relative overflow-hidden group"
           >
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <Package size={80} />
@@ -61,7 +61,7 @@ const AdminPanel = () => {
               <h3 className="text-xs font-black text-indigo-400 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
                 <Info size={14} /> Current Build
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-[10px]">
                 <div>
                   <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Version</p>
                   <p className="text-3xl font-black text-[var(--text-contrast)] tracking-tighter mt-1">v4.7.0</p>
@@ -81,7 +81,7 @@ const AdminPanel = () => {
             </div>
           </motion.div>
 
-          <div className="glass-panel p-8 border border-[var(--border)] rounded-none space-y-4">
+          <div className="ocd-card space-y-[10px]">
             <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">System Environment</h3>
             <div className="space-y-3">
               {[
@@ -90,7 +90,7 @@ const AdminPanel = () => {
                 { label: 'Runtime', value: 'React v19.2.5' },
                 { label: 'Database', value: 'Supabase v2.105.3' }
               ].map(item => (
-                <div key={item.label} className="flex justify-between items-center py-2 border-b border-white/5">
+                <div key={item.label} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
                   <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">{item.label}</span>
                   <span className="text-[11px] font-black text-indigo-400 uppercase">{item.value}</span>
                 </div>
@@ -104,14 +104,14 @@ const AdminPanel = () => {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-panel p-8 border border-[var(--border)] rounded-none shadow-xl bg-[var(--bg-card)]"
+            className="ocd-card shadow-xl"
           >
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-[10px] mb-[10px]">
               <History size={20} className="text-indigo-400" />
               <h3 className="text-[11px] font-black text-[var(--text-contrast)] uppercase tracking-[0.3em]">Deployment History</h3>
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-[10px]">
               {versionHistory.map((item, idx) => (
                 <div key={item.version} className="relative pl-8 border-l-2 border-white/5">
                   <div className={`absolute top-0 -left-[9px] w-4 h-4 rounded-full border-4 border-[var(--bg-card)] shadow-lg ${item.type === 'major' ? 'bg-indigo-500' : 'bg-slate-700'}`} />
@@ -120,7 +120,7 @@ const AdminPanel = () => {
                       <h4 className="text-lg font-black text-[var(--text-contrast)] tracking-tight">{item.version} — {item.title}</h4>
                       <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{item.date}</p>
                     </div>
-                    <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-none border ${item.type === 'major' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-slate-500/10 text-slate-400 border-white/10'}`}>
+                    <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-[8px] border ${item.type === 'major' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-slate-500/10 text-slate-400 border-white/10'}`}>
                       {item.type.toUpperCase()} RELEASE
                     </span>
                   </div>

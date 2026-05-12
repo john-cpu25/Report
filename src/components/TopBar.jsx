@@ -1,6 +1,6 @@
 
 import React from 'react'
-import { Menu, Filter, Bell, Search, User, Plus } from 'lucide-react'
+import { Menu, Bell, Search, User } from 'lucide-react'
 import RincovitchLogo from '../RincovitchLogo'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
@@ -10,8 +10,6 @@ const TopBar = () => {
   const {
     sidebarCollapsed, setSidebarCollapsed,
     mobileSidebarOpen, setMobileSidebarOpen,
-    isSidebarOpen, setIsSidebarOpen,
-    showProjectGroups, setShowProjectGroups,
     activeTab
   } = useApp();
 
@@ -24,18 +22,43 @@ const TopBar = () => {
   };
 
   return (
-          <div className="flex items-center gap-4">
-            <button className="p-2.5 rounded-xl hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all relative">
+    <header className="h-[80px] bg-[var(--bg-main)]/80 backdrop-blur-md border-b border-[var(--border)] sticky top-0 z-30 px-[10px]">
+      <div className="h-full max-w-full mx-auto flex items-center justify-between gap-[10px]">
+        <div className="flex items-center gap-[10px]">
+          <button onClick={handleMenuClick} className="p-[10px] rounded-[8px] hover:bg-white/5 text-[var(--text-muted)] lg:hidden">
+            <Menu size={24} />
+          </button>
+          <div className="flex items-center gap-3">
+             <RincovitchLogo size={32} />
+             <div className="flex flex-col">
+                <h1 className="text-[24px] font-black text-[var(--text-contrast)] uppercase tracking-tighter leading-none italic">
+                  RINCOVITCH <span className="text-indigo-500">OPERATIONS</span>
+                </h1>
+                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] mt-1">Intelligence & Monitoring System</p>
+             </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-[10px]">
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+            <input type="text" placeholder="GLOBAL SEARCH..." className="ocd-input pl-10 w-64 m-0" />
+          </div>
+
+          <div className="flex items-center gap-[10px]">
+            <button className="p-[10px] rounded-[8px] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all relative">
               <Bell size={20} />
               <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[var(--bg-main)]" />
             </button>
             
-            <button className="flex items-center gap-3.5 p-1 pr-4 rounded-2xl hover:bg-white/5 transition-all group border border-transparent hover:border-[var(--border)]">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+            <div className="h-8 w-px bg-[var(--border)]" />
+
+            <button className="flex items-center gap-[10px] p-[10px] rounded-[8px] hover:bg-white/5 transition-all group border border-transparent hover:border-[var(--border)]">
+              <div className="w-10 h-10 rounded-[8px] bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
                 <User size={20} />
               </div>
               <div className="text-left hidden sm:block">
-                <p className="text-[13px] font-bold text-[var(--text-main)] leading-tight">
+                <p className="text-[14px] font-bold text-[var(--text-main)] leading-tight">
                   {user?.name || user?.displayName || 'Authorized User'}
                 </p>
                 <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">

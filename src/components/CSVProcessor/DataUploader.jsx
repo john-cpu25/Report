@@ -95,11 +95,11 @@ const DataUploader = ({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row justify-between items-center gap-6 glass-panel p-6 border-[var(--border)] bg-[var(--bg-card)]">
-      <div className="flex flex-wrap items-center gap-4">
+    <div className="flex flex-col lg:flex-row justify-between items-center gap-[10px] ocd-card">
+      <div className="flex flex-wrap items-center gap-[10px]">
         <label className="relative group cursor-pointer">
           <input type="file" className="hidden" accept=".csv,.xlsx,.xls" onChange={handleFileUpload} />
-          <div className="flex items-center gap-3 px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95">
+          <div className="flex items-center gap-3 px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-[8px] shadow-lg shadow-indigo-500/20 transition-all active:scale-95">
             <Upload size={18} strokeWidth={2.5} />
             <span className="text-xs font-black uppercase tracking-widest">Upload Data</span>
           </div>
@@ -108,7 +108,7 @@ const DataUploader = ({
         <button 
           onClick={fetchSupabaseData}
           disabled={isLoading}
-          className={`flex items-center gap-3 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50 ${isLoading ? 'animate-pulse' : ''}`}
+          className={`flex items-center gap-3 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-[8px] shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50 ${isLoading ? 'animate-pulse' : ''}`}
         >
           {isLoading ? <RefreshCw size={18} className="animate-spin" /> : <Database size={18} />}
           <span className="text-xs font-black uppercase tracking-widest">
@@ -117,7 +117,7 @@ const DataUploader = ({
         </button>
 
         {fileName && (
-          <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/10">
+          <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-[8px] border border-white/10">
             <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
             <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest truncate max-w-[200px]">
               {fileName}
@@ -126,14 +126,14 @@ const DataUploader = ({
         )}
       </div>
 
-      <div className="flex items-center gap-4 text-[var(--text-muted)]">
+      <div className="flex items-center gap-[10px] text-[var(--text-muted)]">
         {lastFetched && (
           <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60">
             Last Sync: {lastFetched.toLocaleTimeString()}
           </span>
         )}
         {fetchError && (
-          <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest bg-rose-500/10 px-3 py-1 rounded-lg">
+          <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest bg-rose-500/10 px-3 py-1 rounded-[8px]">
             {fetchError}
           </span>
         )}

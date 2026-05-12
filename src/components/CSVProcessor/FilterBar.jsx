@@ -43,23 +43,23 @@ const FilterBar = ({
   };
 
   return (
-    <div className="glass-panel p-6 space-y-6">
-      <div className="flex flex-col xl:flex-row gap-6">
+    <div className="ocd-card space-y-[10px]">
+      <div className="flex flex-col xl:flex-row gap-[10px]">
         {/* Search */}
         <div className="relative flex-grow group">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-indigo-400 transition-colors" size={18} />
           <input 
             type="text" 
             placeholder="SEARCH ACROSS PROJECTS, TASKS OR USERS..." 
-            className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-4 text-xs font-black text-[var(--text-main)] focus:border-indigo-500/50 transition-all outline-none shadow-sm placeholder:text-[var(--text-muted)] placeholder:opacity-50 uppercase tracking-normal"
+            className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] py-4 pl-14 pr-4 text-xs font-black text-[var(--text-main)] focus:border-indigo-500/50 transition-all outline-none shadow-sm placeholder:text-[var(--text-muted)] placeholder:opacity-50 uppercase tracking-normal"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
 
         {/* Date Controls */}
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-3 bg-[var(--bg-surface)] p-2 rounded-2xl border border-[var(--border)] shadow-sm">
+        <div className="flex flex-wrap items-center gap-[10px]">
+          <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)] shadow-sm">
             <div className="flex items-center gap-2 px-3 border-r border-[var(--border)]">
               <Calendar size={14} className="text-indigo-500" />
               <input type="month" className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer uppercase"
@@ -74,17 +74,17 @@ const FilterBar = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] shadow-sm">
+          <div className="flex items-center gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)] shadow-sm">
             {['WEEK', 'MONTH', 'YEAR'].map(label => (
               <button key={label} onClick={() => setPreset(label)}
-              className="px-4 py-2 rounded-xl text-[10px] font-black text-[var(--text-muted)] hover:text-white hover:bg-indigo-500 transition-all uppercase tracking-normal">
+              className="px-4 py-2 rounded-[8px] text-[10px] font-black text-[var(--text-muted)] hover:text-white hover:bg-indigo-500 transition-all uppercase tracking-normal">
                 {label}
               </button>
             ))}
           </div>
 
           <button onClick={fetchSupabaseData} disabled={isLoading}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-normal transition-all border ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-[8px] text-[10px] font-black uppercase tracking-normal transition-all border ${
               isLoading ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95'
             }`}>
             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
@@ -94,8 +94,8 @@ const FilterBar = ({
       </div>
 
       {/* Sub Filters */}
-      <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-[var(--border)]">
-        <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2.5 rounded-2xl border border-[var(--border)] shadow-sm">
+      <div className="flex flex-wrap items-center gap-[10px] pt-[10px] border-t border-[var(--border)]">
+        <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] px-4 py-2.5 rounded-[8px] border border-[var(--border)] shadow-sm">
           <Users size={14} className="text-indigo-500" />
           <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">TEAM:</span>
           <select className="bg-transparent text-[10px] font-black text-indigo-500 outline-none cursor-pointer uppercase tracking-normal"
@@ -104,7 +104,7 @@ const FilterBar = ({
           </select>
         </div>
 
-        <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2.5 rounded-2xl border border-[var(--border)] shadow-sm">
+        <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] px-4 py-2.5 rounded-[8px] border border-[var(--border)] shadow-sm">
           <TableIcon size={14} className="text-indigo-500" />
           <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">GROUP:</span>
           <select className="bg-transparent text-[10px] font-black text-indigo-500 outline-none cursor-pointer uppercase tracking-normal"
@@ -114,7 +114,7 @@ const FilterBar = ({
         </div>
 
         <div className="ml-auto flex items-center gap-3">
-          <div className="px-4 py-2.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">
+          <div className="px-4 py-2.5 bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">
             {filteredDataCount} RECORDS
           </div>
         </div>

@@ -41,12 +41,12 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
   ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-12 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 glass-panel p-8">
+    <div className="w-full max-w-4xl mx-auto space-y-[10px] pb-20 px-[10px]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px] ocd-card">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="w-2 h-8 bg-indigo-500 rounded-full" />
-            <h1 className="text-3xl font-black text-[var(--text-contrast)] uppercase tracking-tight">
+            <h1 className="text-[30px] font-black text-[var(--text-contrast)] uppercase tracking-tight">
               System <span className="text-indigo-500">Settings</span>
             </h1>
           </div>
@@ -55,12 +55,12 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
         <Palette size={40} className="text-[var(--text-muted)] opacity-20" />
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-[10px]">
         <div className="flex items-center gap-3 px-2">
           <ImageIcon size={18} className="text-indigo-500" />
           <h2 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Interface Style</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
           {themes.map((t) => (
             <motion.div
               key={t.id}
@@ -70,7 +70,7 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
                 // Also set default background for that theme
                 setBackground(t.id === 'GALAXY' ? 'GALAXY' : 'BAMBOO');
               }}
-              className={`relative group cursor-pointer overflow-hidden rounded-[2.5rem] border-2 transition-all duration-500 ${
+              className={`relative group cursor-pointer overflow-hidden rounded-[8px] border-2 transition-all duration-500 ${
                 theme === t.id 
                   ? 'border-indigo-500 bg-white/5 shadow-[0_0_30px_rgba(99,102,241,0.2)]' 
                   : 'border-[var(--border)] bg-[var(--bg-surface)] hover:border-indigo-500/30'
@@ -82,7 +82,7 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
                 </div>
                 <div className="absolute inset-x-6 bottom-6 space-y-3">
                     <div className={`h-2 w-20 rounded-full ${t.id === 'GALAXY' ? 'bg-white/20' : 'bg-slate-900/20'}`} />
-                    <div className={`h-6 w-32 rounded-lg ${t.id === 'GALAXY' ? 'bg-white/10' : 'bg-slate-900/10'}`} />
+                    <div className={`h-6 w-32 rounded-[8px] ${t.id === 'GALAXY' ? 'bg-white/10' : 'bg-slate-900/10'}`} />
                 </div>
                 {theme === t.id && (
                   <div className="absolute top-6 right-6">
@@ -92,9 +92,9 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
                   </div>
                 )}
               </div>
-              <div className="p-8 space-y-4">
+              <div className="p-[10px] space-y-[10px]">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-2xl ${t.color} text-white shadow-lg`}>
+                  <div className={`p-3 rounded-[8px] ${t.color} text-white shadow-lg`}>
                     <t.icon size={20} />
                   </div>
                   <h3 className={`text-xl font-black uppercase tracking-tight text-[var(--text-contrast)]`}>
@@ -110,25 +110,25 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-[10px]">
         <div className="flex items-center gap-3 px-2">
           <ImageIcon size={18} className="text-indigo-500" />
           <h2 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Background Environment</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px]">
           {backgrounds.map((bg) => (
             <motion.div
               key={bg.id}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setBackground(bg.id)}
-              className={`p-6 rounded-3xl border-2 transition-all cursor-pointer flex flex-col items-center gap-4 text-center ${
+              className={`p-[10px] rounded-[8px] border-2 transition-all cursor-pointer flex flex-col items-center gap-[10px] text-center ${
                 background === bg.id
                   ? 'border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/10'
                   : 'border-[var(--border)] bg-[var(--bg-surface)] hover:border-indigo-500/30'
               }`}
             >
-              <div className={`p-4 rounded-2xl bg-[var(--bg-header)] ${bg.color}`}>
+              <div className={`p-4 rounded-[8px] bg-[var(--bg-header)] ${bg.color}`}>
                 <bg.icon size={24} />
               </div>
               <div>
@@ -140,7 +140,7 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
         </div>
       </div>
 
-      <div className="glass-panel p-8 text-center space-y-4">
+      <div className="ocd-card text-center space-y-[10px]">
         <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em]">Current System Core</p>
         <div className="flex items-center justify-center gap-4">
           <Monitor size={16} className="text-indigo-500" />

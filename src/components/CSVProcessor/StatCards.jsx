@@ -20,17 +20,17 @@ const StatCards = ({ filteredData }) => {
   }, [filteredData]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[10px]">
       {stats.map((stat, idx) => (
         <motion.div
           key={stat.label}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
-          className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border)] p-6 rounded-3xl relative overflow-hidden group hover:border-indigo-500/30 transition-all shadow-lg"
+          className="ocd-card relative overflow-hidden group hover:border-indigo-500/30 transition-all shadow-lg"
         >
           <div className="flex justify-between items-start relative z-10">
-            <div className={`p-3 ${stat.bg} ${stat.color} rounded-2xl border border-[var(--border)] shadow-inner`}>
+            <div className={`p-3 ${stat.bg} ${stat.color} rounded-[8px] border border-[var(--border)] shadow-inner`}>
               <stat.icon size={20} />
             </div>
             <div className="text-right">

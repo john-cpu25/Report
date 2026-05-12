@@ -109,15 +109,15 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
   };
 
   return (
-    <div className={`w-full mx-auto pb-20 transition-all duration-500 ${isExpanded ? 'px-0' : 'px-4 md:px-6'}`}>
+    <div className={`w-full mx-auto pb-20 transition-all duration-500 ${isExpanded ? 'px-0' : 'px-[10px]'}`}>
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--glass-border)] shadow-2xl backdrop-blur-xl mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px] ocd-card mb-[10px]">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+          <div className="w-10 h-10 rounded-[8px] bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
             <ListTodo size={20} />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white uppercase tracking-tight">
+            <h1 className="text-[30px] font-black text-white uppercase tracking-tight">
               Strategic <span className="text-indigo-400">Planning</span>
             </h1>
             <div className="flex items-center gap-2 mt-1">
@@ -128,12 +128,12 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
         </div>
 
         {/* View Mode Switcher */}
-        <div className="flex bg-[var(--bg-surface)] p-1 rounded-2xl border border-[var(--glass-border)] shadow-inner">
+        <div className="flex bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--glass-border)] shadow-inner">
           {['WEEK', 'MONTH', 'YEAR'].map(mode => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
-              className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+              className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-[8px] transition-all ${
                 viewMode === mode 
                   ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
                   : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
@@ -145,15 +145,15 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
         </div>
 
         {/* Date Navigation */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-[10px]">
           <button 
             onClick={() => handleNavigate('prev')}
-            className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+            className="p-[10px] rounded-[8px] bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all"
           >
             <ChevronLeft size={18} />
           </button>
           
-          <div className="px-6 py-2.5 bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-xl text-center min-w-[200px]">
+          <div className="px-6 py-2.5 bg-[var(--bg-surface)] border border-[var(--glass-border)] rounded-[8px] text-center min-w-[200px]">
             <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-[0.2em]">
               {viewMode === 'WEEK' && `Week of ${format(columns[0].date, 'MMM dd')}`}
               {viewMode === 'MONTH' && format(currentDate, 'MMMM yyyy')}
@@ -163,7 +163,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
 
           <button 
             onClick={() => handleNavigate('next')}
-            className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+            className="p-[10px] rounded-[8px] bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all"
           >
             <ChevronRight size={18} />
           </button>
@@ -171,7 +171,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
       </div>
 
       {/* Gantt Container */}
-      <div className="glass-panel border-white/5 shadow-2xl overflow-hidden relative group">
+      <div className="ocd-card overflow-hidden relative group">
         {/* Horizontal Lines Accent */}
         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
         
@@ -180,7 +180,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
           <div className="min-w-[1200px]">
             {/* Grid Header */}
             <div className="grid grid-cols-[280px_1fr] border-b border-[var(--glass-border)] bg-[var(--bg-surface)]">
-              <div className="p-6 flex items-center gap-3 border-r border-[var(--glass-border)]">
+              <div className="p-[10px] flex items-center gap-[10px] border-r border-[var(--glass-border)]">
                 <Layers size={14} className="text-slate-500" />
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Project / Workflows</span>
               </div>
@@ -188,7 +188,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                 {columns.map((col, i) => (
                   <div 
                     key={i} 
-                    className={`flex-1 min-w-[80px] p-4 flex flex-col items-center justify-center border-r border-[var(--glass-border)] last:border-0 ${col.isWeekend ? 'bg-[var(--bg-surface)]' : ''}`}
+                    className={`flex-1 min-w-[80px] p-[10px] flex flex-col items-center justify-center border-r border-[var(--glass-border)] last:border-0 ${col.isWeekend ? 'bg-[var(--bg-surface)]' : ''}`}
                   >
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{col.label}</span>
                     <span className={`text-[11px] font-black mt-0.5 ${viewMode === 'WEEK' ? 'text-indigo-400' : 'text-white'}`}>{col.subLabel}</span>
@@ -211,7 +211,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                   <div key={groupIdx} className="group/row">
                     <div className="grid grid-cols-[280px_1fr]">
                       {/* Left: Project Info */}
-                      <div className="p-6 bg-[var(--bg-surface)] border-r border-[var(--glass-border)] relative">
+                      <div className="p-[10px] bg-[var(--bg-surface)] border-r border-[var(--glass-border)] relative">
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover/row:opacity-100 transition-opacity" />
                         <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight truncate">{group.name}</h3>
                         <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">{group.tasks.length} Active Workflows</p>
@@ -258,7 +258,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                                     top: `${(taskIdx % 3) * 12}px`, // Slight offset if multiple tasks
                                     zIndex: 10 
                                   }}
-                                  className={`absolute h-6 rounded-lg ${getStatusColor(task.status)} border border-white/20 shadow-lg cursor-pointer group/bar flex items-center px-3 overflow-hidden`}
+                                  className={`absolute h-6 rounded-[8px] ${getStatusColor(task.status)} border border-white/20 shadow-lg cursor-pointer group/bar flex items-center px-3 overflow-hidden`}
                                 >
                                   {/* Bar Content */}
                                   <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent pointer-events-none" />
@@ -267,7 +267,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                                   </span>
 
                                   {/* Tooltip on Hover */}
-                                  <div className="absolute top-[-40px] left-1/2 -translate-x-1/2 bg-[var(--bg-dark)] border border-[var(--glass-border)] p-2 rounded-lg opacity-0 group-hover/bar:opacity-100 transition-all whitespace-nowrap z-[100] shadow-2xl pointer-events-none">
+                                  <div className="absolute top-[-40px] left-1/2 -translate-x-1/2 bg-[var(--bg-dark)] border border-[var(--glass-border)] p-[10px] rounded-[8px] opacity-0 group-hover/bar:opacity-100 transition-all whitespace-nowrap z-[100] shadow-2xl pointer-events-none">
                                     <p className="text-[9px] font-black text-[var(--text-main)] uppercase">{task.task}</p>
                                     <p className="text-[8px] font-bold text-slate-400 mt-0.5">{task.status} // {group.name}</p>
                                   </div>
@@ -291,13 +291,13 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
       </div>
 
         {/* Footer Intelligence */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="mt-[10px] grid grid-cols-1 md:grid-cols-3 gap-[10px]">
           {[
             { label: 'Temporal Density', value: '85%', icon: Zap, color: 'text-yellow-400' },
             { label: 'Critical Path', value: '4 Assets', icon: Activity, color: 'text-rose-400' },
             { label: 'Sync Status', value: 'Real-time', icon: Settings2, color: 'text-emerald-400' }
           ].map((stat, i) => (
-            <div key={i} className="glass-panel p-6 border-[var(--glass-border)] bg-[var(--bg-card)] flex items-center justify-between group hover:border-indigo-500/20 transition-all">
+            <div key={i} className="ocd-card flex items-center justify-between group hover:border-indigo-500/20 transition-all">
               <div>
                 <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">{stat.label}</p>
                 <p className={`text-xl font-black mt-1 ${stat.color}`}>{stat.value}</p>

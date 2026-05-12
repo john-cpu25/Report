@@ -235,37 +235,37 @@ const PerformanceReview = () => {
   };
 
   return (
-    <div className="max-w-full mx-auto space-y-8 pb-20 px-4 sm:px-6">
+    <div className="max-w-full mx-auto space-y-[10px] pb-20 px-[10px]">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 glass-panel p-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-[10px] ocd-card">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="w-2 h-8 bg-emerald-500 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.4)]" />
-            <h1 className="text-3xl font-black text-[var(--text-contrast)] uppercase tracking-tight">
+            <h1 className="text-[30px] font-black text-[var(--text-contrast)] uppercase tracking-tight">
               Performance <span className="text-emerald-500">Review</span>
             </h1>
           </div>
           <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-5">Unified Task Analytics — Raw Data View</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-[10px]">
           {/* View Switcher */}
-          <div className="flex items-center gap-2 p-1 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] shadow-sm">
+          <div className="flex items-center gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)] shadow-sm">
             <button onClick={() => setViewMode('raw')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'raw' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+              className={`flex items-center gap-2 px-4 py-2 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'raw' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
               <List size={14} /> Raw
             </button>
             <button onClick={() => setViewMode('weekly')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'weekly' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+              className={`flex items-center gap-2 px-4 py-2 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'weekly' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
               <CalendarRange size={14} /> Weekly
             </button>
             <button onClick={() => setViewMode('summary')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+              className={`flex items-center gap-2 px-4 py-2 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
               <TrendingUp size={14} /> Summary
             </button>
           </div>
 
-          <div className="flex items-center gap-3 bg-[var(--bg-surface)] p-2 rounded-2xl border border-[var(--border)] shadow-sm">
+          <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)] shadow-sm">
             <div className="flex items-center gap-2 px-3">
               <Calendar size={14} className="text-[var(--text-muted)]" />
               <input type="date" className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer uppercase"
@@ -277,14 +277,14 @@ const PerformanceReview = () => {
                 value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
             </div>
           </div>
-          <div className="bg-[var(--bg-surface)] p-2 rounded-2xl border border-[var(--border)] flex items-center gap-3 shadow-sm">
+          <div className="bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)] flex items-center gap-[10px] shadow-sm">
             <Filter size={14} className="text-[var(--text-muted)] ml-2" />
             <select className="bg-transparent text-[11px] font-black text-emerald-500 outline-none cursor-pointer uppercase pr-4"
               value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}>
               {teamOptions.map(t => <option key={t} value={t} className="bg-[var(--bg-dark)]">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
             </select>
           </div>
-          <div className="px-4 py-2 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] text-xs font-black text-[var(--text-muted)] uppercase tracking-widest shadow-sm">
+          <div className="px-4 py-2 rounded-[8px] bg-[var(--bg-surface)] border border-[var(--border)] text-xs font-black text-[var(--text-muted)] uppercase tracking-widest shadow-sm">
             {tableData.length} Tasks
           </div>
         </div>
@@ -296,9 +296,9 @@ const PerformanceReview = () => {
           <p className="text-sm font-black text-slate-500 uppercase tracking-widest animate-pulse">Analyzing Performance Data...</p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-[10px]">
           {/* Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-[10px]">
             {[
               { label: 'Total Tasks', value: stats.total, icon: FileText, color: 'text-slate-500', bg: 'bg-slate-500/10' },
               { label: 'Avg Plan [t1]', value: `${stats.avgT1.toFixed(1)}h`, icon: Clock, color: 'text-sky-500', bg: 'bg-sky-500/10' },
@@ -307,11 +307,11 @@ const PerformanceReview = () => {
               { label: 'Completed', value: stats.completed, icon: Zap, color: 'text-rose-500', bg: 'bg-rose-500/10' },
             ].map((stat, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                className="glass-panel p-4 border-[var(--border)] bg-[var(--bg-card)] relative overflow-hidden group">
+                className="ocd-card bg-[var(--bg-card)] relative overflow-hidden group">
                 <div className={`absolute -right-4 -top-4 w-20 h-20 rounded-full ${stat.bg} opacity-20 group-hover:scale-125 transition-transform duration-500`} />
                 <div className="relative space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded-lg ${stat.bg} ${stat.color}`}><stat.icon size={14} /></div>
+                    <div className={`p-1.5 rounded-[8px] ${stat.bg} ${stat.color}`}><stat.icon size={14} /></div>
                     <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{stat.label}</p>
                   </div>
                   <p className="text-2xl font-black text-[var(--text-contrast)] tracking-tight">{stat.value}</p>
@@ -321,7 +321,7 @@ const PerformanceReview = () => {
           </div>
 
           {viewMode === 'raw' && (
-            <div className="glass-panel overflow-hidden border border-[var(--border)] bg-[var(--bg-surface)] shadow-xl">
+            <div className="ocd-card overflow-hidden bg-[var(--bg-surface)] shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse" style={{ minWidth: '1600px' }}>
                   <thead>
@@ -385,19 +385,19 @@ const PerformanceReview = () => {
           )}
 
           {viewMode === 'weekly' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between glass-panel p-4 border-[var(--border)]">
+            <div className="space-y-[10px]">
+              <div className="flex items-center justify-between ocd-card">
                 <h3 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Weekly Distribution</h3>
-                <div className="flex gap-2 p-1 bg-[var(--bg-surface)] rounded-xl border border-[var(--border)]">
+                <div className="flex gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)]">
                   {['t1', 't2', 't4'].map(m => (
                     <button key={m} onClick={() => setActiveMetric(m)}
-                      className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${activeMetric === m ? 'bg-indigo-500 text-white' : 'text-[var(--text-muted)]'}`}>
+                      className={`px-3 py-1.5 rounded-[8px] text-[9px] font-black uppercase transition-all ${activeMetric === m ? 'bg-indigo-500 text-white' : 'text-[var(--text-muted)]'}`}>
                       {m === 't1' ? 'Plan' : m === 't2' ? 'User' : 'Task'}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="glass-panel overflow-hidden border border-[var(--border)] bg-[var(--bg-surface)]">
+              <div className="ocd-card overflow-hidden bg-[var(--bg-surface)]">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
@@ -444,8 +444,8 @@ const PerformanceReview = () => {
           )}
 
           {viewMode === 'summary' && (
-            <div className="space-y-6">
-              <div className="glass-panel p-4 border-[var(--border)] bg-indigo-500/5">
+            <div className="space-y-[10px]">
+              <div className="ocd-card bg-indigo-500/5">
                 <h3 className="text-sm font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
                   <TrendingUp size={16} /> Efficiency Summary Table
                 </h3>
@@ -453,7 +453,7 @@ const PerformanceReview = () => {
                   Weekly performance calculated based on 40h standard week
                 </p>
               </div>
-              <div className="glass-panel overflow-hidden border border-[var(--border)] bg-[var(--bg-surface)]">
+              <div className="ocd-card overflow-hidden bg-[var(--bg-surface)]">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">

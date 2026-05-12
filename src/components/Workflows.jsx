@@ -186,12 +186,12 @@ const Workflows = () => {
   };
 
   return (
-    <div className="w-full space-y-8 pb-12">
+    <div className="w-full space-y-[10px] pb-12">
       {/* Navigation Header */}
-      <div className="glass-panel p-4 border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-2xl flex flex-wrap items-center justify-between gap-6 shadow-2xl">
+      <div className="ocd-card flex flex-wrap items-center justify-between gap-[10px] shadow-2xl">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <div className="p-[10px] rounded-[8px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               <WorkflowIcon size={20} />
             </div>
             <div>
@@ -202,12 +202,12 @@ const Workflows = () => {
 
           <div className="h-8 w-px bg-[var(--border)] mx-2" />
 
-          <div className="flex items-center gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
+          <div className="flex items-center gap-[10px] p-[10px] bg-white/5 rounded-[8px] border border-white/5">
             {Object.values(workflows).map((wf) => (
               <button
                 key={wf.id}
                 onClick={() => { setActiveWorkflow(wf.id); setActiveStep(0); }}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${
                   activeWorkflow === wf.id 
                     ? `bg-${wf.color}-500 text-white shadow-lg` 
                     : 'text-[var(--text-muted)] hover:text-white'
@@ -228,11 +228,11 @@ const Workflows = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.4 }}
-          className="space-y-12"
+          className="space-y-[10px]"
         >
           {/* Workflow Header */}
           <div className="text-center space-y-3">
-            <h1 className="text-5xl font-black text-white tracking-tighter uppercase italic leading-none">
+            <h1 className="text-[30px] font-black text-white tracking-tighter uppercase italic leading-none">
               {workflows[activeWorkflow].title}
             </h1>
             <p className="text-xs font-black text-indigo-500 uppercase tracking-[0.5em]">
@@ -241,18 +241,18 @@ const Workflows = () => {
           </div>
 
           {workflows[activeWorkflow].type === 'flow' && (
-            <div className="max-w-5xl mx-auto glass-panel p-16 border-[var(--border)] bg-slate-900/40 relative overflow-hidden">
+            <div className="max-w-5xl mx-auto ocd-card relative overflow-hidden">
                {/* Background Glow */}
                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none" />
                
                <div className="relative flex flex-col items-center gap-12">
                  {/* Main Flow nodes */}
-                 <div className="flex flex-wrap justify-center items-center gap-16">
+                 <div className="flex flex-wrap justify-center items-center gap-[10px]">
                     {workflows[activeWorkflow].steps.slice(0, 3).map((step, idx) => (
                       <React.Fragment key={step.id}>
                         <motion.div
                           whileHover={{ scale: 1.05, y: -5 }}
-                          className="w-48 h-24 glass-panel border-indigo-500/20 bg-indigo-500/5 flex flex-col items-center justify-center p-4 text-center group cursor-pointer hover:border-indigo-500/50 transition-all"
+                          className="w-48 h-24 ocd-card border-indigo-500/20 bg-indigo-500/5 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-indigo-500/50 transition-all"
                         >
                           <span className="text-[10px] font-black text-indigo-400 mb-1 opacity-60">PHASE 0{idx+1}</span>
                           <span className="text-sm font-black text-white uppercase tracking-widest">{step.label}</span>
@@ -271,7 +271,7 @@ const Workflows = () => {
                             <div className="flex items-center gap-6">
                                 <motion.div
                                     whileHover={{ scale: 1.05 }}
-                                    className="w-40 h-20 glass-panel border-rose-500/20 bg-rose-500/5 flex flex-col items-center justify-center p-4 text-center group cursor-pointer hover:border-rose-500/50 transition-all"
+                                    className="w-40 h-20 ocd-card border-rose-500/20 bg-rose-500/5 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-rose-500/50 transition-all"
                                 >
                                     <span className="text-[10px] font-black text-rose-400 mb-1 opacity-60">ITERATION</span>
                                     <span className="text-xs font-black text-white uppercase tracking-widest">RECHECK</span>
@@ -288,7 +288,7 @@ const Workflows = () => {
                             <div className="flex items-center gap-6">
                                 <motion.div
                                     whileHover={{ scale: 1.05 }}
-                                    className="w-48 h-24 glass-panel border-emerald-500/30 bg-emerald-500/5 flex flex-col items-center justify-center p-4 text-center group cursor-pointer hover:border-emerald-500/50 transition-all shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+                                    className="w-48 h-24 ocd-card border-emerald-500/30 bg-emerald-500/5 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-emerald-500/50 transition-all shadow-[0_0_30px_rgba(16,185,129,0.1)]"
                                 >
                                     <span className="text-[10px] font-black text-emerald-400 mb-1 opacity-60">FINAL APPROVAL</span>
                                     <span className="text-sm font-black text-white uppercase tracking-widest">CHECKED</span>
@@ -302,21 +302,21 @@ const Workflows = () => {
           )}
 
           {workflows[activeWorkflow].type === 'detailed' && (
-            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-[10px]">
               {/* Vertical Step Navigation */}
-              <div className="lg:col-span-4 space-y-4">
+              <div className="lg:col-span-4 space-y-[10px]">
                 {workflows[activeWorkflow].steps.map((step, idx) => (
                   <motion.button
                     key={idx}
                     whileHover={{ x: 5 }}
                     onClick={() => setActiveStep(idx)}
-                    className={`w-full text-left p-6 rounded-3xl border transition-all flex items-center gap-5 ${
+                    className={`w-full text-left p-[10px] rounded-[8px] border transition-all flex items-center gap-[10px] ${
                       activeStep === idx 
                         ? 'bg-emerald-500 border-emerald-400 text-white shadow-[0_20px_50px_rgba(16,185,129,0.3)] scale-105' 
                         : 'bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-muted)] hover:border-emerald-500/30 hover:text-white'
                     }`}
                   >
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                    <div className={`w-12 h-12 rounded-[8px] flex items-center justify-center shrink-0 ${
                       activeStep === idx ? 'bg-white/20' : 'bg-emerald-500/10 text-emerald-500'
                     }`}>
                       {React.createElement(step.icon, { size: 20 })}
@@ -339,14 +339,14 @@ const Workflows = () => {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="glass-panel p-12 border-emerald-500/10 bg-emerald-500/5 h-full relative overflow-hidden"
+                    className="ocd-card border-emerald-500/10 bg-emerald-500/5 h-full relative overflow-hidden"
                   >
                     {/* Background decoration */}
                     <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full" />
                     
-                    <div className="relative space-y-10">
+                    <div className="relative space-y-[10px]">
                       <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 rounded-[2rem] bg-emerald-500 flex items-center justify-center text-white shadow-2xl shadow-emerald-500/40">
+                        <div className="w-20 h-20 rounded-[8px] bg-emerald-500 flex items-center justify-center text-white shadow-2xl shadow-emerald-500/40">
                           {React.createElement(workflows[activeWorkflow].steps[activeStep].icon, { size: 36 })}
                         </div>
                         <div>
@@ -354,11 +354,11 @@ const Workflows = () => {
                              <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 rounded-lg text-[10px] font-black uppercase">{workflows[activeWorkflow].steps[activeStep].step}</span>
                              <div className="h-px w-12 bg-emerald-500/30" />
                           </div>
-                          <h2 className="text-3xl font-black text-white uppercase tracking-tight">{workflows[activeWorkflow].steps[activeStep].titleEn}</h2>
+                          <h2 className="text-[24px] font-black text-white uppercase tracking-tight">{workflows[activeWorkflow].steps[activeStep].titleEn}</h2>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px] items-start">
                         {/* English Description */}
                         <div className="space-y-4">
                            <div className="flex items-center gap-2 text-[var(--text-muted)] font-black text-[10px] uppercase tracking-widest border-b border-[var(--border)] pb-2">

@@ -464,9 +464,10 @@ const WeeklyReport = ({ exportExcel }) => {
                 </form>
               </div>
             </motion.aside>
-            </div>
-          </motion.aside>
-          )}
+
+
+
+
         </AnimatePresence>
 
         {/* Main Table */}
@@ -1035,7 +1036,7 @@ const WeeklyReport = ({ exportExcel }) => {
             <h3 className="text-[14px] font-black text-white uppercase mb-[10px] italic">System Update</h3>
             <p className="text-[10px] text-slate-400 leading-relaxed mb-[15px] font-bold uppercase">
               The reporting system is now synced with the local database. Your progress is automatically saved to local storage.
-                            <FileSpreadsheet size={16} />
+            </p><div className="flex items-center gap-3 pt-4 border-t border-white/5"><div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400"><FileSpreadsheet size={16} /></div>
               </div>
               <div>
                 <p className="text-[12px] font-black text-white">v2.1 Stable</p>
@@ -1043,8 +1044,7 @@ const WeeklyReport = ({ exportExcel }) => {
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* Batch Add Modal */}
       <AnimatePresence>
