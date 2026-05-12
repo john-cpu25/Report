@@ -86,7 +86,7 @@ const WeeklyReport = ({ exportExcel }) => {
 
 
   const filteredReportData = React.useMemo(() => {
-    let result = reportData.filter(r => r.team === formData.team && visibleStatuses.includes(r.status))
+    let result = reportData.filter(r => visibleStatuses.includes(r.status))
     
     // Apply focused project filter if active
     if (focusedProject) {
@@ -263,48 +263,7 @@ const WeeklyReport = ({ exportExcel }) => {
                     <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
                     <h2 className="text-[24px] font-black text-[var(--text-main)] tracking-tight uppercase">Entry Form</h2>
                   </div>
-                  <button 
-                    type="button"
-                    onClick={() => setShowAddProject(!showAddProject)}
-                    className="p-[10px] bg-indigo-500/10 hover:bg-indigo-500/20 rounded-[8px] text-indigo-400 transition-all"
-                  >
-                    <Plus size={18} />
-                  </button>
                 </div>
-                
-                {showAddProject && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    className="p-[10px] bg-indigo-500/5 rounded-[8px] border border-indigo-500/10 flex flex-col gap-[10px] m-[10px]"
-                  >
-                    <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">New Project Protocol</p>
-                    <div className="flex gap-[10px]">
-                      <input 
-                        type="text" 
-                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none" 
-                        placeholder="PROJECT KEY..."
-                        value={newProjectName}
-                        onChange={e => setNewProjectName(e.target.value.toUpperCase())}
-                      />
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          if (newProjectName) {
-                            addCustomProject(newProjectName)
-                            setFormData({...formData, project: newProjectName})
-                            setNewProjectName('')
-                            setShowAddProject(false)
-                          }
-                        }}
-                        className="px-[15px] bg-indigo-500 rounded-[8px] text-white font-black text-[12px] uppercase"
-                      >
-                        ADD
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-            
                 <form onSubmit={(e) => { handleAddTask(e); setIsSidebarOpen(false); }} className="flex flex-col gap-[10px] p-[10px]">
                   <div className="flex flex-col gap-[5px]">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Project Portfolio</label>
@@ -344,47 +303,15 @@ const WeeklyReport = ({ exportExcel }) => {
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)]">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Workflow Engine</label>
-                    <div className="flex items-center justify-center gap-[15px] py-[5px]">
-                      {[
-                        { id: 'STR MODELING TEAM', img: '/Report/assets/logos/str.png', color: 'indigo' },
-                        { id: 'PT & REO TEAM', img: '/Report/assets/logos/pt.png', color: 'orange' },
-                        { id: 'MTO TEAM', img: '/Report/assets/logos/mto.png', color: 'violet' }
-                      ].map(team => (
-                        <button
-                          key={team.id}
-                          type="button"
-                          onClick={() => setFormData({...formData, team: team.id, tasks: []})}
-                          className={`p-[5px] rounded-[8px] transition-all relative ${
-                            formData.team === team.id 
-                              ? `ring-2 ring-indigo-500 bg-indigo-500/10 scale-110` 
-                              : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0'
-                          }`}
-                        >
-                          <img src={team.img} alt={team.id} className="w-8 h-8 rounded-[4px] object-contain" />
-                        </button>
-                      ))}
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-[5px]">
-                      {Object.values(currentWorkflow).flat().map(t => (
-                        <label key={t} className="flex items-center gap-[5px] cursor-pointer p-[5px] hover:bg-white/5 rounded-[4px] transition-all">
-                          <input 
-                            type="checkbox" 
-                            className="w-4 h-4 rounded-[4px] border border-[var(--border)] bg-[var(--bg-dark)] text-indigo-500"
-                            checked={formData.tasks.includes(t)}
-                            onChange={e => {
-                              const newTasks = e.target.checked 
-                                ? [...formData.tasks, t]
-                                : formData.tasks.filter(x => x !== t)
-                              setFormData({...formData, tasks: newTasks})
-                            }}
-                          />
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter truncate">{t}</span>
-                        </label>
-                      ))}
-                    </div>
+                  <div className="flex flex-col gap-[5px]">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Task Analysis / Details</label>
+                    <textarea 
+                      className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-white outline-none min-h-[100px] custom-scrollbar" 
+                      placeholder="ENTER TASK DETAILS..."
+                      value={formData.tasks.join('\n')}
+                      onChange={e => setFormData({...formData, tasks: e.target.value.split('\n')})}
+                      required
+                    />
                   </div>
 
                   <div className="flex flex-col gap-[5px]">
@@ -473,25 +400,8 @@ const WeeklyReport = ({ exportExcel }) => {
         {/* Main Table */}
         <div className="lg:col-span-9 flex flex-col gap-[10px]">
           <div className="flex items-center justify-between gap-[10px] p-[10px]">
-            <div className="flex items-center gap-[10px] bg-slate-900/50 p-[10px] rounded-[8px] border border-white/5 w-fit shadow-inner">
-              {[
-                { id: 'STR MODELING TEAM', img: '/Report/assets/logos/str.png', color: 'indigo' },
-                { id: 'PT & REO TEAM', img: '/Report/assets/logos/pt.png', color: 'orange' },
-                { id: 'MTO TEAM', img: '/Report/assets/logos/mto.png', color: 'violet' }
-              ].map(team => (
-                <button 
-                  key={`filter-${team.id}`}
-                  onClick={() => setFormData({...formData, team: team.id})}
-                  className={`p-[5px] rounded-[8px] transition-all duration-500 relative group/btn ${
-                    formData.team === team.id 
-                      ? `ring-2 ring-indigo-500 bg-indigo-500/10 scale-110 shadow-lg shadow-indigo-500/20` 
-                      : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105'
-                  }`}
-                  title={team.id}
-                >
-                  <img src={team.img} alt={team.id} className="w-8 h-8 rounded-[4px] object-contain" />
-                </button>
-              ))}
+            <div className="flex items-center gap-[10px]">
+               {/* Team selection removed as per request */}
             </div>
 
             {showProjectGroups && (

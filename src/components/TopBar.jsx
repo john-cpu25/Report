@@ -10,6 +10,8 @@ const TopBar = () => {
   const {
     sidebarCollapsed, setSidebarCollapsed,
     mobileSidebarOpen, setMobileSidebarOpen,
+    isSidebarOpen, setIsSidebarOpen,
+    showProjectGroups, setShowProjectGroups,
     activeTab
   } = useApp();
 
@@ -46,6 +48,30 @@ const TopBar = () => {
           </div>
 
           <div className="flex items-center gap-[10px]">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className={`px-[15px] py-[10px] rounded-[8px] text-[12px] font-black uppercase tracking-widest transition-all border ${
+                isSidebarOpen 
+                  ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20' 
+                  : 'bg-white/5 text-slate-400 border-white/5 hover:border-indigo-500/30 hover:text-indigo-400'
+              }`}
+            >
+              CREATE TASK
+            </button>
+
+            <button 
+              onClick={() => setShowProjectGroups(!showProjectGroups)}
+              className={`px-[15px] py-[10px] rounded-[8px] text-[12px] font-black uppercase tracking-widest transition-all border ${
+                showProjectGroups 
+                  ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20' 
+                  : 'bg-white/5 text-slate-400 border-white/5 hover:border-emerald-500/30 hover:text-emerald-400'
+              }`}
+            >
+              PROJECT GROUP
+            </button>
+
+            <div className="h-8 w-px bg-[var(--border)] mx-2" />
+
             <button className="p-[10px] rounded-[8px] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all relative">
               <Bell size={20} />
               <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[var(--bg-main)]" />
