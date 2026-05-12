@@ -187,51 +187,64 @@ const Projects = () => {
 
           {/* Right Column: Main Project Portfolio */}
           <div className="lg:col-span-9">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[15px]">
               <AnimatePresence mode="popLayout">
                 {filteredProjects.map((project, idx) => (
                   <motion.div
                     key={project.id}
                     layoutId={`card-${project.id}`}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ delay: idx * 0.01 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ delay: idx * 0.02 }}
                     onClick={() => setSelectedId(project.id)}
-                    className="relative flex items-center h-[45px] w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[4px] cursor-pointer overflow-hidden group hover:border-indigo-500 transition-all shadow-sm"
+                    className="flex flex-col bg-white border rounded-[8px] overflow-hidden shadow-md cursor-pointer group hover:shadow-xl transition-all h-[400px]"
+                    style={{ borderColor: project.color || '#0078d4' }}
                   >
-                    {/* Left Rank Badge - Colored by Supabase Data */}
-                    <div 
-                      className="flex items-center justify-center w-[45px] h-full text-white z-10 border-r border-white/5 shadow-[5px_0_15px_rgba(0,0,0,0.3)] transition-colors"
-                      style={{ backgroundColor: `${project.color || '#4f46e5'}ee` }}
-                    >
-                      <div className="w-6 h-6 rounded-full border-2 border-white/20 flex items-center justify-center text-[11px] font-black shadow-inner">
-                        {project.index || idx + 1}
+                    {/* Top: Image/Logo Area (Matching Reference Diamond Logo) */}
+                    <div className="h-1/2 flex items-center justify-center p-[20px] bg-white relative overflow-hidden">
+                      <div className="relative w-32 h-32 rotate-45 flex flex-wrap border-2 border-slate-100 shadow-2xl">
+                        <div className="w-1/2 h-1/2 bg-red-600" />
+                        <div className="w-1/2 h-1/2 bg-slate-300" />
+                        <div className="w-1/2 h-1/2 bg-slate-800" />
+                        <div className="w-1/2 h-1/2 bg-slate-400" />
+                        {/* Center Diamond Cutout */}
+                        <div className="absolute inset-0 m-auto w-6 h-6 bg-white shadow-inner" />
                       </div>
                     </div>
 
-                    {/* Gradient Overlay based on Supabase Color */}
+                    {/* Bottom: Colored Details Area */}
                     <div 
-                      className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity"
-                      style={{ background: `linear-gradient(90deg, transparent, ${project.color || '#6366f1'})` }}
-                    />
-                    
-                    {/* Background Pattern */}
-                    <div 
-                      className="absolute right-0 top-0 w-1/2 h-full opacity-5 pointer-events-none skew-x-[-20deg] translate-x-4 transition-transform group-hover:translate-x-2"
-                      style={{ background: `linear-gradient(90deg, transparent, ${project.color || '#6366f1'})` }}
-                    />
+                      className="h-1/2 p-[15px] flex flex-col gap-[10px] text-white"
+                      style={{ backgroundColor: project.color || '#1e293b' }}
+                    >
+                      <div className="grid grid-cols-12 gap-1 items-start">
+                        <span className="col-span-4 text-[12px] font-black uppercase">Name :</span>
+                        <span className="col-span-8 text-[12px] font-bold truncate">{project.name || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-12 gap-1 items-start">
+                        <span className="col-span-4 text-[12px] font-black uppercase">CreateAt :</span>
+                        <span className="col-span-8 text-[12px] font-bold">{project.created_at ? new Date(project.created_at).toLocaleDateString('vi-VN') : '24/01/2026'}</span>
+                      </div>
 
-                    {/* Project Name (Key) */}
-                    <div className="flex-grow px-[15px] z-10">
-                      <span className="text-[14px] font-black text-[var(--text-main)] uppercase tracking-tight truncate group-hover:text-indigo-300 transition-colors">
-                        {project.key || project.name}
-                      </span>
-                    </div>
+                      <div className="grid grid-cols-12 gap-1 items-start">
+                        <span className="col-span-4 text-[12px] font-black uppercase">Version :</span>
+                        <span className="col-span-8 text-[12px] font-bold">Autodesk Revit {project.revit_version || '2024'}</span>
+                      </div>
 
-                    {/* Right Badge (Task Count) */}
-                    <div className="flex items-center justify-center min-w-[40px] px-[10px] h-full bg-black/30 text-[var(--text-muted)] group-hover:text-white font-black text-[12px] border-l border-white/5 z-10 transition-colors">
-                      {project.taskCount || 0}
+                      <div className="grid grid-cols-12 gap-1 items-start">
+                        <span className="col-span-4 text-[12px] font-black uppercase">Description :</span>
+                        <span className="col-span-8 text-[10px] font-medium italic opacity-80 line-clamp-3">
+                          {project.description || "Core Rincovitch BIM coordination protocol."}
+                        </span>
+                      </div>
+
+                      <div className="mt-auto flex justify-end">
+                        <div className="px-2 py-1 bg-white/20 rounded-[4px] text-[10px] font-black uppercase tracking-widest">
+                          {project.taskCount} Tasks
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
