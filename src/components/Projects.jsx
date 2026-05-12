@@ -98,7 +98,7 @@ const Projects = () => {
   return (
     <div className="w-full mx-auto pb-[10px] relative">
       {/* Header Intelligence - Sticky */}
-      <div className="sticky top-0 z-50 bg-[var(--bg-main)] pt-[10px] pb-[5px]">
+      <div className="sticky top-[80px] z-50 bg-[var(--bg-main)] pt-[10px] pb-[5px]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px] bg-[var(--bg-card)] p-[10px] rounded-[8px] border border-[var(--border)] shadow-md mx-[10px]">
           <div className="flex flex-col gap-[5px]">
             <div className="flex items-center gap-[10px]">
@@ -131,7 +131,7 @@ const Projects = () => {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start p-[10px]">
           {/* Left Column: Top Projects (Sticky) */}
-          <div className="lg:col-span-3 sticky top-[110px] flex flex-col gap-[10px]">
+          <div className="lg:col-span-3 sticky top-[190px] flex flex-col gap-[10px]">
              <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] shadow-sm relative overflow-hidden">
                 <div className="flex items-center gap-[10px] p-[10px] mb-[10px]">
                   <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
@@ -146,7 +146,7 @@ const Projects = () => {
                     <button
                       key={filter}
                       onClick={() => setTimeFilter(filter)}
-                      className={`flex-1 py-[8px] text-[9px] font-black uppercase tracking-widest rounded-[6px] transition-all ${
+                      className={`flex-1 py-[8px] text-[13px] font-black uppercase tracking-widest rounded-[6px] transition-all ${
                         timeFilter === filter 
                           ? 'bg-indigo-600 text-white shadow-lg' 
                           : 'text-slate-500 hover:text-white hover:bg-white/5'
