@@ -128,144 +128,53 @@ const Projects = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start">
-          <div className="lg:col-span-9">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[10px]">
+          <div className="lg:col-span-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px] p-[10px]">
               <AnimatePresence mode="popLayout">
-            {filteredProjects.map((project) => (
-              <motion.div
-                key={project.id}
-                layoutId={`card-${project.id}`}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                onClick={() => setSelectedId(project.id)}
-                className={`group relative cursor-pointer bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] m-[10px] transition-all shadow-sm ${
-                  selectedId === project.id 
-                    ? 'ring-2 ring-indigo-500 bg-indigo-500/5' 
-                    : 'hover:bg-indigo-500/5 hover:border-indigo-500/20'
-                }`}
-              >
-                {/* Accent Color Strip */}
-                <div 
-                  className="absolute top-0 left-0 w-full h-1 z-10"
-                  style={{ backgroundColor: project.color || '#6366f1' }}
-                />
+                {filteredProjects.map((project, idx) => (
+                  <motion.div
+                    key={project.id}
+                    layoutId={`card-${project.id}`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ delay: idx * 0.02 }}
+                    onClick={() => setSelectedId(project.id)}
+                    className="relative flex items-center h-[45px] w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[4px] cursor-pointer overflow-hidden group hover:border-indigo-500 transition-all shadow-sm"
+                  >
+                    {/* Left Rank Badge (Legends of Runeterra Style) */}
+                    <div className="flex items-center justify-center w-[45px] h-full bg-indigo-600/90 text-white z-10 border-r border-white/5 shadow-[5px_0_15px_rgba(0,0,0,0.3)]">
+                      <div className="w-6 h-6 rounded-full border-2 border-white/20 flex items-center justify-center text-[11px] font-black shadow-inner">
+                        {project.index || idx + 1}
+                      </div>
+                    </div>
 
-                <div className="flex flex-col gap-[10px] pt-[20px]">
-                  {/* Top Row: Key & Version */}
-                  <div className="flex justify-between items-start gap-[10px]">
+                    {/* Gradient Overlay for Premium Feel */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/0 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    {/* Background Pattern/Art Mockup */}
                     <div 
-                      className="px-[10px] py-[5px] rounded-[4px] bg-[var(--bg-surface)] border border-[var(--border)] text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] break-words"
-                      title={project.name}
-                    >
-                      {project.name || 'N/A'}
-                    </div>
-                    <div className="flex items-center gap-1.5 px-[10px] py-[5px] rounded-[4px] bg-[var(--bg-surface)] text-[10px] font-bold text-[var(--text-muted)] uppercase border border-[var(--border)]">
-                      <Cpu size={12} />
-                      {project.revit_version || '2024'}
-                    </div>
-                  </div>
+                      className="absolute right-0 top-0 w-1/2 h-full opacity-10 pointer-events-none skew-x-[-20deg] translate-x-4"
+                      style={{ background: `linear-gradient(90deg, transparent, ${project.color || '#6366f1'})` }}
+                    />
 
-                  {/* Project Identity */}
-                  <div className="space-y-[5px]">
-                    <h3 className="text-[24px] font-black text-[var(--text-main)] uppercase group-hover:text-indigo-500 transition-colors truncate" title={project.key}>
-                      {project.key}
-                    </h3>
-                    <div className="flex items-center gap-[10px]">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                      <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Active System</span>
+                    {/* Project Name (Key) */}
+                    <div className="flex-grow px-[15px] z-10">
+                      <span className="text-[14px] font-black text-[var(--text-main)] uppercase tracking-tight truncate group-hover:text-indigo-300 transition-colors">
+                        {project.key || project.name}
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Meta Stats */}
-                  <div className="grid grid-cols-2 gap-[10px] pt-[10px] border-t border-white/5">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Team</p>
-                      <div className="flex items-center gap-1.5">
-                        <Users size={14} className="text-slate-500" />
-                        <span className="text-[14px] font-black text-[var(--text-main)]">12</span>
-                      </div>
+                    {/* Right Badge (Task Count) */}
+                    <div className="flex items-center justify-center min-w-[40px] px-[10px] h-full bg-black/30 text-[var(--text-muted)] group-hover:text-white font-black text-[12px] border-l border-white/5 z-10 transition-colors">
+                      {project.taskCount || 0}
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Tasks</p>
-                      <div className="flex items-center gap-1.5">
-                        <Database size={14} className="text-slate-500" />
-                        <span className="text-[14px] font-black text-[var(--text-main)]">{project.taskCount}+</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                  </motion.div>
+                ))}
               </AnimatePresence>
             </div>
           </div>
           
-          <div className="lg:col-span-3">
-            <div className="sticky top-[10px]">
-              <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] shadow-sm relative overflow-hidden m-[10px]">
-                <div className="absolute top-0 right-0 p-[20px] opacity-5">
-                  <Sparkles size={60} />
-                </div>
-                
-                <div className="relative z-10 flex flex-col gap-[10px]">
-                  <div className="flex items-center gap-[10px] p-[10px]">
-                    <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                    <div>
-                      <h2 className="text-[14px] font-black text-white tracking-tight uppercase">Top 10 Projects</h2>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">High Activity</p>
-                    </div>
-                  </div>
-
-                  <div className="flex bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)]">
-                    {['WEEK', 'MONTH', 'YEAR'].map(filter => (
-                      <button
-                        key={filter}
-                        onClick={() => setTimeFilter(filter)}
-                        className={`flex-1 py-[10px] text-[10px] font-black uppercase tracking-widest rounded-[8px] transition-all ${
-                          timeFilter === filter 
-                            ? 'bg-indigo-500 text-white shadow-lg' 
-                            : 'text-slate-500 hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        {filter}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="max-h-[600px] overflow-y-auto custom-scrollbar pr-[5px] flex flex-col gap-[10px]">
-                    {top10Projects.map((proj, idx) => (
-                      <motion.div 
-                        key={proj.id}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        onClick={() => setSelectedId(proj.id)}
-                        className="bg-[var(--bg-surface)] hover:bg-indigo-500/10 border border-[var(--border)] hover:border-indigo-500/30 transition-all rounded-[8px] p-[10px] cursor-pointer group flex flex-col gap-[10px] relative overflow-hidden"
-                      >
-                        <div 
-                          className="absolute left-0 top-0 w-1 h-full"
-                          style={{ backgroundColor: proj.color || '#6366f1' }}
-                        />
-                        <div className="flex justify-between items-center pl-[10px]">
-                          <div className="flex items-center gap-[10px]">
-                            {idx < 3 && <Crown size={14} className="text-yellow-500" />}
-                            <span className="text-[14px] font-black text-[var(--text-main)] group-hover:text-indigo-500 truncate max-w-[120px]">
-                              {proj.key}
-                            </span>
-                          </div>
-                          <span className="px-[10px] py-[5px] rounded-[4px] text-[10px] font-black bg-indigo-500/20 text-indigo-400">
-                            {proj.taskCount} T
-                          </span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
