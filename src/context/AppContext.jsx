@@ -42,6 +42,13 @@ export const AppProvider = ({ children }) => {
     etaMode: ''
   });
 
+  // Dashboard Data States (Synced with Supabase)
+  const [dashboardProjects, setDashboardProjects] = useState([]);
+  const [dashboardUsers, setDashboardUsers] = useState([]);
+  const [dashboardTasks, setDashboardTasks] = useState([]);
+  const [dashboardLeave, setDashboardLeave] = useState([]);
+  const [isDashboardLoading, setIsDashboardLoading] = useState(false);
+
   // Data Analyst Persistence States
   const [analystTasks, setAnalystTasks] = useState([]);
   const [analystUserMap, setAnalystUserMap] = useState({});
@@ -78,7 +85,7 @@ export const AppProvider = ({ children }) => {
     const savedProjects = localStorage.getItem('customProjects');
     if (savedLogs) {
       const logs = JSON.parse(savedLogs);
-      const migratedLogs = logs.map(log => 
+      const migratedLogs = logs.map(log =>
         log.status === 'PLANING' ? { ...log, status: 'PLANNING' } : log
       );
       setReportData(migratedLogs);
@@ -97,7 +104,42 @@ export const AppProvider = ({ children }) => {
       }
     };
     fetchSupabaseProjects();
+    fetchDashboardData();
+    
+    // Subscribe to changes
+    (async () => {
+      const { supabase } = await import('../supabaseClient');
+      const channel = supabase
+        .channel('public')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Project' }, () => fetchDashboardData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task' }, () => fetchDashboardData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_User' }, () => fetchDashboardData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Leave' }, () => fetchDashboardData())
+        .subscribe();
+      return () => { supabase.removeChannel(channel); };
+    })();
   }, []);
+
+  const fetchDashboardData = async () => {
+    const { supabase } = await import('../supabaseClient');
+    setIsDashboardLoading(true);
+    try {
+      const [projRes, userRes, taskRes, leaveRes] = await Promise.all([
+        supabase.from('NMK_Project').select('*'),
+        supabase.from('NMK_User').select('*'),
+        supabase.from('NMK_Task').select('*').order('created_at', { ascending: false }),
+        supabase.from('NMK_Leave').select('*')
+      ]);
+      setDashboardProjects(projRes.data || []);
+      setDashboardUsers(userRes.data || []);
+      setDashboardTasks(taskRes.data || []);
+      setDashboardLeave(leaveRes.data || []);
+    } catch (err) {
+      console.error('Dashboard Fetch Error:', err);
+    } finally {
+      setIsDashboardLoading(false);
+    }
+  };
 
   // Save data on change
   useEffect(() => {
@@ -113,7 +155,7 @@ export const AppProvider = ({ children }) => {
     if (e) e.preventDefault();
     const targetProject = batchOverrides?.project || formData.project;
     if (!targetProject) return;
-    
+
     const newReportData = [...reportData];
     let dataChanged = false;
 
@@ -170,7 +212,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const deleteRow = (id) => setReportData(reportData.filter(r => r.id !== id));
-  
+
   const moveRow = (id, dir) => {
     const idx = reportData.findIndex(r => r.id === id);
     if (idx === -1) return;
@@ -205,10 +247,20 @@ export const AppProvider = ({ children }) => {
   const weekDates = useMemo(() => {
     const date = parseISO(selectedDate);
     const monday = startOfWeek(date, { weekStartsOn: 1 });
-    return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((_, i) => 
+    return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((_, i) =>
       format(addDays(monday, i), 'dd/MM/yyyy')
     );
   }, [selectedDate]);
+
+  const dashboardStats = useMemo(() => {
+    const activeProjectIds = new Set(dashboardTasks.map(t => t.project_id));
+    return {
+      totalProjects: dashboardProjects.length,
+      activeProjects: activeProjectIds.size,
+      totalUsers: dashboardUsers.length,
+      totalTasks: dashboardTasks.length
+    };
+  }, [dashboardProjects, dashboardTasks, dashboardUsers]);
 
   const value = {
     activeTab, setActiveTab,
@@ -229,6 +281,7 @@ export const AppProvider = ({ children }) => {
     analystUserMap, setAnalystUserMap,
     analystUserTeamMap, setAnalystUserTeamMap,
     lastAnalystFetch, setLastAnalystFetch,
+    dashboardProjects, dashboardUsers, dashboardTasks, dashboardLeave, isDashboardLoading, dashboardStats, fetchDashboardData,
     handleAddTask, deleteRow, moveRow, updateStatus, updateDayTime, updateMarkup, bulkUpdateMarkup
   };
 
