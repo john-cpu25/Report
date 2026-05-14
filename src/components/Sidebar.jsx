@@ -18,6 +18,7 @@ import {
   X,
   Battery,
   Network,
+  User as UserIcon,
   Workflow as WorkflowIcon
 } from 'lucide-react'
 import NavItem from './NavItem'
@@ -33,17 +34,23 @@ const Sidebar = () => {
     setActiveTab
   } = useApp();
 
+  const { isAdmin, isLeader } = useAuth();
+
   const mainSections = [
     {
       title: 'MAIN',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'personal', label: 'My Space', icon: UserIcon }, // New Personal Tab
         { id: 'projects', label: 'Projects', icon: FolderKanban },
         { id: 'organization', label: 'Organization', icon: Network },
         { id: 'report', label: 'Weekly Planner', icon: CalendarClock },
-        { id: 'processor', label: 'Data Analyst', icon: BarChart3 },
+        // Only show Data Analyst and Review to Admin/Leader
+        ...((isAdmin || isLeader) ? [
+          { id: 'processor', label: 'Data Analyst', icon: BarChart3 },
+          { id: 'review', label: 'Review', icon: CheckCircle2 }
+        ] : []),
         { id: 'leave', label: 'Annual Leave', icon: Battery },
-        { id: 'review', label: 'Review', icon: CheckCircle2 },
       ]
     },
     {
@@ -61,7 +68,8 @@ const Sidebar = () => {
     items: [
       { id: 'settings', label: 'Settings', icon: Settings },
       { id: 'export', label: 'Export Data', icon: FileOutput },
-      { id: 'admin', label: 'Admin Panel', icon: ShieldCheck },
+      // Only show Admin Panel to Admin
+      ...(isAdmin ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldCheck }] : []),
     ]
   }
 

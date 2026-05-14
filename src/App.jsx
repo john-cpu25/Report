@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { format } from 'date-fns'
 import { Layout } from 'lucide-react'
@@ -27,6 +26,7 @@ import BambooBackground from './components/BambooBackground'
 import OrgChart from './components/OrgChart'
 import Workflows from './components/Workflows'
 import AdminPanel from './components/AdminPanel'
+import PersonalSpace from './components/PersonalSpace'
 
 function App() {
   const {
@@ -45,7 +45,7 @@ function App() {
     handleAddTask, deleteRow, moveRow, updateStatus, updateDayTime, updateMarkup, bulkUpdateMarkup
   } = useApp();
 
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin, isLeader } = useAuth();
   const [isLoading, setIsLoading] = useState(true)
 
   if (authLoading) return null;
@@ -68,6 +68,28 @@ function App() {
     const fileName = `Rincovitch_Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
     XLSX.writeFile(wb, fileName)
   }
+
+  // Route Guard Logic
+  const canAccessAnalyst = isAdmin || isLeader;
+  const canAccessAdmin = isAdmin;
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'report': return <WeeklyReport exportExcel={exportExcel} />;
+      case 'personal': return <PersonalSpace />;
+      case 'processor': return canAccessAnalyst ? <CSVProcessor /> : <PersonalSpace />;
+      case 'leave': return <AnnualLeave />;
+      case 'projects': return <Projects />;
+      case 'review': return canAccessAnalyst ? <PerformanceReview /> : <PersonalSpace />;
+      case 'dashboard': return <Dashboard />;
+      case 'planning': return <Planning reportData={reportData} weekDates={weekDates} />;
+      case 'organization': return <OrgChart />;
+      case 'workflows': return <Workflows />;
+      case 'admin': return canAccessAdmin ? <AdminPanel /> : <PersonalSpace />;
+      case 'settings': return <Settings theme={theme} setTheme={setTheme} background={background} setBackground={setBackground} />;
+      default: return <Dashboard />;
+    }
+  };
 
   return (
     <AnimatePresence mode="wait">
@@ -101,39 +123,7 @@ function App() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
                   >
-                    {activeTab === 'report' ? (
-                      <WeeklyReport exportExcel={exportExcel} />
-                    ) : activeTab === 'processor' ? (
-                      <CSVProcessor />
-                    ) : activeTab === 'leave' ? (
-                      <AnnualLeave />
-                    ) : activeTab === 'projects' ? (
-                      <Projects />
-                    ) : activeTab === 'review' ? (
-                      <PerformanceReview />
-                    ) : activeTab === 'dashboard' ? (
-                      <Dashboard />
-                    ) : activeTab === 'planning' ? (
-                      <Planning reportData={reportData} weekDates={weekDates} />
-                    ) : activeTab === 'organization' ? (
-                      <OrgChart />
-                    ) : activeTab === 'workflows' ? (
-                      <Workflows />
-                    ) : activeTab === 'admin' ? (
-                      <AdminPanel />
-                    ) : activeTab === 'settings' ? (
-                      <Settings theme={theme} setTheme={setTheme} background={background} setBackground={setBackground} />
-                    ) : (
-                      <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-6">
-                        <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                          <Layout size={40} />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-black text-white uppercase italic tracking-tight">Coming Soon</h2>
-                          <p className="text-indigo-400 font-black uppercase tracking-[0.4em] text-[10px] mt-2">Module: {activeTab}</p>
-                        </div>
-                      </div>
-                    )}
+                    {renderContent()}
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -149,4 +139,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
