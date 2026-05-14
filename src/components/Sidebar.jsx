@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import NavItem from './NavItem'
 import { useApp } from '../context/AppContext'
+import { useAuth } from '../context/AuthContext'
 
 const Sidebar = () => {
   const {

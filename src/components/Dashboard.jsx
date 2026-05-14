@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+<<<<<<< HEAD
 import { 
   LayoutDashboard, 
   Zap, 
@@ -26,18 +27,19 @@ import {
   Title,
   Tooltip,
   Legend 
+=======
+import {
+  LayoutDashboard, Zap, Target, Users, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight,
+  Activity, Layers, Award, Clock, FolderKanban, Search, CheckCircle2, AlertCircle
+} from 'lucide-react';
+import { supabase } from '../supabaseClient';
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend, Filler
+>>>>>>> origin/NguyenWorkspace
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 
-ChartJS.register(
-  CategoryScale, 
-  LinearScale, 
-  BarElement,
-  ArcElement,
-  Title, 
-  Tooltip, 
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -78,226 +80,296 @@ const Dashboard = () => {
   }, [projects, tasks]);
 
   const teamPulse = useMemo(() => {
-    const teams = ['STR MODELING TEAM', 'PT & REO TEAM'];
-    return teams.map(teamName => {
+    const teams = ['STR MODELING TEAM', 'PT & REO TEAM', 'ENGINEER TEAM', 'ETABS TEAM'];
+    return teams.map((teamName, idx) => {
       const teamUsers = users.filter(u => (u.team || '').toUpperCase().includes(teamName.split(' ')[0]));
-      const activeCount = Math.floor(teamUsers.length * 0.7); // Mock for visual
+      const members = teamUsers.length || (idx === 0 ? 8 : idx === 1 ? 7 : idx === 2 ? 5 : 6);
+      const activeCount = Math.floor(teamUsers.length * 0.7) || (idx === 0 ? 2 : idx === 1 ? 4 : idx === 2 ? 3 : 5);
       return {
         name: teamName,
-        members: teamUsers.length,
+        members: members,
         active: activeCount,
-        available: teamUsers.length - activeCount,
-        projects: ['RIVER TERRACE', 'FGW5', 'BALMAIN', 'SURF PARADE'].slice(0, 4),
-        capacity: 75
+        available: members - activeCount,
+        projects: ['RIVER TERRACE', 'FGW5', 'BALMAIN', 'SURF PARADE'].slice(0, idx === 0 ? 4 : idx === 1 ? 2 : 3),
+        capacity: idx === 0 ? 89 : idx === 1 ? 78 : idx === 2 ? 92 : 65
       };
     });
   }, [users]);
 
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
+  };
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+  };
+
   if (loading) return (
-    <div className="h-[60vh] flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+    <div className="h-screen w-full bg-[var(--bg-main)] flex items-center justify-center">
+      <div className="relative w-12 h-12">
+        <div className="absolute inset-0 border-4 border-indigo-500/20 rounded-full"></div>
+        <div className="absolute inset-0 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
     </div>
   );
 
   return (
-    <div className="bg-[#0B0F1A] min-h-screen text-white p-4 font-['Inter']">
-      {/* Header Area */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-[var(--bg-main)] min-h-screen text-[var(--text-main)] p-5 font-['Inter'] relative overflow-x-hidden transition-colors duration-300">
+
+      {/* Background Ambience */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
+
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row md:items-center justify-between mb-8 relative z-10 gap-4">
         <div>
-          <h1 className="text-2xl font-black uppercase tracking-tight">Command Center</h1>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Operational Intelligence System • Real-time Stream
+          <h1 className="text-xl font-bold tracking-tight text-[var(--text-main)]">
+            Command Center
+          </h1>
+          <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1 flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </span>
+            Operational Intelligence System - Real-time Stream
           </p>
         </div>
-        <div className="flex items-center gap-4">
-           <div className="relative group">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
-             <input type="text" placeholder="Global Intelligence Search..." className="bg-slate-900/50 border border-white/5 rounded-full pl-10 pr-4 py-1.5 text-[12px] w-64 outline-none focus:border-indigo-500/50 transition-all" />
-           </div>
-           <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-full text-[12px] font-black uppercase tracking-widest transition-all">
-             + Create Task
-           </button>
-           <div className="flex items-center gap-3 border-l border-white/10 pl-4">
-              <div className="text-right">
-                <p className="text-[11px] font-black">Nguyen Ly</p>
-                <p className="text-[9px] text-slate-500 font-bold uppercase">Modelling Expert</p>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-black text-[10px]">NL</div>
-           </div>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        {/* Left Column: Vertical Stats */}
-        <div className="col-span-1 space-y-4">
-          {[
-            { label: 'Active Projects', value: stats.activeProjects, trend: '+12.5%', color: 'text-emerald-500' },
-            { label: 'Intelligence Tasks', value: stats.intelligenceTasks, trend: '-4.2%', color: 'text-rose-500' },
-            { label: 'Active Agents', value: stats.activeAgents, trend: 'Stable', color: 'text-slate-500' },
-            { label: 'System Pulse', value: stats.systemPulse, trend: '+5.4%', color: 'text-emerald-500' },
-          ].map((item, i) => (
-            <div key={i} className="bg-slate-900/40 border border-white/5 rounded-xl p-4 h-[120px] flex flex-col justify-between">
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">{item.label}</p>
-              <div>
-                <h3 className="text-2xl font-black tracking-tighter">{item.value}</h3>
-                <p className={`text-[9px] font-bold ${item.color}`}>{item.trend}</p>
-              </div>
+        <div className="flex items-center gap-4">
+          <div className="relative group hidden md:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] transition-colors group-focus-within:text-indigo-500" size={14} />
+            <input type="text" placeholder="Global Intelligence Search..." className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md pl-8 pr-3 py-1.5 text-xs w-64 outline-none focus:border-indigo-500/50 transition-all text-[var(--text-main)] placeholder-[var(--text-dim)]" />
+          </div>
+
+          <button className="relative flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm">
+            <Zap size={14} /> Create Task
+          </button>
+
+          <div className="hidden md:flex items-center gap-3 border-l border-[var(--border)] pl-4 cursor-pointer group">
+            <div className="text-right">
+              <p className="text-xs font-bold text-[var(--text-main)] group-hover:text-indigo-500 transition-colors leading-tight">Nguyen Ly</p>
+              <p className="text-[10px] text-[var(--text-dim)]">Modelling Expert</p>
             </div>
+            <div className="w-8 h-8 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] flex items-center justify-center text-[var(--text-main)] font-bold text-[10px]">NL</div>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative z-10 flex flex-col xl:flex-row gap-6">
+
+        {/* LEFT COLUMN: Vertical Stats Cards */}
+        <div className="flex flex-col gap-4 w-full xl:w-44 shrink-0">
+          {[
+            { label: 'Active Projects', value: stats.activeProjects, trend: '+12.5%', isUp: true, color: 'text-emerald-500' },
+            { label: 'Intelligence Tasks', value: stats.intelligenceTasks, trend: '-4.2%', isUp: false, color: 'text-rose-500' },
+            { label: 'Active Agents', value: stats.activeAgents, trend: 'Stable', isUp: true, color: 'text-[var(--text-muted)]' },
+            { label: 'System Pulse', value: stats.systemPulse, trend: '+5.4%', isUp: true, color: 'text-emerald-500' },
+          ].map((item, i) => (
+            <motion.div key={i} variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-xl shadow-sm flex flex-col justify-center gap-2 h-[110px]" style={{ padding: '20px' }}>
+              <p className="text-[11px] font-medium text-[var(--text-muted)]">{item.label}</p>
+              <h3 className="text-3xl font-bold text-[var(--text-main)] leading-none">{item.value}</h3>
+              <p className={`text-[11px] font-semibold ${item.color}`}>{item.trend}</p>
+            </motion.div>
           ))}
         </div>
 
-        {/* Center: Team Pulse & Efficiency */}
-        <div className="col-span-9 space-y-4">
-          {/* Team Pulse Row */}
-          <div className="grid grid-cols-2 gap-4">
+        {/* MIDDLE COLUMN: Team Pulse & Doughnut */}
+        <div className="flex-1 flex flex-col gap-6 min-w-0">
+
+          {/* Team Pulse Section */}
+          {/* Teams Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-8">
             {teamPulse.map((team, i) => (
-              <div key={i} className="bg-slate-900/40 border border-white/5 rounded-xl p-5 relative overflow-hidden">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-[14px] font-black uppercase tracking-tight">{team.name}</h2>
-                    <p className="text-[10px] text-slate-500 font-bold">{team.members} Members</p>
-                    <div className="flex items-center gap-3 mt-2">
-                       <span className="flex items-center gap-1.5 text-[10px] font-black text-indigo-400">
-                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> {team.active} Active
-                       </span>
-                       <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-400">
-                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {team.available} Available
-                       </span>
+              <div key={i} className="flex flex-col">
+
+                {/* Team Name Outside - Top Right */}
+                <div className="flex justify-end mb-2">
+                  <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">{team.name}</h2>
+                </div>
+
+                <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative overflow-hidden shadow-sm flex flex-col md:flex-row gap-6 h-full" style={{ padding: '24px' }}>
+
+                  {/* Left Column - Team Info */}
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div>
+                      <p className="text-xs text-[var(--text-muted)] font-medium">{team.members} Members</p>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs font-medium text-[var(--text-main)] my-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+                        {team.active} Active
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                        {team.available} Available
+                      </div>
+                    </div>
+
+                    <div className="w-full">
+                      <div className="flex justify-between items-center text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wider mb-2">
+                        <span>Capacity</span>
+                        <span className="text-[var(--text-main)]">{team.capacity}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-[var(--bg-surface)] rounded-full overflow-hidden border border-[var(--glass-border)]">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${team.capacity}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className={`h-full rounded-full ${i === 0 ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' : 'bg-gradient-to-r from-rose-400 to-rose-600'}`}
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2">Top Active Projects</p>
-                    <div className="space-y-1">
+
+                  {/* Right Column - Projects */}
+                  <div className="w-full md:w-[45%] bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl flex flex-col justify-start" style={{ padding: '16px' }}>
+                    <div className="flex flex-col justify-start gap-3.5 h-full">
                       {team.projects.map((p, j) => (
-                        <div key={j} className="flex items-center justify-end gap-2 text-[9px] font-bold uppercase">
-                          <span className="text-slate-400">{p}</span>
-                          <span className="text-white w-4 text-right">{Math.floor(Math.random() * 5) + 1}</span>
+                        <div key={j} className="flex items-center gap-2.5 group cursor-default">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-dim)] group-hover:bg-blue-500 transition-colors shrink-0"></span>
+                          <span className="text-xs font-semibold text-[var(--text-main)] group-hover:text-blue-400 transition-colors truncate">{p}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-                </div>
-                <div className="mt-4">
-                  <div className="flex justify-between items-center mb-1.5 text-[9px] font-black uppercase tracking-widest">
-                    <span className="text-slate-500">Capacity Utilization</span>
-                    <span className="text-white">{team.capacity}%</span>
-                  </div>
-                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full" style={{ width: `${team.capacity}%` }} />
-                  </div>
-                </div>
+
+                </motion.div>
               </div>
             ))}
           </div>
 
-          {/* Efficiency & Analysis Row */}
-          <div className="bg-slate-900/40 border border-white/5 rounded-xl p-8 h-[400px] flex items-center justify-center">
-            <div className="flex items-center gap-20">
-               <div className="relative w-48 h-48">
-                  <Doughnut 
-                    data={{
-                      datasets: [{
-                        data: [53, 47],
-                        backgroundColor: ['#10b981', 'rgba(255,255,255,0.03)'],
-                        borderWidth: 0,
-                        circumference: 360,
-                        rotation: 0,
-                        cutout: '85%'
-                      }]
-                    }}
-                    options={{ plugins: { legend: { display: false } }, maintainAspectRatio: false }}
-                  />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <h4 className="text-4xl font-black">53%</h4>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Efficiency</p>
-                  </div>
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-indigo-500 rounded-full border-4 border-[#0B0F1A]" />
-               </div>
+          {/* Efficiency Doughnut */}
+          <motion.div variants={itemVariants} className="flex-1 bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-xl flex flex-col md:flex-row items-center justify-center gap-16 shadow-sm min-h-[300px]" style={{ padding: '32px' }}>
 
-               <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                    <div>
-                      <p className="text-[10px] text-slate-500 font-black uppercase">Total Tasks</p>
-                      <h4 className="text-xl font-black">1,240</h4>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <div>
-                      <p className="text-[10px] text-slate-500 font-black uppercase">Completed</p>
-                      <h4 className="text-xl font-black">842</h4>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-2 h-2 rounded-full bg-rose-500" />
-                    <div>
-                      <p className="text-[10px] text-slate-500 font-black uppercase">Active WIP</p>
-                      <h4 className="text-xl font-black">10</h4>
-                    </div>
-                  </div>
-               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Activity & Calendar */}
-        <div className="col-span-2 space-y-4">
-          <div className="bg-slate-900/40 border border-white/5 rounded-xl p-5 h-[300px] flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-[12px] font-black uppercase tracking-tight">Activity</h2>
-              <div className="flex gap-2 text-[8px] font-black uppercase text-slate-500">
-                <span className="text-indigo-400">Week</span>
-                <span>Month</span>
-                <span>Year</span>
+            <div className="relative w-48 h-48">
+              <Doughnut
+                data={{
+                  labels: ['Efficient', 'Idle'],
+                  datasets: [{
+                    data: [53, 47],
+                    backgroundColor: ['#10b981', '#1e40af'],
+                    borderWidth: 0,
+                    cutout: '80%'
+                  }]
+                }}
+                options={{
+                  plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                  maintainAspectRatio: false
+                }}
+              />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <h4 className="text-3xl font-bold text-[var(--text-main)]">53%</h4>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">Efficiency</p>
               </div>
             </div>
-            <div className="flex-grow">
-              <Bar 
+
+            <div className="flex flex-col gap-5">
+              <div className="flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                <div>
+                  <p className="text-[11px] text-[var(--text-muted)]">Total Tasks</p>
+                  <h4 className="text-sm font-bold text-[var(--text-main)]">1,240</h4>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <div>
+                  <p className="text-[11px] text-[var(--text-muted)]">Completed</p>
+                  <h4 className="text-sm font-bold text-[var(--text-main)]">842</h4>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                <div>
+                  <p className="text-[11px] text-[var(--text-muted)]">Active WIP</p>
+                  <h4 className="text-sm font-bold text-[var(--text-main)]">10</h4>
+                </div>
+              </div>
+            </div>
+
+          </motion.div>
+        </div>
+
+        {/* RIGHT COLUMN: Activity Chart & Calendar */}
+        <div className="flex flex-col gap-6 w-full xl:w-72 shrink-0">
+
+          {/* Activity Chart */}
+          <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl shadow-sm" style={{ padding: '28px' }}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-base font-bold text-[var(--text-main)]">Activity</h2>
+              <div className="flex gap-3">
+                <span className="text-[11px] text-blue-500 font-medium">Week</span>
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">Month</span>
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">Year</span>
+              </div>
+            </div>
+            <div className="w-full h-32">
+              <Bar
                 data={{
-                  labels: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+                  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                   datasets: [{
                     data: [40, 60, 80, 50, 90, 30, 20],
-                    backgroundColor: '#6366f1',
+                    backgroundColor: '#3b82f6',
                     borderRadius: 2,
-                    barThickness: 8
+                    barThickness: 8,
                   }]
                 }}
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
                   plugins: { legend: { display: false } },
-                  scales: { 
-                    x: { grid: { display: false }, ticks: { color: '#475569', font: { size: 8 } } },
-                    y: { display: false }
+                  scales: {
+                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 9 } } },
+                    y: { display: false, min: 0 }
                   }
                 }}
               />
             </div>
-          </div>
+          </motion.div>
 
-          <div className="bg-slate-900/40 border border-white/5 rounded-xl p-5">
-             <div className="flex justify-between items-center mb-4 text-[11px] font-black uppercase tracking-widest text-slate-400">
-               <button>{"<"}</button>
-               <span>August 2026</span>
-               <button>{">"}</button>
-             </div>
-             <div className="grid grid-cols-7 gap-1 text-center mb-2">
-               {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => (
-                 <span key={d} className="text-[8px] font-black text-slate-600">{d}</span>
-               ))}
-             </div>
-             <div className="grid grid-cols-7 gap-1 text-center">
-                {Array.from({ length: 31 }).map((_, i) => (
-                  <span key={i} className={`text-[10px] font-bold p-1.5 rounded-lg ${i + 1 === 12 ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-white/5'}`}>
-                    {i + 1}
-                  </span>
-                ))}
-             </div>
-          </div>
+          {/* Calendar */}
+          <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl shadow-sm flex-1" style={{ padding: '28px' }}>
+            <div className="flex justify-between items-center mb-6">
+              <button className="text-[var(--text-muted)] hover:text-blue-500 font-bold">{"<"}</button>
+              <span className="text-sm font-bold text-[var(--text-main)]">August 2026</span>
+              <button className="text-[var(--text-muted)] hover:text-blue-500 font-bold">{">"}</button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center mb-3">
+              {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => (
+                <span key={d} className="text-[11px] font-medium text-[var(--text-muted)]">{d}</span>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-y-1 gap-x-1 text-center">
+              <span className="p-1"></span>
+              <span className="p-1"></span>
+              {Array.from({ length: 31 }).map((_, i) => {
+                const isToday = i + 1 === 13;
+                return (
+                  <div key={i} className="flex justify-center">
+                    <button
+                      className={`
+                          w-6 h-6 flex items-center justify-center text-[10px] font-medium rounded transition-all
+                          ${isToday
+                          ? 'bg-blue-600 text-white'
+                          : 'text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+                        }
+                        `}
+                    >
+                      {i + 1}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+
         </div>
-      </div>
+
+      </motion.div>
     </div>
   );
 };
