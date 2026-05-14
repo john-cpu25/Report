@@ -267,15 +267,16 @@ const WeeklyReport = ({ exportExcel }) => {
                 <form onSubmit={(e) => { handleAddTask(e); }} className="flex flex-col gap-[10px] p-[10px]">
                   <div className="flex flex-col gap-[5px]">
                     <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Project Portfolio</label>
-                    <select 
-                      className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-[var(--text-main)] outline-none"
-                      value={formData.project}
-                      onChange={e => setFormData({...formData, project: e.target.value})}
-                      required
-                    >
-                      <option value="" disabled>Select Project...</option>
-                      {allProjects.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
+                      <select 
+                        className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-[var(--text-main)] outline-none"
+                        style={{ colorScheme: 'dark' }}
+                        value={formData.project}
+                        onChange={e => setFormData({...formData, project: e.target.value})}
+                        required
+                      >
+                        <option value="" disabled className="bg-[#161B26] text-white">Select Project...</option>
+                        {allProjects.map(p => <option key={p} value={p} className="bg-[#161B26] text-white">{p}</option>)}
+                      </select>
                   </div>
 
                   <div className="flex flex-col gap-[5px]">
@@ -339,10 +340,11 @@ const WeeklyReport = ({ exportExcel }) => {
                       <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Status</label>
                       <select 
                         className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[12px] font-bold text-[var(--text-main)] outline-none"
+                        style={{ colorScheme: 'dark' }}
                         value={formData.status}
                         onChange={e => setFormData({...formData, status: e.target.value})}
                       >
-                        {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                        {ALL_STATUSES.map(s => <option key={s} value={s} className="bg-[#161B26] text-white">{s}</option>)}
                       </select>
                     </div>
                   </div>
@@ -589,10 +591,11 @@ const WeeklyReport = ({ exportExcel }) => {
                                 <td className="p-[10px]">
                                   <select 
                                     className={`text-[10px] font-black py-[5px] px-[10px] rounded-[8px] border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${getStatusColor(row.status).bg} ${getStatusColor(row.status).text}`}
+                                    style={{ colorScheme: 'dark' }}
                                     value={row.status}
                                     onChange={(e) => updateStatus(row.id, e.target.value)}
                                   >
-                                    {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                                    {ALL_STATUSES.map(s => <option key={s} value={s} className="bg-[#161B26] text-white">{s}</option>)}
                                   </select>
                                 </td>
                                 {DAYS_OF_WEEK.map(d => {

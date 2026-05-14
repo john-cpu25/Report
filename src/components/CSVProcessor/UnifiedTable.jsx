@@ -36,13 +36,16 @@ const UnifiedTable = (props) => {
     });
   }
 
+  const stickyOffset = props.stickyOffset || '0px';
+  const row2Offset = `calc(${stickyOffset} + 45px)`; // Approx height of first header row
+
   return (
-    <div className="bg-[var(--bg-card)] overflow-hidden border border-[var(--border)] shadow-xl rounded-[8px] m-[10px]">
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] shadow-xl rounded-[8px] m-[10px] w-full">
       <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full text-left border-collapse" style={{ minWidth: '1800px' }}>
-          <thead className="sticky top-0 z-10">
+          <thead>
             <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-header)]">
-              <th rowSpan={2} className="px-[10px] py-[10px] text-amber-500 border-r border-b border-[var(--border)] sticky left-0 z-20 min-w-[200px] backdrop-blur-md" style={{ backgroundColor: 'var(--table-sticky)' }}>
+              <th rowSpan={2} className="px-[10px] py-[10px] text-amber-500 border-r border-b border-[var(--border)] sticky left-0 z-30 min-w-[200px] backdrop-blur-md bg-[var(--bg-card)]" style={{ top: stickyOffset }}>
                 <div className="flex flex-col gap-[10px]">
                   <div className="flex justify-between items-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('project')}>
                     <span>NAME {renderSortIcon('project')}</span>
@@ -57,32 +60,32 @@ const UnifiedTable = (props) => {
                   </select>
                 </div>
               </th>
-              <th colSpan={4} className="px-[10px] py-[10px] bg-indigo-500/10 text-indigo-500 text-center border-r border-b border-[var(--border)]">MANAGER / LEADER</th>
-              <th colSpan={5} className="px-[10px] py-[10px] bg-sky-500/10 text-sky-500 text-center border-r border-b border-[var(--border)]">USER</th>
-              <th rowSpan={2} className="px-[10px] py-[10px] bg-[var(--bg-header)] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] min-w-[80px]" onClick={() => handleSort('area')}>
+              <th colSpan={4} className="px-[10px] py-[10px] text-indigo-500 text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>MANAGER / LEADER</th>
+              <th colSpan={5} className="px-[10px] py-[10px] text-sky-500 text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>USER</th>
+              <th rowSpan={2} className="px-[10px] py-[10px] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] min-w-[80px] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }} onClick={() => handleSort('area')}>
                 area {renderSortIcon('area')}
               </th>
-              <th className="px-[10px] py-[10px] bg-emerald-500/10 text-emerald-500 text-center border-r border-b border-[var(--border)]">T1</th>
-              <th className="px-[10px] py-[10px] bg-indigo-500/10 text-indigo-500 text-center border-r border-b border-[var(--border)]">T2</th>
-              <th className="px-[10px] py-[10px] bg-violet-500/10 text-violet-500 text-center border-r border-b border-[var(--border)]">T3</th>
-              <th className="px-[10px] py-[10px] bg-amber-500/10 text-amber-500 text-center border-r border-b border-[var(--border)]">T4</th>
-              <th className="px-[10px] py-[10px] bg-rose-500/10 text-rose-500 text-center border-b border-[var(--border)]">T5</th>
+              <th className="px-[10px] py-[10px] text-emerald-500 text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>T1</th>
+              <th className="px-[10px] py-[10px] text-indigo-500 text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>T2</th>
+              <th className="px-[10px] py-[10px] text-violet-500 text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>T3</th>
+              <th className="px-[10px] py-[10px] text-amber-500 text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>T4</th>
+              <th className="px-[10px] py-[10px] text-rose-500 text-center border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>T5</th>
             </tr>
             <tr className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
-              <th className="px-[10px] py-[5px] bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[100px]" onClick={() => handleSort('createdBy')}>create_by {renderSortIcon('createdBy')}</th>
-              <th className="px-[10px] py-[5px] bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('createdAt')}>created_at {renderSortIcon('createdAt')}</th>
-              <th className="px-[10px] py-[5px] bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateStart')}>date_start {renderSortIcon('dateStart')}</th>
-              <th className="px-[10px] py-[5px] bg-indigo-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateEnd')}>date_end {renderSortIcon('dateEnd')}</th>
-              <th className="px-[10px] py-[5px] bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[100px]" onClick={() => handleSort('userName')}>user_id {renderSortIcon('userName')}</th>
-              <th className="px-[10px] py-[5px] bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateAccepted')}>date_accepted {renderSortIcon('dateAccepted')}</th>
-              <th className="px-[10px] py-[5px] bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateStarted')}>date_started {renderSortIcon('dateStarted')}</th>
-              <th className="px-[10px] py-[5px] bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateComplete')}>date_complete {renderSortIcon('dateComplete')}</th>
-              <th className="px-[10px] py-[5px] bg-sky-500/5 border-r border-b border-[var(--border)] min-w-[90px]" onClick={() => handleSort('dateChecked')}>date_checked {renderSortIcon('dateChecked')}</th>
-              <th className="px-[10px] py-[5px] bg-emerald-500/5 border-r border-b border-[var(--border)] text-center">T1</th>
-              <th className="px-[10px] py-[5px] bg-indigo-500/5 border-r border-b border-[var(--border)] text-center">T2</th>
-              <th className="px-[10px] py-[5px] bg-violet-500/5 border-r border-b border-[var(--border)] text-center">T3</th>
-              <th className="px-[10px] py-[5px] bg-amber-500/5 border-r border-b border-[var(--border)] text-center">T4</th>
-              <th className="px-[10px] py-[5px] bg-rose-500/5 border-b border-[var(--border)] text-center">T5</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('createdBy')}>create_by {renderSortIcon('createdBy')}</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[90px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('createdAt')}>created_at {renderSortIcon('createdAt')}</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[90px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStart')}>date_start {renderSortIcon('dateStart')}</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[90px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateEnd')}>date_end {renderSortIcon('dateEnd')}</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('userName')}>user_id {renderSortIcon('userName')}</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[90px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateAccepted')}>date_accepted {renderSortIcon('dateAccepted')}</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[90px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStarted')}>date_started {renderSortIcon('dateStarted')}</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[90px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateComplete')}>date_complete {renderSortIcon('dateComplete')}</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[90px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateChecked')}>date_checked {renderSortIcon('dateChecked')}</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] text-center sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }}>T1</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] text-center sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }}>T2</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] text-center sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }}>T3</th>
+              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] text-center sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }}>T4</th>
+              <th className="px-[10px] py-[5px] border-b border-[var(--border)] text-center sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }}>T5</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">

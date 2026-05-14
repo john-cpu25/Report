@@ -73,12 +73,32 @@ export const fetchPersonalSpaceData = async (userObj, limit = 1000) => {
   return data || [];
 };
 
-export const fetchUsers = async () => {
-  const { data, error } = await supabase
+export const fetchUsers = async (vietnamOnly = false) => {
+  let query = supabase
     .from('NMK_User')
     .select('id, name, email, team, location')
     .order('name');
     
+  if (vietnamOnly) {
+    query = query.ilike('location', 'VIETNAM');
+  }
+    
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+};
+
+export const fetchLeaveEntries = async (userName = null) => {
+  let query = supabase
+    .from('NMK_Leave')
+    .select('*')
+    .order('date', { ascending: false });
+
+  if (userName) {
+    query = query.eq('user_name', userName);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 };

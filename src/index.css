@@ -262,3 +262,25 @@ body.theme-news ::-webkit-calendar-picker-indicator {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(129, 140, 248, 0.6);
 }
+
+/* Global Select & Option Styling for Dark Mode Compatibility */
+select {
+  color-scheme: dark;
+}
+
+option {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  padding: 8px;
+}
+
+/* Ensure contrast in native dropdowns */
+body.theme-galaxy select option {
+  background-color: #161B26;
+  color: #F8FAFC;
+}
+
+body.theme-news select option {
+  background-color: #FFFFFF;
+  color: #0F172A;
+}
