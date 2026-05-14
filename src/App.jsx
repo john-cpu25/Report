@@ -80,10 +80,10 @@ function App() {
           {background === 'MINIMAL' && (
             <div className={`fixed inset-0 z-[-1] ${theme === 'GALAXY' ? 'bg-slate-950' : 'bg-slate-50'}`} />
           )}
-          
+
           <Sidebar />
 
-          <motion.div 
+          <motion.div
             layout initial={false}
             animate={{ marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 ? (sidebarCollapsed ? 100 : 260) : 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
