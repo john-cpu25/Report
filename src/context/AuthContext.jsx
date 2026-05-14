@@ -67,19 +67,40 @@ export const AuthProvider = ({ children }) => {
         silentLogin();
     }, [accounts, instance]);
 
+    // Fallback admin/leader detection when 'role' column doesn't exist in NMK_User
+    const ADMIN_EMAILS = [
+        'nhan.nguyen@rincovitch.com.au',
+    ];
+    const LEADER_EMAILS = [
+        // Add leader emails here
+    ];
+
     const handleUserSync = async (account) => {
         const email = account.username || account.idTokenClaims?.email;
         if (email) {
             const dbUser = await syncUserWithSupabase(email.toLowerCase());
             if (dbUser) {
-                // Lưu email vào localStorage để lần sau dùng cho loginHint (Đăng nhập tự động)
                 localStorage.setItem('last_login_email', email.toLowerCase());
+                
+                // Strategy: Check 'role' column first, then fallback to email list
+                const roleField = dbUser.role || dbUser.Role || dbUser.access_level || dbUser.permission || '';
+                const roleValue = roleField.toString().trim().toLowerCase();
+                
+                const isAdminByRole = roleValue.includes('admin');
+                const isLeaderByRole = roleValue.includes('leader');
+                const isAdminByEmail = ADMIN_EMAILS.includes(email.toLowerCase());
+                const isLeaderByEmail = LEADER_EMAILS.includes(email.toLowerCase());
+                
+                const finalIsAdmin = isAdminByRole || isAdminByEmail;
+                const finalIsLeader = isLeaderByRole || isLeaderByEmail;
+                
+                console.log('[AuthContext] User:', dbUser.name, '| Email:', email, '| DB role:', roleField || 'N/A', '| Admin:', finalIsAdmin, '| Leader:', finalIsLeader);
                 
                 setUser({
                     ...account,
                     ...dbUser,
-                    isAdmin: dbUser.role?.toLowerCase() === 'admin',
-                    isLeader: dbUser.role?.toLowerCase() === 'leader'
+                    isAdmin: finalIsAdmin,
+                    isLeader: finalIsLeader
                 });
             } else {
                 setError(`Email ${email} không có quyền truy cập hệ thống.`);

@@ -48,6 +48,9 @@ export const AppProvider = ({ children }) => {
   const [analystUserTeamMap, setAnalystUserTeamMap] = useState({});
   const [lastAnalystFetch, setLastAnalystFetch] = useState(null);
 
+  // Projects Persistence States
+  const [projectsCache, setProjectsCache] = useState(null);
+
   // Effects for Persistance
   useEffect(() => {
     localStorage.setItem('appTheme', theme);
@@ -229,6 +232,7 @@ export const AppProvider = ({ children }) => {
     analystUserMap, setAnalystUserMap,
     analystUserTeamMap, setAnalystUserTeamMap,
     lastAnalystFetch, setLastAnalystFetch,
+    projectsCache, setProjectsCache,
     handleAddTask, deleteRow, moveRow, updateStatus, updateDayTime, updateMarkup, bulkUpdateMarkup
   };
 

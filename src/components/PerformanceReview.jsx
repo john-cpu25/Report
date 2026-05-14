@@ -4,7 +4,7 @@ import {
   TrendingUp, Clock, Zap, Calendar, Filter, CheckCircle2, AlertTriangle, Users, FileText, 
   CalendarRange, Edit3, Save, PlusSquare, LayoutGrid, List
 } from 'lucide-react';
-import { format, parseISO, startOfDay, endOfDay, startOfWeek, isWithinInterval } from 'date-fns';
+import { format, parseISO, startOfDay, endOfDay, startOfWeek, isWithinInterval, differenceInMinutes } from 'date-fns';
 import { supabase } from '../supabaseClient';
 import { calculateWorkingMinutes, formatMinutes, calculateTaskMetrics } from '../utils/performanceEngine';
 import { processDate, formatDateTime } from '../utils/csvHelpers';
@@ -12,6 +12,7 @@ import { processDate, formatDateTime } from '../utils/csvHelpers';
 const PerformanceReview = () => {
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
+  const [allLeaveEntries, setAllLeaveEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState('ALL');
   const [dateRange, setDateRange] = useState({
@@ -49,17 +50,21 @@ const PerformanceReview = () => {
       try {
         const startStr = startOfDay(parseISO(dateRange.start)).toISOString();
         const endStr = endOfDay(parseISO(dateRange.end)).toISOString();
-        const [tasksRes, usersRes] = await Promise.all([
+        const [tasksRes, usersRes, leaveRes] = await Promise.all([
           supabase.from('NMK_Task').select('*')
             .gte('created_at', startStr).lte('created_at', endStr)
             .order('created_at', { ascending: false }),
-          supabase.from('NMK_User').select('id, name, email, team, location')
+          supabase.from('NMK_User').select('id, name, email, team, location'),
+          supabase.from('NMK_Leave').select('*')
+            .gte('date', dateRange.start).lte('date', dateRange.end)
         ]);
         if (tasksRes.error) throw tasksRes.error;
         if (usersRes.error) throw usersRes.error;
+        
         const vnUsers = (usersRes.data || []).filter(u => u.location?.toUpperCase() === 'VIETNAM');
         setUsers(vnUsers);
         setTasks(tasksRes.data || []);
+        setAllLeaveEntries(leaveRes.data || []);
       } catch (err) { console.error('Failed to fetch data:', err); }
       finally { setLoading(false); }
     };
@@ -150,15 +155,35 @@ const PerformanceReview = () => {
       const name = u.name || u.email;
       if (selectedTeam !== 'ALL' && u.team !== selectedTeam) return;
       
-      // Fetch leave from localStorage
-      const leaveEntries = JSON.parse(localStorage.getItem(`leaveEntries_${name}`) || '[]');
-      const rangeStart = startOfDay(parseISO(dateRange.start));
-      const rangeEnd = endOfDay(parseISO(dateRange.end));
+      const userLeaveEntries = allLeaveEntries.filter(e => e.create_by === u.id);
       
-      const leaveDays = leaveEntries.filter(e => {
-        const d = parseISO(e.date);
-        return isWithinInterval(d, { start: rangeStart, end: rangeEnd }) && e.type !== 'HOLIDAY';
-      }).reduce((sum, e) => sum + Number(e.amount), 0);
+      let leaveDays = 0;
+      userLeaveEntries.forEach(entry => {
+        if (entry.type !== 'Annual Leave') return;
+        try {
+          const list = typeof entry.leave_list === 'string' 
+            ? JSON.parse(entry.leave_list) 
+            : (entry.leave_list || []);
+            
+          list.forEach(segment => {
+            const startStr = segment.LeaveStart || segment.Start;
+            const endStr = segment.LeaveEnd || segment.End;
+            if (!startStr || !endStr) return;
+
+            const d = parseISO(startStr);
+            const dEnd = parseISO(endStr);
+            const rangeStart = startOfDay(parseISO(dateRange.start));
+            const rangeEnd = endOfDay(parseISO(dateRange.end));
+            
+            if (isWithinInterval(d, { start: rangeStart, end: rangeEnd })) {
+              const diffHours = Math.abs(differenceInMinutes(dEnd, d)) / 60;
+              if (diffHours >= 8) leaveDays += 1;
+              else if (diffHours >= 3) leaveDays += 0.5;
+              else leaveDays += (diffHours / 9);
+            }
+          });
+        } catch (err) {}
+      });
 
       summary[name] = {
         id: u.id,
@@ -204,7 +229,7 @@ const PerformanceReview = () => {
         performance: (totalWork / capacity) * 100
       };
     }).sort((a, b) => b.totalWork - a.totalWork);
-  }, [tableData, users, manualData, dateRange]);
+  }, [tableData, users, manualData, dateRange, allLeaveEntries]);
 
   // --- STATS ---
   const stats = useMemo(() => {

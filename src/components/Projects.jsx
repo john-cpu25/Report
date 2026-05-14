@@ -16,38 +16,33 @@ import {
   Crown
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { useApp } from '../context/AppContext';
 
 const Projects = () => {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { projectsCache, setProjectsCache } = useApp();
+  const [projects, setProjects] = useState(projectsCache?.projects || []);
+  const [loading, setLoading] = useState(!projectsCache);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [timeFilter, setTimeFilter] = useState('MONTH');
-  const [taskCounts, setTaskCounts] = useState({});
+  const [taskCounts, setTaskCounts] = useState(projectsCache?.taskCounts || {});
 
   useEffect(() => {
+    if (projectsCache) return;
+
     const fetchData = async () => {
       setLoading(true);
       try {
-        let startDate = new Date();
-        if (timeFilter === 'WEEK') startDate.setDate(startDate.getDate() - 7);
-        else if (timeFilter === 'MONTH') startDate.setMonth(startDate.getMonth() - 1);
-        else if (timeFilter === 'YEAR') startDate.setFullYear(startDate.getFullYear() - 1);
-
         const [projRes, taskRes] = await Promise.all([
           supabase.from('NMK_Project').select('*').order('index', { ascending: true }),
-          supabase.from('NMK_Task')
-            .select('name')
-            .gte('created_at', startDate.toISOString())
-            .limit(5000)
+          supabase.from('NMK_Task').select('name').limit(10000)
         ]);
         
         if (projRes.error) throw projRes.error;
         if (taskRes.error) throw taskRes.error;
 
-        setProjects(projRes.data || []);
+        const projectsData = projRes.data || [];
         
-        // Count tasks per project
         const counts = {};
         if (taskRes.data) {
           taskRes.data.forEach(t => {
@@ -55,13 +50,14 @@ const Projects = () => {
             const parts = rawName.toString().split(':');
             if (parts.length > 0) {
               const projectName = parts[0]?.trim()?.toUpperCase();
-              if (projectName) {
-                counts[projectName] = (counts[projectName] || 0) + 1;
-              }
+              if (projectName) counts[projectName] = (counts[projectName] || 0) + 1;
             }
           });
         }
+
+        setProjects(projectsData);
         setTaskCounts(counts);
+        setProjectsCache({ projects: projectsData, taskCounts: counts });
       } catch (err) {
         console.error('Failed to fetch projects:', err);
       } finally {
@@ -69,7 +65,7 @@ const Projects = () => {
       }
     };
     fetchData();
-  }, [timeFilter]);
+  }, [projectsCache]);
 
   const projectsWithStats = useMemo(() => {
     return projects.map(p => {
@@ -129,67 +125,9 @@ const Projects = () => {
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Syncing Supabase Database...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start p-[10px]">
-          {/* Left Column: Top Projects (Sticky) */}
-          <div className="lg:col-span-3 sticky top-[190px] flex flex-col gap-[10px]">
-             <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] shadow-sm relative overflow-hidden">
-                <div className="flex items-center gap-[10px] p-[10px] mb-[10px]">
-                  <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                  <div>
-                    <h2 className="text-[14px] font-black text-white tracking-tight uppercase">Top Projects</h2>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">High Activity</p>
-                  </div>
-                </div>
-
-                <div className="flex bg-[var(--bg-surface)] p-[5px] rounded-[8px] border border-[var(--border)] mb-[15px]">
-                  {['WEEK', 'MONTH', 'YEAR'].map(filter => (
-                    <button
-                      key={filter}
-                      onClick={() => setTimeFilter(filter)}
-                      className={`flex-1 py-[8px] text-[13px] font-black uppercase tracking-widest rounded-[6px] transition-all ${
-                        timeFilter === filter 
-                          ? 'bg-indigo-600 text-white shadow-lg' 
-                          : 'text-slate-500 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {filter}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex flex-col gap-[8px]">
-                  {top10Projects.map((proj, idx) => (
-                    <motion.div 
-                      key={proj.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      onClick={() => setSelectedId(proj.id)}
-                      className="relative flex items-center h-[40px] w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[4px] cursor-pointer overflow-hidden group hover:border-indigo-500 transition-all"
-                    >
-                      <div 
-                        className="w-[4px] h-full"
-                        style={{ backgroundColor: proj.color || '#6366f1' }}
-                      />
-                      <div className="flex-grow px-[12px] flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {idx < 3 && <Crown size={12} className="text-yellow-500" />}
-                          <span className="text-[12px] font-black text-[var(--text-main)] truncate max-w-[120px] uppercase">
-                            {proj.key}
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-black text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded">
-                          {proj.taskCount}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-             </div>
-          </div>
-
-          {/* Right Column: Main Project Portfolio */}
-          <div className="lg:col-span-9">
+        <div className="p-[10px]">
+          {/* Main Project Portfolio - Full Width */}
+          <div className="w-full">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-[15px]">
               <AnimatePresence mode="popLayout">
                 {filteredProjects.map((project, idx) => (
