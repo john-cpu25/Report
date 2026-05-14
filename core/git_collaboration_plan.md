@@ -42,4 +42,19 @@
 6. **Sync**: Tất cả mọi người `git checkout main` -> `git pull` để lấy bản mới nhất về nhánh cá nhân của mình.
 
 ---
+
+## 4. Build & Deployment Pipeline (Quy trình đẩy lên Web)
+
+Dựa trên sơ đồ quy trình hệ thống:
+
+1. **Local Development**: Mỗi developer làm việc trên Localhost thuộc nhánh riêng.
+2. **Push/Pull**: Code được đẩy lên GitHub định kỳ.
+3. **Merging**: Sau khi Pull Request được duyệt, code từ các nhánh cá nhân sẽ được gộp vào `main`.
+4. **Build & Deploy**: 
+    - GitHub sẽ kích hoạt lệnh `Build` (Vite Build).
+    - Sau khi Build thành công, code sẽ được `Deploy` tự động lên môi trường Web (Production).
+
+**Lưu ý**: Chỉ thực hiện Merge khi đảm bảo code trên Localhost đã chạy ổn định, tránh làm hỏng bản Web đang hoạt động.
+
+---
 *Vị trí file này: /core/git_collaboration_plan.md*

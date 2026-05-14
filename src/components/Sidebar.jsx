@@ -42,7 +42,7 @@ const Sidebar = () => {
       title: 'MAIN',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'personal', label: 'My Space', icon: UserIcon }, // New Personal Tab
+        { id: 'personal', label: 'Personal', icon: UserIcon }, // Changed from My Space
         { id: 'projects', label: 'Projects', icon: FolderKanban },
         { id: 'organization', label: 'Organization', icon: Network },
         { id: 'report', label: 'Weekly Planner', icon: CalendarClock },
@@ -148,7 +148,7 @@ const Sidebar = () => {
         <div className="px-6 mt-8">
           <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
             <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest mb-1">Version</p>
-            <p className="text-[13px] font-bold text-[var(--text-muted)]">Intelligence v4.8.0</p>
+            <p className="text-[13px] font-bold text-[var(--text-muted)]">Intelligence v4.9.0</p>
           </div>
         </div>
       )}
