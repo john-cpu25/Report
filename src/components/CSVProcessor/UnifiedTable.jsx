@@ -92,21 +92,21 @@ const UnifiedTable = ({
                     <span className="font-bold text-[var(--text-contrast)] group-hover:text-emerald-500 transition-colors line-clamp-1">{r.taskName}</span>
                   </div>
                 </td>
-                <td className="px-[10px] py-[10px] text-indigo-500/80 font-bold border-r border-b border-[var(--border)]">{r.createdBy}</td>
-                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.createdAtStr}</td>
-                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateStartStr}</td>
-                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateEndStr}</td>
-                <td className="px-[10px] py-[10px] text-sky-500/80 font-bold border-r border-b border-[var(--border)]">{r.userName}</td>
-                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateAcceptedStr}</td>
-                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateStartedStr}</td>
-                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateCompleteStr}</td>
-                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateCheckedStr}</td>
-                <td className="px-[10px] py-[10px] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)]">{r.area}</td>
-                <td className="px-[10px] py-[10px] text-center font-black border-r border-b border-[var(--border)] text-emerald-500">{r.time1Str}</td>
-                <td className="px-[10px] py-[10px] text-center font-black border-r border-b border-[var(--border)] text-indigo-500">{r.time2Str}</td>
-                <td className="px-[10px] py-[10px] text-center font-black border-r border-b border-[var(--border)] text-violet-500">{r.time3Str}</td>
-                <td className="px-[10px] py-[10px] text-center font-black border-r border-b border-[var(--border)] text-amber-500">{r.time4Str}</td>
-                <td className="px-[10px] py-[10px] text-center font-black border-b border-[var(--border)] text-rose-500">{r.time5Str}</td>
+                <td className="px-[10px] py-[10px] text-indigo-500/80 font-bold border-r border-b border-[var(--border)]">{r.createdBy || '-'}</td>
+                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.createdAtStr || '-'}</td>
+                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateStartStr || '-'}</td>
+                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateEndStr || '-'}</td>
+                <td className="px-[10px] py-[10px] text-sky-500/80 font-bold border-r border-b border-[var(--border)]">{r.userName || '-'}</td>
+                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateAcceptedStr || '-'}</td>
+                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateStartedStr || '-'}</td>
+                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateCompleteStr || '-'}</td>
+                <td className="px-[10px] py-[10px] text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateCheckedStr || '-'}</td>
+                <td className="px-[10px] py-[10px] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)]">{r.area || '-'}</td>
+                <td className="px-[10px] py-[10px] text-center font-black border-r border-b border-[var(--border)] text-emerald-500">{r.time1Str || '-'}</td>
+                <td className="px-[10px] py-[10px] text-center font-black border-r border-b border-[var(--border)] text-indigo-500">{r.time2Str || '-'}</td>
+                <td className="px-[10px] py-[10px] text-center font-black border-r border-b border-[var(--border)] text-violet-500">{r.time3Str || '-'}</td>
+                <td className="px-[10px] py-[10px] text-center font-black border-r border-b border-[var(--border)] text-amber-500">{r.time4Str || '-'}</td>
+                <td className="px-[10px] py-[10px] text-center font-black border-b border-[var(--border)] text-rose-500">{r.time5Str || '-'}</td>
               </tr>
             ))}
           </tbody>

@@ -13,11 +13,10 @@ import {
   Layers,
   Award,
   Clock,
-  FolderKanban
+  FolderKanban,
+  Search
 } from 'lucide-react';
-import WorkflowAnimation from '../WorkflowAnimation';
 import { supabase } from '../supabaseClient';
-import { processDate } from '../utils/csvHelpers';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
