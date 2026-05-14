@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { Layout } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -47,6 +47,13 @@ function App() {
 
   const { user, loading: authLoading, isAdmin, isLeader } = useAuth();
   const [isLoading, setIsLoading] = useState(true)
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   if (authLoading) return null;
 
@@ -106,10 +113,13 @@ function App() {
           <Sidebar />
 
           <motion.div
-            layout initial={false}
-            animate={{ marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 ? (sidebarCollapsed ? 100 : 260) : 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="flex-1 min-h-screen flex flex-col w-full"
+            layout
+            className="flex-1 min-h-screen flex flex-col transition-all duration-300 min-w-0"
+            style={{ 
+              paddingLeft: windowWidth >= 1024 
+                ? (sidebarCollapsed ? '80px' : '260px') 
+                : '0px' 
+            }}
           >
             <TopBar />
 

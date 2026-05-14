@@ -107,17 +107,27 @@ export const AppProvider = ({ children }) => {
     fetchDashboardData();
     
     // Subscribe to changes
-    (async () => {
-      const { supabase } = await import('../supabaseClient');
-      const channel = supabase
-        .channel('public')
+    let channel;
+    const setupSubscription = async () => {
+      const { supabase: supabaseClient } = await import('../supabaseClient');
+      channel = supabaseClient
+        .channel('public_dashboard')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Project' }, () => fetchDashboardData())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task' }, () => fetchDashboardData())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_User' }, () => fetchDashboardData())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Leave' }, () => fetchDashboardData())
         .subscribe();
-      return () => { supabase.removeChannel(channel); };
-    })();
+    };
+
+    setupSubscription();
+
+    return () => {
+      if (channel) {
+        import('../supabaseClient').then(({ supabase: supabaseClient }) => {
+          supabaseClient.removeChannel(channel);
+        });
+      }
+    };
   }, []);
 
   const fetchDashboardData = async () => {

@@ -18,38 +18,40 @@ const SHIFT = {
  */
 export const calculateWorkingMinutes = (start, end) => {
   if (!start || !end || end <= start) return 0;
+  
+  const dStart = new Date(start);
+  const dTarget = new Date(end);
+  
+  // Safety check: Don't process more than 2 years of history to avoid browser freeze
+  const maxHistory = 365 * 2; 
+  const diffDays = Math.ceil((dTarget - dStart) / (1000 * 60 * 60 * 24));
+  if (diffDays > maxHistory) return 0;
 
   let totalMinutes = 0;
-  let current = new Date(start);
-  const target = new Date(end);
+  let current = dStart;
 
-  while (current < target) {
+  // Optimized loop: Process day by day instead of stepping through everything
+  while (current < dTarget) {
     if (!isWeekend(current)) {
       const day = startOfDay(current);
       
-      // Morning overlap
+      // Morning shift: 09:00 - 12:30 (210 mins)
       const mStart = addMinutes(day, SHIFT.MORNING.start * 60);
       const mEnd = addMinutes(day, SHIFT.MORNING.end * 60);
       const overlapMStart = Math.max(current.getTime(), mStart.getTime());
-      const overlapMEnd = Math.min(target.getTime(), mEnd.getTime());
+      const overlapMEnd = Math.min(dTarget.getTime(), mEnd.getTime());
       if (overlapMEnd > overlapMStart) totalMinutes += (overlapMEnd - overlapMStart) / 60000;
 
-      // Afternoon overlap
+      // Afternoon shift: 13:30 - 18:00 (270 mins)
       const aStart = addMinutes(day, SHIFT.AFTERNOON.start * 60);
       const aEnd = addMinutes(day, SHIFT.AFTERNOON.end * 60);
       const overlapAStart = Math.max(current.getTime(), aStart.getTime());
-      const overlapAEnd = Math.min(target.getTime(), aEnd.getTime());
+      const overlapAEnd = Math.min(dTarget.getTime(), aEnd.getTime());
       if (overlapAEnd > overlapAStart) totalMinutes += (overlapAEnd - overlapAStart) / 60000;
     }
     
-    // Jump to next day if we are past afternoon shift
-    const dayEnd = addMinutes(startOfDay(current), SHIFT.AFTERNOON.end * 60);
-    if (current >= dayEnd) {
-      current = addMinutes(startOfDay(current), 24 * 60 + SHIFT.MORNING.start * 60);
-    } else {
-      // Step through time (optimized jump to next shift or target)
-      current = new Date(Math.min(target.getTime(), dayEnd.getTime() + 1));
-    }
+    // Jump to the start of the next working day (09:00)
+    current = addMinutes(startOfDay(current), 24 * 60 + SHIFT.MORNING.start * 60);
   }
 
   return Math.floor(totalMinutes);
