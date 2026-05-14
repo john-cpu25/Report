@@ -20,6 +20,7 @@ import { Doughnut, Bar, Line } from 'react-chartjs-2'
 // Utilities
 import { processDate, formatDuration, formatDateTime } from './utils/csvHelpers'
 import { calculateTaskMetrics } from './utils/performanceEngine'
+import { processTaskData } from './utils/dataProcessor'
 
 // Sub-components
 import DataUploader from './components/CSVProcessor/DataUploader'
@@ -95,41 +96,7 @@ const CSVProcessor = () => {
       setAnalystUserMap(uMap)
       setAnalystUserTeamMap(uTeamMap)
 
-      const processedData = tasksData.map(row => {
-        const metrics = calculateTaskMetrics(row)
-        const createdAt = processDate(row.created_at)
-        const dateStart = processDate(row.date_start)
-        const dateEnd = processDate(row.date_end)
-        const dateAccepted = processDate(row.date_accepted)
-        const dateStarted = processDate(row.date_started)
-        const dateComplete = processDate(row.date_complete)
-        const dateChecked = processDate(row.date_checked)
-        const parts = (row.name || '').toString().split(':')
-        
-        return {
-          id: row.id,
-          project: parts[0]?.trim() || '-',
-          taskName: parts[1]?.trim() || '-',
-          createdBy: uMap[row.create_by] || uMap[row.create_by?.toLowerCase()] || row.create_by || '-',
-          userName: uMap[row.user_id] || uMap[row.user_id?.toLowerCase()] || row.user_id || '-',
-          ...metrics,
-          time1Str: formatDuration(metrics.t1),
-          time2Str: formatDuration(metrics.t2),
-          time3Str: formatDuration(metrics.t3),
-          time4Str: formatDuration(metrics.t4),
-          time5Str: formatDuration(metrics.t5),
-          area: row.area || '-',
-          dateObj: createdAt || dateStart,
-          createdAtStr: formatDateTime(createdAt),
-          dateStartStr: formatDateTime(dateStart),
-          dateEndStr: formatDateTime(dateEnd),
-          dateAcceptedStr: formatDateTime(dateAccepted),
-          dateStartedStr: formatDateTime(dateStarted),
-          dateCompleteStr: formatDateTime(dateComplete),
-          dateCheckedStr: formatDateTime(dateChecked),
-          team: uTeamMap[row.user_id] || uTeamMap[row.user_id?.toLowerCase()] || '-'
-        }
-      }).filter(r => r.project !== '-')
+      const processedData = processTaskData(tasksData, uMap, uTeamMap);
 
       setAnalystTasks(processedData)
       setLastAnalystFetch(new Date())

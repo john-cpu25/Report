@@ -23,6 +23,56 @@ export const fetchTasks = async (options = {}) => {
   return data || [];
 };
 
+export const fetchPersonalSpaceData = async (userObj, limit = 1000) => {
+  if (!userObj) return [];
+  const { id, name, email, username, isAdmin, isLeader, team } = userObj;
+  
+  let query = supabase
+    .from('NMK_Task')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (isAdmin) {
+    // Admin sees everything
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }
+
+  if (isLeader && team) {
+    // Leader sees their team's tasks
+    // First, find all users in this team
+    const { data: teamUsers } = await supabase
+      .from('NMK_User')
+      .select('id, name, email')
+      .ilike('team', `%${team.split(' ')[0]}%`); // Flexible matching for team name
+
+    const teamIdentifiers = [];
+    teamUsers?.forEach(u => {
+      if (u.id) teamIdentifiers.push(u.id);
+      if (u.name) teamIdentifiers.push(u.name);
+      if (u.email) teamIdentifiers.push(u.email);
+    });
+
+    if (teamIdentifiers.length > 0) {
+      const filter = teamIdentifiers.map(val => `user_id.eq."${val}",create_by.eq."${val}"`).join(',');
+      const { data, error } = await query.or(filter);
+      if (error) throw error;
+      return data || [];
+    }
+  }
+
+  // Default: User sees only their own tasks
+  const identifiers = [id, name, email, username].filter(Boolean);
+  if (identifiers.length === 0) return [];
+  const filter = identifiers.map(val => `user_id.eq."${val}",create_by.eq."${val}"`).join(',');
+  
+  const { data, error } = await query.or(filter);
+  if (error) throw error;
+  return data || [];
+};
+
 export const fetchUsers = async () => {
   const { data, error } = await supabase
     .from('NMK_User')

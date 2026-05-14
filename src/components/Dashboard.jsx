@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   LayoutDashboard, Zap, Target, Users, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight,
-  Activity, Layers, Award, Clock, FolderKanban, Search, CheckCircle2, AlertCircle 
+  Activity, Layers, Award, Clock, FolderKanban, Search, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { 
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend, Filler 
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { useApp } from '../context/AppContext';

@@ -1,21 +1,25 @@
 import React from 'react';
 import { formatDuration } from '../../utils/csvHelpers';
 
-const UnifiedTable = ({ 
-  data, 
-  columnFilters, 
-  setColumnFilters,
-  sortConfig,
-  handleSort,
-  columnOptions
-}) => {
+const UnifiedTable = (props) => {
+  // Ultra-robust prop extraction with fallbacks
+  const data = props.data || [];
+  const columnFilters = props.columnFilters || { project: '' };
+  const setColumnFilters = props.setColumnFilters || (() => {});
+  const sortConfig = props.sortConfig || { key: null, direction: 'asc' };
+  const handleSort = props.handleSort || (() => {});
+  const columnOptions = props.columnOptions || { projects: [] };
+
+  const safeFilters = columnFilters;
+  const safeOptions = columnOptions;
+  const safeProjects = Array.isArray(safeOptions.projects) ? safeOptions.projects : [];
 
   const renderSortIcon = (key) => {
     if (sortConfig.key !== key) return null;
     return <span className="text-indigo-400 ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
   };
 
-  const tableRows = [...data];
+  const tableRows = data ? [...data] : [];
 
   if (sortConfig.key) {
     tableRows.sort((a, b) => {
@@ -45,11 +49,11 @@ const UnifiedTable = ({
                   </div>
                   <select 
                     className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] px-[10px] py-[5px] text-[10px] font-bold outline-none focus:border-indigo-500 cursor-pointer appearance-none w-full text-[var(--text-main)]"
-                    value={columnFilters.project}
+                    value={safeFilters.project}
                     onChange={e => setColumnFilters(prev => ({...prev, project: e.target.value}))}
                   >
                     <option value="">All Projects</option>
-                    {columnOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
+                    {safeProjects.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </th>
