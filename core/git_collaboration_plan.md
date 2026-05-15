@@ -1,60 +1,88 @@
-# RINCOVITCH REPORT - GIT COLLABORATION & BRANCHING PLAN
+# RINCOVITCH REPORT - QUY TRÌNH HỢP TÁC GIT & TRIỂN KHAI
 
-## 1. Branch Structure (Mô hình 3 Nhánh)
+Dựa trên sơ đồ quy trình hệ thống đã thống nhất, đây là bản hướng dẫn chi tiết để đảm bảo code luôn ổn định và đồng bộ giữa các thành viên.
 
-### 🟢 Nhánh `main` (Production Branch)
-- **Mục đích**: Chứa mã nguồn ổn định nhất đang chạy thực tế.
-- **Quy tắc**: 
-    - Không bao giờ code trực tiếp trên nhánh này.
-    - Chỉ gộp code (Merge) từ các nhánh cá nhân sau khi đã Review kỹ.
-    - Gắn Tag phiên bản (v4.8, v4.9...) tại đây.
+## 1. Sơ đồ Quy trình (Workflow Diagram)
 
-### 🔵 Nhánh `nhan-workspace` (Developer: Nhan Nguyen & AI)
-- **Mục đích**: Khu vực phát triển tính năng mới, giao diện và logic cao cấp.
-- **Quy tắc**:
-    - Là nhánh làm việc hàng ngày của Nhan.
-    - Thường xuyên `git pull origin main` để cập nhật code mới từ cộng sự (nếu có).
+```mermaid
+graph TD
+    subgraph Local_Dev
+        LN[NHAN NGUYEN BRANCH] --> LH1[LOCALHOST]
+        LL[NGUYEN LY BRANCH] --> LH2[LOCALHOST]
+    end
 
-### 🟡 Nhánh `partner-workspace` (Developer: Cộng sự)
-- **Mục đích**: Khu vực làm việc riêng của cộng sự.
-- **Quy tắc**:
-    - Chỉ làm việc trên nhánh này.
-    - Gửi **Pull Request** cho Nhan khi muốn gộp code vào `main`.
+    subgraph GitHub_Remote
+        GH[GITHUB REPO]
+        PUSH[PUSH CODE]
+        PULL[PULL CODE]
+        MERGE[MERGE / SYNC]
+    end
 
----
+    subgraph Deployment
+        BD[BUILD & DEPLOY]
+        WEB[WEB PRODUCTION]
+    end
 
-## 2. Phân biệt Code (Authorship)
-
-- **Commit Message Standard**: `UPDATE_VERSION_MODULE_CONTENT`
-    - Ví dụ: `UPDATE_V4.9.0_SECURITY_RBAC`
-- **GitLens/Git Blame**: Sử dụng để kiểm tra người viết từng dòng code trong VS Code.
-- **Update Logs**: Mỗi người khi update xong nên tạo 1 file log trong thư mục `/core/` (Ví dụ: `UPDATE_V4.9.0_NHAN_LOG.md`).
-
----
-
-## 3. Quy trình gộp Code (Merge Workflow)
-
-1. **Task Assignment**: Thỏa thuận trước ai làm file nào/module nào để tránh conflict.
-2. **Feature Development**: Code trên nhánh cá nhân.
-3. **Pull Request (PR)**: Tạo PR trên GitHub để so sánh sự thay đổi.
-4. **Code Review**: Admin (Nhan) kiểm tra code trong PR.
-5. **Merge**: Gộp vào `main` nếu đạt yêu cầu.
-6. **Sync**: Tất cả mọi người `git checkout main` -> `git pull` để lấy bản mới nhất về nhánh cá nhân của mình.
+    %% Flow logic
+    LN <--> PULL
+    LN --> PUSH
+    LL <--> PULL
+    LL --> PUSH
+    
+    PUSH --> GH
+    PULL --- GH
+    GH --> MERGE
+    MERGE --> LN
+    MERGE --> LL
+    
+    GH --> BD
+    BD --> WEB
+```
 
 ---
 
-## 4. Build & Deployment Pipeline (Quy trình đẩy lên Web)
+## 2. Cấu trúc Nhánh (Branch Strategy)
 
-Dựa trên sơ đồ quy trình hệ thống:
+### 🟢 Nhánh `main` (Nhánh Sản phẩm)
+- **Mục đích**: Chứa mã nguồn "sạch" nhất đang chạy trên môi trường **WEB**.
+- **Quy tắc**: Chỉ được Merge từ các nhánh cá nhân sau khi Nhan Nguyen đã kiểm tra.
 
-1. **Local Development**: Mỗi developer làm việc trên Localhost thuộc nhánh riêng.
-2. **Push/Pull**: Code được đẩy lên GitHub định kỳ.
-3. **Merging**: Sau khi Pull Request được duyệt, code từ các nhánh cá nhân sẽ được gộp vào `main`.
-4. **Build & Deploy**: 
-    - GitHub sẽ kích hoạt lệnh `Build` (Vite Build).
-    - Sau khi Build thành công, code sẽ được `Deploy` tự động lên môi trường Web (Production).
+### 🔵 Nhánh `nhan-workspace` (Developer: Nhan Nguyen)
+- **Mục đích**: Nhánh làm việc chính của Nhan và AI.
+- **Quy trình**: 
+    - Code trên Localhost -> `PUSH` lên GitHub.
+    - `PULL` code từ GitHub về để cập nhật.
 
-**Lưu ý**: Chỉ thực hiện Merge khi đảm bảo code trên Localhost đã chạy ổn định, tránh làm hỏng bản Web đang hoạt động.
+### 🟡 Nhánh `ly-workspace` (Developer: Nguyen Ly)
+- **Mục đích**: Nhánh làm việc của cộng sự (Nguyen Ly).
+- **Quy trình**:
+    - Code trên Localhost -> `PUSH` lên GitHub.
+    - Nhận code mới thông qua quy trình `MERGE` từ `main`.
 
 ---
+
+## 3. Các bước vận hành hàng ngày
+
+1. **Bắt đầu ngày mới (PULL)**: 
+   - Luôn thực hiện `git pull origin nhan-workspace` (hoặc ly-workspace) để đảm bảo bạn đang ở bản mới nhất.
+2. **Phát triển (LOCAL)**: 
+   - Code và test trực tiếp trên `LOCALHOST`.
+3. **Cập nhật (PUSH)**: 
+   - Sau khi hoàn thành tính năng, thực hiện `PUSH` lên nhánh tương ứng trên GitHub.
+4. **Hợp nhất (MERGE)**:
+   - Khi muốn gộp code của Ly vào Nhan hoặc ngược lại, phải thông qua GitHub (Pull Request).
+   - Sau khi Merge xong, GitHub sẽ tự động thực hiện quy trình **BUILD & DEPLOY**.
+
+---
+
+## 4. Quy trình Đẩy lên Web (Build & Deploy)
+
+1. **Trigger**: Lệnh `Merge` vào nhánh `main` (hoặc nhánh được cấu hình deploy) sẽ kích hoạt quy trình tự động.
+2. **Build**: Hệ thống GitHub Actions sẽ chạy lệnh `npm run build` để đóng gói ứng dụng.
+3. **Deploy**: File build sẽ được đẩy lên server (Vercel/Netlify/Host) để cập nhật nội dung trên **WEB**.
+
+---
+> [!IMPORTANT]
+> Tuyệt đối không `PUSH` trực tiếp code lỗi lên GitHub. Luôn kiểm tra kỹ trên **LOCALHOST** trước khi thực hiện PUSH.
+
 *Vị trí file này: /core/git_collaboration_plan.md*
