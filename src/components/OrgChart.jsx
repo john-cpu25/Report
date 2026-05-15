@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Search, Edit3, Plus, Trash2, Save, UserPlus, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import initialOrgData from '../data/orgData.json'
+import { useApp } from '../context/AppContext'
 
 // ==================== LAYOUT ENGINE ====================
 const CARD_W = 210
@@ -247,6 +248,9 @@ const actionBtnStyle = (color) => ({
 
 // ==================== MAIN COMPONENT ====================
 const OrgChart = () => {
+  const { theme } = useApp()
+  const isDark = theme === 'GALAXY' || theme === 'DARK'
+
   const [orgData, setOrgData] = useState(() => {
     const saved = localStorage.getItem('rincovitch_org_data_v22')
     return saved ? JSON.parse(saved) : initialOrgData
@@ -254,7 +258,6 @@ const OrgChart = () => {
   const [selectedNode, setSelectedNode] = useState(null)
   const [editingNode, setEditingNode] = useState(null)
   const [addingToNode, setAddingToNode] = useState(null)
-  const [searchTerm, setSearchTerm] = useState('')
 
   // Pan & Zoom state
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -384,32 +387,24 @@ const OrgChart = () => {
     setAddingToNode(null)
   }
 
-  // Search filter
-  const matchSearch = (n) => !searchTerm || n.name.toLowerCase().includes(searchTerm.toLowerCase()) || n.position.toLowerCase().includes(searchTerm.toLowerCase())
-
   return (
-    <div style={{ position: 'relative', width: '100%', height: '88vh', background: '#0F172A', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div style={{ position: 'relative', width: '100%', height: '88vh', background: isDark ? '#0F172A' : '#F8FAFC', borderRadius: 12, overflow: 'hidden', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
       {/* Header */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 100%)', backdropFilter: 'blur(12px)' }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: isDark ? 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 100%)' : 'linear-gradient(180deg, rgba(248,250,252,0.95) 0%, rgba(248,250,252,0.7) 100%)', backdropFilter: 'blur(12px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #F59E0B, #D97706)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', margin: 0, lineHeight: 1 }}>Organization Chart</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: isDark ? '#fff' : '#0F172A', letterSpacing: '-0.03em', margin: 0, lineHeight: 1 }}>Organization Chart</h1>
             <p style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.2em', margin: '3px 0 0' }}>Rincovitch Engineering</p>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ position: 'relative' }}>
-            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#64748B' }} />
-            <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search..."
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px 8px 32px', fontSize: 13, color: '#fff', outline: 'none', width: 200, fontWeight: 600 }} />
-          </div>
-          <button onClick={() => setZoom(z => Math.min(2, z * 1.2))} style={toolBtnStyle}><ZoomIn size={16} /></button>
-          <button onClick={() => setZoom(z => Math.max(0.2, z * 0.8))} style={toolBtnStyle}><ZoomOut size={16} /></button>
-          <button onClick={fitToScreen} style={toolBtnStyle}><Maximize2 size={16} /></button>
+          <button onClick={() => setZoom(z => Math.min(2, z * 1.2))} style={toolBtnStyle(isDark)}><ZoomIn size={16} /></button>
+          <button onClick={() => setZoom(z => Math.max(0.2, z * 0.8))} style={toolBtnStyle(isDark)}><ZoomOut size={16} /></button>
+          <button onClick={fitToScreen} style={toolBtnStyle(isDark)}><Maximize2 size={16} /></button>
           <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, minWidth: 45, textAlign: 'center' }}>{Math.round(zoom * 100)}%</div>
         </div>
       </div>
@@ -422,9 +417,29 @@ const OrgChart = () => {
         <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0', position: 'relative' }}>
           {/* SVG Connectors */}
           <svg style={{ position: 'absolute', left: 0, top: 0, width: bounds.maxX + 200, height: bounds.maxY + 200, pointerEvents: 'none', overflow: 'visible' }}>
-            {edges.map((edge, i) => (
-              <path key={i} d={edge.d} fill="none" stroke={edge.color} strokeWidth="2" opacity="0.45" strokeLinecap="round" />
-            ))}
+            {edges.map((edge, i) => {
+              const delay = -(i % 4) * 0.2;
+              return (
+                <g key={i}>
+                  {/* Base line */}
+                  <path d={edge.d} fill="none" stroke={edge.color} strokeWidth="2" opacity="0.15" strokeLinecap="round" />
+                  {/* Tail 3 (Faintest) */}
+                  <path d={edge.d} fill="none" stroke={edge.color} strokeWidth="1" strokeLinecap="round" opacity="0.2"
+                    style={{ strokeDasharray: '30 232', animation: `flowLight 1.2s linear infinite ${delay}s` }} />
+                  {/* Tail 2 (Mid) */}
+                  <path d={edge.d} fill="none" stroke={edge.color} strokeWidth="2" strokeLinecap="round" opacity="0.5"
+                    style={{ strokeDasharray: '15 247', animation: `flowLight 1.2s linear infinite ${delay - 0.07}s` }} />
+                  {/* Head (Brightest) */}
+                  <path d={edge.d} fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" 
+                    style={{
+                      filter: `drop-shadow(0 0 5px ${edge.color}) drop-shadow(0 0 10px #fff)`,
+                      strokeDasharray: '4 258',
+                      animation: `flowLight 1.2s linear infinite ${delay - 0.12}s`
+                    }} 
+                  />
+                </g>
+              )
+            })}
           </svg>
 
           {/* Cards */}
@@ -443,12 +458,12 @@ const OrgChart = () => {
       {/* Detail Panel - centered modal */}
       {selectedNode && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setSelectedNode(null)} />
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(4px)' }} onClick={() => setSelectedNode(null)} />
           <div style={{
             position: 'relative', width: 340, maxWidth: '90%', zIndex: 501,
-            background: 'rgba(15,23,42,0.97)', backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16,
-            boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
+            background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(0,0,0,0.08)', borderRadius: 16,
+            boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
             animation: 'fadeInUp 0.3s ease-out',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
           }}>
@@ -456,8 +471,8 @@ const OrgChart = () => {
           <button onClick={() => setSelectedNode(null)} style={{
             position: 'absolute', top: 12, right: 12, zIndex: 10,
             width: 30, height: 30, borderRadius: 8,
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-            color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+            background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
+            color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
           }}>✕</button>
 
           {/* Header with accent color band */}
@@ -476,7 +491,7 @@ const OrgChart = () => {
             }}>
               {getZodiac(selectedNode.dob).emoji}
             </div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 4 }}>{selectedNode.name}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: isDark ? '#fff' : '#0F172A', marginBottom: 4 }}>{selectedNode.name}</div>
             <div style={{ fontSize: 11, fontWeight: 700, color: getColor(selectedNode.team).accent, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{selectedNode.position}</div>
           </div>
 
@@ -492,7 +507,7 @@ const OrgChart = () => {
                 ].map((row, i) => (
                   <tr key={i}>
                     <td style={{ padding: '10px 12px', fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.12em', width: 90, verticalAlign: 'top' }}>{row.label}</td>
-                    <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 600, color: '#E2E8F0', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>{row.value || '—'}</td>
+                    <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 600, color: isDark ? '#E2E8F0' : '#0F172A', background: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC', borderRadius: 8 }}>{row.value || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -533,47 +548,51 @@ const OrgChart = () => {
           from { transform: translateY(20px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
+        @keyframes flowLight {
+          from { stroke-dashoffset: 262; }
+          to { stroke-dashoffset: 0; }
+        }
       `}</style>
 
       {/* Edit / Add Modal */}
       {(editingNode || addingToNode) && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }} onClick={() => { setEditingNode(null); setAddingToNode(null) }} />
-          <form onSubmit={editingNode ? handleEdit : handleAdd} style={{ position: 'relative', width: '100%', maxWidth: 420, background: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 28, boxShadow: '0 30px 80px rgba(0,0,0,0.6)' }}>
+          <div style={{ position: 'absolute', inset: 0, background: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.5)', backdropFilter: 'blur(8px)' }} onClick={() => { setEditingNode(null); setAddingToNode(null) }} />
+          <form onSubmit={editingNode ? handleEdit : handleAdd} style={{ position: 'relative', width: '100%', maxWidth: 420, background: isDark ? '#1E293B' : '#fff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 16, padding: 28, boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.6)' : '0 30px 80px rgba(0,0,0,0.15)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#818CF8' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366F1' }}>
                 {editingNode ? <Edit3 size={20} /> : <UserPlus size={20} />}
               </div>
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 900, color: '#fff', margin: 0 }}>{editingNode ? 'Edit Member' : 'Add Member'}</h2>
+                <h2 style={{ fontSize: 20, fontWeight: 900, color: isDark ? '#fff' : '#0F172A', margin: 0 }}>{editingNode ? 'Edit Member' : 'Add Member'}</h2>
                 <p style={{ fontSize: 10, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '2px 0 0' }}>Update organization</p>
               </div>
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Name</label>
-              <input name="name" defaultValue={editingNode?.name || ''} required style={inputStyle} />
+              <label style={labelStyle(isDark)}>Name</label>
+              <input name="name" defaultValue={editingNode?.name || ''} required style={inputStyle(isDark)} />
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Position</label>
-              <input name="position" defaultValue={editingNode?.position || ''} required style={inputStyle} />
+              <label style={labelStyle(isDark)}>Position</label>
+              <input name="position" defaultValue={editingNode?.position || ''} required style={inputStyle(isDark)} />
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Level</label>
-              <input type="number" name="level" defaultValue={editingNode?.level ?? (addingToNode ? (addingToNode.level || 0) + 1 : 0)} required style={inputStyle} />
+              <label style={labelStyle(isDark)}>Level</label>
+              <input type="number" name="level" defaultValue={editingNode?.level ?? (addingToNode ? (addingToNode.level || 0) + 1 : 0)} required style={inputStyle(isDark)} />
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Ngày sinh (DOB)</label>
-              <input type="date" name="dob" defaultValue={editingNode?.dob || ''} style={inputStyle} />
+              <label style={labelStyle(isDark)}>Ngày sinh (DOB)</label>
+              <input type="date" name="dob" defaultValue={editingNode?.dob || ''} style={inputStyle(isDark)} />
             </div>
             <div style={{ marginBottom: 24 }}>
-              <label style={labelStyle}>Children Layout</label>
-              <select name="layout" defaultValue={editingNode?.layout || 'horizontal'} style={inputStyle}>
+              <label style={labelStyle(isDark)}>Children Layout</label>
+              <select name="layout" defaultValue={editingNode?.layout || 'horizontal'} style={inputStyle(isDark)}>
                 <option value="horizontal">Horizontal (Trải ngang)</option>
                 <option value="vertical">Vertical (Xếp dọc)</option>
               </select>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button type="button" onClick={() => { setEditingNode(null); setAddingToNode(null) }} style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#94A3B8', fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>Cancel</button>
+              <button type="button" onClick={() => { setEditingNode(null); setAddingToNode(null) }} style={{ flex: 1, padding: '10px', background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 10, color: isDark ? '#94A3B8' : '#475569', fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>Cancel</button>
               <button type="submit" style={{ flex: 2, padding: '10px', background: '#6366F1', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Save size={14} /> Confirm</button>
             </div>
           </form>
@@ -583,8 +602,8 @@ const OrgChart = () => {
   )
 }
 
-const toolBtnStyle = { width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }
-const labelStyle = { display: 'block', fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 6 }
-const inputStyle = { width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, outline: 'none', boxSizing: 'border-box' }
+const toolBtnStyle = (isDark) => ({ width: 34, height: 34, borderRadius: 8, border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`, background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', color: isDark ? '#94A3B8' : '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' })
+const labelStyle = (isDark) => ({ display: 'block', fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 6 })
+const inputStyle = (isDark) => ({ width: '100%', padding: '10px 14px', background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, borderRadius: 10, color: isDark ? '#fff' : '#0F172A', fontSize: 14, fontWeight: 600, outline: 'none', boxSizing: 'border-box' })
 
 export default OrgChart

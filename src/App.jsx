@@ -27,6 +27,7 @@ import OrgChart from './components/OrgChart'
 import Workflows from './components/Workflows'
 import AdminPanel from './components/AdminPanel'
 import PersonalSpace from './components/PersonalSpace'
+import DrawingsManager from './components/DrawingsManager'
 
 function App() {
   const {
@@ -92,6 +93,7 @@ function App() {
       case 'planning': return <Planning reportData={reportData} weekDates={weekDates} />;
       case 'organization': return <OrgChart />;
       case 'workflows': return <Workflows />;
+      case 'issues': return <DrawingsManager />;
       case 'admin': return canAccessAdmin ? <AdminPanel /> : <PersonalSpace />;
       case 'settings': return <Settings theme={theme} setTheme={setTheme} background={background} setBackground={setBackground} />;
       default: return <Dashboard />;
