@@ -298,7 +298,7 @@ const PersonalSpace = () => {
   return (
     <div className="w-full space-y-[10px] animate-in fade-in duration-700 pb-20">
       {/* Sticky Header + Filter Wrapper */}
-      <div className="sticky top-[80px] z-30 w-full space-y-[10px] pb-[10px]" style={{ background: 'var(--bg-main, #0f172a)' }}>
+      <div className="sticky top-0 z-[40] w-full space-y-[10px] pb-[10px] pt-[10px] mt-[-10px]" style={{ background: 'var(--bg-main, #0f172a)' }}>
       {/* Header */}
       <div className="bg-[var(--bg-card)] px-[20px] py-[16px] rounded-[12px] border border-[var(--border)] shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-[12px]">

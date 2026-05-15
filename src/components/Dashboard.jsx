@@ -178,7 +178,13 @@ const Dashboard = () => {
       const userIds = new Set(teamUsers.map(u => u.id));
 
       const teamTasks = tasks.filter(task => userIds.has(task.user_id));
-      const workingUserIds = new Set(teamTasks.filter(task => task.status === 0).map(task => task.user_id));
+
+      const todaysTasks = teamTasks.filter(task => {
+        const d = new Date(task.created_at || task.date_start);
+        return format(d, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
+      });
+
+      const workingUserIds = new Set(todaysTasks.filter(task => task.status === 0).map(task => task.user_id));
 
       const leaveUserIds = new Set();
       leaves.forEach(l => {
@@ -198,11 +204,6 @@ const Dashboard = () => {
       const availableList = teamUsers.filter(u => !workingUserIds.has(u.id) && !leaveUserIds.has(u.id)).map(u => u.name);
 
       const teamProjectMap = new Map(projects.map(p => [p.id, p.name]));
-
-      const todaysTasks = teamTasks.filter(task => {
-        const d = new Date(task.created_at || task.date_start);
-        return format(d, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
-      });
 
       // Get unique project names that have tasks today
       const dailyTasks = Array.from(new Set(todaysTasks.map(task => 

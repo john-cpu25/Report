@@ -1,406 +1,590 @@
-import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Users, 
-  Search, 
-  Edit3, 
-  X, 
-  ChevronRight, 
-  ChevronDown, 
-  Save, 
-  Plus, 
-  Trash2, 
-  UserPlus,
-  GitGraph,
-  Hexagon,
-  Layers,
-  Crown,
-  LayoutGrid
-} from 'lucide-react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { Search, Edit3, Plus, Trash2, Save, UserPlus, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import initialOrgData from '../data/orgData.json'
 
-// --- Premium Bee Icon SVG ---
-const CustomBee = ({ color = "currentColor", size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Wings */}
-    <path d="M12 10C12 10 14 6 18 6C22 6 22 10 18 12C14 14 12 13 12 13" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
-    <path d="M12 10C12 10 10 6 6 6C2 6 2 10 6 12C10 14 12 13 12 13" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
-    {/* Body Stripes */}
-    <path d="M9 13H15" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    <path d="M10 16H14" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    <path d="M11 19H13" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    {/* Head & Antennae */}
-    <circle cx="12" cy="9" r="3" stroke={color} strokeWidth="1.5" />
-    <path d="M10 7L8 4" stroke={color} strokeWidth="1" strokeLinecap="round" />
-    <path d="M14 7L16 4" stroke={color} strokeWidth="1" strokeLinecap="round" />
-  </svg>
-)
+// ==================== LAYOUT ENGINE ====================
+const CARD_W = 210
+const CARD_H = 76
+const H_SEP = 40
+const V_SEP = 40
+const V_STACK_SEP = 16
+const INDENT = 40
 
-// --- Hexagon Component ---
-const HexNode = ({ node, onClick, isQueen, beeColor, beeRole, textClass, glowClass }) => {
-  return (
-    <motion.div
-      layout
-      whileHover={{ scale: 1.1, zIndex: 50 }}
-      onClick={() => onClick(node)}
-      className={`relative w-28 h-32 cursor-pointer group transition-all duration-500`}
-      style={{
-        clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)"
-      }}
-    >
-      <div className={`absolute inset-0 bg-gradient-to-br ${glowClass} border-2 backdrop-blur-xl transition-all duration-300 group-hover:brightness-150`} />
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-        {isQueen ? (
-          <div className="text-orange-400 animate-bounce mb-1"><Crown size={14} fill="#f97316" fillOpacity="0.2" /></div>
-        ) : (
-          <div className={`transition-transform duration-500 group-hover:rotate-12`}><CustomBee color={beeColor} size={18} /></div>
-        )}
-      </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center pt-6 p-3 text-center">
-        <p className={`text-[8px] font-black leading-none mb-1 uppercase tracking-tighter truncate w-full ${textClass}`}>{node.name}</p>
-        <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest truncate w-full">{node.position}</p>
-      </div>
-    </motion.div>
-  )
+const TEAM_COLORS = {
+  "Leadership": { accent: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
+  "Slab Design": { accent: '#8B5CF6', bg: '#F5F3FF', border: '#DDD6FE' },
+  "BIM / REO / MTO": { accent: '#06B6D4', bg: '#ECFEFF', border: '#A5F3FC' },
+  "BIM": { accent: '#06B6D4', bg: '#ECFEFF', border: '#A5F3FC' },
+  "Lateral Design": { accent: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
+  "Support": { accent: '#F43F5E', bg: '#FFF1F2', border: '#FECDD3' },
 }
 
-// --- Mindmap OrgNode ---
-const OrgNode = ({ node, onSelect, onEdit, onAdd, onDelete, isSelected, branchColor }) => {
-  const hasChildren = node.children && node.children.length > 0
-  const [isExpanded, setIsExpanded] = useState(true)
-  const assistant = node.children?.find(c => c.isAssistant)
-  const regularChildren = node.children?.filter(c => !c.isAssistant) || []
+function getColor(team) {
+  return TEAM_COLORS[team] || { accent: '#6366F1', bg: '#EEF2FF', border: '#C7D2FE' }
+}
 
-  const colors = {
-    "Slab Design": "from-purple-500 to-indigo-600",
-    "BIM / REO / MTO": "from-cyan-500 to-blue-600",
-    "Lateral Design": "from-emerald-500 to-teal-600",
-    "Leadership": "from-amber-500 to-orange-600"
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)) }
+
+function getKids(node) { return (node.children || []).filter(c => !c.isAssistant) }
+
+const getZodiac = (dob) => {
+  if (!dob) return { name: 'Chưa rõ', emoji: '🧑‍💻' };
+  const year = new Date(dob).getFullYear();
+  if (isNaN(year)) return { name: 'Chưa rõ', emoji: '🧑‍💻' };
+  const zodiacs = [
+    { name: 'Thân', emoji: '🐵' }, // 0
+    { name: 'Dậu', emoji: '🐔' },  // 1
+    { name: 'Tuất', emoji: '🐶' }, // 2
+    { name: 'Hợi', emoji: '🐷' },  // 3
+    { name: 'Tý', emoji: '🐭' },   // 4
+    { name: 'Sửu', emoji: '🐮' },  // 5
+    { name: 'Dần', emoji: '🐯' },  // 6
+    { name: 'Mão', emoji: '🐱' },  // 7
+    { name: 'Thìn', emoji: '🐲' }, // 8
+    { name: 'Tỵ', emoji: '🐍' },   // 9
+    { name: 'Ngọ', emoji: '🐴' },  // 10
+    { name: 'Mùi', emoji: '🐐' },  // 11
+  ];
+  return zodiacs[year % 12];
+}
+
+// Pass 1: measure subtree width and height
+function measure(node) {
+  const kids = getKids(node)
+  if (kids.length === 0) {
+    node._sw = CARD_W
+    node._sh = CARD_H
+    node._px = 0
+    return
   }
-  const currentColor = branchColor || colors[node.team] || "from-slate-600 to-slate-700"
-  const themeHex = currentColor.includes('cyan') ? '#06b6d4' : 
-                   currentColor.includes('purple') ? '#8b5cf6' :
-                   currentColor.includes('emerald') ? '#10b981' : '#6366f1'
+  kids.forEach(c => measure(c))
+
+  if (node.layout === 'vertical') {
+    let left_overflow = 0
+    kids.forEach(c => {
+      const overflow = c._px - (CARD_W / 2 + INDENT)
+      if (overflow > left_overflow) left_overflow = overflow
+    })
+    node._px = left_overflow
+
+    let max_right = CARD_W + node._px
+    let totalCH = 0
+    kids.forEach(c => {
+      const right = node._px + CARD_W / 2 + INDENT - c._px + c._sw
+      if (right > max_right) max_right = right
+      totalCH += c._sh
+    })
+    totalCH += (kids.length - 1) * V_STACK_SEP
+
+    node._sw = max_right
+    node._sh = CARD_H + V_SEP + totalCH
+  } else {
+    const totalCW = kids.reduce((s, c) => s + c._sw, 0) + (kids.length - 1) * H_SEP
+    node._sw = Math.max(CARD_W, totalCW)
+    node._px = (node._sw - CARD_W) / 2
+    const maxCH = Math.max(...kids.map(c => c._sh))
+    node._sh = CARD_H + V_SEP + maxCH
+  }
+}
+
+// Pass 2: assign x, y positions
+function layoutPos(node, left, top) {
+  const kids = getKids(node)
+  node._x = left + node._px
+  node._y = top
+
+  if (kids.length === 0) return
+
+  if (node.layout === 'vertical') {
+    const childCardX = node._x + CARD_W / 2 + INDENT
+    let childTop = top + CARD_H + V_SEP
+    kids.forEach(child => {
+      const childLeft = childCardX - child._px
+      layoutPos(child, childLeft, childTop)
+      childTop += child._sh + V_STACK_SEP
+    })
+  } else {
+    const totalCW = kids.reduce((s, c) => s + c._sw, 0) + (kids.length - 1) * H_SEP
+    let childLeft = left + (node._sw - totalCW) / 2
+    const childTop = top + CARD_H + V_SEP
+    kids.forEach(child => {
+      layoutPos(child, childLeft, childTop)
+      childLeft += child._sw + H_SEP
+    })
+  }
+}
+
+// Collect flat arrays of nodes and edges
+const R = 12 // corner radius for rounded connectors
+
+function collectAll(node, nodes, edges) {
+  nodes.push(node)
+  const kids = getKids(node)
+  if (kids.length === 0) return
+
+  const pcx = node._x + CARD_W / 2
+  const pby = node._y + CARD_H
+  const col = getColor(node.team).accent
+
+  if (node.layout === 'vertical') {
+    // Each child gets an L-shaped rounded path from parent bottom center
+    kids.forEach(kid => {
+      const ky = kid._y + CARD_H / 2
+      const kx = kid._x
+      const kc = getColor(kid.team).accent
+      edges.push({
+        d: `M${pcx},${pby} L${pcx},${ky - R} Q${pcx},${ky} ${pcx + R},${ky} L${kx},${ky}`,
+        color: kc
+      })
+    })
+  } else {
+    // Each child gets a U-shaped rounded path from parent bottom center
+    const midY = pby + V_SEP / 2
+    kids.forEach(kid => {
+      const ccx = kid._x + CARD_W / 2
+      const cty = kid._y
+      const kc = getColor(kid.team).accent
+      if (Math.abs(ccx - pcx) < 2) {
+        // Directly below — straight line
+        edges.push({ d: `M${pcx},${pby} L${ccx},${cty}`, color: kc })
+      } else {
+        const dx = ccx > pcx ? 1 : -1
+        edges.push({
+          d: `M${pcx},${pby} L${pcx},${midY - R} Q${pcx},${midY} ${pcx + dx * R},${midY} L${ccx - dx * R},${midY} Q${ccx},${midY} ${ccx},${midY + R} L${ccx},${cty}`,
+          color: kc
+        })
+      }
+    })
+  }
+  kids.forEach(kid => collectAll(kid, nodes, edges))
+}
+
+// ==================== CARD COMPONENT ====================
+const OrgCard = ({ node, isSelected, onSelect, onEdit, onAdd, onDelete }) => {
+  const tc = getColor(node.team)
+  const [hovered, setHovered] = useState(false)
 
   return (
-    <div className="flex flex-col items-center relative">
-      <div className="relative z-10">
-        <motion.div layout onClick={() => onSelect(node)} className={`relative group cursor-pointer transition-all duration-500 ${isSelected?.id === node.id ? 'scale-110' : 'hover:scale-105'}`}>
-          <div className={`absolute -inset-2 bg-gradient-to-r ${currentColor} rounded-full blur-xl opacity-0 group-hover:opacity-40 transition duration-1000 animate-pulse`} />
-          <div className={`relative flex flex-col items-center justify-center w-24 h-24 rounded-full border bg-slate-900 shadow-2xl overflow-hidden transition-all duration-300 ${isSelected?.id === node.id ? `border-white/40 ring-4 ring-white/10` : 'border-white/10'}`}>
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${currentColor}`} />
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 text-[10px] font-black uppercase ${node.level === 0 ? 'bg-amber-500/20 text-amber-400' : `bg-white/5 text-white/80`}`}>{node.name.split(' ').map(n => n[0]).join('')}</div>
-            <div className="px-2 text-center">
-              <p className="text-[9px] font-black text-white truncate w-20 leading-none mb-0.5 tracking-tight">{node.name}</p>
-              <p className={`text-[7px] font-bold uppercase tracking-tighter truncate w-20 ${node.level === 0 ? 'text-amber-500/60' : 'text-slate-500'}`}>{node.position}</p>
-            </div>
-            <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-1.5">
-              <button onClick={(e) => { e.stopPropagation(); onEdit(node); }} className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 transition-colors"><Edit3 size={11} /></button>
-              <button onClick={(e) => { e.stopPropagation(); onAdd(node); }} className="p-1.5 rounded-full bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"><Plus size={11} /></button>
-              {node.level !== 0 && <button onClick={(e) => { e.stopPropagation(); onDelete(node.id); }} className="p-1.5 rounded-full bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"><Trash2 size={11} /></button>}
-            </div>
-          </div>
-          {hasChildren && regularChildren.length > 0 && <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-lg ${isExpanded ? 'rotate-0' : '-rotate-90'}`}><ChevronDown size={10} /></button>}
-        </motion.div>
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={(e) => { e.stopPropagation(); onSelect(node) }}
+      style={{
+        position: 'absolute',
+        left: node._x,
+        top: node._y,
+        width: CARD_W,
+        height: CARD_H,
+        borderRadius: 12,
+        background: '#fff',
+        border: `2px solid ${isSelected ? tc.accent : tc.border}`,
+        boxShadow: isSelected
+          ? `0 0 0 3px ${tc.accent}33, 0 8px 25px rgba(0,0,0,0.12)`
+          : '0 4px 15px rgba(0,0,0,0.08)',
+        cursor: 'pointer',
+        transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.2s',
+        transform: hovered ? 'scale(1.03)' : 'scale(1)',
+        zIndex: hovered ? 50 : 10,
+        overflow: 'visible',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+      }}
+    >
+      {/* Avatar circle */}
+      <div style={{
+        position: 'absolute', left: -26,
+        width: 52, height: 52, borderRadius: '50%',
+        background: '#fff', border: `3px solid ${tc.accent}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: tc.accent, fontWeight: 900, fontSize: 32,
+        boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+      }}>
+        {getZodiac(node.dob).emoji}
       </div>
 
-      <AnimatePresence>
-        {isExpanded && regularChildren.length > 0 && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className={`flex mt-16 w-full relative ${node.layout === 'vertical' ? 'flex-col items-center' : 'justify-center gap-16 pt-12 items-start'}`}>
-            <svg className="absolute top-[-64px] left-0 w-full h-[calc(100%+64px)] pointer-events-none overflow-visible">
-              {node.layout === 'vertical' ? (
-                <>
-                  <path d="M 50% 0 L 50% 100%" stroke={themeHex} strokeWidth="1" strokeDasharray="4 4" opacity="0.2" fill="none" />
-                  {regularChildren.map((child, i) => (
-                    <path key={child.id} d={`M 50% ${64 + i * 110} L ${child.side === 'left' ? 'calc(50% - 40px)' : 'calc(50% + 40px)'} ${64 + i * 110}`} stroke={themeHex} strokeWidth="1.5" opacity="0.3" fill="none" />
-                  ))}
-                </>
-              ) : (
-                <g opacity="0.3">
-                  <path d="M 50% 0 L 50% 32" stroke={themeHex} strokeWidth="2" fill="none" />
-                  <path d={`M 15% 32 L 85% 32`} stroke={themeHex} strokeWidth="2" strokeLinecap="round" />
-                  {regularChildren.map((_, i) => (
-                    <path key={i} d={`M ${15 + (i * 70) / (regularChildren.length - 1)}% 32 L ${15 + (i * 70) / (regularChildren.length - 1)}% 64`} stroke={themeHex} strokeWidth="2" fill="none" />
-                  ))}
-                </g>
-              )}
-            </svg>
-            {regularChildren.map((child) => (
-              <div key={child.id} className={`relative flex items-center ${node.layout === 'vertical' ? `w-full ${child.side === 'left' ? 'flex-row-reverse justify-start pr-[50%]' : 'flex-row justify-start pl-[50%]'} mb-12` : 'flex-col'}`}>
-                <div className={node.layout === 'vertical' ? (child.side === 'left' ? 'mr-10' : 'ml-10') : ''}>
-                  <OrgNode node={child} onSelect={onSelect} onEdit={onEdit} onAdd={onAdd} onDelete={onDelete} isSelected={isSelected} branchColor={node.level === 0 ? colors[child.team] : branchColor} />
-                </div>
-              </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Info */}
+      <div style={{ flex: 1, paddingLeft: 36, paddingRight: 8, overflow: 'hidden' }}>
+        <div style={{
+          fontSize: 13, fontWeight: 800, color: '#1E293B',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          lineHeight: '1.2', marginBottom: 3,
+        }}>{node.name}</div>
+        <div style={{
+          fontSize: 9, fontWeight: 700, color: tc.accent,
+          textTransform: 'uppercase', letterSpacing: '0.08em',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>{node.position}</div>
+      </div>
+
+      {/* Hover actions */}
+      {hovered && (
+        <div style={{
+          position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.92)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          borderRadius: 10,
+        }}>
+          <button onClick={(e) => { e.stopPropagation(); onEdit(node) }}
+            style={actionBtnStyle('#6366F1')}><Edit3 size={14} /></button>
+          <button onClick={(e) => { e.stopPropagation(); onAdd(node) }}
+            style={actionBtnStyle('#10B981')}><Plus size={14} /></button>
+          {node.level !== 0 && (
+            <button onClick={(e) => { e.stopPropagation(); onDelete(node.id) }}
+              style={actionBtnStyle('#EF4444')}><Trash2 size={14} /></button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
-// --- Main Component ---
+const actionBtnStyle = (color) => ({
+  width: 32, height: 32, borderRadius: '50%',
+  border: `1.5px solid ${color}30`, background: `${color}10`,
+  color, display: 'flex', alignItems: 'center', justifyContent: 'center',
+  cursor: 'pointer', transition: 'all 0.15s',
+})
+
+// ==================== MAIN COMPONENT ====================
 const OrgChart = () => {
   const [orgData, setOrgData] = useState(() => {
-    const saved = localStorage.getItem('rincovitch_org_data_v21')
+    const saved = localStorage.getItem('rincovitch_org_data_v22')
     return saved ? JSON.parse(saved) : initialOrgData
   })
-  const [viewMode, setViewMode] = useState('mindmap')
   const [selectedNode, setSelectedNode] = useState(null)
   const [editingNode, setEditingNode] = useState(null)
   const [addingToNode, setAddingToNode] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
 
+  // Pan & Zoom state
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(0.85)
+  const [dragging, setDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const containerRef = useRef(null)
+
   useEffect(() => {
-    localStorage.setItem('rincovitch_org_data_v21', JSON.stringify(orgData))
+    localStorage.setItem('rincovitch_org_data_v22', JSON.stringify(orgData))
   }, [orgData])
 
-  const flattenData = (nodes) => {
-    let flat = []
-    nodes.forEach(node => {
-      flat.push(node)
-      if (node.children) flat = flat.concat(flattenData(node.children))
+  // Layout calculation
+  const { nodes, edges, bounds } = useMemo(() => {
+    const tree = deepClone(orgData)
+    tree.forEach(root => { measure(root); layoutPos(root, 0, 0) })
+    const nodes = [], edges = []
+    tree.forEach(root => collectAll(root, nodes, edges))
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    nodes.forEach(n => {
+      minX = Math.min(minX, n._x)
+      minY = Math.min(minY, n._y)
+      maxX = Math.max(maxX, n._x + CARD_W)
+      maxY = Math.max(maxY, n._y + CARD_H)
     })
-    return flat
-  }
+    return { nodes, edges, bounds: { minX, minY, maxX, maxY, w: maxX - minX + 100, h: maxY - minY + 100 } }
+  }, [orgData])
 
-  const findAndReplace = (nodes, id, newData) => {
-    return nodes.map(node => {
-      if (node.id === id) return { ...node, ...newData }
-      if (node.children) return { ...node, children: findAndReplace(node.children, id, newData) }
-      return node
-    })
-  }
+  // Center on mount
+  useEffect(() => {
+    if (containerRef.current && bounds.w) {
+      const cw = containerRef.current.clientWidth
+      const ch = containerRef.current.clientHeight
+      const headerH = 60
+      const fitZoom = Math.min((cw - 40) / bounds.w, (ch - headerH - 40) / bounds.h, 1)
+      const z = Math.max(0.3, Math.min(fitZoom, 1))
+      setZoom(z)
+      setPan({
+        x: (cw - bounds.w * z) / 2 - bounds.minX * z,
+        y: headerH + (ch - headerH - bounds.h * z) / 2 - bounds.minY * z,
+      })
+    }
+  }, [bounds])
 
-  const findAndAdd = (nodes, parentId, newNode) => {
-    return nodes.map(node => {
-      if (node.id === parentId) return { ...node, children: [...(node.children || []), newNode] }
-      if (node.children) return { ...node, children: findAndAdd(node.children, parentId, newNode) }
-      return node
-    })
-  }
+  // Pan handlers
+  const handleMouseDown = useCallback((e) => {
+    if (e.button !== 0) return
+    setDragging(true)
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+  }, [pan])
 
-  const findAndDelete = (nodes, id) => {
-    return nodes.filter(node => node.id !== id).map(node => {
-      if (node.children) return { ...node, children: findAndDelete(node.children, id) }
-      return node
-    })
-  }
+  const handleMouseMove = useCallback((e) => {
+    if (!dragging) return
+    setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y })
+  }, [dragging, dragStart])
 
-  const handleUpdateNode = (e) => {
+  const handleMouseUp = useCallback(() => setDragging(false), [])
+
+  const handleWheel = useCallback((e) => {
     e.preventDefault()
-    const formData = new FormData(e.target)
-    const newData = { name: formData.get('name'), position: formData.get('position') }
-    setOrgData(findAndReplace(orgData, editingNode.id, newData))
-    if (selectedNode?.id === editingNode.id) setSelectedNode({ ...selectedNode, ...newData })
+    const delta = e.deltaY > 0 ? 0.92 : 1.08
+    setZoom(z => Math.max(0.2, Math.min(2, z * delta)))
+  }, [])
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [handleWheel])
+
+  const fitToScreen = () => {
+    if (!containerRef.current) return
+    const cw = containerRef.current.clientWidth
+    const ch = containerRef.current.clientHeight
+    const headerH = 60
+    const fitZoom = Math.min((cw - 40) / bounds.w, (ch - headerH - 40) / bounds.h, 1)
+    const z = Math.max(0.25, fitZoom)
+    setZoom(z)
+    setPan({
+      x: (cw - bounds.w * z) / 2 - bounds.minX * z,
+      y: headerH + (ch - headerH - bounds.h * z) / 2 - bounds.minY * z,
+    })
+  }
+
+  // CRUD helpers
+  const findAndReplace = (nodes, id, data) => nodes.map(n => {
+    if (n.id === id) return { ...n, ...data }
+    if (n.children) return { ...n, children: findAndReplace(n.children, id, data) }
+    return n
+  })
+  const findAndAdd = (nodes, pid, child) => nodes.map(n => {
+    if (n.id === pid) return { ...n, children: [...(n.children || []), child] }
+    if (n.children) return { ...n, children: findAndAdd(n.children, pid, child) }
+    return n
+  })
+  const findAndDelete = (nodes, id) => nodes.filter(n => n.id !== id).map(n => {
+    if (n.children) return { ...n, children: findAndDelete(n.children, id) }
+    return n
+  })
+
+  const handleEdit = (e) => {
+    e.preventDefault()
+    const fd = new FormData(e.target)
+    setOrgData(findAndReplace(orgData, editingNode.id, { 
+      name: fd.get('name'), 
+      position: fd.get('position'),
+      layout: fd.get('layout'),
+      dob: fd.get('dob'),
+      level: parseInt(fd.get('level')) || 0
+    }))
     setEditingNode(null)
   }
-
-  const handleAddNode = (e) => {
+  const handleAdd = (e) => {
     e.preventDefault()
-    const formData = new FormData(e.target)
-    const newNode = {
-      id: Date.now().toString(),
-      name: formData.get('name'),
-      position: formData.get('position'),
-      team: addingToNode.team,
-      level: (addingToNode.level || 0) + 1,
-      side: formData.get('side') || 'right',
-      children: []
-    }
-    setOrgData(findAndAdd(orgData, addingToNode.id, newNode))
+    const fd = new FormData(e.target)
+    setOrgData(findAndAdd(orgData, addingToNode.id, {
+      id: Date.now().toString(), 
+      name: fd.get('name'), 
+      position: fd.get('position'),
+      layout: fd.get('layout'),
+      dob: fd.get('dob'),
+      level: parseInt(fd.get('level')) || 0,
+      team: addingToNode.team, 
+      children: [],
+    }))
     setAddingToNode(null)
   }
 
-  const rawFlatNodes = flattenData(orgData)
-  const managersNames = ["Nhân Nguyễn", "Đức Phạm", "Trí Nguyễn", "Dung Đỗ", "Sơn Lâm"]
-  const leadersNames = ["Nguyên Lý", "Khánh Nguyễn", "Cường Phạm", "Tiến Trần"]
-
-  // --- Bee Styling Logic Helper ---
-  const getBeeStyles = (node) => {
-    const isQueen = node.name === "Vũ Đỗ"
-    const isManager = managersNames.includes(node.name)
-    const isLeader = leadersNames.includes(node.name)
-
-    let beeColor = "#ffffff"
-    let beeRole = "Bee Worker"
-    let glowClass = "from-white/10 to-white/5 border-white/20"
-    let textClass = "text-white/60"
-
-    if (isQueen) {
-      beeColor = "#f97316"
-      beeRole = "Queen Bee"
-      glowClass = "from-orange-500/30 to-amber-600/30 border-orange-400 shadow-[0_0_30px_rgba(249,115,22,0.4)] scale-125 z-10"
-      textClass = "text-orange-400"
-    } else if (isManager) {
-      beeColor = "#a855f7"
-      beeRole = "Bee Manager"
-      glowClass = "from-purple-500/30 to-indigo-600/30 border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.3)]"
-      textClass = "text-purple-400"
-    } else if (isLeader) {
-      beeColor = "#3b82f6"
-      beeRole = "Bee Leader"
-      glowClass = "from-blue-500/30 to-cyan-600/30 border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
-      textClass = "text-blue-400"
-    }
-    return { isQueen, isManager, isLeader, beeColor, beeRole, glowClass, textClass }
-  }
-
-  // --- Team Mapping Logic ---
-  const engineerTeam = {
-    leader: rawFlatNodes.find(n => n.name === "Vũ Đỗ"),
-    slab: rawFlatNodes.filter(n => ["Đức Phạm", "Dung Đỗ", "Trí Nguyễn", "Ngân Trần", "Bảo Phạm", "An Nguyễn", "Nhân Phạm", "Kỳ Phan"].includes(n.name)),
-    lateral: rawFlatNodes.filter(n => ["Sơn Lâm", "Junior 1"].includes(n.name))
-  }
-
-  const drafterTeam = {
-    leader: rawFlatNodes.find(n => n.name === "Nhân Nguyễn"),
-    modeling: rawFlatNodes.filter(n => ["Nguyên Lý", "Khánh Nguyễn", "Quang Nguyễn", "Tâm Phan", "Khiêm Nguyễn", "Quân Nguyễn", "Khang Trịnh"].includes(n.name)),
-    ptreo: rawFlatNodes.filter(n => ["Cường Phạm", "Tiến Trần", "Nhân Khưu", "Trung Nguyễn", "Đăng Nguyễn", "Hoàng Phạm"].includes(n.name))
-  }
+  // Search filter
+  const matchSearch = (n) => !searchTerm || n.name.toLowerCase().includes(searchTerm.toLowerCase()) || n.position.toLowerCase().includes(searchTerm.toLowerCase())
 
   return (
-    <div className="relative min-h-[90vh] flex flex-col bg-slate-950/40 rounded-[8px] border border-white/5 overflow-hidden m-[10px]">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/5 blur-[120px] rounded-full" />
-      </div>
-
-      <div className="relative z-20 flex flex-col md:flex-row items-center justify-between p-[10px] gap-[10px]">
-        <div className="flex items-center gap-[10px] p-[10px]">
-          <div className="p-[10px] bg-gradient-to-br from-amber-500 to-orange-600 rounded-[8px] text-white shadow-lg shadow-orange-500/20">
-            <CustomBee size={24} />
+    <div style={{ position: 'relative', width: '100%', height: '88vh', background: '#0F172A', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+      {/* Header */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 100%)', backdropFilter: 'blur(12px)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #F59E0B, #D97706)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
           <div>
-            <h1 className="text-[30px] font-black text-white tracking-tighter uppercase italic leading-none">Beehive Intelligence</h1>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-[5px]">Strategic Colony Management</p>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', margin: 0, lineHeight: 1 }}>Organization Chart</h1>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.2em', margin: '3px 0 0' }}>Rincovitch Engineering</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-[10px] p-[10px]">
-          <div className="flex bg-white/5 p-[10px] rounded-[8px] border border-white/10 shadow-inner gap-[10px]">
-            {[
-              { id: 'mindmap', icon: <GitGraph size={14} />, label: 'Mindmap' },
-              { id: 'honeycomb', icon: <CustomBee size={14} />, label: 'Beehive' },
-              { id: 'team', icon: <LayoutGrid size={14} />, label: 'Teams' }
-            ].map(mode => (
-              <button key={mode.id} onClick={() => setViewMode(mode.id)} className={`flex items-center gap-[10px] px-[10px] py-[10px] rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === mode.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-white'}`}>{mode.icon} {mode.label}</button>
-            ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#64748B' }} />
+            <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search..."
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px 8px 32px', fontSize: 13, color: '#fff', outline: 'none', width: 200, fontWeight: 600 }} />
           </div>
-          <div className="relative group p-[10px]">
-            <Search className="absolute left-[25px] top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors" size={16} />
-            <input type="text" placeholder="Scan colony..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-white/5 border border-white/10 rounded-[8px] py-[10px] pl-[45px] pr-[15px] text-[14px] font-bold text-white outline-none focus:ring-2 focus:ring-cyan-500/10 transition-all w-64" />
-          </div>
+          <button onClick={() => setZoom(z => Math.min(2, z * 1.2))} style={toolBtnStyle}><ZoomIn size={16} /></button>
+          <button onClick={() => setZoom(z => Math.max(0.2, z * 0.8))} style={toolBtnStyle}><ZoomOut size={16} /></button>
+          <button onClick={fitToScreen} style={toolBtnStyle}><Maximize2 size={16} /></button>
+          <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, minWidth: 45, textAlign: 'center' }}>{Math.round(zoom * 100)}%</div>
         </div>
       </div>
 
-      <div className="relative flex-grow overflow-auto custom-scrollbar p-[10px] select-none">
-        {viewMode === 'mindmap' ? (
-          <div className="flex justify-center min-w-max pb-40 p-[10px]">
-            {orgData.map(rootNode => (<OrgNode key={rootNode.id} node={rootNode} onSelect={setSelectedNode} onEdit={setEditingNode} onAdd={setAddingToNode} onDelete={(id) => setOrgData(findAndDelete(orgData, id))} isSelected={selectedNode} />))}
-          </div>
-        ) : viewMode === 'honeycomb' ? (
-          <div className="max-w-7xl mx-auto pb-40 px-[10px] space-y-[20px]">
-            {[
-              { id: 'queen', label: 'Queen Bee', nodes: rawFlatNodes.filter(n => n.name === "Vũ Đỗ") },
-              { id: 'managers', label: 'Bee Managers', nodes: rawFlatNodes.filter(n => managersNames.includes(n.name)) },
-              { id: 'leaders', label: 'Bee Leaders', nodes: rawFlatNodes.filter(n => leadersNames.includes(n.name)) },
-              { id: 'workers', label: 'Bee Workers', nodes: rawFlatNodes.filter(n => !managersNames.includes(n.name) && !leadersNames.includes(n.name) && n.name !== "Vũ Đỗ") }
-            ].map((tier) => tier.nodes.length > 0 && (
-              <div key={tier.id} className="relative p-[10px]">
-                <div className="flex items-center gap-[10px] mb-[10px]"><div className="h-[1px] flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" /><span className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500 whitespace-nowrap">{tier.label}</span><div className="h-[1px] flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" /></div>
-                <div className="flex flex-wrap justify-center gap-x-[10px] gap-y-[10px]">{tier.nodes.map((node, i) => (<div key={node.id} className={i % 2 !== 0 ? 'mt-[10px]' : ''}><HexNode node={node} onClick={setSelectedNode} {...getBeeStyles(node)} /></div>))}</div>
-              </div>
+      {/* Canvas */}
+      <div ref={containerRef}
+        style={{ position: 'absolute', inset: 0, cursor: dragging ? 'grabbing' : 'grab', overflow: 'hidden' }}
+        onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
+      >
+        <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0', position: 'relative' }}>
+          {/* SVG Connectors */}
+          <svg style={{ position: 'absolute', left: 0, top: 0, width: bounds.maxX + 200, height: bounds.maxY + 200, pointerEvents: 'none', overflow: 'visible' }}>
+            {edges.map((edge, i) => (
+              <path key={i} d={edge.d} fill="none" stroke={edge.color} strokeWidth="2" opacity="0.45" strokeLinecap="round" />
             ))}
-          </div>
-        ) : (
-          <div className="max-w-7xl mx-auto pb-40 px-[10px] space-y-[20px]">
-            {/* Engineer Team Section */}
-            <div className="relative border-l-2 border-indigo-500/20 pl-[10px] m-[10px]">
-              <div className="flex items-center gap-[10px] mb-[10px] p-[10px]">
-                <div className="p-[10px] bg-indigo-500/20 rounded-[8px] text-indigo-400 border border-indigo-500/30 font-black text-[10px]">ENGINEER COMMAND</div>
-                <HexNode node={engineerTeam.leader} onClick={setSelectedNode} {...getBeeStyles(engineerTeam.leader)} />
-              </div>
-              <div className="space-y-[10px] p-[10px]">
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-[10px]">Slab Engineer</h4>
-                  <div className="flex flex-wrap gap-[10px]">
-                    {engineerTeam.slab.map(node => (<HexNode key={node.id} node={node} onClick={setSelectedNode} {...getBeeStyles(node)} />))}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-[10px]">Lateral Engineer</h4>
-                  <div className="flex flex-wrap gap-[10px]">{engineerTeam.lateral.map(node => (<HexNode key={node.id} node={node} onClick={setSelectedNode} {...getBeeStyles(node)} />))}</div>
-                </div>
-              </div>
-            </div>
+          </svg>
 
-            {/* Drafter Team Section */}
-            <div className="relative border-l-2 border-purple-500/20 pl-[10px] m-[10px]">
-              <div className="flex items-center gap-[10px] mb-[10px] p-[10px]">
-                <div className="p-[10px] bg-purple-500/20 rounded-[8px] text-purple-400 border border-purple-500/30 font-black text-[10px]">DRAFTER COMMAND</div>
-                <HexNode node={drafterTeam.leader} onClick={setSelectedNode} {...getBeeStyles(drafterTeam.leader)} />
-              </div>
-              <div className="space-y-[10px] p-[10px]">
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-[10px]">Modeling - Arch</h4>
-                  <div className="flex flex-wrap gap-[10px]">{drafterTeam.modeling.map(node => (<HexNode key={node.id} node={node} onClick={setSelectedNode} {...getBeeStyles(node)} />))}</div>
-                </div>
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mb-[10px]">PT & REO - MTO</h4>
-                  <div className="flex flex-wrap gap-[10px]">{drafterTeam.ptreo.map(node => (<HexNode key={node.id} node={node} onClick={setSelectedNode} {...getBeeStyles(node)} />))}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+          {/* Cards */}
+          {nodes.map(node => (
+            <OrgCard key={node.id} node={node}
+              isSelected={selectedNode?.id === node.id}
+              onSelect={setSelectedNode}
+              onEdit={setEditingNode}
+              onAdd={setAddingToNode}
+              onDelete={(id) => setOrgData(findAndDelete(orgData, id))}
+            />
+          ))}
+        </div>
       </div>
 
-      <AnimatePresence>
-        {selectedNode && (
-          <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="fixed bottom-[10px] left-1/2 -translate-x-1/2 w-full max-w-xl bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] p-[10px] z-50 flex items-center gap-[10px] shadow-2xl m-[10px]">
-            <div className="w-16 h-16 rounded-full bg-indigo-500/10 border border-white/10 flex items-center justify-center text-white text-[24px] font-black">{selectedNode.name.split(' ').map(n => n[0]).join('')}</div>
-            <div className="flex-grow">
-              <h3 className="text-[24px] font-black text-white uppercase italic tracking-tight">{selectedNode.name}</h3>
-              <p className="text-[14px] font-bold text-cyan-400 uppercase tracking-widest">{selectedNode.position}</p>
-            </div>
-            <button onClick={() => setSelectedNode(null)} className="p-[10px] text-slate-500 hover:text-white transition-colors">✕</button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Detail Panel - centered modal */}
+      {selectedNode && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setSelectedNode(null)} />
+          <div style={{
+            position: 'relative', width: 340, maxWidth: '90%', zIndex: 501,
+            background: 'rgba(15,23,42,0.97)', backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16,
+            boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
+            animation: 'fadeInUp 0.3s ease-out',
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          }}>
+          {/* Close button */}
+          <button onClick={() => setSelectedNode(null)} style={{
+            position: 'absolute', top: 12, right: 12, zIndex: 10,
+            width: 30, height: 30, borderRadius: 8,
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+            color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+          }}>✕</button>
 
-      <AnimatePresence>
-        {(editingNode || addingToNode) && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-[10px]">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setEditingNode(null); setAddingToNode(null); }} className="absolute inset-0 bg-[#0B0F1A]/80 backdrop-blur-xl" />
-            <motion.form onSubmit={editingNode ? handleUpdateNode : handleAddNode} initial={{ scale: 0.9, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 40 }} className="relative w-full max-w-md bg-[var(--bg-card)] p-[20px] rounded-[8px] border border-[var(--border)] shadow-2xl">
-              <div className="flex items-center gap-[10px] mb-[20px] p-[10px]">
-                <div className="p-[10px] bg-white/5 rounded-[8px] text-white border border-white/10">{editingNode ? <Edit3 size={24} /> : <UserPlus size={24} />}</div>
-                <div>
-                  <h2 className="text-[24px] font-black text-white tracking-tighter uppercase italic">{editingNode ? 'Edit Member' : 'Add Member'}</h2>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Colony Database Update</p>
-                </div>
-              </div>
-              <div className="space-y-[15px] p-[10px]">
-                <div className="space-y-[5px]">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Identity</label>
-                  <input name="name" type="text" defaultValue={editingNode?.name || ''} required className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] py-[10px] px-[15px] text-[14px] font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" />
-                </div>
-                <div className="space-y-[5px]">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Position</label>
-                  <input name="position" type="text" defaultValue={editingNode?.position || ''} required className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] py-[10px] px-[15px] text-[14px] font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" />
-                </div>
-                <div className="flex gap-[10px] pt-[20px]">
-                  <button type="button" onClick={() => { setEditingNode(null); setAddingToNode(null); }} className="flex-1 py-[10px] bg-white/5 hover:bg-white/10 text-slate-400 font-black text-[10px] tracking-widest rounded-[8px] border border-white/10 transition-all">CANCEL</button>
-                  <button type="submit" className="flex-[2] py-[10px] bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] tracking-widest rounded-[8px] transition-all shadow-lg shadow-indigo-500/40 flex items-center justify-center gap-[10px]"><Save size={16} /> CONFIRM</button>
-                </div>
-              </div>
-            </motion.form>
+          {/* Header with accent color band */}
+          <div style={{
+            background: `linear-gradient(135deg, ${getColor(selectedNode.team).accent}20, ${getColor(selectedNode.team).accent}08)`,
+            borderBottom: `2px solid ${getColor(selectedNode.team).accent}40`,
+            padding: '28px 24px 24px', textAlign: 'center',
+          }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: '50%', margin: '0 auto 14px',
+              background: `${getColor(selectedNode.team).accent}15`,
+              border: `3px solid ${getColor(selectedNode.team).accent}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: getColor(selectedNode.team).accent, fontWeight: 900, fontSize: 40,
+              boxShadow: `0 0 30px ${getColor(selectedNode.team).accent}20`, overflow: 'hidden'
+            }}>
+              {getZodiac(selectedNode.dob).emoji}
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 4 }}>{selectedNode.name}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: getColor(selectedNode.team).accent, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{selectedNode.position}</div>
           </div>
-        )}
-      </AnimatePresence>
+
+          {/* Info table */}
+          <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
+              <tbody>
+                {[
+                  { label: 'Ngày sinh', value: selectedNode.dob ? new Date(selectedNode.dob).toLocaleDateString('vi-VN') : '—' },
+                  { label: 'Con giáp', value: getZodiac(selectedNode.dob).name },
+                  { label: 'Team', value: selectedNode.team },
+                  { label: 'ID', value: selectedNode.id },
+                ].map((row, i) => (
+                  <tr key={i}>
+                    <td style={{ padding: '10px 12px', fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.12em', width: 90, verticalAlign: 'top' }}>{row.label}</td>
+                    <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 600, color: '#E2E8F0', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>{row.value || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Team badge */}
+            <div style={{ marginTop: 20, padding: '14px 16px', borderRadius: 12, background: `${getColor(selectedNode.team).accent}08`, border: `1px solid ${getColor(selectedNode.team).accent}20` }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 8 }}>Department</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: getColor(selectedNode.team).accent }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{selectedNode.team || 'General'}</span>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ marginTop: 20, display: 'flex', gap: 8 }}>
+              <button onClick={() => { setEditingNode(selectedNode); setSelectedNode(null) }} style={{
+                flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(99,102,241,0.3)',
+                background: 'rgba(99,102,241,0.1)', color: '#818CF8', fontWeight: 800, fontSize: 11,
+                textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}><Edit3 size={13} /> Edit</button>
+              <button onClick={() => { setAddingToNode(selectedNode); setSelectedNode(null) }} style={{
+                flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(16,185,129,0.3)',
+                background: 'rgba(16,185,129,0.1)', color: '#34D399', fontWeight: 800, fontSize: 11,
+                textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}><Plus size={13} /> Add Sub</button>
+            </div>
+          </div>
+        </div>
+        </div>
+      )}
+
+      {/* CSS Animation */}
+      <style>{`
+        @keyframes fadeInUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
+
+      {/* Edit / Add Modal */}
+      {(editingNode || addingToNode) && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }} onClick={() => { setEditingNode(null); setAddingToNode(null) }} />
+          <form onSubmit={editingNode ? handleEdit : handleAdd} style={{ position: 'relative', width: '100%', maxWidth: 420, background: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 28, boxShadow: '0 30px 80px rgba(0,0,0,0.6)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#818CF8' }}>
+                {editingNode ? <Edit3 size={20} /> : <UserPlus size={20} />}
+              </div>
+              <div>
+                <h2 style={{ fontSize: 20, fontWeight: 900, color: '#fff', margin: 0 }}>{editingNode ? 'Edit Member' : 'Add Member'}</h2>
+                <p style={{ fontSize: 10, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '2px 0 0' }}>Update organization</p>
+              </div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Name</label>
+              <input name="name" defaultValue={editingNode?.name || ''} required style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Position</label>
+              <input name="position" defaultValue={editingNode?.position || ''} required style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Level</label>
+              <input type="number" name="level" defaultValue={editingNode?.level ?? (addingToNode ? (addingToNode.level || 0) + 1 : 0)} required style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Ngày sinh (DOB)</label>
+              <input type="date" name="dob" defaultValue={editingNode?.dob || ''} style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: 24 }}>
+              <label style={labelStyle}>Children Layout</label>
+              <select name="layout" defaultValue={editingNode?.layout || 'horizontal'} style={inputStyle}>
+                <option value="horizontal">Horizontal (Trải ngang)</option>
+                <option value="vertical">Vertical (Xếp dọc)</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button type="button" onClick={() => { setEditingNode(null); setAddingToNode(null) }} style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#94A3B8', fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" style={{ flex: 2, padding: '10px', background: '#6366F1', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Save size={14} /> Confirm</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }
+
+const toolBtnStyle = { width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }
+const labelStyle = { display: 'block', fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 6 }
+const inputStyle = { width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 600, outline: 'none', boxSizing: 'border-box' }
 
 export default OrgChart
