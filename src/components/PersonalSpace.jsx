@@ -19,6 +19,11 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { 
+  calculateTaskMetrics, 
+  formatMinutes, 
+  calculateDailyWorkingMinutes 
+} from '../utils/performanceEngine';
 
 ChartJS.register(
   CategoryScale,
@@ -249,31 +254,65 @@ const PersonalSpace = () => {
     const weekDates = [0, 1, 2, 3, 4].map(i => addDays(targetMonday, i));
     const weekNum = getISOWeek(targetMonday);
 
-    // Filter tasks that fall within this week's Mon-Fri
+    // Filter tasks that have ANY overlap with this week's Mon-Fri
     const weekTasks = filteredData.filter(t => {
-      if (!t.dateObj) return false;
-      return weekDates.some(wd => isSameDay(t.dateObj, wd));
+      // Determine range based on metric
+      let rangeStart = t.date_start;
+      let rangeEnd = t.date_end;
+      if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
+      if (selectedTimeMetric === 't3') rangeEnd = t.date_checked;
+      if (selectedTimeMetric === 't4') { rangeStart = t.date_started; rangeEnd = t.date_checked; }
+      if (selectedTimeMetric === 't5') { rangeStart = t.created_at; rangeEnd = t.date_checked; }
+
+      if (!rangeStart || !rangeEnd) return false;
+      
+      // Check if any part of the task falls within the week's boundaries
+      const weekStart = weekDates[0];
+      const weekEnd = addDays(weekDates[4], 1); // Saturday 00:00
+      
+      return (new Date(rangeStart) < weekEnd && new Date(rangeEnd) > weekStart);
     });
 
-    // Group by team → user → day, summing hours (t4 = pure processing minutes)
+    // Group by team → user → day, distributing hours across the week
     const teamMap = {};
     weekTasks.forEach(t => {
       const team = t.team || 'Unknown';
       const user = t.userName || 'Unknown';
       const project = t.project || 'Unassigned';
-      const dayIndex = weekDates.findIndex(wd => isSameDay(t.dateObj, wd));
-      if (dayIndex === -1) return;
+      
+      // Determine the range for splitting based on selected metric
+      let rangeStart = t.date_start;
+      let rangeEnd = t.date_end;
+
+      if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
+      if (selectedTimeMetric === 't3') rangeEnd = t.date_checked;
+      if (selectedTimeMetric === 't4') { rangeStart = t.date_started; rangeEnd = t.date_checked; }
+      if (selectedTimeMetric === 't5') { rangeStart = t.created_at; rangeEnd = t.date_checked; }
+
+      // Get breakdown of minutes per day
+      const breakdown = calculateDailyWorkingMinutes(rangeStart, rangeEnd);
       
       if (!teamMap[team]) teamMap[team] = {};
       if (!teamMap[team][user]) teamMap[team][user] = {};
       if (!teamMap[team][user][project]) {
         teamMap[team][user][project] = { hours: [0, 0, 0, 0, 0], tasks: [0, 0, 0, 0, 0] };
       }
+
+      // Add to each day that overlaps with our weekDates
+      Object.entries(breakdown).forEach(([dateStr, mins]) => {
+        const d = new Date(dateStr);
+        const dayIndex = weekDates.findIndex(wd => isSameDay(d, wd));
+        if (dayIndex !== -1) {
+          teamMap[team][user][project].hours[dayIndex] += (mins / 60);
+        }
+      });
       
-      
-      const metricValue = t[selectedTimeMetric] || 0;
-      teamMap[team][user][project].hours[dayIndex] += (metricValue / 60);
-      teamMap[team][user][project].tasks[dayIndex] += 1;
+      // Still count the task itself on the primary date for the "Tasks" count
+      const primaryDate = t.dateObj || new Date(rangeStart);
+      const primaryIdx = weekDates.findIndex(wd => isSameDay(primaryDate, wd));
+      if (primaryIdx !== -1) {
+        teamMap[team][user][project].tasks[primaryIdx] += 1;
+      }
     });
 
     // Convert to structured array: Team -> User -> Project
@@ -765,13 +804,13 @@ const PersonalSpace = () => {
 
                   return (
                     <div key={m.id} className="relative group/time">
-                      {/* Formula Badge (Like Image 2) */}
+                      {/* Formula Badge (Strictly aligned with time_logic.md) */}
                       <div className="absolute -top-[30px] left-1/2 -translate-x-1/2 px-2 py-1 bg-[#1e293b] border border-emerald-500/30 rounded shadow-xl opacity-0 group-hover/time:opacity-100 transition-all pointer-events-none whitespace-nowrap z-50">
                         <span className="text-[9px] font-black text-emerald-400 tracking-tighter uppercase">
-                          {m.id === 't1' ? 'ESTIMATE_TIME' :
-                           m.id === 't2' ? 'PLAN_START → PLAN_END' :
-                           m.id === 't3' ? 'DATE_START → DATE_END' :
-                           m.id === 't4' ? 'DATE_ACCEPTED → DATE_COMPLETE' :
+                          {m.id === 't1' ? 'DATE_START → DATE_END' :
+                           m.id === 't2' ? 'DATE_START → DATE_COMPLETE' :
+                           m.id === 't3' ? 'DATE_START → DATE_CHECKED' :
+                           m.id === 't4' ? 'DATE_STARTED → DATE_CHECKED' :
                            'CREATED_AT → DATE_CHECKED'}
                         </span>
                         {/* Tooltip Arrow */}
@@ -851,18 +890,18 @@ const PersonalSpace = () => {
                   <React.Fragment key={ti}>
                     {team.users.map((user, ui) => {
                       const isEvenUser = ui % 2 === 0;
-                      const rowBg = isEvenUser ? 'bg-white/[0.04]' : 'bg-transparent';
+                      const rowBg = isEvenUser ? 'bg-[var(--bg-surface)]/30' : 'bg-transparent';
                       
                       return user.projects.map((project, pi) => (
                         <tr 
                           key={`${ti}-${ui}-${pi}`} 
-                          className={`hover:bg-indigo-500/10 transition-colors border-b border-white/[0.03] ${rowBg}`}
+                          className={`hover:bg-indigo-500/10 transition-colors border-b border-[var(--border)] ${rowBg}`}
                         >
                         {/* Team Column */}
                         {ui === 0 && pi === 0 && (
                           <td
                             rowSpan={team.totalRows}
-                            className="px-[20px] py-[15px] text-[12px] font-black text-indigo-500 uppercase tracking-tight border-r border-[var(--border)] align-top bg-indigo-500/5 min-w-[140px]"
+                            className="px-[20px] py-[15px] text-[12px] font-black text-indigo-500 uppercase tracking-tight border-r border-[var(--border)] align-top bg-indigo-500/[0.05] min-w-[140px]"
                           >
                             {team.name}
                           </td>
@@ -871,7 +910,7 @@ const PersonalSpace = () => {
                         {pi === 0 && (
                           <td
                             rowSpan={user.projects.length}
-                            className="px-[20px] py-[15px] text-[12px] font-black text-sky-500 uppercase tracking-tight border-r border-[var(--border)] align-top bg-white/[0.02] min-w-[140px]"
+                            className="px-[20px] py-[15px] text-[12px] font-black text-sky-500 uppercase tracking-tight border-r border-[var(--border)] align-top bg-[var(--bg-surface)]/10 min-w-[140px]"
                           >
                             {user.name}
                           </td>
