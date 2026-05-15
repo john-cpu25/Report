@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Folder, FileText, MessageSquare, Plus, PenTool, CheckCircle2, Clock } from 'lucide-react';
+import { Folder, FileText, MessageSquare, Plus, PenTool, CheckCircle2, Clock, Edit2, Trash2, Search } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 // ==================== MOCK DATA ====================
@@ -39,32 +39,55 @@ export default function DrawingsManager() {
   const { theme, dashboardProjects } = useApp();
   const isDark = theme === 'GALAXY' || theme === 'DARK';
 
-  const projects = dashboardProjects && dashboardProjects.length > 0 
-    ? dashboardProjects.map((p, i) => ({
-        id: p.id,
-        name: p.name || 'Unnamed Project',
-        code: p.key || `PROJ-${String(i+1).padStart(2, '0')}`,
-        color: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'][i % 5]
-      }))
-    : MOCK_PROJECTS;
+  const projects = React.useMemo(() => {
+    return dashboardProjects && dashboardProjects.length > 0 
+      ? dashboardProjects.map((p, i) => ({
+          id: p.id,
+          name: p.name || 'Unnamed Project',
+          code: p.key || `PROJ-${String(i+1).padStart(2, '0')}`,
+          color: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'][i % 5]
+        }))
+      : MOCK_PROJECTS;
+  }, [dashboardProjects]);
 
   const [selectedProj, setSelectedProj] = useState(projects[0]?.id || null);
+  const [projectSearch, setProjectSearch] = useState('');
   
-  // Deterministic mock data generators
-  const getDrawings = (pid) => {
-    if (!pid) return [];
-    if (MOCK_DRAWINGS[pid]) return MOCK_DRAWINGS[pid]; // Fallback to initial mock if matched
-    const seed = String(pid).charCodeAt(0) || 0;
-    const count = (seed % 3) + 2; 
-    const drawings = [];
-    for (let i = 1; i <= count; i++) {
-      drawings.push({
-        id: `D-${pid}-${i}`, number: `S-0${i}`,
-        title: ['Ground Floor Layout', 'Typical Details', 'Column Schedule', 'Roof Plan'][i % 4],
-        rev: ['P1', 'P2', 'T1', 'C1'][i % 4], date: `2026-05-${10 + i}`
-      });
+  // Sync selectedProj if projects change or search filters out the selected one
+  useEffect(() => {
+    if (projects.length > 0 && !selectedProj) {
+      setSelectedProj(projects[0].id);
     }
-    return drawings;
+  }, [projects]);
+
+  const filteredProjects = projects.filter(p => 
+    p.name.toLowerCase().includes(projectSearch.toLowerCase()) || 
+    p.code.toLowerCase().includes(projectSearch.toLowerCase())
+  );
+  
+  // Initialize drawings state with a merge of MOCK and Generated data to ensure consistency
+  const [drawings, setDrawings] = useState(() => {
+    const initial = { ...MOCK_DRAWINGS };
+    projects.forEach(p => {
+      if (!initial[p.id]) {
+        const seed = String(p.id).charCodeAt(0) || 0;
+        const count = (seed % 3) + 2;
+        const generated = [];
+        for (let i = 1; i <= count; i++) {
+          generated.push({
+            id: `D-${p.id}-${i}`, number: `S-0${i}`,
+            title: ['Ground Floor Layout', 'Typical Details', 'Column Schedule', 'Roof Plan'][i % 4],
+            rev: ['P1', 'P2', 'T1', 'C1'][i % 4], date: `2026-05-${10 + i}`
+          });
+        }
+        initial[p.id] = generated;
+      }
+    });
+    return initial;
+  });
+  
+  const getDrawings = (pid) => {
+    return drawings[pid] || [];
   };
 
   const getMarkups = (did) => {
@@ -84,9 +107,46 @@ export default function DrawingsManager() {
     return markups;
   };
 
-  const currentDrawings = getDrawings(selectedProj);
-  const [selectedDraw, setSelectedDraw] = useState(currentDrawings[0]?.id || null);
-  const currentMarkups = getMarkups(selectedDraw);
+  const [showAddDrawingModal, setShowAddDrawingModal] = useState(false);
+  const [formData, setFormData] = useState({ number: '', title: '', rev: 'P1', status: 'Draft', date: new Date().toISOString().split('T')[0] });
+
+  // Use memoization to ensure UI updates when drawings state changes
+  const currentDrawings = React.useMemo(() => {
+    if (!selectedProj) return [];
+    return drawings[selectedProj] || [];
+  }, [selectedProj, drawings]);
+
+  const [selectedDraw, setSelectedDraw] = useState(null);
+
+  // Sync selectedDraw if it becomes invalid or empty
+  React.useEffect(() => {
+    if (currentDrawings.length > 0) {
+      if (!selectedDraw || !currentDrawings.find(d => d.id === selectedDraw)) {
+        setSelectedDraw(currentDrawings[0].id);
+      }
+    } else {
+      setSelectedDraw(null);
+    }
+  }, [selectedProj, currentDrawings]);
+
+  const currentMarkups = React.useMemo(() => {
+    if (!selectedDraw) return [];
+    if (MOCK_MARKUPS[selectedDraw]) return MOCK_MARKUPS[selectedDraw];
+    
+    // Generator for other markups
+    const seed = String(selectedDraw).charCodeAt(selectedDraw.length - 1) || 0;
+    const count = (seed % 3) + 1; 
+    const markups = [];
+    for (let i = 1; i <= count; i++) {
+      markups.push({
+        id: `M-${selectedDraw}-${i}`,
+        author: ['Minh', 'Khoa', 'Tung', 'Lan'][i % 4],
+        text: ['Add 12mm rebar', 'Check concrete grade', 'Update title block logo', 'Verify grid dimensions'][i % 4],
+        status: i % 2 === 0 ? 'Done' : 'Pending', date: `2026-05-${15 + i}`
+      });
+    }
+    return markups;
+  }, [selectedDraw]);
 
   const containerRef = useRef(null);
   const [lines, setLines] = useState([]);
@@ -105,6 +165,7 @@ export default function DrawingsManager() {
       const pNode = projRefs.current[selectedProj];
       if (pNode) {
         const pRect = pNode.getBoundingClientRect();
+        // If project card is outside the scrolled container viewport, handle gracefully
         const startX = pRect.right - containerRect.left;
         const startY = pRect.top - containerRect.top + pRect.height / 2;
 
@@ -145,19 +206,84 @@ export default function DrawingsManager() {
   };
 
   useLayoutEffect(() => {
-    const timer = setTimeout(updateLines, 50); 
+    const timer = setTimeout(updateLines, 100); 
     window.addEventListener('resize', updateLines);
+    // Listen for scroll in columns
+    const columns = containerRef.current?.querySelectorAll('.overflow-auto');
+    columns?.forEach(col => col.addEventListener('scroll', updateLines));
+
     return () => {
       clearTimeout(timer);
       window.removeEventListener('resize', updateLines);
+      columns?.forEach(col => col.removeEventListener('scroll', updateLines));
     };
-  }, [selectedProj, selectedDraw]);
+  }, [selectedProj, selectedDraw, drawings, currentDrawings, currentMarkups]);
 
   // Handle selections
   const handleSelectProj = (pid) => {
     setSelectedProj(pid);
-    const newDrawings = getDrawings(pid);
-    setSelectedDraw(newDrawings[0]?.id || null);
+    // selection sync handled by useEffect
+  };
+
+  const [editingDrawing, setEditingDrawing] = useState(null);
+
+  const handleAddDrawing = () => {
+    if (!formData.title || !formData.number) {
+      alert("Please fill in both Title and Sheet Number.");
+      return;
+    }
+    
+    const newId = `D-NEW-${Date.now()}`;
+    const drawingObj = {
+      id: newId,
+      ...formData
+    };
+
+    setDrawings(prev => {
+      const updated = { ...prev };
+      updated[selectedProj] = [...(prev[selectedProj] || []), drawingObj];
+      return updated;
+    });
+
+    setSelectedDraw(newId);
+    setShowAddDrawingModal(false);
+    setFormData({ number: '', title: '', rev: 'P1', status: 'Draft', date: new Date().toISOString().split('T')[0] });
+  };
+
+  const handleDeleteDrawing = (id) => {
+    if (!window.confirm("Are you sure you want to delete this drawing?")) return;
+    
+    setDrawings(prev => {
+      const updated = { ...prev };
+      updated[selectedProj] = (prev[selectedProj] || []).filter(d => d.id !== id);
+      return updated;
+    });
+
+    if (selectedDraw === id) {
+      setSelectedDraw(null);
+    }
+  };
+
+  const handleEditDrawing = (draw) => {
+    setFormData({ ...draw });
+    setEditingDrawing(draw.id);
+    setShowAddDrawingModal(true);
+  };
+
+  const handleUpdateDrawing = () => {
+    if (!formData.title || !formData.number) return;
+
+    setDrawings(prev => {
+      const updated = { ...prev };
+      updated[selectedProj] = (prev[selectedProj] || []).map(d => 
+        d.id === editingDrawing ? { ...d, ...formData } : d
+      );
+      return updated;
+    });
+
+    setShowAddDrawingModal(false);
+    setEditingDrawing(null);
+    setFormData({ number: '', title: '', rev: 'P1', status: 'Draft', date: new Date().toISOString().split('T')[0] });
   };
 
   const drawCurve = (x1, y1, x2, y2) => {
@@ -183,9 +309,14 @@ export default function DrawingsManager() {
           </div>
         </div>
         
-        <button className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-600 transition-colors">
-          <Plus size={16} /> New Drawing
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowAddDrawingModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-600 transition-colors"
+          >
+            <Plus size={16} /> New Drawing
+          </button>
+        </div>
       </div>
 
       {/* Canvas */}
@@ -242,10 +373,25 @@ export default function DrawingsManager() {
         <div className="relative z-10 flex gap-20 items-start min-h-full pl-6 md:pl-12">
           
           {/* COLUMN 1: PROJECTS */}
-          <div className="flex flex-col gap-4 w-64 shrink-0">
+          <div className="flex flex-col gap-4 w-64 shrink-0 h-full">
             <h3 className={`text-xs font-black uppercase tracking-widest pl-2 mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>1. Projects</h3>
-            <div className="flex flex-col gap-3" style={{ paddingLeft: '30px' }}>
-              {projects.map(proj => {
+            
+            {/* Search Bar */}
+            <div className="px-2 mb-2">
+              <div className={`relative flex items-center rounded-xl border-2 transition-all ${isDark ? 'bg-slate-900 border-slate-800 focus-within:border-indigo-500' : 'bg-white border-slate-200 focus-within:border-indigo-500'}`}>
+                <Search size={14} className="absolute left-3 text-slate-500" />
+                <input 
+                  type="text"
+                  placeholder="Search projects..."
+                  value={projectSearch}
+                  onChange={(e) => setProjectSearch(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-2 bg-transparent outline-none text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto flex flex-col gap-3 pr-2 scrollbar-hide" style={{ paddingLeft: '30px', maxHeight: 'calc(100vh - 300px)' }}>
+              {filteredProjects.map(proj => {
                 const active = selectedProj === proj.id;
                 return (
                   <div key={proj.id} className="relative mb-2 mt-2">
@@ -285,10 +431,18 @@ export default function DrawingsManager() {
           </div>
 
           {/* COLUMN 2: DRAWINGS */}
-          <div className="flex flex-col gap-4 w-72 shrink-0">
+          <div className="flex flex-col gap-4 w-72 shrink-0 h-full overflow-auto scrollbar-hide" style={{ maxHeight: 'calc(100vh - 220px)' }}>
             <AnimatePresence mode="wait">
               <motion.div key={selectedProj} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex flex-col gap-4">
-                <h3 className={`text-xs font-black uppercase tracking-widest pl-2 mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>2. Blueprints</h3>
+                <div className="flex items-center justify-between pl-2 mb-2 pr-4">
+                  <h3 className={`text-xs font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>2. Blueprints</h3>
+                  <button 
+                    onClick={() => setShowAddDrawingModal(true)}
+                    className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${isDark ? 'bg-slate-800 text-indigo-400 hover:bg-slate-700' : 'bg-slate-200 text-indigo-600 hover:bg-slate-300'}`}
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
                 {currentDrawings.map(draw => {
                   const active = selectedDraw === draw.id;
                   return (
@@ -296,23 +450,36 @@ export default function DrawingsManager() {
                       key={draw.id} 
                       ref={el => drawRefs.current[draw.id] = el}
                       onClick={() => setSelectedDraw(draw.id)}
-                      className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${
+                      className={`rounded-2xl border-2 transition-all cursor-pointer relative group overflow-hidden ${
                         active 
                         ? (isDark ? 'border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/20' : 'border-indigo-500 bg-indigo-50 shadow-lg shadow-indigo-500/20')
                         : (isDark ? 'border-slate-800 bg-slate-800/50 hover:border-slate-700' : 'border-slate-200 bg-white hover:border-slate-300')
                       }`}
+                      style={{ padding: '24px 20px 24px 24px' }}
                     >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className={`p-2.5 rounded-lg shrink-0 ${active ? 'bg-indigo-500 text-white' : (isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500')}`}>
-                          <FileText size={18} />
-                        </div>
-                        <div className="flex flex-col items-end gap-1.5">
-                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-md ${isDark ? 'bg-slate-900 text-indigo-400' : 'bg-slate-100 text-indigo-600'}`}>{draw.number}</span>
-                          <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>REV {draw.rev}</span>
+                      {/* Action Buttons (Hover) */}
+                      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleEditDrawing(draw); }}
+                          className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-indigo-400' : 'bg-slate-200 hover:bg-slate-300 text-indigo-600'}`}
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteDrawing(draw.id); }}
+                          className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-700 hover:bg-red-900/50 text-red-400' : 'bg-red-100 hover:bg-red-200 text-red-600'}`}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <h4 className={`text-base font-black leading-tight pr-12 ${active ? 'text-indigo-500' : (isDark ? 'text-white' : 'text-slate-900')}`}>{draw.title}</h4>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-600'}`}>REV {draw.rev}</span>
+                          <span className={`text-[11px] font-bold tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{draw.date}</span>
                         </div>
                       </div>
-                      <h4 className={`text-sm font-bold mb-2.5 leading-tight pr-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{draw.title}</h4>
-                      <p className={`text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{draw.date}</p>
                     </div>
                   );
                 })}
@@ -326,7 +493,7 @@ export default function DrawingsManager() {
           </div>
 
           {/* COLUMN 3: MARKUPS */}
-          <div className="flex flex-col gap-4 w-80 shrink-0 pr-4">
+          <div className="flex flex-col gap-4 w-80 shrink-0 pr-4 h-full overflow-auto scrollbar-hide" style={{ maxHeight: 'calc(100vh - 220px)' }}>
             <AnimatePresence mode="wait">
               <motion.div key={selectedDraw} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex flex-col gap-4">
                 <h3 className={`text-xs font-black uppercase tracking-widest pl-2 mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>3. Active Markups</h3>
@@ -337,25 +504,27 @@ export default function DrawingsManager() {
                     <div 
                       key={mark.id} 
                       ref={el => markRefs.current[mark.id] = el}
-                      className={`p-5 rounded-2xl border transition-all ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-white border-slate-200'} shadow-sm`}
+                      className={`rounded-2xl border transition-all overflow-hidden ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-white border-slate-200'} shadow-sm`}
+                      style={{ padding: '24px 20px 20px 24px' }}
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0`} style={{ background: color }}>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0 shadow-sm`} style={{ background: color }}>
                             {mark.author.charAt(0)}
                           </div>
-                          <span className={`text-sm font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{mark.author}</span>
+                          <span className={`text-sm font-black ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{mark.author}</span>
                         </div>
-                        <span className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-md`} style={{ background: `${color}15`, color }}>
+                        <span className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full`} style={{ background: `${color}15`, color }}>
                           {isDone ? <CheckCircle2 size={12} /> : <Clock size={12} />}
                           {mark.status}
                         </span>
                       </div>
-                      <div className={`p-4 rounded-xl text-sm font-medium leading-relaxed ${isDark ? 'bg-slate-900/50 text-slate-300' : 'bg-slate-50 text-slate-700'}`}>
+                      <div className={`p-4 rounded-xl text-sm font-semibold leading-relaxed border-l-4`} 
+                           style={{ borderColor: color, backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : '#f8fafc', marginLeft: '4px' }}>
                         "{mark.text}"
                       </div>
-                      <div className={`text-[10px] font-bold mt-4 text-right uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        Logged: {mark.date}
+                      <div className={`text-[10px] font-black mt-4 text-right uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {mark.date}
                       </div>
                     </div>
                   );
@@ -378,6 +547,105 @@ export default function DrawingsManager() {
 
         </div>
       </div>
+
+      {/* Add/Edit Drawing Modal */}
+      <AnimatePresence>
+        {showAddDrawingModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => { setShowAddDrawingModal(false); setEditingDrawing(null); }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className={`relative w-full max-w-md rounded-3xl shadow-2xl overflow-hidden ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-white border border-slate-100'}`}
+              style={{ padding: '32px' }}
+            >
+              <h2 className={`text-2xl font-black mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                {editingDrawing ? 'Edit Drawing' : 'Add New Drawing'}
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Drawing Title</label>
+                  <input 
+                    type="text" 
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    placeholder="e.g. Ground Floor Plan" 
+                    className={`w-full rounded-xl border-2 outline-none transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`} 
+                    style={{ padding: '12px 20px' }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Sheet No.</label>
+                    <input 
+                      type="text" 
+                      value={formData.number}
+                      onChange={(e) => setFormData({...formData, number: e.target.value})}
+                      placeholder="S-01" 
+                      className={`w-full rounded-xl border-2 outline-none transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`} 
+                      style={{ padding: '12px 20px' }}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Revision</label>
+                    <input 
+                      type="text" 
+                      value={formData.rev}
+                      onChange={(e) => setFormData({...formData, rev: e.target.value})}
+                      placeholder="P1" 
+                      className={`w-full rounded-xl border-2 outline-none transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`} 
+                      style={{ padding: '12px 20px' }}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Status</label>
+                    <select 
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className={`w-full rounded-xl border-2 outline-none transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`}
+                      style={{ padding: '12px 20px' }}
+                    >
+                      <option>Draft</option>
+                      <option>Approved</option>
+                      <option>In Review</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Date</label>
+                    <input 
+                      type="date" 
+                      value={formData.date}
+                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+                      className={`w-full rounded-xl border-2 outline-none transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`} 
+                      style={{ padding: '12px 20px' }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8 flex gap-3">
+                <button 
+                  onClick={() => { setShowAddDrawingModal(false); setEditingDrawing(null); }} 
+                  className={`flex-1 py-3 rounded-xl font-bold transition-all ${isDark ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={editingDrawing ? handleUpdateDrawing : handleAddDrawing} 
+                  className="flex-1 py-3 rounded-xl bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-500/30 hover:bg-indigo-600 transition-all"
+                >
+                  {editingDrawing ? 'Save Changes' : 'Add Drawing'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
