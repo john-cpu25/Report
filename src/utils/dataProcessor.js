@@ -39,6 +39,15 @@ export const processTaskData = (tasksData, userMap = {}, teamMap = {}) => {
         createdBy: getSafeName(creatorId),
         userName: getSafeName(userId),
         ...metrics,
+        // Raw Date Objects for calculations
+        created_at: createdAt,
+        date_start: dateStart,
+        date_end: dateEnd,
+        date_accepted: dateAccepted,
+        date_started: dateStarted,
+        date_complete: dateComplete,
+        date_checked: dateChecked,
+        
         time1Str: formatDuration(metrics.t1),
         time2Str: formatDuration(metrics.t2),
         time3Str: formatDuration(metrics.t3),

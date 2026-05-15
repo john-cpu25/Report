@@ -1,5 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { formatDuration } from '../../utils/csvHelpers';
+
+const CALCULATION_LOGIC = {
+  T1: { label: 'TARGET DURATION', formula: 'date_start → date_end', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  T2: { label: 'ACTUAL COMPLETION', formula: 'date_start → date_complete', color: 'text-sky-500', bg: 'bg-sky-500/10' },
+  T3: { label: 'FULL CYCLE', formula: 'date_start → date_checked', color: 'text-violet-500', bg: 'bg-violet-500/10' },
+  T4: { label: 'PURE PROCESSING', formula: 'date_started → date_checked', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  T5: { label: 'SYSTEM LEAD TIME', formula: 'created_at → date_checked', color: 'text-rose-500', bg: 'bg-rose-500/10' }
+};
+
+const HeaderWithTooltip = ({ id, color, stickyOffset, row2Offset, isRow2, rowSpan }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const logic = CALCULATION_LOGIC[id];
+
+  return (
+    <th 
+      rowSpan={rowSpan}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`px-[10px] py-[${isRow2 ? '5' : '10'}px] ${color} text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)] group cursor-help`}
+      style={{ top: isRow2 ? row2Offset : stickyOffset }}
+    >
+      <div className="relative inline-block">
+        {id}
+        {isHovered && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50 pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="bg-[#1e293b] border border-white/10 rounded-lg p-3 shadow-2xl min-w-[180px] backdrop-blur-xl text-left">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className={`text-[11px] font-black ${logic.color}`}>{id}</span>
+                <span className="text-[9px] font-black text-white uppercase tracking-tight">{logic.label}</span>
+              </div>
+              <div className={`p-2 rounded ${logic.bg} border border-white/5`}>
+                <p className="text-[8px] font-mono text-slate-300 opacity-80 whitespace-nowrap">{logic.formula}</p>
+              </div>
+              {/* Arrow */}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-8 border-transparent border-t-[#1e293b]" />
+            </div>
+          </div>
+        )}
+      </div>
+    </th>
+  );
+};
 
 const UnifiedTable = (props) => {
   // Ultra-robust prop extraction with fallbacks
@@ -65,11 +107,11 @@ const UnifiedTable = (props) => {
               <th rowSpan={2} className="px-[10px] py-[10px] text-[var(--text-muted)] text-center border-r border-b border-[var(--border)] min-w-[80px] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }} onClick={() => handleSort('area')}>
                 area {renderSortIcon('area')}
               </th>
-              <th className="px-[10px] py-[10px] text-emerald-500 text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>T1</th>
-              <th className="px-[10px] py-[10px] text-indigo-500 text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>T2</th>
-              <th className="px-[10px] py-[10px] text-violet-500 text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>T3</th>
-              <th className="px-[10px] py-[10px] text-amber-500 text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>T4</th>
-              <th className="px-[10px] py-[10px] text-rose-500 text-center border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>T5</th>
+              <HeaderWithTooltip id="T1" color="text-emerald-500" stickyOffset={stickyOffset} rowSpan={2} />
+              <HeaderWithTooltip id="T2" color="text-indigo-500" stickyOffset={stickyOffset} rowSpan={2} />
+              <HeaderWithTooltip id="T3" color="text-violet-500" stickyOffset={stickyOffset} rowSpan={2} />
+              <HeaderWithTooltip id="T4" color="text-amber-500" stickyOffset={stickyOffset} rowSpan={2} />
+              <HeaderWithTooltip id="T5" color="text-rose-500" stickyOffset={stickyOffset} rowSpan={2} />
             </tr>
             <tr className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)]">
               <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('createdBy')}>create_by {renderSortIcon('createdBy')}</th>
@@ -81,11 +123,6 @@ const UnifiedTable = (props) => {
               <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[90px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStarted')}>date_started {renderSortIcon('dateStarted')}</th>
               <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[90px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateComplete')}>date_complete {renderSortIcon('dateComplete')}</th>
               <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] min-w-[90px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateChecked')}>date_checked {renderSortIcon('dateChecked')}</th>
-              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] text-center sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }}>T1</th>
-              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] text-center sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }}>T2</th>
-              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] text-center sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }}>T3</th>
-              <th className="px-[10px] py-[5px] border-r border-b border-[var(--border)] text-center sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }}>T4</th>
-              <th className="px-[10px] py-[5px] border-b border-[var(--border)] text-center sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }}>T5</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">

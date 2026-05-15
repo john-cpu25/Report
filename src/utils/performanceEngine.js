@@ -8,53 +8,55 @@ import { format, differenceInMinutes, isWeekend, addMinutes, startOfDay } from '
 
 // Shift Configuration
 const SHIFT = {
-  MORNING: { start: 9, end: 12.5 }, // 09:00 - 12:30
-  AFTERNOON: { start: 13.5, end: 18 }, // 13:30 - 18:00
-  TOTAL_DAILY_MINUTES: (12.5 - 9 + 18 - 13.5) * 60 // 480 minutes (8 hours)
+  MORNING: { start: 8.5, end: 12.5 }, // 08:30 - 12:30
+  AFTERNOON: { start: 13.5, end: 17.5 }, // 13:30 - 17:30
+  TOTAL_DAILY_MINUTES: (12.5 - 8.5 + 17.5 - 13.5) * 60 // 480 minutes (8 hours)
 };
 
 /**
  * Calculates working minutes between two dates, excluding weekends and non-working hours.
  */
 export const calculateWorkingMinutes = (start, end) => {
-  if (!start || !end || end <= start) return 0;
+  if (!start || !end) return 0;
   
   const dStart = new Date(start);
-  const dTarget = new Date(end);
+  const dEnd = new Date(end);
+  if (dEnd <= dStart) return 0;
   
-  // Safety check: Don't process more than 2 years of history to avoid browser freeze
-  const maxHistory = 365 * 2; 
-  const diffDays = Math.ceil((dTarget - dStart) / (1000 * 60 * 60 * 24));
-  if (diffDays > maxHistory) return 0;
+  // Safety check: Don't process more than 1 year to avoid performance issues
+  const diffDays = Math.ceil((dEnd - dStart) / (1000 * 60 * 60 * 24));
+  if (diffDays > 365) return 0;
 
   let totalMinutes = 0;
-  let current = dStart;
+  let current = new Date(dStart);
 
-  // Optimized loop: Process day by day instead of stepping through everything
-  while (current < dTarget) {
+  // Set time to the start of the range for the first iteration
+  while (current < dEnd) {
     if (!isWeekend(current)) {
       const day = startOfDay(current);
       
-      // Morning shift: 09:00 - 12:30 (210 mins)
-      const mStart = addMinutes(day, SHIFT.MORNING.start * 60);
-      const mEnd = addMinutes(day, SHIFT.MORNING.end * 60);
-      const overlapMStart = Math.max(current.getTime(), mStart.getTime());
-      const overlapMEnd = Math.min(dTarget.getTime(), mEnd.getTime());
-      if (overlapMEnd > overlapMStart) totalMinutes += (overlapMEnd - overlapMStart) / 60000;
+      // Define shifts for the current day
+      const shifts = [
+        { s: addMinutes(day, 8.5 * 60), e: addMinutes(day, 12.5 * 60) }, // 08:30 - 12:30
+        { s: addMinutes(day, 13.5 * 60), e: addMinutes(day, 17.5 * 60) } // 13:30 - 17:30
+      ];
 
-      // Afternoon shift: 13:30 - 18:00 (270 mins)
-      const aStart = addMinutes(day, SHIFT.AFTERNOON.start * 60);
-      const aEnd = addMinutes(day, SHIFT.AFTERNOON.end * 60);
-      const overlapAStart = Math.max(current.getTime(), aStart.getTime());
-      const overlapAEnd = Math.min(dTarget.getTime(), aEnd.getTime());
-      if (overlapAEnd > overlapAStart) totalMinutes += (overlapAEnd - overlapAStart) / 60000;
+      for (const shift of shifts) {
+        const overlapStart = Math.max(current.getTime(), shift.s.getTime());
+        const overlapEnd = Math.min(dEnd.getTime(), shift.e.getTime());
+        
+        if (overlapEnd > overlapStart) {
+          totalMinutes += (overlapEnd - overlapStart) / 60000;
+        }
+      }
     }
     
-    // Jump to the start of the next working day (09:00)
-    current = addMinutes(startOfDay(current), 24 * 60 + SHIFT.MORNING.start * 60);
+    // Advance to the beginning of the next day (00:00) to ensure we don't skip days
+    // but start at the very beginning of the next potential working period
+    current = startOfDay(new Date(current.getTime() + 24 * 60 * 60 * 1000));
   }
 
-  return Math.floor(totalMinutes);
+  return Math.round(totalMinutes);
 };
 
 /**
@@ -99,6 +101,48 @@ export const formatMinutes = (minutes) => {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h}h ${m}m`;
+};
+
+/**
+ * Returns a breakdown of working minutes per day between two dates.
+ * Useful for distributing task metrics across a timesheet.
+ */
+export const calculateDailyWorkingMinutes = (start, end) => {
+  const breakdown = {};
+  if (!start || !end) return breakdown;
+  
+  const dStart = new Date(start);
+  const dEnd = new Date(end);
+  if (dEnd <= dStart) return breakdown;
+
+  let current = new Date(dStart);
+  while (current < dEnd) {
+    if (!isWeekend(current)) {
+      const day = startOfDay(current);
+      const dateKey = format(day, 'yyyy-MM-dd');
+      let dayMinutes = 0;
+
+      const shifts = [
+        { s: addMinutes(day, 8.5 * 60), e: addMinutes(day, 12.5 * 60) },
+        { s: addMinutes(day, 13.5 * 60), e: addMinutes(day, 17.5 * 60) }
+      ];
+
+      for (const shift of shifts) {
+        const overlapStart = Math.max(current.getTime(), shift.s.getTime());
+        const overlapEnd = Math.min(dEnd.getTime(), shift.e.getTime());
+        if (overlapEnd > overlapStart) {
+          dayMinutes += (overlapEnd - overlapStart) / 60000;
+        }
+      }
+      
+      if (dayMinutes > 0) {
+        breakdown[dateKey] = (breakdown[dateKey] || 0) + dayMinutes;
+      }
+    }
+    current = startOfDay(new Date(current.getTime() + 24 * 60 * 60 * 1000));
+  }
+
+  return breakdown;
 };
 
 /**

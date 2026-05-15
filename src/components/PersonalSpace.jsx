@@ -19,6 +19,11 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { 
+  calculateTaskMetrics, 
+  formatMinutes, 
+  calculateDailyWorkingMinutes 
+} from '../utils/performanceEngine';
 
 ChartJS.register(
   CategoryScale,
@@ -42,15 +47,16 @@ const PersonalSpace = () => {
   } = useApp();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'weekly' | 'project' | 'gantt' | 'team'
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'daily' | 'project' | 'team' | 'gantt' | 'deep-analysis'
   const [expandedWeeks, setExpandedWeeks] = useState({});
   const [expandedProjects, setExpandedProjects] = useState({});
   const [expandedTeams, setExpandedTeams] = useState({});
   const [weekOffset, setWeekOffset] = useState(0);
   const [localMaps, setLocalMaps] = useState({ userMap: {}, teamMap: {} });
+  const [selectedTimeMetric, setSelectedTimeMetric] = useState('t4'); // Default to T4 (Processing Time)
   
   // Optimization: Date Filtering
-  const [timeRange, setTimeRange] = useState('month'); // 'week' | 'month' | 'year' | 'all'
+  const [timeRange, setTimeRange] = useState('month'); // 'week' | 'month' | 'custom'
   
   // Local Filter States
   const [localFilters, setLocalFilters] = useState({
@@ -97,35 +103,65 @@ const PersonalSpace = () => {
     loadData();
   }, [user]);
 
+  // Ensure daily view only uses weekly range
+  useEffect(() => {
+    if (viewMode === 'daily' && timeRange !== 'week') {
+      setTimeRange('week');
+    }
+  }, [viewMode]);
+
   // Dynamic Options for Filters
   const filterOptions = useMemo(() => {
+    // We use all tasks to populate the base options
     const data = analystTasks || [];
     const projects = [...new Set(data.map(t => t.project))].sort();
     const users = [...new Set(data.map(t => t.userName))].sort();
-    const teams = [...new Set(data.map(t => t.team))].sort();
+    const teams = [...new Set(data.map(t => t.team))].sort().filter(Boolean);
     return { projects, users, teams };
   }, [analystTasks]);
 
   const filteredData = useMemo(() => {
+    const tasks = analystTasks || [];
+    if (tasks.length === 0) return [];
+    
     const now = new Date();
-    const filtered = (analystTasks || []).filter(t => {
-      // Date Range Filter (Local)
-      if (timeRange !== 'all' && t.dateObj) {
-        const diffDays = Math.abs((now - t.dateObj) / (1000 * 60 * 60 * 24));
-        if (timeRange === 'week' && diffDays > 7) return false;
-        if (timeRange === 'month' && diffDays > 30) return false;
+    const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
+    const endOfCurrentWeek = endOfWeek(now, { weekStartsOn: 1 });
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const filtered = tasks.filter(t => {
+      // 1. Date Range Filter
+      if (t.dateObj) {
+        if (timeRange === 'week') {
+          if (!isWithinInterval(t.dateObj, { start: startOfCurrentWeek, end: endOfCurrentWeek })) return false;
+        } else if (timeRange === 'month') {
+          if (!isWithinInterval(t.dateObj, { start: startOfCurrentMonth, end: endOfCurrentMonth })) return false;
+        } else if (timeRange === 'custom') {
+          // Custom shows historical data
+          if (t.dateObj >= startOfCurrentMonth) return false;
+        }
       }
 
+      // 2. Team Filter
       const matchTeam = !localFilters.team || t.team === localFilters.team;
+      
+      // 3. User Filter
       const matchUser = !localFilters.user || t.userName === localFilters.user;
+      
+      // 4. Project Filter
       const matchProject = !localFilters.project || t.project === localFilters.project;
+      
+      // 5. Search Filter (Search Task, Project, or Member)
       const matchSearch = !localFilters.search || 
         t.taskName?.toLowerCase().includes(localFilters.search.toLowerCase()) ||
-        t.project?.toLowerCase().includes(localFilters.search.toLowerCase());
+        t.project?.toLowerCase().includes(localFilters.search.toLowerCase()) ||
+        t.userName?.toLowerCase().includes(localFilters.search.toLowerCase());
+      
       return matchTeam && matchUser && matchProject && matchSearch;
     });
 
-    // Apply local sort
+    // 6. Apply local sort
     const sorted = [...filtered];
     switch (localSort) {
       case 'date-desc': sorted.sort((a, b) => (b.dateObj || 0) - (a.dateObj || 0)); break;
@@ -202,53 +238,117 @@ const PersonalSpace = () => {
 
   // Timesheet View Data (Mo-Fr pivot table)
   const timesheetData = useMemo(() => {
+    const dataToProcess = filteredData;
+    if (!dataToProcess || dataToProcess.length === 0) {
+      const today = new Date();
+      const currentMonday = startOfWeek(today, { weekStartsOn: 1 });
+      const targetMonday = addDays(currentMonday, weekOffset * 7);
+      const weekDates = [0, 1, 2, 3, 4].map(i => addDays(targetMonday, i));
+      const weekNum = getISOWeek(targetMonday);
+      return { weekNumber: weekNum, monday: targetMonday, weekDates, teams: [], totalPerDay: [0,0,0,0,0], tasksPerDay: [0,0,0,0,0], grandTotalHours: 0, grandTotalTasks: 0 };
+    }
+
     const today = new Date();
     const currentMonday = startOfWeek(today, { weekStartsOn: 1 });
     const targetMonday = addDays(currentMonday, weekOffset * 7);
     const weekDates = [0, 1, 2, 3, 4].map(i => addDays(targetMonday, i));
     const weekNum = getISOWeek(targetMonday);
 
-    // Filter tasks that fall within this week's Mon-Fri
+    // Filter tasks that have ANY overlap with this week's Mon-Fri
     const weekTasks = filteredData.filter(t => {
-      if (!t.dateObj) return false;
-      return weekDates.some(wd => isSameDay(t.dateObj, wd));
+      // Determine range based on metric
+      let rangeStart = t.date_start;
+      let rangeEnd = t.date_end;
+      if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
+      if (selectedTimeMetric === 't3') rangeEnd = t.date_checked;
+      if (selectedTimeMetric === 't4') { rangeStart = t.date_started; rangeEnd = t.date_checked; }
+      if (selectedTimeMetric === 't5') { rangeStart = t.created_at; rangeEnd = t.date_checked; }
+
+      if (!rangeStart || !rangeEnd) return false;
+      
+      // Check if any part of the task falls within the week's boundaries
+      const weekStart = weekDates[0];
+      const weekEnd = addDays(weekDates[4], 1); // Saturday 00:00
+      
+      return (new Date(rangeStart) < weekEnd && new Date(rangeEnd) > weekStart);
     });
 
-    // Group by team → user → day, summing hours (t4 = pure processing minutes)
+    // Group by team → user → day, distributing hours across the week
     const teamMap = {};
     weekTasks.forEach(t => {
       const team = t.team || 'Unknown';
       const user = t.userName || 'Unknown';
-      const dayIndex = weekDates.findIndex(wd => isSameDay(t.dateObj, wd));
-      if (dayIndex === -1) return;
+      const project = t.project || 'Unassigned';
+      
+      // Determine the range for splitting based on selected metric
+      let rangeStart = t.date_start;
+      let rangeEnd = t.date_end;
+
+      if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
+      if (selectedTimeMetric === 't3') rangeEnd = t.date_checked;
+      if (selectedTimeMetric === 't4') { rangeStart = t.date_started; rangeEnd = t.date_checked; }
+      if (selectedTimeMetric === 't5') { rangeStart = t.created_at; rangeEnd = t.date_checked; }
+
+      // Get breakdown of minutes per day
+      const breakdown = calculateDailyWorkingMinutes(rangeStart, rangeEnd);
+      
       if (!teamMap[team]) teamMap[team] = {};
-      if (!teamMap[team][user]) teamMap[team][user] = { hours: [0, 0, 0, 0, 0], tasks: [0, 0, 0, 0, 0] };
-      teamMap[team][user].hours[dayIndex] += ((t.t4 || 0) / 60);
-      teamMap[team][user].tasks[dayIndex] += 1;
+      if (!teamMap[team][user]) teamMap[team][user] = {};
+      if (!teamMap[team][user][project]) {
+        teamMap[team][user][project] = { hours: [0, 0, 0, 0, 0], tasks: [0, 0, 0, 0, 0] };
+      }
+
+      // Add to each day that overlaps with our weekDates
+      Object.entries(breakdown).forEach(([dateStr, mins]) => {
+        const d = new Date(dateStr);
+        const dayIndex = weekDates.findIndex(wd => isSameDay(d, wd));
+        if (dayIndex !== -1) {
+          teamMap[team][user][project].hours[dayIndex] += (mins / 60);
+        }
+      });
+      
+      // Still count the task itself on the primary date for the "Tasks" count
+      const primaryDate = t.dateObj || new Date(rangeStart);
+      const primaryIdx = weekDates.findIndex(wd => isSameDay(primaryDate, wd));
+      if (primaryIdx !== -1) {
+        teamMap[team][user][project].tasks[primaryIdx] += 1;
+      }
     });
 
-    // Convert to structured array
+    // Convert to structured array: Team -> User -> Project
     const teams = Object.entries(teamMap)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([teamName, members]) => ({
-        name: teamName,
-        members: Object.entries(members)
+      .map(([teamName, users]) => {
+        const teamUsers = Object.entries(users)
           .sort(([a], [b]) => a.localeCompare(b))
-          .map(([userName, data]) => ({
+          .map(([userName, projects]) => ({
             name: userName,
-            hours: data.hours,
-            tasks: data.tasks,
-            totalHours: data.hours.reduce((a, b) => a + b, 0),
-            totalTasks: data.tasks.reduce((a, b) => a + b, 0)
-          }))
-      }));
+            projects: Object.entries(projects)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([projectName, data]) => ({
+                name: projectName,
+                hours: data.hours,
+                tasks: data.tasks,
+                totalHours: data.hours.reduce((a, b) => a + b, 0),
+                totalTasks: data.tasks.reduce((a, b) => a + b, 0)
+              }))
+          }));
+        
+        return {
+          name: teamName,
+          users: teamUsers,
+          totalRows: teamUsers.reduce((acc, u) => acc + u.projects.length, 0)
+        };
+      });
 
     const totalPerDay = [0, 0, 0, 0, 0];
     const tasksPerDay = [0, 0, 0, 0, 0];
     teams.forEach(team => {
-      team.members.forEach(member => {
-        member.hours.forEach((val, i) => { totalPerDay[i] += val; });
-        member.tasks.forEach((val, i) => { tasksPerDay[i] += val; });
+      team.users.forEach(user => {
+        user.projects.forEach(project => {
+          project.hours.forEach((val, i) => { totalPerDay[i] += val; });
+          project.tasks.forEach((val, i) => { tasksPerDay[i] += val; });
+        });
       });
     });
 
@@ -262,7 +362,7 @@ const PersonalSpace = () => {
       grandTotalHours: totalPerDay.reduce((a, b) => a + b, 0),
       grandTotalTasks: tasksPerDay.reduce((a, b) => a + b, 0)
     };
-  }, [filteredData, weekOffset]);
+  }, [filteredData, weekOffset, selectedTimeMetric]);
 
   const toggleWeek = (key) => {
     setExpandedWeeks(prev => ({ ...prev, [key]: !prev[key] }));
@@ -317,63 +417,106 @@ const PersonalSpace = () => {
           </div>
         </div>
 
-        {/* Windows 11 Fluent Toolbar */}
+        {/* Windows 11 Fluent Toolbar - REDESIGNED */}
         <div className="mt-[12px] flex items-center gap-[12px] overflow-x-auto custom-scrollbar py-[4px]">
-          {/* Time Range Buttons */}
-          <div className="flex items-center gap-[8px] shrink-0">
+          
+          {/* Orange Group: View Modes (List, Weekly, Daily) */}
+          <div className="flex items-center gap-[6px] p-[4px] rounded-xl bg-orange-500/5 border border-orange-500/20 shadow-sm shrink-0">
             {[
-              { id: 'week', label: 'Week', icon: <Calendar size={16} /> },
-              { id: 'month', label: 'Month', icon: <Calendar size={16} /> },
-              { id: 'all', label: 'All Data', icon: <Target size={16} /> }
-            ].map(r => (
-              <button
-                key={r.id}
-                onClick={() => setTimeRange(r.id)}
-                className={`flex items-center gap-2 h-[40px] min-w-[90px] px-5 rounded-xl text-[13px] font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50 border ${
-                  timeRange === r.id
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25 border-blue-600'
-                    : 'bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-card)] hover:text-[var(--text-main)] hover:border-blue-400/40 hover:shadow-md'
-                }`}
-              >
-                {r.icon} {r.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Sync Button */}
-          <button
-            onClick={() => loadData(true)}
-            className="flex items-center gap-2 h-[40px] min-w-[90px] px-5 rounded-xl text-[13px] font-semibold bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-card)] hover:text-[var(--text-main)] hover:border-blue-400/40 hover:shadow-md transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 shrink-0"
-            title="Force Sync with Supabase"
-          >
-            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} /> Sync
-          </button>
-
-          {/* Divider */}
-          <div className="w-px h-[28px] bg-[var(--border)] shrink-0" />
-
-          {/* View Mode Buttons */}
-          <div className="flex items-center gap-[8px] shrink-0">
-            {[
-              { id: 'list', label: 'List', icon: <List size={16} /> },
-              { id: 'project', label: 'Project', icon: <LayoutGrid size={16} /> },
-              { id: 'team', label: 'Team', icon: <Users size={16} /> },
-              { id: 'gantt', label: 'Gantt', icon: <BarChart2 size={16} /> },
-              { id: 'weekly', label: 'Weekly', icon: <Calendar size={16} /> },
-              { id: 'daily', label: 'Daily', icon: <CalendarDays size={16} /> }
+              { id: 'list', label: 'List', icon: <List size={14} /> },
+              { id: 'daily', label: 'Daily', icon: <CalendarDays size={14} /> }
             ].map(v => (
               <button
                 key={v.id}
                 onClick={() => setViewMode(v.id)}
-                className={`flex items-center gap-2 h-[40px] min-w-[90px] px-5 rounded-xl text-[13px] font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50 border ${
+                className={`flex items-center gap-2 h-[32px] px-3 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
                   viewMode === v.id
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25 border-blue-600'
-                    : 'bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-card)] hover:text-[var(--text-main)] hover:border-blue-400/40 hover:shadow-md'
+                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25'
+                    : 'text-orange-500/70 hover:bg-orange-500/10 hover:text-orange-500'
                 }`}
               >
                 {v.icon} {v.label}
               </button>
             ))}
+          </div>
+
+          {/* Green Group: Entity Modes (Project, Team) */}
+          <div className="flex items-center gap-[6px] p-[4px] rounded-xl bg-emerald-500/5 border border-emerald-500/20 shadow-sm shrink-0">
+            {[
+              { id: 'project', label: 'Project', icon: <LayoutGrid size={14} /> },
+              { id: 'team', label: 'Team', icon: <Users size={14} /> }
+            ].map(v => (
+              <button
+                key={v.id}
+                onClick={() => setViewMode(v.id)}
+                className={`flex items-center gap-2 h-[32px] px-3 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
+                  viewMode === v.id
+                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
+                    : 'text-emerald-500/70 hover:bg-emerald-500/10 hover:text-emerald-500'
+                }`}
+              >
+                {v.icon} {v.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Dark Blue Group: Analysis Modes (Gantt, Deep Analysis) */}
+          <div className="flex items-center gap-[6px] p-[4px] rounded-xl bg-indigo-500/5 border border-indigo-500/20 shadow-sm shrink-0">
+            {[
+              { id: 'gantt', label: 'Gantt', icon: <BarChart2 size={14} /> },
+              { id: 'deep-analysis', label: 'Deep Analysis', icon: <Target size={14} /> }
+            ].map(v => (
+              <button
+                key={v.id}
+                onClick={() => setViewMode(v.id)}
+                className={`flex items-center gap-2 h-[32px] px-3 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
+                  viewMode === v.id
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
+                    : 'text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300'
+                }`}
+              >
+                {v.icon} {v.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1" /> {/* Spacer */}
+
+            {/* Lime Group: Time Filters (Week, Month, Custom) */}
+            <div className="flex items-center gap-[6px] p-[4px] rounded-xl bg-lime-500/5 border border-lime-500/20 shadow-sm shrink-0">
+              {[
+                { id: 'week', label: 'Week', icon: <Calendar size={14} /> },
+                { id: 'month', label: 'Month', icon: <CalendarDays size={14} /> },
+                { id: 'custom', label: 'Custom', icon: <TrendingUp size={14} /> }
+              ].map(r => {
+                const isDisabled = viewMode === 'daily' && r.id !== 'week';
+                return (
+                  <button
+                    key={r.id}
+                    disabled={isDisabled}
+                    onClick={() => setTimeRange(r.id)}
+                    className={`flex items-center gap-2 h-[32px] px-3 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
+                      isDisabled ? 'opacity-20 grayscale cursor-not-allowed' :
+                      timeRange === r.id
+                        ? 'bg-lime-600 text-white shadow-lg shadow-lime-600/25'
+                        : 'text-lime-500/70 hover:bg-lime-500/10 hover:text-lime-400'
+                    }`}
+                  >
+                    {r.icon} {r.label}
+                  </button>
+                );
+              })}
+            </div>
+
+          {/* Purple Group: Sync */}
+          <div className="flex items-center gap-[6px] p-[4px] rounded-xl bg-violet-500/5 border border-violet-500/20 shadow-sm shrink-0">
+            <button
+              onClick={() => loadData(true)}
+              className={`flex items-center gap-2 h-[32px] px-3 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 text-violet-400 hover:bg-violet-500/10 hover:text-violet-300`}
+              title="Force Sync with Supabase"
+            >
+              <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> Sync
+            </button>
           </div>
         </div>
       </div>
@@ -627,49 +770,6 @@ const PersonalSpace = () => {
         </div>
       )}
 
-      {viewMode === 'weekly' && (
-        <div className="space-y-[10px]">
-          {weeklyData.map(week => (
-            <div key={week.key} className="ocd-card p-0 overflow-hidden border-indigo-500/20">
-              <div 
-                onClick={() => toggleWeek(week.key)}
-                className="flex items-center justify-between p-[15px] bg-white/5 cursor-pointer hover:bg-white/10 transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  {expandedWeeks[week.key] ? <ChevronDown size={18} className="text-indigo-500" /> : <ChevronRight size={18} className="text-[var(--text-muted)]" />}
-                  <div>
-                    <h3 className="text-[12px] font-black text-[var(--text-contrast)] uppercase tracking-widest">{week.label}</h3>
-                    <div className="flex gap-4 mt-1">
-                      <span className="text-[9px] font-bold text-slate-500 uppercase">Tasks: {week.count}</span>
-                      <span className="text-[9px] font-bold text-emerald-500 uppercase">Completed: {week.completed}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] font-black text-indigo-500 uppercase">Week Efficiency</div>
-                  <div className="text-lg font-black text-[var(--text-contrast)] tracking-tighter">
-                    {week.tasks.length > 0 ? (week.tasks.reduce((acc, t) => acc + (t.score || 0), 0) / week.tasks.length).toFixed(1) : 0}%
-                  </div>
-                </div>
-              </div>
-              
-              {expandedWeeks[week.key] && (
-                <div className="border-t border-[var(--border)] overflow-x-auto custom-scrollbar">
-                  <UnifiedTable 
-                    data={week.tasks}
-                    columnFilters={columnFilters}
-                    setColumnFilters={setColumnFilters}
-                    sortConfig={sortConfig}
-                    handleSort={handleSort}
-                    columnOptions={filterOptions}
-                    stickyOffset="215px"
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
 
       {viewMode === 'daily' && (
         <div className="ocd-card p-0 overflow-hidden shadow-2xl shadow-black/20">
@@ -683,6 +783,49 @@ const PersonalSpace = () => {
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase">Tasks:</span>
                 <span className="text-[14px] font-black text-indigo-400">{timesheetData.grandTotalTasks}</span>
+              </div>
+
+              {/* Time Metric Selector */}
+              <div className="flex items-center gap-1 ml-4 p-1 rounded-lg bg-white/5 border border-white/10">
+                {[
+                  { id: 't1', color: 'emerald' },
+                  { id: 't2', color: 'sky' },
+                  { id: 't3', color: 'indigo' },
+                  { id: 't4', color: 'orange' },
+                  { id: 't5', color: 'rose' }
+                ].map((m, idx) => {
+                  const isActive = selectedTimeMetric === m.id;
+                  const colorClass = 
+                    m.color === 'emerald' ? (isActive ? 'bg-emerald-500 text-white' : 'text-emerald-500 hover:bg-emerald-500/10') :
+                    m.color === 'sky' ? (isActive ? 'bg-sky-500 text-white' : 'text-sky-500 hover:bg-sky-500/10') :
+                    m.color === 'indigo' ? (isActive ? 'bg-indigo-500 text-white' : 'text-indigo-500 hover:bg-indigo-500/10') :
+                    m.color === 'orange' ? (isActive ? 'bg-orange-500 text-white' : 'text-orange-500 hover:bg-orange-500/10') :
+                    (isActive ? 'bg-rose-500 text-white' : 'text-rose-500 hover:bg-rose-500/10');
+
+                  return (
+                    <div key={m.id} className="relative group/time">
+                      {/* Formula Badge (Strictly aligned with time_logic.md) */}
+                      <div className="absolute -top-[30px] left-1/2 -translate-x-1/2 px-2 py-1 bg-[#1e293b] border border-emerald-500/30 rounded shadow-xl opacity-0 group-hover/time:opacity-100 transition-all pointer-events-none whitespace-nowrap z-50">
+                        <span className="text-[9px] font-black text-emerald-400 tracking-tighter uppercase">
+                          {m.id === 't1' ? 'DATE_START → DATE_END' :
+                           m.id === 't2' ? 'DATE_START → DATE_COMPLETE' :
+                           m.id === 't3' ? 'DATE_START → DATE_CHECKED' :
+                           m.id === 't4' ? 'DATE_STARTED → DATE_CHECKED' :
+                           'CREATED_AT → DATE_CHECKED'}
+                        </span>
+                        {/* Tooltip Arrow */}
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1e293b] border-r border-b border-emerald-500/30 rotate-45" />
+                      </div>
+
+                      <button
+                        onClick={() => setSelectedTimeMetric(m.id)}
+                        className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded transition-all ${colorClass}`}
+                      >
+                        Time {idx + 1}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -718,7 +861,8 @@ const PersonalSpace = () => {
               <thead>
                 <tr className="bg-[var(--bg-card)]">
                   <th className="sticky z-20 text-left px-[16px] py-[12px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-r border-[var(--border)] w-[120px] bg-[var(--bg-card)]" style={{ top: '0px' }}>Team</th>
-                  <th className="sticky z-20 text-left px-[16px] py-[12px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-r border-[var(--border)] w-[160px] bg-[var(--bg-card)]" style={{ top: '0px' }}>Member</th>
+                  <th className="sticky z-20 text-left px-[16px] py-[12px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-r border-[var(--border)] w-[120px] bg-[var(--bg-card)]" style={{ top: '0px' }}>Member</th>
+                  <th className="sticky z-20 text-left px-[16px] py-[12px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-r border-[var(--border)] w-[160px] bg-[var(--bg-card)]" style={{ top: '0px' }}>Project</th>
                   {timesheetData.weekDates.map((date, i) => {
                     const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
                     const dayColors = ['text-blue-400', 'text-violet-400', 'text-amber-400', 'text-emerald-400', 'text-rose-400'];
@@ -742,48 +886,68 @@ const PersonalSpace = () => {
                     </td>
                   </tr>
                 )}
-                {timesheetData.teams.map(team => (
-                  team.members.map((member, mi) => (
-                    <tr key={`${team.name}-${member.name}`} className="hover:bg-white/[0.02] transition-colors border-b border-white/[0.03]">
-                      {mi === 0 && (
-                        <td
-                          rowSpan={team.members.length}
-                          className="px-[16px] py-[10px] text-[12px] font-black text-indigo-400 uppercase tracking-tight border-r border-[var(--border)] align-top bg-white/[0.02]"
+                {timesheetData.teams.map((team, ti) => (
+                  <React.Fragment key={ti}>
+                    {team.users.map((user, ui) => {
+                      const isEvenUser = ui % 2 === 0;
+                      const rowBg = isEvenUser ? 'bg-[var(--bg-surface)]/30' : 'bg-transparent';
+                      
+                      return user.projects.map((project, pi) => (
+                        <tr 
+                          key={`${ti}-${ui}-${pi}`} 
+                          className={`hover:bg-indigo-500/10 transition-colors border-b border-[var(--border)] ${rowBg}`}
                         >
-                          {team.name}
-                        </td>
-                      )}
-                      <td className="px-[16px] py-[10px] text-[12px] font-semibold text-[var(--text-main)] border-r border-[var(--border)]">
-                        {member.name}
-                      </td>
-                      {member.hours.map((hours, di) => {
-                        const isToday = isSameDay(timesheetData.weekDates[di], new Date());
-                        const cellColor = hours === 0 ? 'text-[var(--text-muted)] opacity-30'
-                          : hours < 4 ? 'text-rose-400 font-black'
-                          : hours < 7 ? 'text-amber-400 font-black'
-                          : hours < 9 ? 'text-emerald-400 font-black'
-                          : 'text-blue-400 font-black';
-                        return (
+                        {/* Team Column */}
+                        {ui === 0 && pi === 0 && (
                           <td
-                            key={di}
-                            className={`text-center px-[10px] py-[10px] text-[13px] border-r border-[var(--border)] ${isToday ? 'bg-indigo-500/5' : ''} ${cellColor}`}
-                            title={`${member.tasks[di]} task(s)`}
+                            rowSpan={team.totalRows}
+                            className="px-[20px] py-[15px] text-[12px] font-black text-indigo-500 uppercase tracking-tight border-r border-[var(--border)] align-top bg-indigo-500/[0.05] min-w-[140px]"
                           >
-                            {hours > 0 ? hours.toFixed(2) : ''}
+                            {team.name}
                           </td>
-                        );
-                      })}
-                      <td className="text-center px-[10px] py-[10px] text-[13px] font-black text-[var(--text-contrast)]">
-                        {member.totalHours > 0 ? member.totalHours.toFixed(2) : ''}
-                      </td>
-                    </tr>
-                  ))
+                        )}
+                        {/* Member Column */}
+                        {pi === 0 && (
+                          <td
+                            rowSpan={user.projects.length}
+                            className="px-[20px] py-[15px] text-[12px] font-black text-sky-500 uppercase tracking-tight border-r border-[var(--border)] align-top bg-[var(--bg-surface)]/10 min-w-[140px]"
+                          >
+                            {user.name}
+                          </td>
+                        )}
+                        {/* Project Column */}
+                        <td className="px-[20px] py-[15px] text-[11px] font-bold text-emerald-500 border-r border-[var(--border)] uppercase italic min-w-[180px]">
+                          {project.name}
+                        </td>
+                        {project.hours.map((hours, di) => {
+                          const isToday = isSameDay(timesheetData.weekDates[di], new Date());
+                          const cellColor = hours === 0 ? 'text-[var(--text-muted)] opacity-30'
+                            : hours < 4 ? 'text-rose-400 font-black'
+                            : hours < 7 ? 'text-amber-400 font-black'
+                            : hours < 9 ? 'text-emerald-400 font-black'
+                            : 'text-blue-400 font-black';
+                          return (
+                            <td
+                              key={di}
+                              className={`text-center px-[12px] py-[15px] text-[13px] border-r border-[var(--border)] ${isToday ? 'bg-indigo-500/5' : ''} ${cellColor}`}
+                            >
+                              {hours > 0 ? hours.toFixed(2) : ''}
+                            </td>
+                          );
+                        })}
+                        <td className="text-center px-[12px] py-[15px] text-[13px] font-black text-[var(--text-contrast)]">
+                          {project.totalHours > 0 ? project.totalHours.toFixed(2) : ''}
+                        </td>
+                      </tr>
+                      ))
+                    })}
+                  </React.Fragment>
                 ))}
               </tbody>
               {timesheetData.teams.length > 0 && (
                 <tfoot>
                   <tr className="bg-white/[0.05] border-t-2 border-[var(--border)]">
-                    <td colSpan={2} className="px-[16px] py-[12px] text-[11px] font-black text-[var(--text-muted)] uppercase tracking-widest border-r border-[var(--border)]">Total</td>
+                    <td colSpan={3} className="px-[16px] py-[12px] text-[11px] font-black text-[var(--text-muted)] uppercase tracking-widest border-r border-[var(--border)]">Total</td>
                     {timesheetData.totalPerDay.map((total, i) => {
                       const isToday = isSameDay(timesheetData.weekDates[i], new Date());
                       return (

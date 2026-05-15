@@ -17,8 +17,8 @@ Tài liệu này quy định cách tính toán các chỉ số thời gian (KPI)
 Tất cả các chỉ số trên đều được tính dựa trên **Giờ làm việc thực tế (Working Minutes)**, loại trừ:
 - **Cuối tuần**: Thứ 7 và Chủ nhật.
 - **Ngoài giờ làm việc**:
-    - Sáng: 09:00 - 12:30
-    - Chiều: 13:30 - 18:00
+    - Sáng: 08:30 - 12:30
+    - Chiều: 13:30 - 17:30
     - Nghỉ trưa: 12:30 - 13:30 (không tính)
 - **Tổng giờ làm việc 1 ngày**: 8 giờ (480 phút).
 

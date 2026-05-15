@@ -43,7 +43,7 @@ body.theme-news {
   --text-main: #0F172A;
   --text-muted: #475569;
   --text-dim: #94A3B8;
-  --border: rgba(0, 0, 0, 0.08);
+  --border: rgba(0, 0, 0, 0.12);
   --glass-bg: rgba(255, 255, 255, 0.9);
   --glass-border: rgba(0, 0, 0, 0.05);
 }
