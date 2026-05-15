@@ -23,52 +23,85 @@ export const fetchTasks = async (options = {}) => {
   return data || [];
 };
 
-export const fetchPersonalSpaceData = async (userObj, limit = 1000) => {
+export const fetchPersonalSpaceData = async (userObj, limit = 50000) => {
   if (!userObj) return [];
   const { id, name, email, username, isAdmin, isLeader, team } = userObj;
   
-  let query = supabase
-    .from('NMK_Task')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit);
+  let filterStr = null;
 
-  if (isAdmin) {
-    // Admin sees everything
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
-  }
+  if (!isAdmin) {
+    if (team) {
+      // Team members see their entire team's tasks
+      // First, find all users in this team to get their identifiers
+      const teamSlug = team.split(' ')[0]; // Use first word for broader matching if needed
+      const { data: teamUsers } = await supabase
+        .from('NMK_User')
+        .select('id, name, email')
+        .ilike('team', `%${teamSlug}%`);
 
-  if (isLeader && team) {
-    // Leader sees their team's tasks
-    // First, find all users in this team
-    const { data: teamUsers } = await supabase
-      .from('NMK_User')
-      .select('id, name, email')
-      .ilike('team', `%${team.split(' ')[0]}%`); // Flexible matching for team name
+      const teamIdentifiers = [];
+      teamUsers?.forEach(u => {
+        if (u.id) teamIdentifiers.push(u.id);
+        if (u.name) teamIdentifiers.push(u.name);
+        if (u.email) teamIdentifiers.push(u.email);
+      });
 
-    const teamIdentifiers = [];
-    teamUsers?.forEach(u => {
-      if (u.id) teamIdentifiers.push(u.id);
-      if (u.name) teamIdentifiers.push(u.name);
-      if (u.email) teamIdentifiers.push(u.email);
-    });
-
-    if (teamIdentifiers.length > 0) {
-      const filter = teamIdentifiers.map(val => `user_id.eq."${val}",create_by.eq."${val}"`).join(',');
-      const { data, error } = await query.or(filter);
-      if (error) throw error;
-      return data || [];
+      if (teamIdentifiers.length > 0) {
+        // Filter by any of the team member identifiers in user_id or create_by
+        filterStr = teamIdentifiers.map(val => `user_id.eq."${val}",create_by.eq."${val}"`).join(',');
+      } else {
+        // Fallback to own tasks if team lookup fails
+        const identifiers = [id, name, email, username].filter(Boolean);
+        filterStr = identifiers.map(val => `user_id.eq."${val}",create_by.eq."${val}"`).join(',');
+      }
+    } else {
+      // Default: User without team sees only their own tasks
+      const identifiers = [id, name, email, username].filter(Boolean);
+      if (identifiers.length === 0) return [];
+      filterStr = identifiers.map(val => `user_id.eq."${val}",create_by.eq."${val}"`).join(',');
     }
   }
 
-  // Default: User sees only their own tasks
-  const identifiers = [id, name, email, username].filter(Boolean);
-  if (identifiers.length === 0) return [];
-  const filter = identifiers.map(val => `user_id.eq."${val}",create_by.eq."${val}"`).join(',');
-  
-  const { data, error } = await query.or(filter);
+  let allData = [];
+  let from = 0;
+  let chunkSize = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    let query = supabase
+      .from('NMK_Task')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, from + chunkSize - 1);
+      
+    if (filterStr) {
+      query = query.or(filterStr);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    
+    if (data && data.length > 0) {
+      allData = [...allData, ...data];
+      from += chunkSize;
+      // If we got fewer rows than requested, we've hit the end of the table
+      if (data.length < chunkSize || allData.length >= limit) {
+        hasMore = false;
+      }
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allData.slice(0, limit);
+};
+
+export const fetchOrgChartData = async () => {
+  const { data, error } = await supabase
+    .from('NMK_User')
+    .select('id, full_name, position, is_assistant, level, manager_id, team_name, location')
+    .order('level');
+    
   if (error) throw error;
   return data || [];
 };

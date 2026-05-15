@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Search, Edit3, Plus, Trash2, Save, UserPlus, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import initialOrgData from '../data/orgData.json'
 import { useApp } from '../context/AppContext'
+import { fetchOrgChartData } from '../services/supabaseService'
 
 // ==================== LAYOUT ENGINE ====================
 const CARD_W = 210
@@ -251,10 +252,8 @@ const OrgChart = () => {
   const { theme } = useApp()
   const isDark = theme === 'GALAXY' || theme === 'DARK'
 
-  const [orgData, setOrgData] = useState(() => {
-    const saved = localStorage.getItem('rincovitch_org_data_v22')
-    return saved ? JSON.parse(saved) : initialOrgData
-  })
+  const [orgData, setOrgData] = useState([])
+  const [loading, setLoading] = useState(true)
   const [selectedNode, setSelectedNode] = useState(null)
   const [editingNode, setEditingNode] = useState(null)
   const [addingToNode, setAddingToNode] = useState(null)
@@ -267,15 +266,84 @@ const OrgChart = () => {
   const containerRef = useRef(null)
 
   useEffect(() => {
-    localStorage.setItem('rincovitch_org_data_v22', JSON.stringify(orgData))
-  }, [orgData])
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        const rawData = await fetchOrgChartData()
+        
+        // Filter only Vietnam users and valid full_name
+        const localData = rawData.filter(u => 
+          u.location?.toUpperCase() === 'VIETNAM' && 
+          u.full_name && 
+          u.full_name.trim() !== ''
+        )
+        
+        // Transform flat data to tree
+        const nodesMap = {}
+        const nameToNodeMap = {}
+        const roots = []
+        
+        // Pass 1: Create node objects and name mapping
+        localData.forEach(item => {
+          const node = {
+            ...item,
+            name: item.full_name,
+            team: item.team_name,
+            isAssistant: item.is_assistant,
+            children: [],
+            // Auto-layout: roots horizontal, kids vertical
+            layout: (item.manager_id === null || item.manager_id === "" || item.level === 0) ? 'horizontal' : 'vertical'
+          }
+          nodesMap[item.id] = node
+          if (item.full_name) nameToNodeMap[item.full_name.trim()] = node
+        })
+        
+        // Pass 2: Build hierarchy using both ID and Name for manager_id
+        localData.forEach(item => {
+          const node = nodesMap[item.id]
+          let mid = item.manager_id
+          if (typeof mid === 'string') mid = mid.trim()
+          
+          // Try to find parent by ID first, then by Name
+          const parent = nodesMap[mid] || nameToNodeMap[mid]
+          
+          if (parent && parent.id !== node.id) {
+            parent.children.push(node)
+          } else {
+            roots.push(node)
+          }
+        })
+        
+        // Sort roots by level to ensure top-down order
+        roots.sort((a, b) => (a.level || 0) - (b.level || 0))
+        setOrgData(roots)
+      } catch (err) {
+        console.error('Failed to load org chart data:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
 
   // Layout calculation
   const { nodes, edges, bounds } = useMemo(() => {
+    if (!orgData || orgData.length === 0) {
+      return { nodes: [], edges: [], bounds: { minX: 0, minY: 0, maxX: 0, maxY: 0, w: 0, h: 0 } }
+    }
     const tree = deepClone(orgData)
-    tree.forEach(root => { measure(root); layoutPos(root, 0, 0) })
+    
+    // Arrange multiple roots horizontally
+    let currentX = 0
+    tree.forEach(root => { 
+      measure(root)
+      layoutPos(root, currentX, 0) 
+      currentX += root._sw + H_SEP * 2 // Add extra spacing between independent trees
+    })
+    
     const nodes = [], edges = []
     tree.forEach(root => collectAll(root, nodes, edges))
+    
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
     nodes.forEach(n => {
       minX = Math.min(minX, n._x)
@@ -318,9 +386,26 @@ const OrgChart = () => {
 
   const handleWheel = useCallback((e) => {
     e.preventDefault()
-    const delta = e.deltaY > 0 ? 0.92 : 1.08
-    setZoom(z => Math.max(0.2, Math.min(2, z * delta)))
-  }, [])
+    if (!containerRef.current) return
+
+    const rect = containerRef.current.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+
+    // Calculate content position relative to zoom
+    const contentX = (mouseX - pan.x) / zoom
+    const contentY = (mouseY - pan.y) / zoom
+
+    const delta = e.deltaY > 0 ? 0.9 : 1.1
+    const newZoom = Math.max(0.1, Math.min(3, zoom * delta))
+
+    // Adjust pan to zoom towards mouse position
+    setPan({
+      x: mouseX - contentX * newZoom,
+      y: mouseY - contentY * newZoom
+    })
+    setZoom(newZoom)
+  }, [zoom, pan])
 
   useEffect(() => {
     const el = containerRef.current
@@ -410,10 +495,16 @@ const OrgChart = () => {
       </div>
 
       {/* Canvas */}
-      <div ref={containerRef}
-        style={{ position: 'absolute', inset: 0, cursor: dragging ? 'grabbing' : 'grab', overflow: 'hidden' }}
-        onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
-      >
+      {loading ? (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: isDark ? '#0F172A' : '#F8FAFC', zIndex: 50 }}>
+          <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+          <p style={{ fontSize: 10, fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Fetching Corporate Hierarchy...</p>
+        </div>
+      ) : (
+        <div ref={containerRef}
+          style={{ position: 'absolute', inset: 0, cursor: dragging ? 'grabbing' : 'grab', overflow: 'hidden' }}
+          onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
+        >
         <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0', position: 'relative' }}>
           {/* SVG Connectors */}
           <svg style={{ position: 'absolute', left: 0, top: 0, width: bounds.maxX + 200, height: bounds.maxY + 200, pointerEvents: 'none', overflow: 'visible' }}>
@@ -454,6 +545,7 @@ const OrgChart = () => {
           ))}
         </div>
       </div>
+      )}
 
       {/* Detail Panel - centered modal */}
       {selectedNode && (

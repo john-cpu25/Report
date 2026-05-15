@@ -100,18 +100,19 @@ const Projects = () => {
             <div className="flex items-center gap-[10px]">
               <div className="w-1.5 h-8 bg-indigo-500 rounded-full" />
               <h1 className="text-[30px] font-black text-[var(--text-main)] uppercase tracking-tight">
-                Project <span className="text-indigo-400">Intelligence</span>
+                PROJECT
               </h1>
             </div>
-            <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-[15px]">Global Portfolio Management System</p>
           </div>
 
-          <div className="relative group max-w-md w-full">
-            <Search className="absolute left-[15px] top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
+          <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] overflow-hidden focus-within:border-indigo-500/50 focus-within:ring-4 focus-within:ring-indigo-500/5 transition-all group max-w-md w-full">
+            <div className="w-12 h-10 flex items-center justify-center border-r border-[var(--border)] bg-indigo-500/5 shrink-0">
+              <Search className="text-[var(--text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
+            </div>
             <input 
               type="text" 
               placeholder="FILTER PROJECTS..." 
-              className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] py-[10px] pl-[45px] pr-[15px] text-[14px] font-bold text-[var(--text-main)] focus:border-indigo-500/50 transition-all outline-none placeholder:text-[var(--text-muted)]"
+              className="flex-1 bg-transparent py-2.5 px-4 text-[14px] font-bold text-[var(--text-main)] outline-none placeholder:text-[var(--text-muted)] placeholder:font-black placeholder:tracking-[0.2em]"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -225,82 +226,43 @@ const Projects = () => {
             
             <motion.div
               layoutId={`card-${selectedId}`}
-              className="relative w-full max-w-5xl bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] overflow-hidden shadow-2xl flex flex-col lg:flex-row"
+              className="relative w-full max-w-4xl bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] overflow-hidden shadow-2xl flex flex-col"
             >
               <div 
                 className="absolute top-0 left-0 w-full h-1 z-10"
                 style={{ backgroundColor: selectedProject.color || '#6366f1' }}
               />
 
-              {/* Left Content Area */}
-              <div className="lg:w-2/5 p-[20px] bg-indigo-600/10 flex flex-col gap-[20px] border-r border-[var(--border)]">
-                <div className="space-y-[10px]">
-                  <div className="inline-flex items-center gap-[10px] px-[10px] py-[5px] bg-indigo-500/20 rounded-[8px] border border-indigo-500/30">
+              <div className="p-8 flex flex-col gap-6">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/20">
                     <Sparkles size={14} className="text-yellow-400" />
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Active Analysis</span>
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Project Detail</span>
                   </div>
-                  <h2 className="text-[30px] font-black text-[var(--text-main)] leading-tight uppercase">
+                  <h2 className="text-[32px] font-black text-[var(--text-main)] leading-tight uppercase">
                     {selectedProject.key}
                   </h2>
-                  <p className="text-[14px] font-bold text-[var(--text-muted)]">
+                  <p className="text-[16px] font-bold text-[var(--text-muted)]">
                     {selectedProject.name}
                   </p>
                 </div>
 
-                <div className="mt-auto grid grid-cols-1 gap-[10px]">
-                  <div className="bg-[var(--bg-surface)] p-[15px] rounded-[8px] border border-[var(--border)]">
-                    <div className="flex items-center gap-[10px]">
-                      <Users size={20} className="text-indigo-400" />
-                      <div>
-                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Efficiency</p>
-                        <p className="text-[14px] font-black text-[var(--text-main)]">92% PERFORMANCE</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Content Area */}
-              <div className="lg:w-3/5 p-[20px] flex flex-col gap-[20px] bg-[var(--bg-card)] relative">
-                <button 
-                  onClick={() => setSelectedId(null)}
-                  className="absolute top-[20px] right-[20px] w-10 h-10 flex items-center justify-center bg-[var(--bg-surface)] hover:bg-rose-500/10 hover:text-rose-500 rounded-[8px] text-[var(--text-muted)] transition-all"
-                >
-                  ✕
-                </button>
-
-                <div className="space-y-[10px]">
-                  <div className="flex items-center gap-[10px] text-indigo-400">
+                <div className="space-y-3 pt-4 border-t border-[var(--border)]">
+                  <div className="flex items-center gap-2 text-indigo-400">
                     <Layers size={18} />
-                    <span className="text-[14px] font-black uppercase tracking-widest">Technical Brief</span>
+                    <span className="text-[12px] font-black uppercase tracking-widest">Description</span>
                   </div>
-                  <p className="text-[14px] text-[var(--text-muted)] leading-relaxed">
-                    {selectedProject.description || "Core Rincovitch BIM coordination protocol. Focus on high-fidelity modeling and cross-disciplinary synchronization."}
+                  <p className="text-[15px] text-[var(--text-muted)] leading-relaxed">
+                    {selectedProject.description || "Project documentation and coordination protocols for Rincovitch BIM standards."}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
-                  <div className="flex items-center gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)]">
-                    <Cpu size={24} className="text-indigo-400" />
-                    <div>
-                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">Platform</p>
-                      <p className="text-[14px] font-black text-[var(--text-main)]">REVIT {selectedProject.revit_version || '2024'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)]">
-                    <User size={24} className="text-emerald-400" />
-                    <div>
-                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">Lead</p>
-                      <p className="text-[14px] font-black text-[var(--text-main)]">NM KHANG</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-auto">
-                  <button className="w-full py-[15px] bg-indigo-600 hover:bg-indigo-500 text-white rounded-[8px] text-[14px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all">
-                    Access Project Protocol
-                  </button>
-                </div>
+                <button 
+                  onClick={() => setSelectedId(null)}
+                  className="mt-6 py-3 bg-[var(--bg-surface)] hover:bg-rose-500/10 hover:text-rose-500 text-[var(--text-muted)] rounded-lg text-[12px] font-black uppercase tracking-widest transition-all border border-[var(--border)]"
+                >
+                  Close Detail
+                </button>
               </div>
             </motion.div>
           </div>

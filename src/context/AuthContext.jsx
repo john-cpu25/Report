@@ -76,25 +76,43 @@ export const AuthProvider = ({ children }) => {
     ];
 
     const handleUserSync = async (account) => {
-        const email = account.username || account.idTokenClaims?.email;
+        const email = (account.username || account.idTokenClaims?.email || '').toLowerCase();
         if (email) {
-            const dbUser = await syncUserWithSupabase(email.toLowerCase());
-            if (dbUser) {
-                localStorage.setItem('last_login_email', email.toLowerCase());
+            let dbUser = await syncUserWithSupabase(email);
+            const isAdminByEmail = ADMIN_EMAILS.includes(email);
+            const isLeaderByEmail = LEADER_EMAILS.includes(email);
+
+            // AUTO-REGISTRATION FOR ADMINS
+            if (!dbUser && isAdminByEmail) {
+                console.log('[AuthContext] Auto-registering Admin:', email);
+                const { data: newUser, error: regError } = await supabase
+                    .from('NMK_User')
+                    .upsert({ 
+                        email: email,
+                        name: account.name || 'System Admin',
+                        team: 'Management',
+                        location: 'VIETNAM',
+                        role: 'Admin'
+                    }, { onConflict: 'email' })
+                    .select()
+                    .single();
                 
-                // Strategy: Check 'role' column first, then fallback to email list
+                if (!regError) dbUser = newUser;
+            }
+
+            if (dbUser) {
+                localStorage.setItem('last_login_email', email);
+                
                 const roleField = dbUser.role || dbUser.Role || dbUser.access_level || dbUser.permission || '';
                 const roleValue = roleField.toString().trim().toLowerCase();
                 
                 const isAdminByRole = roleValue.includes('admin');
                 const isLeaderByRole = roleValue.includes('leader');
-                const isAdminByEmail = ADMIN_EMAILS.includes(email.toLowerCase());
-                const isLeaderByEmail = LEADER_EMAILS.includes(email.toLowerCase());
                 
                 const finalIsAdmin = isAdminByRole || isAdminByEmail;
                 const finalIsLeader = isLeaderByRole || isLeaderByEmail;
                 
-                console.log('[AuthContext] User:', dbUser.name, '| Email:', email, '| DB role:', roleField || 'N/A', '| Admin:', finalIsAdmin, '| Leader:', finalIsLeader);
+                console.log('[AuthContext] User:', dbUser.name, '| Email:', email, '| Admin:', finalIsAdmin);
                 
                 setUser({
                     ...account,
@@ -102,6 +120,7 @@ export const AuthProvider = ({ children }) => {
                     isAdmin: finalIsAdmin,
                     isLeader: finalIsLeader
                 });
+                setError(null);
             } else {
                 setError(`Email ${email} không có quyền truy cập hệ thống.`);
             }
