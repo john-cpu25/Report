@@ -46,11 +46,6 @@ const Sidebar = () => {
         { id: 'projects', label: 'Projects', icon: FolderKanban },
         { id: 'organization', label: 'Organization', icon: Network },
         { id: 'report', label: 'Weekly Planner', icon: CalendarClock },
-        // Only show Data Analyst and Review to Admin/Leader
-        ...((isAdmin || isLeader) ? [
-          { id: 'processor', label: 'Data Analyst', icon: BarChart3 },
-          { id: 'review', label: 'Review', icon: CheckCircle2 }
-        ] : []),
         { id: 'leave', label: 'Annual Leave', icon: Battery },
       ]
     },
