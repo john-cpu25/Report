@@ -98,7 +98,7 @@ const PersonalSpace = () => {
   const [expandedWeeks, setExpandedWeeks] = useState({});
   const [expandedTeams, setExpandedTeams] = useState({});
   const [weekOffset, setWeekOffset] = useState(0);
-  const [projectSubView, setProjectSubView] = useState('grid'); // 'grid' | 'bookshelf' | 'table'
+  const [projectSubView, setProjectSubView] = useState('bookshelf'); // Default to bookshelf now
   const [localMaps, setLocalMaps] = useState({ userMap: {}, teamMap: {} });
   const [selectedTimeMetric, setSelectedTimeMetric] = useState('t4'); // Default to T4 (Processing Time)
   
@@ -1061,19 +1061,19 @@ const PersonalSpace = () => {
               <span className="text-[11px] font-black text-[var(--text-contrast)] uppercase tracking-widest">Display Mode</span>
             </div>
             
-            <div className="flex items-center gap-1 p-1 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg border border-white/10 shadow-inner">
+            <div className="flex items-center gap-1.5 p-1.5 bg-slate-200/50 dark:bg-slate-800/80 rounded-xl border border-white/10 shadow-inner">
               {[
-                { id: 'grid', label: 'Grid View', icon: <LayoutGrid size={14} /> },
-                { id: 'bookshelf', label: 'Bookshelf', icon: <Layers size={14} /> },
-                { id: 'table', label: 'Detailed Table', icon: <List size={14} /> }
+                { id: 'grid', label: 'Grid View', icon: <LayoutGrid size={16} /> },
+                { id: 'bookshelf', label: 'Bookshelf', icon: <Layers size={16} /> },
+                { id: 'table', label: 'Detailed Table', icon: <List size={16} /> }
               ].map((v) => (
                 <button
                   key={v.id}
                   onClick={() => setProjectSubView(v.id)}
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${
+                  className={`flex items-center gap-2.5 px-5 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
                     projectSubView === v.id 
-                      ? 'bg-white text-emerald-600 shadow-md' 
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-emerald-600 text-white shadow-[0_4px_12px_rgba(16,185,129,0.3)] scale-105' 
+                      : 'text-slate-500 hover:text-emerald-500 hover:bg-emerald-500/5'
                   }`}
                 >
                   {v.icon} {v.label}
