@@ -70,7 +70,12 @@ const PersonalSpace = () => {
   const getProjectColor = (projectName) => {
     const name = (projectName || '').toUpperCase();
     if (projectColorMap[name]) return projectColorMap[name];
-    const colors = ['#6366f1', '#10b981', '#f43f5e', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316'];
+    const colors = [
+      '#6366f1', '#10b981', '#f43f5e', '#f59e0b', '#3b82f6', 
+      '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316',
+      '#ef4444', '#22c55e', '#a855f7', '#eab308', '#0ea5e9',
+      '#d946ef', '#f43f5e', '#84cc16', '#06b6d4', '#64748b'
+    ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
       hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -79,16 +84,25 @@ const PersonalSpace = () => {
   };
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'daily' | 'project' | 'team' | 'gantt' | 'deep-analysis'
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'daily' | 'project' | 'team' | 'gantt' | 'deep-analysis' | 'performance'
+  const [manualData, setManualData] = useState(() => {
+    const saved = localStorage.getItem('personal_manual_data');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem('personal_manual_data', JSON.stringify(manualData));
+  }, [manualData]);
+  const [localSort, setLocalSort] = useState('date-desc');
+  const [expandedProjects, setExpandedProjects] = useState([]);
   const [expandedWeeks, setExpandedWeeks] = useState({});
-  const [expandedProjects, setExpandedProjects] = useState({});
   const [expandedTeams, setExpandedTeams] = useState({});
   const [weekOffset, setWeekOffset] = useState(0);
   const [localMaps, setLocalMaps] = useState({ userMap: {}, teamMap: {} });
   const [selectedTimeMetric, setSelectedTimeMetric] = useState('t4'); // Default to T4 (Processing Time)
   
   // Optimization: Date Filtering
-  const [timeRange, setTimeRange] = useState('month'); // 'week' | 'month' | 'custom'
+  const [timeRange, setTimeRange] = useState('week'); // 'day' | 'week' | 'month' | 'year'
   
   // Local Filter States
   const [localFilters, setLocalFilters] = useState({
@@ -98,8 +112,7 @@ const PersonalSpace = () => {
     search: ''
   });
 
-  // Local Sort State
-  const [localSort, setLocalSort] = useState('date-desc'); // 'date-desc' | 'date-asc' | 'project-asc' | 'project-desc' | 'user-asc' | 'user-desc' | 'team-asc'
+  // Local Filter States
 
   const loadData = async (force = false) => {
     if (!user) return;
@@ -167,12 +180,14 @@ const PersonalSpace = () => {
       // 1. Date Range Filter
       let dateMatch = true;
       if (t.dateObj && viewMode !== 'project' && viewMode !== 'daily' && viewMode !== 'gantt') {
-        if (timeRange === 'week') {
+        if (timeRange === 'day') {
+          dateMatch = isSameDay(t.dateObj, targetDate);
+        } else if (timeRange === 'week') {
           dateMatch = isWithinInterval(t.dateObj, { start: startOfCurrentWeek, end: endOfCurrentWeek });
         } else if (timeRange === 'month') {
           dateMatch = isWithinInterval(t.dateObj, { start: startOfCurrentMonth, end: endOfCurrentMonth });
-        } else if (timeRange === 'custom') {
-          dateMatch = true;
+        } else if (timeRange === 'year') {
+          dateMatch = t.dateObj.getFullYear() === targetDate.getFullYear();
         }
       }
 
@@ -241,16 +256,25 @@ const PersonalSpace = () => {
   const ganttTimeline = useMemo(() => {
     const targetDate = addDays(startOfDay(new Date()), weekOffset * 7);
     
-    if (timeRange === 'month') {
+    if (timeRange === 'day') {
+      // Show 24 hours
+      return [...Array(24)].map((_, i) => {
+        const d = new Date(targetDate);
+        d.setHours(i, 0, 0, 0);
+        return d;
+      });
+    } else if (timeRange === 'week') {
+      const targetMonday = startOfWeek(targetDate, { weekStartsOn: 1 });
+      return [...Array(7)].map((_, i) => addDays(targetMonday, i));
+    } else if (timeRange === 'month') {
       const startOfCurrentMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
       const endOfCurrentMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
       const daysInMonth = endOfCurrentMonth.getDate();
       return [...Array(daysInMonth)].map((_, i) => addDays(startOfCurrentMonth, i));
-    } else if (timeRange === 'week') {
-      const targetMonday = startOfWeek(targetDate, { weekStartsOn: 1 });
-      return [...Array(7)].map((_, i) => addDays(targetMonday, i));
+    } else if (timeRange === 'year') {
+      // Show 12 months
+      return [...Array(12)].map((_, i) => new Date(targetDate.getFullYear(), i, 1));
     } else {
-      // Default: 14 days
       const targetMonday = startOfWeek(targetDate, { weekStartsOn: 1 });
       return [...Array(14)].map((_, i) => addDays(targetMonday, i));
     }
@@ -614,6 +638,24 @@ const PersonalSpace = () => {
     return { trendLabels, t1Data, t2Data, movingAvg, projectLabels, projectCounts, userLabels, userCounts };
   }, [filteredData, selectedTimeMetric]);
 
+  const efficiencyData = useMemo(() => {
+    const data = analystTasks || [];
+    const users = filterOptions.users;
+    return users.map(uName => {
+      const uTasks = filteredData.filter(t => t.userName === uName);
+      const metrics = uTasks.map(t => calculateTaskMetrics(t));
+      const projectTime = metrics.reduce((acc, curr) => acc + (curr.t2 || 0), 0) / 60;
+      const checkTime = uTasks.filter(t => t.taskName?.toLowerCase().includes('check')).reduce((acc, t) => acc + (calculateTaskMetrics(t).t2 || 0), 0) / 60;
+      const otTime = manualData[uName]?.ot || 0;
+      const totalPlan = metrics.reduce((acc, curr) => acc + curr[selectedTimeMetric], 0) / 60;
+      const leaveDays = 0; 
+      const freeTime = Math.max(0, 40 - (projectTime + checkTime));
+      const efficiency = projectTime > 0 ? (totalPlan / projectTime) * 100 : 100;
+      const performance = Math.min(((projectTime + otTime) / 40) * 100, 100);
+      return { name: uName, projectTime, checkTime, otTime, leaveDays, freeTime, efficiency, performance };
+    }).sort((a, b) => b.projectTime - a.projectTime);
+  }, [filteredData, filterOptions.users, manualData, selectedTimeMetric]);
+
   const toggleWeek = (key) => {
     setExpandedWeeks(prev => ({ ...prev, [key]: !prev[key] }));
   };
@@ -630,12 +672,17 @@ const PersonalSpace = () => {
         {/* Show header even while loading */}
         <div className="bg-[var(--bg-card)] p-[20px] rounded-[12px] border border-[var(--border)] shadow-xl">
           <h2 className="text-[28px] font-black text-[var(--text-contrast)] uppercase tracking-tighter flex items-center gap-[10px]">
-            <User size={28} className={scopeLabel.color} />
-            <span className={scopeLabel.color}>PERSONAL</span> SPACE
+            <span 
+              className="text-slate-900 dark:text-white"
+              style={{ 
+                textShadow: '0.5px 0.5px 1px rgba(255,255,255,0.2), -0.5px -0.5px 1px rgba(0,0,0,0.5)',
+                opacity: 0.95,
+                letterSpacing: '-0.05em'
+              }}
+            >
+              PERSONAL
+            </span>
           </h2>
-          <div className="flex items-center gap-3 mt-2">
-            <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded ${scopeLabel.bg} ${scopeLabel.color}`}>{scopeLabel.label}</span>
-          </div>
         </div>
         <div className="h-[50vh] flex flex-col items-center justify-center space-y-4">
           <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
@@ -654,119 +701,139 @@ const PersonalSpace = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-[12px]">
           <div>
             <h2 className="text-[28px] font-black text-[var(--text-contrast)] uppercase tracking-tighter flex items-center gap-[10px]">
-              <User size={28} className={scopeLabel.color} />
-              <span className={scopeLabel.color}>PERSONAL</span> SPACE
+              <span 
+                className="text-slate-900 dark:text-white"
+                style={{ 
+                  textShadow: '0.5px 0.5px 1px rgba(255,255,255,0.2), -0.5px -0.5px 1px rgba(0,0,0,0.5)',
+                  opacity: 0.95,
+                  letterSpacing: '-0.05em'
+                }}
+              >
+                PERSONAL
+              </span>
             </h2>
-            <div className="flex items-center gap-3 mt-1">
-              <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded ${scopeLabel.bg} ${scopeLabel.color}`}>{scopeLabel.label}</span>
-              <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{scopeLabel.sub}</span>
-              {filteredData.length > 0 && (
-                <span className="text-[9px] font-bold text-slate-500 uppercase">{filteredData.length} records</span>
-              )}
-            </div>
           </div>
         </div>
 
         {/* Windows 11 Fluent Toolbar - REDESIGNED */}
         <div className="mt-[12px] flex items-center gap-[12px] overflow-x-auto custom-scrollbar py-[4px]">
           
-          {/* Orange Group: View Modes (List, Weekly, Daily) */}
-          <div className="flex items-center gap-[6px] p-[4px] rounded-xl bg-orange-500/5 border border-orange-500/20 shadow-sm shrink-0">
-            {[
-              { id: 'list', label: 'List', icon: <List size={14} /> },
-              { id: 'daily', label: 'Daily', icon: <CalendarDays size={14} /> }
-            ].map(v => (
-              <button
-                key={v.id}
-                onClick={() => setViewMode(v.id)}
-                className={`flex items-center gap-2 h-[32px] px-3 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
-                  viewMode === v.id
-                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25'
-                    : 'text-orange-500/70 hover:bg-orange-500/10 hover:text-orange-500'
-                }`}
-              >
-                {v.icon} {v.label}
-              </button>
-            ))}
-          </div>
+          {/* Unified Navigation: Basic, Project, Analysis Groups */}
+          <div className="flex items-center gap-[12px] p-[3px] bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md rounded-xl border border-white/20 shadow-inner shrink-0">
+            {/* Group 1: Basic Modes */}
+            <div className="flex items-center border-r border-slate-300/30 pr-2 mr-2">
+              {[
+                { id: 'list', label: 'List', icon: <List size={14} />, color: 'text-orange-500' },
+                { id: 'daily', label: 'Daily', icon: <CalendarDays size={14} />, color: 'text-orange-500' }
+              ].map(v => (
+                <button
+                  key={v.id}
+                  onClick={() => setViewMode(v.id)}
+                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
+                    viewMode === v.id ? v.color : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {v.icon} <span className="ml-1">{v.label}</span>
+                  {viewMode === v.id && (
+                    <motion.div
+                      layoutId="activeViewMode"
+                      className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)] z-[-1]"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
 
-          {/* Green Group: Entity Modes (Project) */}
-          <div className="flex items-center gap-[6px] p-[4px] rounded-xl bg-emerald-500/5 border border-emerald-500/20 shadow-sm shrink-0">
-            {[
-              { id: 'project', label: 'Project', icon: <LayoutGrid size={14} /> }
-            ].map(v => (
-              <button
-                key={v.id}
-                onClick={() => setViewMode(v.id)}
-                className={`flex items-center gap-2 h-[32px] px-3 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
-                  viewMode === v.id
-                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
-                    : 'text-emerald-500/70 hover:bg-emerald-500/10 hover:text-emerald-500'
-                }`}
-              >
-                {v.icon} {v.label}
-              </button>
-            ))}
-          </div>
+            {/* Group 2: Entity Modes */}
+            <div className="flex items-center border-r border-slate-300/30 pr-2 mr-2">
+              {[
+                { id: 'project', label: 'Project', icon: <LayoutGrid size={14} />, color: 'text-emerald-500' }
+              ].map(v => (
+                <button
+                  key={v.id}
+                  onClick={() => setViewMode(v.id)}
+                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
+                    viewMode === v.id ? v.color : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {v.icon} <span className="ml-1">{v.label}</span>
+                  {viewMode === v.id && (
+                    <motion.div
+                      layoutId="activeViewMode"
+                      className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)] z-[-1]"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
 
-          {/* Dark Blue Group: Analysis Modes (Gantt, Deep Analysis) */}
-          <div className="flex items-center gap-[6px] p-[4px] rounded-xl bg-indigo-500/5 border border-indigo-500/20 shadow-sm shrink-0">
-            {[
-              { id: 'gantt', label: 'Gantt', icon: <BarChart2 size={14} /> },
-              { id: 'deep-analysis', label: 'Deep Analysis', icon: <Target size={14} /> }
-            ].map(v => (
-              <button
-                key={v.id}
-                onClick={() => setViewMode(v.id)}
-                className={`flex items-center gap-2 h-[32px] px-3 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
-                  viewMode === v.id
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
-                    : 'text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300'
-                }`}
-              >
-                {v.icon} {v.label}
-              </button>
-            ))}
+            {/* Group 3: Analysis Modes */}
+            <div className="flex items-center">
+              {[
+                { id: 'gantt', label: 'Gantt', icon: <BarChart2 size={14} />, color: 'text-indigo-600' },
+                { id: 'deep-analysis', label: 'Deep Analysis', icon: <Target size={14} />, color: 'text-indigo-600' },
+                { id: 'performance', label: 'Performance', icon: <TrendingUp size={14} />, color: 'text-indigo-600' }
+              ].map(v => (
+                <button
+                  key={v.id}
+                  onClick={() => setViewMode(v.id)}
+                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
+                    viewMode === v.id ? v.color : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {v.icon} <span className="ml-1">{v.label}</span>
+                  {viewMode === v.id && (
+                    <motion.div
+                      layoutId="activeViewMode"
+                      className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)] z-[-1]"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex-1" /> {/* Spacer */}
 
-            {/* Lime Group: Time Filters (Week, Month, Custom) - HIDDEN IN PROJECT VIEW */}
-            {viewMode !== 'project' && (
-              <div className="flex items-center gap-[6px] p-[4px] rounded-xl bg-lime-500/5 border border-lime-500/20 shadow-sm shrink-0">
-                {[
-                  { id: 'week', label: 'Week', icon: <Calendar size={14} /> },
-                  { id: 'month', label: 'Month', icon: <CalendarDays size={14} /> },
-                  { id: 'custom', label: 'Custom', icon: <TrendingUp size={14} /> }
-                ].map(r => {
-                  const isDisabled = viewMode === 'daily' && r.id !== 'week';
+            {/* Time Segmented Control (New Design) */}
+            {['list', 'daily', 'project'].includes(viewMode) && (
+              <div className="flex items-center gap-1 p-[3px] bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md rounded-xl border border-white/20 shadow-inner relative shrink-0">
+                {['week', 'month', 'year'].map((id) => {
+                  const isActive = timeRange === id;
                   return (
                     <button
-                      key={r.id}
-                      disabled={isDisabled}
-                      onClick={() => setTimeRange(r.id)}
-                      className={`flex items-center gap-2 h-[32px] px-3 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
-                        isDisabled ? 'opacity-20 grayscale cursor-not-allowed' :
-                        timeRange === r.id
-                          ? 'bg-lime-600 text-white shadow-lg shadow-lime-600/25'
-                          : 'text-lime-500/70 hover:bg-lime-500/10 hover:text-lime-400'
+                      key={id}
+                      onClick={() => setTimeRange(id)}
+                      className={`relative px-6 h-[28px] text-[10px] font-black uppercase tracking-widest transition-all duration-300 z-10 ${
+                        isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'
                       }`}
                     >
-                      {r.icon} {r.label}
+                      {id}
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeRange"
+                          className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)] z-[-1]"
+                          transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+                        />
+                      )}
                     </button>
                   );
                 })}
               </div>
             )}
 
-          {/* Purple Group: Sync */}
-          <div className="flex items-center gap-[6px] p-[4px] rounded-xl bg-violet-500/5 border border-violet-500/20 shadow-sm shrink-0">
+          {/* Action Group: Sync */}
+          <div className="flex items-center p-[3px] bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md rounded-xl border border-white/20 shadow-inner shrink-0 ml-auto">
             <button
               onClick={() => loadData(true)}
-              className={`flex items-center gap-2 h-[32px] px-3 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200 text-violet-400 hover:bg-violet-500/10 hover:text-violet-300`}
+              className="flex items-center gap-3 h-[28px] px-5 text-[10px] font-black uppercase tracking-widest text-violet-500 hover:text-violet-700 transition-colors"
               title="Force Sync with Supabase"
             >
-              <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> Sync
+              <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+              <span className="ml-1">Sync</span>
             </button>
           </div>
         </div>
@@ -845,9 +912,10 @@ const PersonalSpace = () => {
 
       {/* Content Area */}
       {/* Timesheet Summary & Navigation Header (Visible for Daily, Project, and Gantt) */}
+      <div className="px-[20px] space-y-[10px]">
       {/* --- CONTENT AREA: STATS & TIME NAVIGATION --- */}
       <div className="ocd-card p-0 overflow-hidden mb-[10px] shadow-xl border border-indigo-500/20 bg-[var(--bg-card)]">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between px-[20px] py-[12px] bg-indigo-500/5 border-b border-[var(--border)] gap-4">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between px-[12px] py-[12px] bg-indigo-500/5 border-b border-[var(--border)] gap-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Total Hours:</span>
@@ -865,39 +933,41 @@ const PersonalSpace = () => {
             <div className="w-[1px] h-8 bg-[var(--border)] mx-2 hidden xl:block" />
 
             {/* Time Metric Selector */}
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-inner">
-              {[
-                { id: 't1', label: 'T1', color: 'emerald', tooltip: 'DATE_START → DATE_END' },
-                { id: 't2', label: 'T2', color: 'sky', tooltip: 'DATE_START → DATE_COMPLETE' },
-                { id: 't3', label: 'T3', color: 'indigo', tooltip: 'DATE_START → DATE_CHECKED' },
-                { id: 't4', label: 'T4', color: 'orange', tooltip: 'DATE_STARTED → DATE_CHECKED' },
-                { id: 't5', label: 'T5', color: 'rose', tooltip: 'CREATED_AT → DATE_CHECKED' }
-              ].map((m) => {
-                const isActive = selectedTimeMetric === m.id;
-                const colorClass = 
-                  m.color === 'emerald' ? (isActive ? 'bg-emerald-500 text-white' : 'text-emerald-500 hover:bg-emerald-500/10') :
-                  m.color === 'sky' ? (isActive ? 'bg-sky-500 text-white' : 'text-sky-500 hover:bg-sky-500/10') :
-                  m.color === 'indigo' ? (isActive ? 'bg-indigo-500 text-white' : 'text-indigo-500 hover:bg-indigo-500/10') :
-                  m.color === 'orange' ? (isActive ? 'bg-orange-500 text-white' : 'text-orange-500 hover:bg-orange-500/10') :
-                  (isActive ? 'bg-rose-500 text-white' : 'text-rose-500 hover:bg-rose-500/10');
+            {['list', 'daily', 'project'].includes(viewMode) && (
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-inner">
+                {[
+                  { id: 't1', label: 'T1', color: 'emerald', tooltip: 'DATE_START → DATE_END' },
+                  { id: 't2', label: 'T2', color: 'sky', tooltip: 'DATE_START → DATE_COMPLETE' },
+                  { id: 't3', label: 'T3', color: 'indigo', tooltip: 'DATE_START → DATE_CHECKED' },
+                  { id: 't4', label: 'T4', color: 'orange', tooltip: 'DATE_STARTED → DATE_CHECKED' },
+                  { id: 't5', label: 'T5', color: 'rose', tooltip: 'CREATED_AT → DATE_CHECKED' }
+                ].map((m) => {
+                  const isActive = selectedTimeMetric === m.id;
+                  const colorClass = 
+                    m.color === 'emerald' ? (isActive ? 'bg-emerald-500 text-white' : 'text-emerald-500 hover:bg-emerald-500/10') :
+                    m.color === 'sky' ? (isActive ? 'bg-sky-500 text-white' : 'text-sky-500 hover:bg-sky-500/10') :
+                    m.color === 'indigo' ? (isActive ? 'bg-indigo-500 text-white' : 'text-indigo-500 hover:bg-indigo-500/10') :
+                    m.color === 'orange' ? (isActive ? 'bg-orange-500 text-white' : 'text-orange-500 hover:bg-orange-500/10') :
+                    (isActive ? 'bg-rose-500 text-white' : 'text-rose-500 hover:bg-rose-500/10');
 
-                return (
-                  <div key={m.id} className="relative group/time">
-                    <div className="absolute -top-[34px] left-1/2 -translate-x-1/2 px-2.5 py-1.5 bg-[#0f172a] border border-white/10 rounded-md shadow-2xl opacity-0 group-hover/time:opacity-100 transition-all pointer-events-none whitespace-nowrap z-[60]">
-                      <span className="text-[9px] font-black text-white tracking-tighter uppercase">{m.tooltip}</span>
-                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0f172a] border-r border-b border-white/10 rotate-45" />
+                  return (
+                    <div key={m.id} className="relative group/time">
+                      <div className="absolute -top-[34px] left-1/2 -translate-x-1/2 px-2.5 py-1.5 bg-[#0f172a] border border-white/10 rounded-md shadow-2xl opacity-0 group-hover/time:opacity-100 transition-all pointer-events-none whitespace-nowrap z-[60]">
+                        <span className="text-[9px] font-black text-white tracking-tighter uppercase">{m.tooltip}</span>
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0f172a] border-r border-b border-white/10 rotate-45" />
+                      </div>
+
+                      <button
+                        onClick={() => setSelectedTimeMetric(m.id)}
+                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${colorClass} ${isActive ? 'shadow-md' : ''}`}
+                      >
+                        {m.label}
+                      </button>
                     </div>
-
-                    <button
-                      onClick={() => setSelectedTimeMetric(m.id)}
-                      className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${colorClass} ${isActive ? 'shadow-md' : ''}`}
-                    >
-                      {m.label}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Enhanced Year/Week Picker + Navigation */}
@@ -1092,15 +1162,24 @@ const PersonalSpace = () => {
           <div className="overflow-x-auto custom-scrollbar">
             <div className="w-full min-w-[900px]">
               {/* Gantt Header: Dates */}
-              <div className="flex border-b border-[var(--border)] bg-white/5 sticky z-20 backdrop-blur-md" style={{ top: '240px' }}>
-                <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] p-[15px] text-[10px] font-black uppercase text-indigo-400 shrink-0 bg-[var(--bg-card)]">Task Intelligence</div>
+              <div className="flex border-b border-[var(--border)] bg-white/5 sticky z-[45] backdrop-blur-md" style={{ top: '0px' }}>
+                <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] p-[15px] text-[10px] font-black uppercase text-indigo-400 shrink-0 bg-[var(--bg-card)] sticky left-0 z-30">Task Intelligence</div>
                 <div className="flex-1 flex min-w-0">
                   {ganttTimeline.map((date, i) => {
                     const isToday = isSameDay(date, new Date());
                     return (
                       <div key={i} className={`flex-1 min-w-[28px] border-r border-[var(--border)] py-[10px] px-0 text-center flex flex-col items-center justify-center ${isToday ? 'bg-indigo-500/20' : 'bg-[var(--bg-card)]'}`}>
-                        <div className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-tighter">{format(date, 'EEE')}</div>
-                        <div className={`text-[10px] md:text-[11px] font-black tracking-tighter ${isToday ? 'text-indigo-400' : 'text-[var(--text-main)]'}`}>{format(date, 'dd/MM')}</div>
+                        <div className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-tighter">
+                          {timeRange === 'day' ? format(date, 'HH:mm') : 
+                           timeRange === 'year' ? format(date, 'yyyy') : 
+                           format(date, 'EEE')}
+                        </div>
+                        <div className={`text-[10px] md:text-[11px] font-black tracking-tighter ${isToday ? 'text-indigo-400' : 'text-[var(--text-main)]'}`}>
+                          {timeRange === 'day' ? format(date, 'dd/MM') :
+                           timeRange === 'year' ? format(date, 'MMM') :
+                           timeRange === 'month' ? format(date, 'dd') :
+                           format(date, 'dd/MM')}
+                        </div>
                       </div>
                     );
                   })}
@@ -1130,8 +1209,12 @@ const PersonalSpace = () => {
                       if (!endDate || isNaN(endDate)) endDate = addDays(startDate, 1);
                       if (endDate < startDate) endDate = addDays(startDate, 1);
                       
-                      const startOffsetRaw = differenceInDays(startDate, chartStart);
-                      const durationRaw = differenceInDays(endDate, startDate) + 1;
+                      const startOffsetRaw = timeRange === 'day' ? differenceInHours(startDate, chartStart) : 
+                                             timeRange === 'year' ? differenceInCalendarMonths(startDate, chartStart) : 
+                                             differenceInDays(startDate, chartStart);
+                      const durationRaw = timeRange === 'day' ? differenceInHours(endDate, startDate) : 
+                                          timeRange === 'year' ? differenceInCalendarMonths(endDate, startDate) + 1 : 
+                                          differenceInDays(endDate, startDate) + 1;
                       
                       const renderOffset = Math.max(0, startOffsetRaw);
                       const overflowLeft = startOffsetRaw < 0 ? Math.abs(startOffsetRaw) : 0;
@@ -1160,28 +1243,99 @@ const PersonalSpace = () => {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="flex h-[48px] hover:bg-white/[0.02] group border-b border-[var(--border)] transition-colors"
+                        className="flex flex-col border-b border-[var(--border)]"
                       >
-                        <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] p-[10px] flex items-center justify-between shrink-0 bg-indigo-500/5">
-                          <span className="text-[10px] font-black text-[var(--text-main)] group-hover:text-indigo-400 uppercase truncate pr-2 transition-colors">{group.name}</span>
-                          <span className="text-[9px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md whitespace-nowrap">{visibleTasks.length} tasks</span>
+                        <div 
+                          onClick={() => {
+                            if (expandedProjects.includes(group.name)) {
+                              setExpandedProjects(expandedProjects.filter(name => name !== group.name));
+                            } else {
+                              setExpandedProjects([...expandedProjects, group.name]);
+                            }
+                          }}
+                          className="flex h-[48px] hover:bg-white/[0.02] group transition-colors cursor-pointer"
+                        >
+                          <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] p-[10px] flex items-center justify-between shrink-0 bg-[var(--bg-card)] sticky left-0 z-20">
+                            <div className="flex items-center gap-2 truncate">
+                              <ChevronRight 
+                                size={14} 
+                                className={`text-indigo-400 transition-transform duration-200 ${expandedProjects.includes(group.name) ? 'rotate-90' : ''}`} 
+                              />
+                              <span className="text-[10px] font-black uppercase truncate transition-colors" style={{ color: getProjectColor(group.name) }}>{group.name}</span>
+                            </div>
+                            <span className="text-[9px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md whitespace-nowrap">{visibleTasks.length} tasks</span>
+                          </div>
+                          <div className="flex-1 relative flex items-center px-0 h-full">
+                            {/* Weekend Shading Overlay */}
+                            <div className="absolute inset-0 flex pointer-events-none z-10">
+                              {ganttTimeline.map((date, idx) => {
+                                  const day = date.getDay();
+                                  const isWeekend = (timeRange === 'week' || timeRange === 'month') && (day === 0 || day === 6);
+                                return (
+                                  <div 
+                                    key={idx} 
+                                    className={`flex-1 border-r border-[var(--border)]/30 ${isWeekend ? 'bg-[var(--bg-main)]/40' : ''}`}
+                                  />
+                                );
+                              })}
+                            </div>
+
+                            {/* Project Aggregated Bar */}
+                            <motion.div 
+                              initial={{ opacity: 0, width: 0 }}
+                              animate={{ opacity: 1, width: `${(projectDuration / totalDays) * 100}%` }}
+                              style={{ 
+                                marginLeft: `${(minOffset / totalDays) * 100}%`,
+                                backgroundColor: `${getProjectColor(group.name)}20`,
+                                border: `1.5px solid ${getProjectColor(group.name)}`,
+                                boxShadow: `0 0 12px ${getProjectColor(group.name)}30`,
+                                background: `linear-gradient(to right, ${getProjectColor(group.name)}40, ${getProjectColor(group.name)}10)`,
+                                zIndex: 5
+                              }}
+                              className="h-6 rounded-[6px] relative overflow-hidden group/bar flex items-center px-2"
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent pointer-events-none" />
+                            </motion.div>
+                          </div>
                         </div>
-                        <div className="flex-1 relative flex items-center px-2">
-                          {/* Project Aggregated Bar */}
-                          <motion.div 
-                            initial={{ opacity: 0, width: 0 }}
-                            animate={{ opacity: 1, width: `${(projectDuration / totalDays) * 100}%` }}
-                            style={{ 
-                              marginLeft: `${(minOffset / totalDays) * 100}%`,
-                              backgroundColor: 'rgba(99, 102, 241, 0.25)',
-                              border: '1px solid rgba(99, 102, 241, 0.6)',
-                              boxShadow: '0 0 10px rgba(99, 102, 241, 0.1)'
-                            }}
-                            className="h-5 rounded-[4px] relative overflow-hidden group/bar"
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent" />
-                          </motion.div>
-                        </div>
+
+                        {/* Expanded Tasks */}
+                        {expandedProjects.includes(group.name) && (
+                          <div className="flex flex-col bg-black/5">
+                            {visibleTasks.map((task, idx) => (
+                              <div key={idx} className="flex h-[32px] border-b border-[var(--border)]/50 hover:bg-white/[0.01] transition-colors">
+                                <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] pl-[35px] pr-[10px] flex items-center shrink-0 bg-[var(--bg-card)] sticky left-0 z-20">
+                                  <span className="text-[9px] font-medium text-[var(--text-muted)] truncate uppercase tracking-tight">
+                                    {task.task_name || task.title || 'Untitled Task'}
+                                  </span>
+                                </div>
+                                <div className="flex-1 relative flex items-center px-0 h-full">
+                                  {/* Weekend Shading Overlay for sub-tasks */}
+                                  <div className="absolute inset-0 flex pointer-events-none z-10">
+                                    {ganttTimeline.map((_, sIdx) => {
+                                      const isWeekend = ganttTimeline[sIdx].getDay() === 0 || ganttTimeline[sIdx].getDay() === 6;
+                                      return (
+                                        <div key={sIdx} className={`flex-1 border-r border-[var(--border)]/10 ${isWeekend ? 'bg-[var(--bg-main)]/60' : ''}`} />
+                                      );
+                                    })}
+                                  </div>
+                                  
+                                  <motion.div 
+                                    initial={{ opacity: 0, width: 0 }}
+                                    animate={{ opacity: 1, width: `${(task.renderDuration / totalDays) * 100}%` }}
+                                    style={{ 
+                                      marginLeft: `${(task.renderOffset / totalDays) * 100}%`,
+                                      backgroundColor: `${getProjectColor(group.name)}15`,
+                                      border: `1px solid ${getProjectColor(group.name)}60`,
+                                      zIndex: 5
+                                    }}
+                                    className="h-4 rounded-[4px] relative"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </motion.div>
                     );
                   })}
@@ -1190,7 +1344,7 @@ const PersonalSpace = () => {
 
               {/* Workload Intelligence HTML Chart */}
               <div className="flex border-t border-[var(--border)] bg-[var(--bg-card)] h-[150px] sticky bottom-0 z-10">
-                <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] p-[15px] flex flex-col justify-center shrink-0">
+                <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] p-[15px] flex flex-col justify-center shrink-0 bg-[var(--bg-card)] sticky left-0 z-20">
                   <div className="flex items-center gap-[10px]">
                     <TrendingUp size={16} className="text-emerald-400 shrink-0" />
                     <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest leading-tight">Workload<br/>(Tasks / Day)</span>
@@ -1588,6 +1742,61 @@ const PersonalSpace = () => {
           </div>
         </div>
       )}
+
+      {viewMode === 'performance' && (
+        <div className="ocd-card p-0 shadow-2xl shadow-black/20 border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-[1000px]">
+              <thead>
+                <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)] bg-indigo-500/5 h-[40px]">
+                  <th className="pr-6 py-0 vertical-align-middle" style={{ paddingLeft: '12px' }}>Full Name</th>
+                  <th className="px-4 py-0 text-center vertical-align-middle">Project Time</th>
+                  <th className="px-4 py-0 text-center vertical-align-middle">Check Time</th>
+                  <th className="px-4 py-0 text-center bg-indigo-500/5 vertical-align-middle">OT Time</th>
+                  <th className="px-4 py-0 text-center bg-orange-500/5 vertical-align-middle">Leave (D)</th>
+                  <th className="px-4 py-0 text-center vertical-align-middle">Free Time</th>
+                  <th className="px-4 py-0 text-center text-emerald-500 vertical-align-middle">Efficiency</th>
+                  <th className="px-4 py-0 text-right vertical-align-middle pr-4">Performance (%)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)]">
+                {efficiencyData?.map((s, i) => (
+                  <tr key={i} className="text-[11px] group hover:bg-[var(--bg-header)] transition-colors">
+                    <td className="pr-6 py-4" style={{ paddingLeft: '12px' }}>
+                      <div className="font-black text-[var(--text-contrast)] uppercase tracking-tight">{s.name}</div>
+                    </td>
+                    <td className="px-4 py-4 text-center font-mono font-bold text-sky-400">{s.projectTime.toFixed(1)}h</td>
+                    <td className="px-4 py-4 text-center font-mono font-bold text-amber-500">{s.checkTime.toFixed(1)}h</td>
+                    <td className="px-4 py-4 text-center bg-indigo-500/5">
+                      <input 
+                        type="number" 
+                        value={s.otTime || ''}
+                        onChange={(e) => setManualData(prev => ({ ...prev, [s.name]: { ...prev[s.name], ot: parseFloat(e.target.value) || 0 } }))}
+                        className="w-12 bg-transparent border-none text-center font-bold text-indigo-400 outline-none p-0 h-auto"
+                        placeholder="0"
+                      />
+                    </td>
+                    <td className="px-4 py-4 text-center bg-orange-500/5 font-mono font-bold text-orange-400">
+                      {s.leaveDays}d
+                    </td>
+                    <td className="px-4 py-4 text-center font-mono font-bold text-[var(--text-main)]">
+                      {s.freeTime.toFixed(1)}h
+                    </td>
+                    <td className="px-4 py-4 text-center font-mono font-black text-emerald-500">{s.efficiency.toFixed(0)}%</td>
+                    <td className="px-4 py-4 text-right pr-4 min-w-[140px]">
+                      <div className="font-mono font-black text-red-500 mb-1">{s.performance.toFixed(1)}%</div>
+                      <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div className="h-full bg-red-500" style={{ width: `${Math.min(s.performance, 100)}%` }} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
   );
 };

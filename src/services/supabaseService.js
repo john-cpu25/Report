@@ -113,7 +113,7 @@ export const fetchUsers = async (vietnamOnly = false) => {
     .order('name');
     
   if (vietnamOnly) {
-    query = query.ilike('location', 'VIETNAM');
+    query = query.or('location.ilike.VIETNAM,location.ilike.VIET NAM');
   }
     
   const { data, error } = await query;
