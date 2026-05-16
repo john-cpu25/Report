@@ -29,6 +29,21 @@
 
 ---
 
+## [VERSION 4.8.5] - 2026-05-16 (COMPLETED)
+### "Dashboard Synchronization & Neumorphic Design"
+
+### 1. Đồng bộ Giao diện (Layout Sync)
+- [x] **Precise Alignment**: Gióng hàng Logo và Nội dung theo trục dọc **10px** chuẩn xác.
+- [x] **Indentation Fix**: Loại bỏ Padding dư thừa, đồng nhất lề trái cho toàn bộ Dashboard.
+- [x] **Market Intelligence V2**: Tối giản hóa, đưa về dạng Compact (12px padding) đồng bộ với Team Cards.
+
+### 2. Hệ thống Neumorphism (Tactile UI)
+- [x] **Global CSS Templates**: Lưu bộ class `.neu-button`, `.neu-raised`, `.neu-inset` vào `index.css`.
+- [x] **Interactive Selectors**: Áp dụng phong cách 3D cho bộ chọn Team, Time Range và Chart Type.
+- [x] **Theme-Aware Shadows**: Tự động điều chỉnh đổ bóng Neumorphic cho cả Light và Dark Mode.
+
+---
+
 ## [VERSION 4.9.0] - 2026-05-15 (DỰ KIẾN)
 ### "Security Enforcement & Personal Workspace"
 
@@ -50,8 +65,8 @@
 
 ---
 **Kế hoạch tiếp theo (Next Steps):**
+- [/] Áp dụng Neumorphism cho toàn bộ hệ thống Tab (Annual Leave, Review).
 - [ ] Triển khai phân quyền Sidebar ngay lập tức.
-- [ ] Xây dựng khung giao diện cho Tab cá nhân.
 - [ ] Thực hiện fix bảo mật theo file `SECURITY_AUDIT.md`.
 
 ---

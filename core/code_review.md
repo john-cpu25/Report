@@ -38,6 +38,27 @@ Hệ thống được tổ chức theo mô hình React hiện đại:
 | **Supabase** | Backend/Database | Đang tích hợp |
 | **Chart.js** | Visualization | Hiển thị biểu đồ |
 
+## 4. Đánh giá Module Dashboard (Cập nhật 16/05/2026)
+
+### 4.1. Phân tích Kỹ thuật
+- **Tối ưu hóa**: Sử dụng `useMemo` triệt để cho `teamPulse` và `trendData`, đảm bảo hiệu năng khi dữ liệu lớn.
+- **Tính năng**: 
+    - Theo dõi xung nhịp đội ngũ (Team Pulse) theo thời gian thực.
+    - Biểu đồ xu hướng đa dạng (Line, Bar, Polar) với khả năng tùy biến cao qua Chart.js Plugins.
+- **Thẩm mỹ**: Giao diện Glassmorphism hiện đại, đồng bộ với ngôn ngữ thiết kế chung của hệ thống.
+
+### 4.2. Chế độ Admin Bypass (New Feature)
+Để phục vụ việc review nhanh và phát triển độc lập, một chế độ Bypass đã được thiết lập:
+- **Cơ chế**: URL Parameter `?admin_mode=true`.
+- **Chức năng**: Tự động cấp quyền `Super Admin` giả lập, bỏ qua bước đăng nhập Microsoft MSAL.
+- **Lưu ý**: Chỉ sử dụng trong môi trường phát triển hoặc nội bộ.
+
+## 5. Đề xuất Tiếp theo
+1. **Component Refactoring**: Tách Dashboard thành các file nhỏ (`TeamPulse.jsx`, `TrendChart.jsx`) để dễ quản lý.
+2. **Security**: Thêm lớp Secret Key cho tham số `admin_mode` nếu triển khai rộng rãi.
+3. **Data Integration**: Chuyển dần các logic tính toán phức tạp sang phía Supabase (Edge Functions) để giảm tải cho Client.
+
+
 ## 4. Đánh giá Tổng quan (Overall Assessment)
 
 ### Điểm mạnh (Strengths)

@@ -136,35 +136,32 @@ const TopBar = () => {
         </div>
 
         <div className="flex items-center gap-[10px]">
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
-            <input type="text" placeholder="GLOBAL SEARCH..." className="ocd-input pl-10 w-64 m-0" />
-          </div>
+          {activeTab === 'report' && (
+            <>
+              <div className="relative hidden md:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+                <input type="text" placeholder="GLOBAL SEARCH..." className="ocd-input pl-10 w-64 m-0" />
+              </div>
+
+              <div className="flex items-center gap-[10px]">
+                <button 
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className={`neu-button neu-pill px-6 py-2.5 text-[11px] ${isSidebarOpen ? 'active text-indigo-500' : ''}`}
+                >
+                  CREATE TASK
+                </button>
+
+                <button 
+                  onClick={() => setShowProjectGroups(!showProjectGroups)}
+                  className={`neu-button neu-pill px-6 py-2.5 text-[11px] ${showProjectGroups ? 'active text-emerald-500' : ''}`}
+                >
+                  PROJECT GROUP
+                </button>
+              </div>
+            </>
+          )}
 
           <div className="flex items-center gap-[10px]">
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`px-[15px] py-[10px] rounded-[8px] text-[12px] font-black uppercase tracking-widest transition-all border ${
-                isSidebarOpen 
-                  ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20' 
-                  : 'bg-white/5 text-slate-400 border-white/5 hover:border-indigo-500/30 hover:text-indigo-400'
-              }`}
-            >
-              CREATE TASK
-            </button>
-
-            <button 
-              onClick={() => setShowProjectGroups(!showProjectGroups)}
-              className={`px-[15px] py-[10px] rounded-[8px] text-[12px] font-black uppercase tracking-widest transition-all border ${
-                showProjectGroups 
-                  ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20' 
-                  : 'bg-white/5 text-slate-400 border-white/5 hover:border-emerald-500/30 hover:text-emerald-400'
-              }`}
-            >
-              PROJECT GROUP
-            </button>
-
-            <div className="h-8 w-px bg-[var(--border)] mx-2" />
 
             <button className="p-[10px] rounded-[8px] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all relative">
               <Bell size={20} />

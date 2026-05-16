@@ -273,44 +273,44 @@ const PerformanceReview = () => {
           <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-[0.3em] ml-5">Unified Task Analytics — Raw Data View</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-[10px]">
-          {/* View Switcher */}
-          <div className="flex items-center gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)] shadow-sm">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* View Switcher (Neumorphic) */}
+          <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
             <button onClick={() => setViewMode('raw')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'raw' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
-              <List size={14} /> Raw
+              className={`neu-button px-6 py-2 text-[10px] gap-2 ${viewMode === 'raw' ? 'active text-indigo-500' : ''}`}>
+              <List size={14} /> RAW
             </button>
             <button onClick={() => setViewMode('weekly')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'weekly' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
-              <CalendarRange size={14} /> Weekly
+              className={`neu-button px-6 py-2 text-[10px] gap-2 ${viewMode === 'weekly' ? 'active text-indigo-500' : ''}`}>
+              <CalendarRange size={14} /> WEEKLY
             </button>
             <button onClick={() => setViewMode('summary')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'summary' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
-              <TrendingUp size={14} /> Summary
+              className={`neu-button px-6 py-2 text-[10px] gap-2 ${viewMode === 'summary' ? 'active text-indigo-500' : ''}`}>
+              <TrendingUp size={14} /> SUMMARY
             </button>
           </div>
 
-          <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)] shadow-sm">
-            <div className="flex items-center gap-2 px-3">
+          <div className="neu-inset rounded-2xl p-1.5 flex gap-4 items-center">
+            <div className="flex items-center gap-3 pl-4 border-r border-[var(--border)] pr-4">
               <Calendar size={14} className="text-[var(--text-muted)]" />
-              <input type="date" className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer uppercase"
+              <input type="date" className="bg-transparent text-[11px] font-black text-emerald-500 outline-none cursor-pointer uppercase"
                 value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} />
-            </div>
-            <div className="w-px h-4 bg-[var(--border)]" />
-            <div className="flex items-center gap-2 px-3">
-              <input type="date" className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer uppercase"
+              <span className="text-[var(--text-muted)] opacity-50">→</span>
+              <input type="date" className="bg-transparent text-[11px] font-black text-emerald-500 outline-none cursor-pointer uppercase"
                 value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
             </div>
+
+            <div className="flex items-center gap-3 pr-4">
+              <Filter size={14} className="text-[var(--text-muted)]" />
+              <select className="bg-transparent text-[11px] font-black text-indigo-500 outline-none cursor-pointer uppercase pr-4"
+                value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}>
+                {teamOptions.map(t => <option key={t} value={t} className="bg-[var(--bg-dark)]">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
+              </select>
+            </div>
           </div>
-          <div className="bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)] flex items-center gap-[10px] shadow-sm">
-            <Filter size={14} className="text-[var(--text-muted)] ml-2" />
-            <select className="bg-transparent text-[11px] font-black text-emerald-500 outline-none cursor-pointer uppercase pr-4"
-              value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}>
-              {teamOptions.map(t => <option key={t} value={t} className="bg-[var(--bg-dark)]">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
-            </select>
-          </div>
-          <div className="px-4 py-2 rounded-[8px] bg-[var(--bg-surface)] border border-[var(--border)] text-xs font-black text-[var(--text-muted)] uppercase tracking-widest shadow-sm">
-            {tableData.length} Tasks
+
+          <div className="neu-button neu-pill px-6 py-2 text-[10px] text-emerald-500">
+            {tableData.length} TASKS
           </div>
         </div>
       </div>
@@ -413,11 +413,11 @@ const PerformanceReview = () => {
             <div className="space-y-[10px]">
               <div className="flex items-center justify-between ocd-card">
                 <h3 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Weekly Distribution</h3>
-                <div className="flex gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)]">
+                <div className="neu-inset rounded-2xl p-1 flex gap-1">
                   {['t1', 't2', 't4'].map(m => (
                     <button key={m} onClick={() => setActiveMetric(m)}
-                      className={`px-3 py-1.5 rounded-[8px] text-[9px] font-black uppercase transition-all ${activeMetric === m ? 'bg-indigo-500 text-white' : 'text-[var(--text-muted)]'}`}>
-                      {m === 't1' ? 'Plan' : m === 't2' ? 'User' : 'Task'}
+                      className={`neu-button px-4 py-1.5 text-[9px] ${activeMetric === m ? 'active text-indigo-500' : ''}`}>
+                      {m === 't1' ? 'PLAN' : m === 't2' ? 'USER' : 'TASK'}
                     </button>
                   ))}
                 </div>

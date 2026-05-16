@@ -266,12 +266,12 @@ const AnnualLeave = () => {
 
   return (
     <div className="w-full space-y-[10px] pb-12">
-      {/* Control Header */}
-      <div className="bg-[var(--bg-card)] p-[10px] border border-[var(--border)] rounded-[8px] flex flex-wrap items-center justify-between gap-[10px] m-[10px] shadow-sm">
-        <div className="flex items-center gap-[10px]">
-          <div className="flex items-center gap-[10px]">
-            <div className="p-[10px] rounded-[8px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              <Landmark size={20} />
+      {/* Control Header (Neumorphic Action Bar) */}
+      <div className="neu-raised p-6 flex flex-wrap items-center justify-between gap-8 m-[10px] rounded-3xl">
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4">
+            <div className="neu-button neu-square p-4 text-indigo-500">
+              <Landmark size={24} />
             </div>
             <div>
               <h2 className="text-[14px] font-black text-indigo-500 uppercase tracking-widest leading-none">VN Annual Leave</h2>
@@ -279,68 +279,70 @@ const AnnualLeave = () => {
             </div>
           </div>
 
-          <div className="h-10 w-px bg-[var(--border)]" />
+          <div className="h-12 w-px bg-[var(--border)] opacity-50" />
 
-          <div className="flex items-center gap-[10px] p-[10px] bg-indigo-500/5 rounded-[8px] border border-indigo-500/10">
+          <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
             <button 
               onClick={() => setViewMode('personal')}
-              className={`flex items-center gap-[10px] px-[15px] py-[10px] rounded-[8px] text-[14px] font-black uppercase tracking-widest transition-all ${viewMode === 'personal' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
+              className={`neu-button px-6 py-2.5 text-[11px] gap-2 ${viewMode === 'personal' ? 'active text-indigo-500' : ''}`}
             >
-              <User size={14} /> Individual + Analytics
+              <User size={14} /> PERSONAL + ANALYTICS
             </button>
             <button 
               onClick={() => setViewMode('team')}
-              className={`flex items-center gap-[10px] px-[15px] py-[10px] rounded-[8px] text-[14px] font-black uppercase tracking-widest transition-all ${viewMode === 'team' ? 'bg-indigo-500 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-indigo-500'}`}
+              className={`neu-button px-6 py-2.5 text-[11px] gap-2 ${viewMode === 'team' ? 'active text-indigo-500' : ''}`}
             >
-              <LayoutGrid size={14} /> Team Summary
+              <LayoutGrid size={14} /> TEAM SUMMARY
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-[10px]">
-          <div className="flex items-center gap-[10px] bg-indigo-500/5 px-[15px] py-[10px] rounded-[8px] border border-indigo-500/10">
-            <Calendar size={14} className="text-indigo-400" />
-            <select 
-              className="bg-transparent text-[11px] font-black text-indigo-500 outline-none cursor-pointer uppercase"
-              style={{ colorScheme: 'dark' }}
-              value={selectedYear}
-              onChange={e => setSelectedYear(e.target.value)}
-            >
-              <option value="2024" className="bg-[#161B26] text-white">YEAR 2024</option>
-              <option value="2025" className="bg-[#161B26] text-white">YEAR 2025</option>
-              <option value="2026" className="bg-[#161B26] text-white">YEAR 2026</option>
-              <option value="ALL" className="bg-[#161B26] text-white">ALL DATA (CUMULATIVE)</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-[10px] bg-indigo-500/5 px-[15px] py-[10px] rounded-[8px] border border-indigo-500/10">
-            <Users size={14} className="text-indigo-400" />
-            <select 
-              className="bg-transparent text-[11px] font-black text-indigo-500 outline-none cursor-pointer uppercase"
-              style={{ colorScheme: 'dark' }}
-              value={selectedTeam}
-              onChange={e => setSelectedTeam(e.target.value)}
-            >
-              {teamOptions.map(t => <option key={t} value={t} className="bg-[#161B26] text-white">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
-            </select>
-          </div>
-
-          {viewMode === 'personal' && (
-            <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] px-[15px] py-[10px] rounded-[8px] border border-[var(--border)]">
-              <User size={14} className="text-[var(--text-muted)]" />
+        <div className="flex items-center gap-4">
+          <div className="neu-inset rounded-2xl p-1.5 flex gap-4 items-center">
+            <div className="flex items-center gap-3 pl-4 border-r border-[var(--border)] pr-4">
+              <Calendar size={14} className="text-indigo-400" />
               <select 
-                className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer min-w-[150px]"
+                className="bg-transparent text-[11px] font-black text-indigo-500 outline-none cursor-pointer uppercase"
                 style={{ colorScheme: 'dark' }}
-                value={selectedUser}
-                onChange={e => setSelectedUser(e.target.value)}
+                value={selectedYear}
+                onChange={e => setSelectedYear(e.target.value)}
               >
-                <option value="ADMIN" className="bg-[#161B26] text-white">SYSTEM ADMIN</option>
-                {filteredUsersByTeam.map(u => (
-                  <option key={u.id} value={u.name || u.email} className="bg-[#161B26] text-white">{u.name || u.email}</option>
-                ))}
+                <option value="2024" className="bg-[#161B26] text-white">YEAR 2024</option>
+                <option value="2025" className="bg-[#161B26] text-white">YEAR 2025</option>
+                <option value="2026" className="bg-[#161B26] text-white">YEAR 2026</option>
+                <option value="ALL" className="bg-[#161B26] text-white">ALL DATA</option>
               </select>
             </div>
-          )}
+
+            <div className="flex items-center gap-3 pr-4">
+              <Users size={14} className="text-indigo-400" />
+              <select 
+                className="bg-transparent text-[11px] font-black text-indigo-500 outline-none cursor-pointer uppercase"
+                style={{ colorScheme: 'dark' }}
+                value={selectedTeam}
+                onChange={e => setSelectedTeam(e.target.value)}
+              >
+                {teamOptions.map(t => <option key={t} value={t} className="bg-[#161B26] text-white">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
+              </select>
+            </div>
+
+            {viewMode === 'personal' && (
+              <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2 rounded-xl border border-[var(--border)] shadow-inner">
+                <User size={14} className="text-[var(--text-muted)]" />
+                <select 
+                  className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer min-w-[120px]"
+                  style={{ colorScheme: 'dark' }}
+                  value={selectedUser}
+                  onChange={e => setSelectedUser(e.target.value)}
+                >
+                  <option value="ADMIN" className="bg-[#161B26] text-white">SYSTEM ADMIN</option>
+                  {filteredUsersByTeam.map(u => (
+                    <option key={u.id} value={u.name || u.email} className="bg-[#161B26] text-white">{u.name || u.email}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

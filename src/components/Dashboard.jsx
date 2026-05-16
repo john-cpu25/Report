@@ -153,6 +153,30 @@ const Dashboard = () => {
   const [chartType, setChartType] = useState('LINE'); // LINE, BAR, POLAR
 
   const [showWorkChart, setShowWorkChart] = useState(true);
+  const [audRate, setAudRate] = useState({ rate: 18839.06, change: '+0.15%', buy: 18780, sell: 18890 });
+
+  useEffect(() => {
+    const fetchAudRate = async () => {
+      try {
+        const response = await fetch('https://open.er-api.com/v6/latest/AUD');
+        const data = await response.json();
+        if (data && data.rates && data.rates.VND) {
+          const currentRate = data.rates.VND;
+          setAudRate({
+            rate: currentRate,
+            change: '+0.22%', // In a real app, we'd calculate this from history
+            buy: Math.floor(currentRate - 50),
+            sell: Math.floor(currentRate + 60)
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch AUD rate:', error);
+      }
+    };
+    fetchAudRate();
+    const interval = setInterval(fetchAudRate, 600000); // Update every 10 mins
+    return () => clearInterval(interval);
+  }, []);
 
   const stats = useMemo(() => {
     return {
@@ -307,7 +331,7 @@ const Dashboard = () => {
 
 
   return (
-    <div className="bg-[var(--bg-main)] min-h-screen text-[var(--text-main)] p-5 px-4 lg:px-8 font-['Inter'] relative transition-colors duration-300">
+    <div className="bg-[var(--bg-main)] min-h-screen text-[var(--text-main)] py-5 font-['Inter'] relative transition-colors duration-300">
 
       {/* Background Ambience */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
@@ -315,150 +339,160 @@ const Dashboard = () => {
 
 
 
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative z-10 flex flex-col xl:flex-row gap-6" style={{ marginTop: '12px' }}>
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative z-10 flex flex-col gap-6" style={{ marginTop: '12px' }}>
 
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          {/* LEFT: Teams Section (8/12) */}
+          <div className="xl:col-span-8 flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
+              {teamPulse.map((team, i) => (
+                <div key={i} className="flex flex-col h-full">
+                  <div className="flex justify-start mb-1">
+                    <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">{team.name}</h2>
+                  </div>
 
+                  <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex flex-col md:flex-row gap-3 h-full flex-1" style={{ padding: '12px' }}>
+                    {(!team.hasData && loading) ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] animate-pulse">Syncing Data...</p>
+                        </div>
+                      </div>
+                    ) : !team.hasData ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/5 z-20 rounded-2xl">
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">No Active Logs</p>
+                      </div>
+                    ) : null}
 
-        {/* MIDDLE COLUMN: Team Pulse & Doughnut */}
-        <div className="flex-1 flex flex-col gap-6 min-w-0">
+                    {/* Left Column - Team Info (Compact) */}
+                    <div className="w-[120px] shrink-0 flex flex-col justify-between">
+                      <p className="text-[10px] text-[var(--text-muted)] font-bold">{team.members} MBRS</p>
+                      <div className="flex flex-col gap-1.5 text-[10px] font-bold text-[var(--text-main)] my-1">
+                        <div className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                          <span className="text-[var(--text-muted)]">WK:</span>
+                          <span>{team.working.length}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          <span className="text-[var(--text-muted)]">AV:</span>
+                          <span>{team.available.length}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          <span className="text-[var(--text-muted)]">LV:</span>
+                          <span>{team.leave.length}</span>
+                        </div>
+                      </div>
+                    </div>
 
-          {/* Team Pulse Section */}
-          {/* Teams Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-4 auto-rows-fr">
-            {teamPulse.map((team, i) => (
-              <div key={i} className="flex flex-col h-full">
-
-                {/* Team Name Outside - Top Left */}
-                <div className="flex justify-start mb-1">
-                  <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">{team.name}</h2>
+                    {/* Right Column - Tasks (Closer and Wider) */}
+                    <div className="flex-1 bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden h-[75px]">
+                      <div className="flex flex-col justify-start gap-2 h-full p-2.5 overflow-y-auto custom-scrollbar">
+                        {team.dailyTasks ? team.dailyTasks.map((t, j) => (
+                          <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
+                            <span className={`w-1 h-1 rounded-full shrink-0 ${t.isWorking ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]' : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'}`}></span>
+                            <div className="text-[10px] font-bold truncate">
+                              <span className={`${t.isWorking ? 'text-rose-400' : 'text-[var(--text-muted)]'} uppercase tracking-wide`}>{t.project}</span>
+                            </div>
+                          </div>
+                        )) : (
+                          <div className="flex items-center justify-center h-full">
+                            <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-30">NO TASKS TODAY</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
                 </div>
-
-                <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex flex-col md:flex-row gap-4 h-full flex-1" style={{ padding: '14px' }}>
-
-                  {(!team.hasData && loading) ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] animate-pulse">Syncing Data...</p>
-                      </div>
-                    </div>
-                  ) : !team.hasData ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 z-20 rounded-2xl">
-                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">No Active Logs</p>
-                    </div>
-                  ) : null}
-
-                  {/* Left Column - Team Info */}
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <p className="text-xs text-[var(--text-muted)] font-medium">{team.members} Members</p>
-                    </div>
-
-                    <div className="flex flex-col gap-2 text-[11px] font-bold text-[var(--text-main)] my-2">
-                      {/* Working */}
-                      <div className="group/tooltip relative flex items-center gap-2 cursor-help w-fit">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
-                        <span className="text-[var(--text-muted)] w-16">Working:</span>
-                        <span>{team.working.length}</span>
-                        {team.working.length > 0 && (
-                          <div className={`absolute ${i % 2 === 0 ? 'left-full ml-4' : 'right-full mr-4'} top-1/2 -translate-y-1/2 hidden group-hover/tooltip:block z-[100]`}>
-                            <div className="bg-[var(--bg-card)]/95 backdrop-blur-md border border-[var(--glass-border)] rounded-lg p-3 shadow-xl min-w-[180px]">
-                              {team.working.map((name, idx) => (
-                                <div key={idx} className="text-xs font-semibold text-[var(--text-main)] py-1 whitespace-nowrap opacity-95">{name}</div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Available */}
-                      <div className="group/tooltip relative flex items-center gap-2 cursor-help w-fit">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                        <span className="text-[var(--text-muted)] w-16">Available:</span>
-                        <span>{team.available.length}</span>
-                        {team.available.length > 0 && (
-                          <div className={`absolute ${i % 2 === 0 ? 'left-full ml-4' : 'right-full mr-4'} top-1/2 -translate-y-1/2 hidden group-hover/tooltip:block z-[100]`}>
-                            <div className="bg-[var(--bg-card)]/95 backdrop-blur-md border border-[var(--glass-border)] rounded-lg p-3 shadow-xl min-w-[180px]">
-                              {team.available.map((name, idx) => (
-                                <div key={idx} className="text-xs font-semibold text-[var(--text-main)] py-1 whitespace-nowrap opacity-95">{name}</div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Leave */}
-                      <div className="group/tooltip relative flex items-center gap-2 cursor-help w-fit">
-                        <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-                        <span className="text-[var(--text-muted)] w-16">Leave:</span>
-                        <span>{team.leave.length}</span>
-                        {team.leave.length > 0 && (
-                          <div className={`absolute ${i % 2 === 0 ? 'left-full ml-4' : 'right-full mr-4'} top-1/2 -translate-y-1/2 hidden group-hover/tooltip:block z-[100]`}>
-                            <div className="bg-[var(--bg-card)]/95 backdrop-blur-md border border-[var(--glass-border)] rounded-lg p-3 shadow-xl min-w-[180px]">
-                              {team.leave.map((name, idx) => (
-                                <div key={idx} className="text-xs font-semibold text-[var(--text-main)] py-1 whitespace-nowrap opacity-95">{name}</div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Column - Tasks */}
-                  <div className="w-full md:w-[45%] bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden h-[80px]">
-                    <div className="flex flex-col justify-start gap-2 h-full p-3 overflow-y-auto custom-scrollbar">
-                      {team.dailyTasks ? team.dailyTasks.map((t, j) => (
-                        <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${t.isWorking ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]' : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'}`}></span>
-                          <div className="text-[11px] font-bold truncate transition-colors">
-                            <span className={`${t.isWorking ? 'text-rose-400' : 'text-[var(--text-muted)]'} uppercase tracking-wide`}>{t.project}</span>
-                          </div>
-                        </div>
-                      )) : (
-                        <div className="flex items-center justify-center h-full">
-                          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">No Tasks Today</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                </motion.div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          {/* Task Trends Section */}
-          <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl p-8 shadow-sm min-h-[600px] flex flex-col gap-10">
-            <div className="flex flex-col md:flex-row justify-start items-start md:items-center gap-10 pl-4">
-              <div className="flex items-center gap-6 h-10">
-                {/* Team Selector */}
-                <div className="relative group h-full">
+          {/* RIGHT: Currency & Market Section (4/12) */}
+          <div className="xl:col-span-4 flex flex-col">
+             <div className="flex justify-start mb-2 h-[20px] items-center">
+                <h2 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Market Intelligence</h2>
+             </div>
+             <motion.div 
+               variants={itemVariants} 
+               className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl shadow-sm flex-1 flex flex-col gap-3"
+               style={{ padding: '12px' }}
+             >
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                         <span className="font-black text-lg">A$</span>
+                      </div>
+                      <div>
+                         <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight">AUD / VND</h3>
+                         <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1">
+                            <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span> Live Exchange
+                         </p>
+                      </div>
+                   </div>
+                   <div className="text-right">
+                      <div className="flex items-center gap-1.5 text-emerald-500 font-black text-lg">
+                         <ArrowUpRight size={18} />
+                         <span>{audRate.rate.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <p className="text-[10px] text-[var(--text-muted)] font-bold">{audRate.change} Today</p>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mt-1">
+                   <div 
+                    className="bg-[var(--bg-surface)]/50 rounded-xl border border-[var(--border)] hover:bg-[var(--bg-surface)] transition-colors group"
+                    style={{ padding: '12px 16px' }}
+                   >
+                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase mb-1 group-hover:text-[var(--text-main)] transition-colors">Buy Rate</p>
+                      <p className="text-xs font-black text-[var(--text-main)]">{audRate.buy.toLocaleString('vi-VN')}</p>
+                   </div>
+                   <div 
+                    className="bg-[var(--bg-surface)]/50 rounded-xl border border-[var(--border)] hover:bg-[var(--bg-surface)] transition-colors group"
+                    style={{ padding: '12px 16px' }}
+                   >
+                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase mb-1 group-hover:text-[var(--text-main)] transition-colors">Sell Rate</p>
+                      <p className="text-xs font-black text-[var(--text-main)]">{audRate.sell.toLocaleString('vi-VN')}</p>
+                   </div>
+                </div>
+             </motion.div>
+          </div>
+        </div>
+
+        {/* Task Trends Section */}
+         <motion.div variants={itemVariants} className="bg-[var(--bg-main)] border border-[var(--border)] rounded-3xl p-10 shadow-sm min-h-[500px] flex flex-col gap-12">
+            <div className="flex flex-col md:flex-row justify-start items-start md:items-center gap-12 pl-2">
+              <div className="flex items-center gap-8 h-12">
+                {/* Team Selector (Neumorphic) */}
+                <div className="relative h-full group">
+                  <div className="absolute inset-0 bg-[var(--bg-surface)] rounded-2xl shadow-[4px_4px_10px_rgba(0,0,0,0.1),-4px_-4px_10px_rgba(255,255,255,0.8)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.3),-2px_-2px_10px_rgba(255,255,255,0.05)] group-hover:scale-[1.02] transition-transform duration-300"></div>
                   <select 
                     value={chartTeam}
                     onChange={(e) => setChartTeam(e.target.value)}
-                    className="h-full appearance-none bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-main)] text-[11px] font-black uppercase tracking-widest px-6 pr-10 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500/50 hover:bg-[var(--glass-border)] transition-all"
+                    className="relative h-full appearance-none bg-transparent text-[var(--text-main)] text-[11px] font-black uppercase tracking-[0.2em] px-8 pr-12 rounded-2xl cursor-pointer focus:outline-none z-10"
                   >
                     <option value="ALL">ALL TEAMS</option>
                     {TEAMS.map(t => (
                       <option key={t.id} value={t.id}>{t.display}</option>
                     ))}
                   </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)]">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)] z-20">
                     <ChevronDown size={14} />
                   </div>
                 </div>
 
-                {/* Time Range Selector */}
-                <div className="h-full flex bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-1 gap-1">
+                {/* Time Range Selector (Neumorphic) */}
+                <div className="h-full flex bg-[var(--bg-surface)] rounded-2xl p-1.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2),inset_-1px_-1px_5px_rgba(255,255,255,0.02)] gap-2">
                   {['DAY', 'WEEK', 'MONTH', 'YEAR'].map((r) => (
                     <button
                       key={r}
                       onClick={() => setTimeRange(r)}
-                      className={`h-full px-6 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                      className={`h-full px-6 text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-300 ${
                         timeRange === r 
-                        ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/30' 
-                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-border)]'
+                        ? 'bg-[var(--bg-surface)] text-indigo-600 shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,1)] dark:shadow-[2px_2px_5px_rgba(0,0,0,0.3),-1px_-1px_5px_rgba(255,255,255,0.05)] scale-[0.98]' 
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                     >
                       {r}
@@ -466,8 +500,8 @@ const Dashboard = () => {
                   ))}
                 </div>
 
-                {/* Chart Type Selector */}
-                <div className="h-full flex bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-1 gap-1">
+                {/* Chart Type Selector (Neumorphic) */}
+                <div className="h-full flex bg-[var(--bg-surface)] rounded-2xl p-1.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2),inset_-1px_-1px_5px_rgba(255,255,255,0.02)] gap-2">
                   {[
                     { id: 'LINE', icon: TrendingUp },
                     { id: 'BAR', icon: BarChart3 },
@@ -476,10 +510,10 @@ const Dashboard = () => {
                     <button
                       key={t.id}
                       onClick={() => setChartType(t.id)}
-                      className={`h-full aspect-square flex items-center justify-center rounded-lg transition-all ${
+                      className={`h-full aspect-square flex items-center justify-center rounded-xl transition-all duration-300 ${
                         chartType === t.id 
-                        ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/30' 
-                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-border)]'
+                        ? 'bg-[var(--bg-surface)] text-indigo-600 shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,1)] dark:shadow-[2px_2px_5px_rgba(0,0,0,0.3),-1px_-1px_5px_rgba(255,255,255,0.05)] scale-[0.98]' 
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                       title={`${t.id} Chart`}
                     >
@@ -612,8 +646,6 @@ const Dashboard = () => {
               )}
             </div>
           </motion.div>
-        </div>
-
 
 
       </motion.div>

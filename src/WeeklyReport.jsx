@@ -351,17 +351,13 @@ const WeeklyReport = ({ exportExcel }) => {
 
                   <div className="flex flex-col gap-[5px]">
                     <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">ETA Protocol</label>
-                    <div className="grid grid-cols-3 gap-[5px]">
+                    <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
                       {['MO', 'AF', 'CUSTOM'].map(opt => (
                         <button
                           key={opt}
                           type="button"
                           onClick={() => handleEtaMode(opt)}
-                          className={`py-[10px] rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all border ${
-                            formData.etaMode === opt
-                              ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
-                              : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--text-muted)]/20'
-                          }`}
+                          className={`neu-button flex-1 py-3 text-[10px] ${formData.etaMode === opt ? 'active text-indigo-500' : ''}`}
                         >
                           {opt}
                         </button>
@@ -377,15 +373,15 @@ const WeeklyReport = ({ exportExcel }) => {
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-[10px] pt-[10px]">
-                    <button type="submit" className="w-full py-[15px] bg-indigo-600 hover:bg-indigo-500 text-white rounded-[8px] text-[14px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all">
-                      SUBMIT TO LOG
+                  <div className="flex flex-col gap-4 pt-[10px]">
+                    <button type="submit" className="neu-button neu-pill w-full py-4 text-[14px] text-indigo-500 active:scale-[0.98]">
+                       SUBMIT TO LOG
                     </button>
-                    <div className="grid grid-cols-2 gap-[10px]">
-                      <button type="button" onClick={exportExcel} className="flex items-center justify-center gap-[10px] py-[10px] bg-white/5 hover:bg-white/10 text-slate-300 rounded-[8px] text-[10px] font-black uppercase border border-white/10 transition-all">
+                    <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
+                      <button type="button" onClick={exportExcel} className="neu-button flex-1 py-3 text-[10px] gap-2">
                         <FileSpreadsheet size={14} /> EXPORT
                       </button>
-                      <button type="button" onClick={() => setShowBatchModal(true)} className="flex items-center justify-center gap-[10px] py-[10px] bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-[8px] text-[10px] font-black uppercase border border-orange-500/20 transition-all">
+                      <button type="button" onClick={() => setShowBatchModal(true)} className="neu-button flex-1 py-3 text-[10px] gap-2">
                         <Layout size={14} /> BATCH ADD
                       </button>
                     </div>
@@ -405,26 +401,26 @@ const WeeklyReport = ({ exportExcel }) => {
             </div>
 
             {showProjectGroups && (
-              <div className="flex items-center gap-[10px] p-[10px]">
+              <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
                 <button 
                   onClick={expandAll}
-                  className="px-[15px] py-[10px] bg-white/5 hover:bg-white/10 rounded-[8px] text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/5 transition-all"
+                  className="neu-button px-6 py-2 text-[10px]"
                 >
-                  Expand All
+                  EXPAND ALL
                 </button>
                 <button 
                   onClick={collapseAll}
-                  className="px-[15px] py-[10px] bg-white/5 hover:bg-white/10 rounded-[8px] text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/5 transition-all"
+                  className="neu-button px-6 py-2 text-[10px]"
                 >
-                  Collapse All
+                  COLLAPSE ALL
                 </button>
                 {focusedProject && (
                   <button 
                     onClick={() => setFocusedProject(null)}
-                    className="px-[15px] py-[10px] bg-rose-500/10 hover:bg-rose-500/20 rounded-[8px] text-[10px] font-black text-rose-400 uppercase tracking-widest border border-rose-500/20 transition-all flex items-center gap-[10px]"
+                    className="neu-button px-6 py-2 text-[10px] text-rose-500 gap-2"
                   >
                     <X size={14} />
-                    Reset Focus
+                    RESET FOCUS
                   </button>
                 )}
               </div>

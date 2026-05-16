@@ -248,6 +248,78 @@ body.theme-news ::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
+/* ==========================================================================
+   NEUMORPHISM DESIGN SYSTEM
+   ========================================================================== */
+
+/* Raised effect (Nút nổi) */
+.neu-raised {
+  background: var(--bg-surface);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.08), 
+              -4px -4px 10px rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.dark .neu-raised {
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.4), 
+              -2px -2px 8px rgba(255, 255, 255, 0.05);
+}
+
+/* Inset effect (Khung chìm) */
+.neu-inset {
+  background: var(--bg-surface);
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.05), 
+              inset -2px -2px 5px rgba(255, 255, 255, 0.5);
+}
+
+.dark .neu-inset {
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.3), 
+              inset -1px -1px 4px rgba(255, 255, 255, 0.02);
+}
+
+/* Interactive Neumorphic Button */
+.neu-button {
+  background: var(--bg-surface);
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.neu-button:hover {
+  color: var(--text-main);
+  transform: translateY(-1px);
+  box-shadow: 6px 6px 15px rgba(0, 0, 0, 0.1), 
+              -6px -6px 15px rgba(255, 255, 255, 0.9);
+}
+
+.dark .neu-button:hover {
+  box-shadow: 6px 6px 18px rgba(0, 0, 0, 0.5), 
+              -2px -2px 10px rgba(255, 255, 255, 0.07);
+}
+
+.neu-button:active, .neu-button.active {
+  color: #4f46e5; /* Indigo-600 */
+  box-shadow: inset 3px 3px 7px rgba(0, 0, 0, 0.1), 
+              inset -3px -3px 7px rgba(255, 255, 255, 0.8);
+  transform: scale(0.97);
+}
+
+.dark .neu-button:active, .dark .neu-button.active {
+  box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.4), 
+              inset -1px -1px 6px rgba(255, 255, 255, 0.03);
+}
+
+/* Rounded variants */
+.neu-pill { border-radius: 9999px; }
+.neu-square { border-radius: 16px; }
+
 /* Custom Scrollbar Utility */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
