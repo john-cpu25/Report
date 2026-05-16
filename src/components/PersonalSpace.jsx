@@ -98,6 +98,7 @@ const PersonalSpace = () => {
   const [expandedWeeks, setExpandedWeeks] = useState({});
   const [expandedTeams, setExpandedTeams] = useState({});
   const [weekOffset, setWeekOffset] = useState(0);
+  const [projectSubView, setProjectSubView] = useState('grid'); // 'grid' | 'bookshelf' | 'table'
   const [localMaps, setLocalMaps] = useState({ userMap: {}, teamMap: {} });
   const [selectedTimeMetric, setSelectedTimeMetric] = useState('t4'); // Default to T4 (Processing Time)
   
@@ -1052,108 +1053,288 @@ const PersonalSpace = () => {
       )}
 
       {viewMode === 'project' && (
-        <div className="ocd-card p-0 shadow-2xl shadow-black/20 border border-[var(--border)] bg-[var(--bg-card)]">
-          <div className="max-h-[calc(100vh-320px)] overflow-y-auto overflow-x-auto custom-scrollbar">
-            <table className="w-full border-collapse table-fixed" style={{ minWidth: '1120px' }}>
-              <colgroup>
-                <col style={{ width: '140px' }} />
-                <col style={{ width: '200px' }} />
-                <col style={{ width: '140px' }} />
-                <col style={{ width: '80px' }} />
-                <col style={{ width: '80px' }} />
-                <col style={{ width: '80px' }} />
-                <col style={{ width: '80px' }} />
-                <col style={{ width: '80px' }} />
-                <col style={{ width: '80px' }} />
-                <col style={{ width: '80px' }} />
-                <col style={{ width: '80px' }} />
-              </colgroup>
-              <thead>
-                <tr className="bg-[var(--bg-card)]">
-                  <th className="sticky z-[35] text-left px-[16px] py-[14px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px' }}>Team</th>
-                  <th className="sticky z-[35] text-left px-[16px] py-[14px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px' }}>Project</th>
-                  <th className="sticky z-[35] text-left px-[16px] py-[14px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px' }}>Member</th>
-                  {projectTimesheetData.weekDates.map((date, i) => {
-                    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                    const dayColors = ['text-blue-400', 'text-violet-400', 'text-amber-400', 'text-emerald-400', 'text-rose-400', 'text-orange-400', 'text-pink-400'];
-                    return (
-                      <th key={i} className="sticky z-[35] text-center px-[10px] py-[12px] border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px' }}>
-                        <div className={`text-[12px] font-black ${dayColors[i]}`}>{format(date, 'dd/MM')}</div>
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)]">[{dayLabels[i]}]</div>
-                      </th>
-                    );
-                  })}
-                  <th className="sticky z-[35] text-center px-[10px] py-[14px] border-b border-[var(--border)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest bg-[var(--bg-card)]" style={{ top: '0px' }}>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projectTimesheetData.teams.length === 0 && (
-                  <tr>
-                    <td colSpan={11} className="text-center py-[40px]">
-                      <CalendarDays size={28} className="text-[var(--text-muted)] opacity-30 mx-auto mb-2" />
-                      <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.2em]">No project data for Week {projectTimesheetData.weekNumber}</p>
-                    </td>
-                  </tr>
-                )}
-                {projectTimesheetData.teams.map((team, ti) => (
-                  <React.Fragment key={ti}>
-                    {team.projects.map((project, pi) => (
-                      project.members.map((member, mi) => {
-                        const isEvenMember = mi % 2 === 0;
-                        const rowBg = isEvenMember ? 'bg-[var(--bg-surface)]/30' : 'bg-transparent';
-                        
-                        return (
-                          <tr 
-                            key={`${ti}-${pi}-${mi}`} 
-                            className={`hover:bg-indigo-500/10 transition-colors border-b border-[var(--border)] ${rowBg}`}
-                          >
-                            {/* Team Column */}
-                            {pi === 0 && mi === 0 && (
-                              <td
-                                rowSpan={team.totalRows}
-                                className="px-[20px] py-[15px] text-[12px] font-black text-indigo-500 uppercase tracking-tight border-r border-[var(--border)] align-top bg-indigo-500/[0.05] min-w-[140px]"
-                              >
-                                {team.name}
-                              </td>
-                            )}
-                            {/* Project Column */}
-                            {mi === 0 && (
-                              <td
-                                rowSpan={project.totalRows}
-                                className="px-[12px] py-[15px] text-[10px] font-black border-r border-[var(--border)] uppercase align-top bg-emerald-500/[0.02]"
-                                style={{ color: getProjectColor(project.name) }}
-                              >
-                                {project.name}
-                              </td>
-                            )}
-                            {/* Member Column */}
-                            <td className="px-[20px] py-[15px] text-[12px] font-black text-sky-500 uppercase tracking-tight border-r border-[var(--border)] min-w-[140px]">
-                              {member.name}
-                            </td>
-                            {member.hours.map((hours, di) => {
-                              const cellColor = hours === 0 ? 'text-[var(--text-muted)] opacity-30'
-                                : hours < 4 ? 'text-rose-400 font-black'
-                                : hours < 7 ? 'text-amber-400 font-black'
-                                : hours < 9 ? 'text-emerald-400 font-black'
-                                : 'text-blue-400 font-black';
-                              return (
-                                <td key={di} className={`text-center px-[12px] py-[15px] text-[13px] border-r border-[var(--border)] ${cellColor}`}>
-                                  {hours > 0 ? hours.toFixed(2) : ''}
-                                </td>
-                              );
-                            })}
-                            <td className="text-center px-[12px] py-[15px] text-[13px] font-black text-[var(--text-contrast)]">
-                              {member.totalHours > 0 ? member.totalHours.toFixed(2) : ''}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ))}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
+        <div className="flex flex-col gap-4">
+          {/* Sub-view Switcher for Project Tab */}
+          <div className="flex items-center justify-between bg-[var(--bg-card)] p-3 rounded-xl border border-[var(--border)] shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+              <span className="text-[11px] font-black text-[var(--text-contrast)] uppercase tracking-widest">Display Mode</span>
+            </div>
+            
+            <div className="flex items-center gap-1 p-1 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg border border-white/10 shadow-inner">
+              {[
+                { id: 'grid', label: 'Grid View', icon: <LayoutGrid size={14} /> },
+                { id: 'bookshelf', label: 'Bookshelf', icon: <Layers size={14} /> },
+                { id: 'table', label: 'Detailed Table', icon: <List size={14} /> }
+              ].map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setProjectSubView(v.id)}
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${
+                    projectSubView === v.id 
+                      ? 'bg-white text-emerald-600 shadow-md' 
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {v.icon} {v.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {projectSubView === 'grid' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-[15px] animate-in fade-in zoom-in-95 duration-500">
+              {dashboardProjects?.map((project, idx) => (
+                <motion.div
+                  key={project.id || idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="flex flex-col bg-white border rounded-[8px] overflow-hidden shadow-md cursor-pointer group hover:shadow-xl transition-all h-[400px]"
+                  style={{ borderColor: project.color || '#0078d4' }}
+                >
+                  {/* Top: Image/Logo Area (2/3 height) */}
+                  <div className="h-2/3 flex items-center justify-center bg-white relative overflow-hidden">
+                    {project.image || project.image_url ? (
+                      <img 
+                        src={project.image_url || (project.image?.startsWith('data:image') ? project.image : `data:image/png;base64,${project.image}`)} 
+                        alt={project.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="relative w-32 h-32 rotate-45 flex flex-wrap border-2 border-slate-100 shadow-2xl">
+                        <div className="w-1/2 h-1/2 bg-red-600" />
+                        <div className="w-1/2 h-1/2 bg-slate-300" />
+                        <div className="w-1/2 h-1/2 bg-slate-800" />
+                        <div className="w-1/2 h-1/2 bg-slate-400" />
+                        <div className="absolute inset-0 m-auto w-6 h-6 bg-white shadow-inner" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bottom: Details Area (1/3 height) */}
+                  <div 
+                    className="h-1/3 text-white overflow-hidden relative"
+                    style={{ backgroundColor: project.color || '#1e293b' }}
+                  >
+                    <div className="flex flex-col gap-[10px] p-5">
+                      <div className="flex gap-[40px] items-start leading-none">
+                        <span className="w-20 text-[10px] font-black uppercase shrink-0 opacity-70">NAME :</span>
+                        <span className="text-[10px] font-black truncate uppercase">{project.name || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex gap-[40px] items-start leading-none">
+                        <span className="w-20 text-[10px] font-black uppercase shrink-0 opacity-70">CREATEAT :</span>
+                        <span className="text-[10px] font-black">{project.created_at ? new Date(project.created_at).toLocaleDateString('vi-VN') : '24/01/2026'}</span>
+                      </div>
+
+                      <div className="flex gap-[40px] items-start leading-none">
+                        <span className="w-20 text-[10px] font-black uppercase shrink-0 opacity-70">VERSION :</span>
+                        <span className="text-[10px] font-black uppercase">Autodesk Revit {project.revit_version || '2024'}</span>
+                      </div>
+
+                      <div className="flex gap-[40px] items-start leading-none">
+                        <span className="w-20 text-[10px] font-black uppercase shrink-0 opacity-70">DESCRIPTION :</span>
+                        <span className="text-[9px] font-bold italic opacity-90 line-clamp-2">
+                          {project.description || "Core Rincovitch BIM coordination protocol."}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {projectSubView === 'bookshelf' && (
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-10 min-h-[500px] flex flex-col justify-end shadow-2xl overflow-hidden relative group/shelf">
+              {/* Shelf Background Elements */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+              
+              {/* The "Books" Container */}
+              <div className="flex items-end justify-center gap-0.5 relative z-10 px-10">
+                {dashboardProjects?.map((project, idx) => (
+                  <motion.div
+                    key={project.id || idx}
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ 
+                      y: [0, -5, 0], 
+                      opacity: 1,
+                      rotateZ: idx % 12 === 0 ? [-10, -8, -10] : idx % 15 === 0 ? [5, 7, 5] : [0, 1, 0] 
+                    }}
+                    transition={{
+                      y: { duration: 3 + (idx % 2), repeat: Infinity, ease: "easeInOut" },
+                      rotateZ: { duration: 4 + (idx % 3), repeat: Infinity, ease: "easeInOut" },
+                      opacity: { duration: 0.5 }
+                    }}
+                    whileHover={{ 
+                      y: -40, 
+                      rotateZ: 0, 
+                      scale: 1.05,
+                      zIndex: 50,
+                      transition: { type: "spring", stiffness: 300 }
+                    }}
+                    className="relative group/book cursor-pointer shrink-0"
+                    style={{
+                      width: '45px',
+                      height: `${240 + (Math.abs(idx % 10 - 5) * 10)}px`,
+                      backgroundColor: project.color || '#1e293b',
+                      borderLeft: '2px solid rgba(255,255,255,0.1)',
+                      borderRight: '2px solid rgba(0,0,0,0.2)',
+                      boxShadow: 'inset 0 0 10px rgba(0,0,0,0.3), 5px 0 15px rgba(0,0,0,0.2)',
+                      borderRadius: '2px 4px 4px 2px',
+                    }}
+                  >
+                    {/* Book Spine Content */}
+                    <div className="absolute inset-0 flex flex-col items-center py-6 px-1">
+                      {/* Top Label */}
+                      <div className="w-full h-4 bg-white/10 mb-4" />
+                      
+                      {/* Project Name (Vertical) */}
+                      <div className="flex-1 flex items-center justify-center overflow-hidden">
+                        <span className="text-[9px] font-black text-white/90 uppercase whitespace-nowrap rotate-90 tracking-widest origin-center">
+                          {project.name}
+                        </span>
+                      </div>
+
+                      {/* Bottom Label/Badge */}
+                      <div className="mt-auto flex flex-col items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center border border-white/30">
+                          <span className="text-[8px] font-bold text-white">{idx + 1}</span>
+                        </div>
+                        <div className="w-8 h-1 bg-white/40 rounded-full" />
+                      </div>
+                    </div>
+
+                    {/* Hover Detail Card */}
+                    <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-48 bg-[#0f172a] border border-white/20 p-4 rounded-xl shadow-2xl opacity-0 group-hover/book:opacity-100 transition-all pointer-events-none z-[60] scale-75 group-hover/book:scale-100 translate-y-4 group-hover/book:translate-y-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }} />
+                        <span className="text-[10px] font-black text-white uppercase truncate">{project.name}</span>
+                      </div>
+                      <p className="text-[8px] text-slate-400 font-bold uppercase leading-relaxed line-clamp-3">
+                        {project.description || "Active BIM project in coordination phase."}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Shelf Base Board */}
+              <div className="w-full h-6 bg-gradient-to-b from-[#334155] to-[#1e293b] rounded-md shadow-2xl mt-[-4px] relative z-[5] border-t border-white/10" />
+              
+              {/* Shelf Label */}
+              <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-10 py-2 bg-indigo-500/10 backdrop-blur-md rounded-full border border-indigo-500/20 opacity-0 group-hover/shelf:opacity-100 transition-all duration-700">
+                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.5em]">Project Intelligence Archive</span>
+              </div>
+            </div>
+          )}
+
+          {projectSubView === 'table' && (
+            <div className="ocd-card p-0 shadow-2xl shadow-black/20 border border-[var(--border)] bg-[var(--bg-card)]">
+              <div className="max-h-[calc(100vh-320px)] overflow-y-auto overflow-x-auto custom-scrollbar">
+                <table className="w-full border-collapse table-fixed" style={{ minWidth: '1120px' }}>
+                  <colgroup>
+                    <col style={{ width: '140px' }} />
+                    <col style={{ width: '200px' }} />
+                    <col style={{ width: '140px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '80px' }} />
+                  </colgroup>
+                  <thead>
+                    <tr className="bg-[var(--bg-card)]">
+                      <th className="sticky z-[35] text-left px-[16px] py-[14px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px' }}>Team</th>
+                      <th className="sticky z-[35] text-left px-[16px] py-[14px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px' }}>Project</th>
+                      <th className="sticky z-[35] text-left px-[16px] py-[14px] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px' }}>Member</th>
+                      {projectTimesheetData.weekDates.map((date, i) => {
+                        const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        const dayColors = ['text-blue-400', 'text-violet-400', 'text-amber-400', 'text-emerald-400', 'text-rose-400', 'text-orange-400', 'text-pink-400'];
+                        return (
+                          <th key={i} className="sticky z-[35] text-center px-[10px] py-[12px] border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px' }}>
+                            <div className={`text-[12px] font-black ${dayColors[i]}`}>{format(date, 'dd/MM')}</div>
+                            <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)]">[{dayLabels[i]}]</div>
+                          </th>
+                        );
+                      })}
+                      <th className="sticky z-[35] text-center px-[10px] py-[14px] border-b border-[var(--border)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest bg-[var(--bg-card)]" style={{ top: '0px' }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projectTimesheetData.teams.length === 0 && (
+                      <tr>
+                        <td colSpan={11} className="text-center py-[40px]">
+                          <CalendarDays size={28} className="text-[var(--text-muted)] opacity-30 mx-auto mb-2" />
+                          <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.2em]">No project data for Week {projectTimesheetData.weekNumber}</p>
+                        </td>
+                      </tr>
+                    )}
+                    {projectTimesheetData.teams.map((team, ti) => (
+                      <React.Fragment key={ti}>
+                        {team.projects.map((project, pi) => (
+                          project.members.map((member, mi) => {
+                            const isEvenMember = mi % 2 === 0;
+                            const rowBg = isEvenMember ? 'bg-[var(--bg-surface)]/30' : 'bg-transparent';
+                            
+                            return (
+                              <tr 
+                                key={`${ti}-${pi}-${mi}`} 
+                                className={`hover:bg-indigo-500/10 transition-colors border-b border-[var(--border)] ${rowBg}`}
+                              >
+                                {/* Team Column */}
+                                {pi === 0 && mi === 0 && (
+                                  <td
+                                    rowSpan={team.totalRows}
+                                    className="px-[20px] py-[15px] text-[12px] font-black text-indigo-500 uppercase tracking-tight border-r border-[var(--border)] align-top bg-indigo-500/[0.05] min-w-[140px]"
+                                  >
+                                    {team.name}
+                                  </td>
+                                )}
+                                {/* Project Column */}
+                                {mi === 0 && (
+                                  <td
+                                    rowSpan={project.totalRows}
+                                    className="px-[12px] py-[15px] text-[10px] font-black border-r border-[var(--border)] uppercase align-top bg-emerald-500/[0.02]"
+                                    style={{ color: getProjectColor(project.name) }}
+                                  >
+                                    {project.name}
+                                  </td>
+                                )}
+                                {/* Member Column */}
+                                <td className="px-[20px] py-[15px] text-[12px] font-black text-sky-500 uppercase tracking-tight border-r border(--border)] min-w-[140px]">
+                                  {member.name}
+                                </td>
+                                {member.hours.map((hours, di) => {
+                                  const cellColor = hours === 0 ? 'text-[var(--text-muted)] opacity-30'
+                                    : hours < 4 ? 'text-rose-400 font-black'
+                                    : hours < 7 ? 'text-amber-400 font-black'
+                                    : hours < 9 ? 'text-emerald-400 font-black'
+                                    : 'text-blue-400 font-black';
+                                  return (
+                                    <td key={di} className={`text-center px-[12px] py-[15px] text-[13px] border-r border-[var(--border)] ${cellColor}`}>
+                                      {hours > 0 ? hours.toFixed(2) : ''}
+                                    </td>
+                                  );
+                                })}
+                                <td className="text-center px-[12px] py-[15px] text-[13px] font-black text-[var(--text-contrast)]">
+                                  {member.totalHours > 0 ? member.totalHours.toFixed(2) : ''}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
