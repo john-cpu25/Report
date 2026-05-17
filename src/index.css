@@ -363,3 +363,26 @@ body.theme-news select option {
   background-color: #FFFFFF;
   color: #0F172A;
 }
+
+/* Premium Book Page Layout Margins */
+.book-page-left {
+  padding: 24px;
+}
+.book-page-right {
+  padding: 24px;
+}
+
+@media (min-width: 768px) {
+  .book-page-left {
+    padding-top: 44px !important;
+    padding-bottom: 44px !important;
+    padding-left: 56px !important;
+    padding-right: 68px !important;
+  }
+  .book-page-right {
+    padding-top: 44px !important;
+    padding-bottom: 44px !important;
+    padding-left: 68px !important;
+    padding-right: 56px !important;
+  }
+}
