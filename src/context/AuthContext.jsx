@@ -39,14 +39,33 @@ export const AuthProvider = ({ children }) => {
 
         if (isAdminMode) {
             console.log('[AuthContext] Admin Bypass Mode Active');
-            setUser({
-                name: 'Super Admin (Bypass)',
-                email: 'admin@bypass.local',
-                isAdmin: true,
-                isLeader: true,
-                team: 'Management',
-                location: 'VIETNAM'
-            });
+            const savedBypassUser = localStorage.getItem('bypass_user_profile');
+            if (savedBypassUser) {
+                try {
+                    setUser(JSON.parse(savedBypassUser));
+                } catch (e) {
+                    console.error('[AuthContext] Error parsing saved bypass user:', e);
+                    setUser({
+                        name: 'Super Admin (Bypass)',
+                        email: 'admin@bypass.local',
+                        isAdmin: true,
+                        isLeader: true,
+                        team: 'Management',
+                        location: 'VIETNAM',
+                        image: null
+                    });
+                }
+            } else {
+                setUser({
+                    name: 'Super Admin (Bypass)',
+                    email: 'admin@bypass.local',
+                    isAdmin: true,
+                    isLeader: true,
+                    team: 'Management',
+                    location: 'VIETNAM',
+                    image: null
+                });
+            }
             setLoading(false);
             return;
         }
@@ -158,6 +177,35 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const updateUserProfile = async (updatedData) => {
+        const queryParams = new URLSearchParams(window.location.search);
+        const isAdminMode = queryParams.get('admin_mode') === 'true';
+
+        const newUser = { ...user, ...updatedData };
+        setUser(newUser);
+
+        if (isAdminMode) {
+            localStorage.setItem('bypass_user_profile', JSON.stringify(newUser));
+        } else if (user?.email) {
+            const { error } = await supabase
+                .from('NMK_User')
+                .update({
+                    name: newUser.name,
+                    full_name: newUser.full_name || newUser.name,
+                    image: newUser.image, // base64 compressed
+                    location: newUser.location || 'VietNam',
+                    team: newUser.team || 'Management',
+                    position: newUser.position || 'Engineer'
+                })
+                .eq('email', user.email);
+
+            if (error) {
+                console.error('[AuthContext] Error updating profile in Supabase:', error);
+                throw error;
+            }
+        }
+    };
+
     return (
         <AuthContext.Provider value={{ 
             user, 
@@ -165,6 +213,7 @@ export const AuthProvider = ({ children }) => {
             error, 
             login, 
             logout,
+            updateUserProfile,
             isAdmin: user?.isAdmin || false,
             isLeader: user?.isLeader || false,
             userTeam: user?.team || null

@@ -2,13 +2,17 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { format, startOfWeek, addDays, parseISO } from 'date-fns';
 import { fetchProjects } from '../services/supabaseService';
 import projectsData from '../data/projects.json';
+import { useNotifications } from './NotificationContext';
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
+  const { sendNotification } = useNotifications();
+
   // Navigation & UI States
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Filter overlay in CSVProcessor
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebarCollapsed');
     return saved !== null ? JSON.parse(saved) : false;
@@ -203,6 +207,19 @@ export const AppProvider = ({ children }) => {
           newReportData[existingIndex].days[formData.day] = formData.eta;
           newReportData[existingIndex].status = formData.status;
           dataChanged = true;
+
+          // Trigger local notification in bypass mode
+          if (isAdminMode) {
+            sendNotification({
+              recipient: 'admin@bypass.local',
+              sender: 'system',
+              senderName: 'Hệ thống',
+              type: 'TASK_ASSIGNED',
+              title: 'Cập nhật tiến độ nhiệm vụ 🎯',
+              content: `Bạn vừa cập nhật tiến độ cho nhiệm vụ **"${taskName}"** trong dự án **"${targetProject}"**.`,
+              link: '?tab=personal'
+            });
+          }
         } else {
           newReportData.push({
             id: Date.now() + Math.random(),
@@ -215,6 +232,19 @@ export const AppProvider = ({ children }) => {
             days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '', ...{ [formData.day]: formData.eta } }
           });
           dataChanged = true;
+
+          // Trigger local notification in bypass mode
+          if (isAdminMode) {
+            sendNotification({
+              recipient: 'admin@bypass.local',
+              sender: 'system',
+              senderName: 'Hệ thống',
+              type: 'TASK_ASSIGNED',
+              title: 'Nhiệm vụ mới được giao 🎯',
+              content: `Bạn vừa gán nhiệm vụ mới **"${taskName}"** trong dự án **"${targetProject}"** cho bản thân.`,
+              link: '?tab=personal'
+            });
+          }
         }
       });
     }
@@ -241,7 +271,43 @@ export const AppProvider = ({ children }) => {
   };
 
   const updateStatus = (id, status) => {
+    const task = reportData.find(r => r.id === id);
     setReportData(reportData.map(r => r.id === id ? { ...r, status } : r));
+
+    // Trigger local notification in bypass mode
+    if (isAdminMode && task) {
+      if (status === 'DONE') {
+        sendNotification({
+          recipient: 'admin@bypass.local',
+          sender: 'admin@bypass.local',
+          senderName: 'Super Admin',
+          type: 'TASK_COMPLETED',
+          title: 'Nhiệm vụ hoàn thành 🎉',
+          content: `Bạn đã báo cáo HOÀN THÀNH nhiệm vụ **"${task.task}"** thuộc dự án **"${task.project}"**.`,
+          link: '?tab=personal'
+        });
+      } else if (status === 'ISSUE') {
+        sendNotification({
+          recipient: 'admin@bypass.local',
+          sender: 'admin@bypass.local',
+          senderName: 'Super Admin',
+          type: 'TASK_INTERRUPTED',
+          title: 'Nhiệm vụ bị gián đoạn 🚨',
+          content: `Bạn đã báo cáo GIÁN ĐOẠN nhiệm vụ **"${task.task}"** thuộc dự án **"${task.project}"**.`,
+          link: '?tab=personal'
+        });
+      } else {
+        sendNotification({
+          recipient: 'admin@bypass.local',
+          sender: 'admin@bypass.local',
+          senderName: 'Super Admin',
+          type: 'SYSTEM',
+          title: 'Trạng thái thay đổi ⚙️',
+          content: `Nhiệm vụ **"${task.task}"** đã chuyển trạng thái sang **${status}**.`,
+          link: '?tab=personal'
+        });
+      }
+    }
   };
 
   const updateMarkup = (id, { date, time }) => {
@@ -278,6 +344,7 @@ export const AppProvider = ({ children }) => {
   const value = {
     activeTab, setActiveTab,
     isSidebarOpen, setIsSidebarOpen,
+    showProfileModal, setShowProfileModal,
     sidebarCollapsed, setSidebarCollapsed,
     mobileSidebarOpen, setMobileSidebarOpen,
     theme, setTheme,

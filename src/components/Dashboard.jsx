@@ -475,19 +475,28 @@ const Dashboard = () => {
             <div className="flex flex-col md:flex-row justify-start items-start md:items-center gap-12 pl-2">
               <div className="flex items-center gap-8 h-12">
                 {/* Team Selector (Neumorphic) */}
-                <div className="relative h-full group">
+                <div className="relative h-full group" style={{ minWidth: '180px' }}>
                   <div className="absolute inset-0 bg-[var(--bg-surface)] rounded-2xl shadow-[4px_4px_10px_rgba(0,0,0,0.1),-4px_-4px_10px_rgba(255,255,255,0.8)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.3),-2px_-2px_10px_rgba(255,255,255,0.05)] group-hover:scale-[1.02] transition-transform duration-300"></div>
                   <select 
                     value={chartTeam}
                     onChange={(e) => setChartTeam(e.target.value)}
-                    className="relative h-full appearance-none bg-transparent text-[var(--text-main)] text-[11px] font-black uppercase tracking-[0.2em] px-8 pr-12 rounded-2xl cursor-pointer focus:outline-none z-10"
+                    className="relative w-full h-full bg-transparent text-[var(--text-main)] text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl cursor-pointer focus:outline-none z-10"
+                    style={{
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      appearance: 'none',
+                      textAlign: 'center',
+                      textAlignLast: 'center',
+                      paddingLeft: '32px',
+                      paddingRight: '40px',
+                    }}
                   >
                     <option value="ALL">ALL TEAMS</option>
                     {TEAMS.map(t => (
                       <option key={t.id} value={t.id}>{t.display}</option>
                     ))}
                   </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)] z-20">
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)] z-20">
                     <ChevronDown size={14} />
                   </div>
                 </div>

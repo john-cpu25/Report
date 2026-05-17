@@ -8,6 +8,7 @@ import { PublicClientApplication } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
 import { msalConfig } from './services/authConfig'
 import { AuthProvider } from './context/AuthContext'
+import { NotificationProvider } from './context/NotificationContext'
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
@@ -15,9 +16,11 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <MsalProvider instance={msalInstance}>
       <AuthProvider>
-        <AppProvider>
-          <App />
-        </AppProvider>
+        <NotificationProvider>
+          <AppProvider>
+            <App />
+          </AppProvider>
+        </NotificationProvider>
       </AuthProvider>
     </MsalProvider>
   </StrictMode>,

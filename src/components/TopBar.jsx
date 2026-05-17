@@ -1,10 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Menu, Bell, Search, User, ChevronDown, FolderKanban, CheckCircle2 } from 'lucide-react'
+import { Menu, Bell, Search, User, ChevronDown, FolderKanban, CheckCircle2, Clipboard, Check, AlertTriangle, Calendar } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import RincovitchLogo from '../RincovitchLogo'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
+import { useNotifications } from '../context/NotificationContext'
 
 const TopBar = () => {
   const { user } = useAuth();
@@ -13,21 +14,63 @@ const TopBar = () => {
     mobileSidebarOpen, setMobileSidebarOpen,
     isSidebarOpen, setIsSidebarOpen,
     showProjectGroups, setShowProjectGroups,
-    activeTab, dashboardStats, dashboardProjects, dashboardTasks
+    activeTab, setActiveTab, dashboardStats, dashboardProjects, dashboardTasks, dashboardUsers,
+    setShowProfileModal
   } = useApp();
 
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [dropdownOpen, setDropdownOpen] = useState(null); // 'TOTAL' or 'ACTIVE'
   const dropdownRef = useRef(null);
+
+  const [bellOpen, setBellOpen] = useState(false);
+  const bellRef = useRef(null);
+  const [notifFilter, setNotifFilter] = useState('all');
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(null);
       }
+      if (bellRef.current && !bellRef.current.contains(event.target)) {
+        setBellOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const filteredNotifs = notifications.filter(n => notifFilter === 'all' ? true : !n.is_read);
+
+  const formatContent = (text) => {
+    if (!text) return '';
+    const parts = text.split('**');
+    return parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="text-[var(--text-main)] font-black inline">{part}</strong> : part);
+  };
+
+  const formatRelativeTime = (isoString) => {
+    if (!isoString) return '';
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    const diffMins = Math.floor(diffMs / (60 * 1000));
+    const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
+    const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+    
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    return `${diffDays} ngày trước`;
+  };
+
+  const handleNotifClick = (notif) => {
+    markAsRead(notif.id);
+    setBellOpen(false);
+    if (notif.link) {
+      const params = new URLSearchParams(notif.link);
+      const tab = params.get('tab');
+      if (tab) {
+        setActiveTab(tab);
+      }
+    }
+  };
 
   const activeProjectIds = new Set(dashboardTasks.map(t => t.project_id));
   const activeProjectsList = dashboardProjects.filter(p => activeProjectIds.has(p.id));
@@ -163,23 +206,145 @@ const TopBar = () => {
 
           <div className="flex items-center gap-[10px]">
 
-            <button className="p-[10px] rounded-[8px] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all relative">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[var(--bg-main)]" />
-            </button>
+            {/* Real-time Interactive Bell Dropdown Popover */}
+            <div className="relative" ref={bellRef}>
+              <button 
+                onClick={() => setBellOpen(!bellOpen)}
+                className={`p-[10px] rounded-[8px] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all relative ${bellOpen ? 'bg-white/10 text-[var(--text-main)]' : ''}`}
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-[var(--bg-main)] shadow-lg shadow-rose-500/20 px-1 animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              <AnimatePresence>
+                {bellOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.99 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.99 }}
+                    className="absolute right-0 top-[calc(100%+12px)] bg-[var(--bg-card)]/98 backdrop-blur-2xl border border-[var(--border)] rounded-[8px] shadow-2xl z-50 overflow-hidden"
+                    style={{ width: '600px', maxWidth: 'calc(100vw - 20px)' }}
+                  >
+                    <div className="px-5 py-4 pt-5 border-b border-[var(--border)] bg-white/5 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bell size={14} className="text-indigo-400" />
+                        <h3 className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.25em]">Thông Báo</h3>
+                      </div>
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={markAllAsRead} 
+                          className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded hover:bg-indigo-500/20 transition-all"
+                        >
+                          Đọc tất cả
+                        </button>
+                      )}
+                    </div>
+                    
+                    {/* Segmented Filter Control */}
+                    <div className="px-5 py-2.5 border-b border-[var(--border)] flex gap-2 bg-[var(--bg-surface)]">
+                      {['all', 'unread'].map(f => (
+                        <button
+                          key={f}
+                          onClick={() => setNotifFilter(f)}
+                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                            notifFilter === f 
+                              ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/10' 
+                              : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                          }`}
+                        >
+                          {f === 'all' ? 'Tất cả' : `Chưa đọc (${unreadCount})`}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="max-h-[700px] overflow-y-auto custom-scrollbar p-1.5">
+                      {filteredNotifs.length === 0 ? (
+                        <div className="py-12 text-center text-slate-500 text-[10px] font-black uppercase tracking-widest opacity-40">
+                          Không có thông báo mới
+                        </div>
+                      ) : (
+                        filteredNotifs.map((n, idx) => {
+                          const senderUser = dashboardUsers?.find(u => u.email?.toLowerCase() === n.sender?.toLowerCase() || u.name?.toLowerCase() === n.senderName?.toLowerCase());
+                          const avatarImg = senderUser?.image || null;
+                          const isUnread = !n.is_read;
+
+                          return (
+                            <div 
+                              key={n.id || idx} 
+                              onClick={() => handleNotifClick(n)}
+                              className={`flex items-start gap-3 p-3 rounded-xl hover:bg-[var(--bg-surface)] transition-all cursor-pointer mb-1 border border-transparent ${isUnread ? 'bg-indigo-500/5 dark:bg-indigo-500/10 border-indigo-500/10 dark:border-indigo-500/20' : ''}`}
+                            >
+                              {/* Sender Avatar with Type Badge Overlay */}
+                              <div className="relative shrink-0 mt-0.5">
+                                <div className="w-9 h-9 rounded-lg overflow-hidden bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-xs">
+                                  {avatarImg ? (
+                                    <img src={avatarImg} alt="sender" className="w-full h-full object-cover" />
+                                  ) : (
+                                    (n.senderName || 'H').substring(0, 1).toUpperCase()
+                                  )}
+                                </div>
+                                
+                                {/* Type Badge Overlay */}
+                                <div className={`absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white shadow-md border-2 border-[var(--bg-card)] ${
+                                  n.type === 'TASK_ASSIGNED' ? 'bg-blue-500' :
+                                  n.type === 'TASK_COMPLETED' ? 'bg-emerald-500' :
+                                  n.type === 'TASK_INTERRUPTED' ? 'bg-rose-500' :
+                                  n.type === 'LEAVE_REQUESTED' ? 'bg-orange-500' : 'bg-slate-500'
+                                }`}>
+                                  {n.type === 'TASK_ASSIGNED' && <Clipboard size={9} />}
+                                  {n.type === 'TASK_COMPLETED' && <Check size={9} />}
+                                  {n.type === 'TASK_INTERRUPTED' && <AlertTriangle size={9} />}
+                                  {n.type === 'LEAVE_REQUESTED' && <Calendar size={9} />}
+                                  {n.type !== 'TASK_ASSIGNED' && n.type !== 'TASK_COMPLETED' && n.type !== 'TASK_INTERRUPTED' && n.type !== 'LEAVE_REQUESTED' && <Bell size={9} />}
+                                </div>
+                              </div>
+
+                              <div className="flex-grow min-w-0">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <span className="text-[11px] font-black text-[var(--text-main)] tracking-wide uppercase leading-none">{n.title}</span>
+                                  <span className="text-[9px] font-bold text-slate-500 whitespace-nowrap shrink-0">{formatRelativeTime(n.created_at)}</span>
+                                </div>
+                                <p className="text-[11px] font-medium text-[var(--text-muted)] leading-relaxed tracking-normal break-words">
+                                  {formatContent(n.content)}
+                                </p>
+                              </div>
+
+                              {isUnread && (
+                                <div className="w-2 h-2 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50 self-center shrink-0 ml-1 animate-pulse" />
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             
             <div className="h-8 w-px bg-[var(--border)]" />
 
-            <button className="flex items-center gap-[10px] p-[10px] rounded-[8px] hover:bg-white/5 transition-all group border border-transparent hover:border-[var(--border)]">
-              <div className="w-10 h-10 rounded-[8px] bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                <User size={20} />
+            <button 
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center gap-[10px] p-[10px] rounded-[8px] hover:bg-white/5 transition-all group border border-transparent hover:border-[var(--border)]"
+            >
+              <div className="w-10 h-10 rounded-[8px] overflow-hidden bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm shrink-0">
+                {user?.image ? (
+                  <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                ) : (
+                  <User size={20} />
+                )}
               </div>
               <div className="text-left hidden sm:block">
                 <p className="text-[14px] font-bold text-[var(--text-main)] leading-tight">
                   {user?.name || user?.displayName || 'Authorized User'}
                 </p>
                 <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-                  {user?.role || user?.team || 'Operation Team'}
+                  {user?.team || user?.role || 'Operation Team'}
                 </p>
               </div>
             </button>

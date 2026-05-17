@@ -26,6 +26,7 @@ import Workflows from './components/Workflows'
 import AdminPanel from './components/AdminPanel'
 import PersonalSpace from './components/PersonalSpace'
 import DrawingsManager from './components/DrawingsManager'
+import ProfileModal from './components/ProfileModal'
 
 function App() {
   const {
@@ -41,6 +42,7 @@ function App() {
     weekDates,
     showProjectGroups,
     formData,
+    showProfileModal, setShowProfileModal,
     handleAddTask, deleteRow, moveRow, updateStatus, updateDayTime, updateMarkup, bulkUpdateMarkup
   } = useApp();
 
@@ -108,6 +110,7 @@ function App() {
           )}
 
           <Sidebar />
+          <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
 
           <motion.div
             layout
