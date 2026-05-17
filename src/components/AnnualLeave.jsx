@@ -349,8 +349,8 @@ const AnnualLeave = () => {
       {viewMode === 'personal' ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-[10px] m-[10px]">
           {/* Orange Zone: Individual + Analytics */}
-          <div className="border-[2px] border-orange-500/30 rounded-[12px] p-[15px] bg-orange-500/5 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-2 h-full bg-orange-500/40" />
+          <div className="neu-raised p-[20px] rounded-3xl relative overflow-hidden bg-[var(--bg-card)] border border-orange-500/20">
+            <div className="absolute top-0 left-0 w-2.5 h-full bg-orange-500/40" />
             
             <div className="flex flex-col gap-[15px]">
               <div className="flex items-center gap-[10px] mb-[10px]">
@@ -415,26 +415,26 @@ const AnnualLeave = () => {
           </div>
 
           {/* Green Zone: Reserves + History */}
-          <div className="border-[2px] border-emerald-500/30 rounded-[12px] p-[15px] bg-emerald-500/5 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500/40" />
+          <div className="neu-raised p-[20px] rounded-3xl relative overflow-hidden bg-[var(--bg-card)] border border-emerald-500/20">
+            <div className="absolute top-0 left-0 w-2.5 h-full bg-emerald-500/40" />
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-[15px]">
               {/* Stats Column */}
               <div className="lg:col-span-4 flex flex-col gap-[10px]">
-                <div className="flex-grow bg-[var(--bg-card)] border border-[var(--border)] p-[20px] rounded-[8px] flex flex-col items-center justify-center text-center shadow-sm">
-                  <div className="p-[15px] rounded-[8px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-4">
+                <div className="flex-grow neu-raised p-[20px] rounded-2xl flex flex-col items-center justify-center text-center bg-[var(--bg-card)]">
+                  <div className="neu-button neu-square p-4 text-indigo-500 mb-4">
                     <Landmark size={24} />
                   </div>
-                  <h4 className="text-[12px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">Total Team Reserve</h4>
-                  <p className="text-[40px] font-black text-[var(--text-main)] leading-none">
+                  <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">Total Team Reserve</h4>
+                  <p className="text-[40px] font-black text-[var(--text-contrast)] leading-none">
                     {summaryData.reduce((s, u) => s + u.remaining, 0)}
                   </p>
-                  <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-2">Available Days Remaining</p>
+                  <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest mt-3">Available Days Remaining</p>
                 </div>
 
-                <div className="bg-[var(--bg-card)] border border-[var(--border)] p-[15px] rounded-[8px]">
+                <div className="neu-raised p-[20px] rounded-2xl bg-[var(--bg-card)]">
                   <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-[15px] flex items-center gap-[10px]">
-                    <AlertCircle size={12} /> Critical Attention
+                    <AlertCircle size={14} className="text-rose-500 animate-pulse" /> Critical Attention
                   </h4>
                   <div className="space-y-[8px]">
                     {summaryData.filter(u => u.remaining < 3).slice(0, 3).map(u => (
@@ -449,13 +449,13 @@ const AnnualLeave = () => {
 
               {/* History Column */}
               <div className="lg:col-span-8">
-                <div className="bg-[var(--bg-card)] overflow-hidden border border-[var(--border)] rounded-[8px] shadow-sm h-full flex flex-col">
-                  <div className="px-[20px] py-[12px] border-b border-[var(--border)] bg-indigo-500/5 flex justify-between items-center">
+                <div className="neu-raised rounded-2xl overflow-hidden h-full flex flex-col bg-[var(--bg-card)]">
+                  <div className="px-[20px] py-[15px] border-b border-[var(--border)] bg-indigo-500/5 flex justify-between items-center">
                     <div className="flex items-center gap-[10px]">
-                      <List className="text-indigo-400" size={14} />
-                      <h3 className="text-[12px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Leave History {selectedYear === 'ALL' ? 'Lifetime' : selectedYear}</h3>
+                      <List className="text-indigo-400 animate-pulse" size={14} />
+                      <h3 className="text-[11px] font-black text-[var(--text-contrast)] uppercase tracking-[0.2em]">Leave History {selectedYear === 'ALL' ? 'Lifetime' : selectedYear}</h3>
                     </div>
-                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-[10px] py-[4px] rounded-[4px] border border-indigo-500/20">
+                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest neu-inset px-[12px] py-[4px] rounded-full">
                       {currentYearEntries.length} Records Detected
                     </span>
                   </div>
@@ -508,29 +508,32 @@ const AnnualLeave = () => {
         </motion.div>
       ) : (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-[10px] m-[10px]">
-          <div className="flex justify-between items-end p-[10px]">
+          <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 p-[10px] mb-4">
             <div>
-              <h2 className="text-[30px] font-black text-[var(--text-main)] uppercase tracking-tight italic leading-none">Team <span className="text-indigo-400">Overview</span></h2>
-              <p className="text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2">Aggregate leave statistics for Vietnam operations</p>
-            </div>
-            <div className="flex gap-[10px]">
-              <div className="bg-[var(--bg-card)] p-[15px] rounded-[8px] border border-[var(--border)] text-center min-w-[120px] shadow-sm">
-                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase mb-1">Total Users</p>
-                <p className="text-[24px] font-black text-[var(--text-main)]">{summaryData.length}</p>
+              <div className="flex items-center gap-[10px] mb-2">
+                <div className="w-2.5 h-8 bg-indigo-500 rounded-full" />
+                <h2 className="text-[28px] font-black text-[var(--text-main)] uppercase tracking-tight italic leading-none">Team <span className="text-indigo-400">Overview</span></h2>
               </div>
-              <div className="bg-indigo-500/10 p-[15px] rounded-[8px] border border-indigo-500/20 text-center min-w-[120px] shadow-sm">
-                <p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Avg Used</p>
-                <p className="text-[24px] font-black text-[var(--text-main)]">
+              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Aggregate leave statistics for Vietnam operations</p>
+            </div>
+            <div className="flex gap-4">
+              <div className="neu-raised px-6 py-4 rounded-2xl text-center min-w-[130px] bg-[var(--bg-card)]">
+                <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-1">Total Users</p>
+                <p className="text-[28px] font-black text-[var(--text-contrast)] tracking-tighter leading-none">{summaryData.length}</p>
+              </div>
+              <div className="neu-raised px-6 py-4 rounded-2xl text-center min-w-[130px] bg-[var(--bg-card)] border border-indigo-500/10">
+                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-wider mb-1">Avg Used</p>
+                <p className="text-[28px] font-black text-indigo-500 tracking-tighter leading-none">
                   {summaryData.length ? (summaryData.reduce((s, u) => s + u.used, 0) / summaryData.length).toFixed(1) : 0}D
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-[var(--bg-card)] overflow-hidden border border-[var(--border)] shadow-xl rounded-[8px]">
-            <table className="w-full text-left">
+          <div className="neu-raised overflow-hidden rounded-3xl bg-[var(--bg-card)]">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-indigo-500/5 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] border-b border-[var(--border)]">
+                <tr className="bg-indigo-500/5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] border-b border-[var(--border)]">
                   <th className="px-[20px] py-[15px]">User Intelligence</th>
                   <th className="px-[20px] py-[15px]">Team</th>
                   <th className="px-[20px] py-[15px] text-center">Seniority</th>

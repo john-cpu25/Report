@@ -12,6 +12,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut, Line, PolarArea } from 'react-chartjs-2';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import {
   format, subDays, startOfDay, endOfDay, eachDayOfInterval,
   startOfWeek, endOfWeek, eachWeekOfInterval,
@@ -148,6 +149,8 @@ const Dashboard = () => {
     dashboardStats: headerStats
   } = useApp();
 
+  const { user, isAdmin, isLeader, userTeam } = useAuth();
+
   const [chartTeam, setChartTeam] = useState('ALL');
   const [timeRange, setTimeRange] = useState('WEEK'); // DAY, WEEK, MONTH
   const [chartType, setChartType] = useState('LINE'); // LINE, BAR, POLAR
@@ -245,10 +248,11 @@ const Dashboard = () => {
         leave: leaveListNames,
         dailyTasks: dailyTasks.length > 0 ? dailyTasks : null,
         capacity: teamUsers.length > 0 ? Math.round((workingList.length / teamUsers.length) * 100) : 0,
-        hasData: teamUsers.length > 0 || teamTasks.length > 0
+        hasData: teamUsers.length > 0 || teamTasks.length > 0,
+        isVisible: isAdmin || (t.id === (userTeam || '').toUpperCase())
       };
     });
-  }, [users, tasks, projects, leaves]);
+  }, [users, tasks, projects, leaves, isAdmin, userTeam]);
 
   const trendData = useMemo(() => {
     const now = new Date();
@@ -271,6 +275,7 @@ const Dashboard = () => {
 
     const userTeamMap = new Map(users.map(u => [u.id, (u.team || '').toUpperCase()]));
     const filteredTasks = tasks.filter(t => {
+      if (!isAdmin && !isLeader && t.user_id !== user?.id) return false;
       if (chartTeam !== 'ALL' && userTeamMap.get(t.user_id) !== chartTeam) return false;
       return true;
     });
@@ -317,7 +322,7 @@ const Dashboard = () => {
         pointHoverBorderWidth: 2
       }]
     };
-  }, [tasks, users, chartTeam, timeRange, chartType]);
+  }, [tasks, users, chartTeam, timeRange, chartType, isAdmin, isLeader, user]);
 
   const itemVariants = {
     hidden: { opacity: 0, y: 15 },
@@ -359,6 +364,10 @@ const Dashboard = () => {
                           <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] animate-pulse">Syncing Data...</p>
                         </div>
                       </div>
+                    ) : !team.isVisible ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-main)]/80 backdrop-blur-[4px] z-20 rounded-2xl border border-dashed border-[var(--border)]">
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">NO TASKS TODAY</p>
+                      </div>
                     ) : !team.hasData ? (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/5 z-20 rounded-2xl">
                         <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">No Active Logs</p>
@@ -367,22 +376,22 @@ const Dashboard = () => {
 
                     {/* Left Column - Team Info (Compact) */}
                     <div className="w-[120px] shrink-0 flex flex-col justify-between">
-                      <p className="text-[10px] text-[var(--text-muted)] font-bold">{team.members} MBRS</p>
+                      <p className="text-[10px] text-[var(--text-muted)] font-bold">{team.members} MEMBERS</p>
                       <div className="flex flex-col gap-1.5 text-[10px] font-bold text-[var(--text-main)] my-1">
                         <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                          <span className="text-[var(--text-muted)]">WK:</span>
-                          <span>{team.working.length}</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                          <span className="text-[var(--text-muted)] w-[45px] inline-block">BUSY:</span>
+                          <span className="tabular-nums">{team.working.length.toString().padStart(2, '0')}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          <span className="text-[var(--text-muted)]">AV:</span>
-                          <span>{team.available.length}</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                          <span className="text-[var(--text-muted)] w-[45px] inline-block">FREE:</span>
+                          <span className="tabular-nums">{team.available.length.toString().padStart(2, '0')}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                          <span className="text-[var(--text-muted)]">LV:</span>
-                          <span>{team.leave.length}</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                          <span className="text-[var(--text-muted)] w-[45px] inline-block">LEAVE:</span>
+                          <span className="tabular-nums">{team.leave.length.toString().padStart(2, '0')}</span>
                         </div>
                       </div>
                     </div>

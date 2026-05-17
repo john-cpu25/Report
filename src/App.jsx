@@ -10,7 +10,6 @@ import { useAuth } from './context/AuthContext'
 
 // Components
 import WeeklyReport from './WeeklyReport'
-import CSVProcessor from './CSVProcessor'
 import CelestialBackground from './CelestialBackground'
 import Preloader from './Preloader'
 import Login from './components/Login'
@@ -18,7 +17,6 @@ import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import AnnualLeave from './components/AnnualLeave'
 import Projects from './components/Projects'
-import PerformanceReview from './components/PerformanceReview'
 import Dashboard from './components/Dashboard'
 import Planning from './components/Planning'
 import Settings from './components/Settings'
@@ -78,17 +76,14 @@ function App() {
   }
 
   // Route Guard Logic
-  const canAccessAnalyst = isAdmin || isLeader;
   const canAccessAdmin = isAdmin;
 
   const renderContent = () => {
     switch (activeTab) {
       case 'report': return <WeeklyReport exportExcel={exportExcel} />;
       case 'personal': return <PersonalSpace />;
-      case 'processor': return canAccessAnalyst ? <CSVProcessor /> : <PersonalSpace />;
       case 'leave': return <AnnualLeave />;
       case 'projects': return <Projects />;
-      case 'review': return canAccessAnalyst ? <PerformanceReview /> : <PersonalSpace />;
       case 'dashboard': return <Dashboard />;
       case 'planning': return <Planning reportData={reportData} weekDates={weekDates} />;
       case 'organization': return <OrgChart />;

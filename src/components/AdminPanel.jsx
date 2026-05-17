@@ -5,6 +5,44 @@ import { ShieldCheck, History, Info, Package, Zap } from 'lucide-react';
 const AdminPanel = () => {
   const versionHistory = [
     {
+      version: 'v5.0.0',
+      date: '2026-05-17',
+      title: 'Architecture Overhaul & Deep Optimization',
+      changes: [
+        'Decoupled monolithic PersonalSpace.jsx: reduced code size by 63% (from 1814 to 675 lines).',
+        'Implemented usePersonalSpaceEngine custom hook to centralize all complex calculations.',
+        'Created modular sub-components: TimesheetView, ProjectView, GanttView, DeepAnalysisView.',
+        'Implemented Data Normalization Adapter in dataProcessor.js to trim and uppercase raw data.',
+        'Deleted obsolete legacy CSVProcessor.jsx and PerformanceReview.jsx modules, trimming 190KB off bundle size.',
+        'Applied tactile Neumorphic (3D soft UI) design templates to the Annual Leave dashboard.',
+        'Redesigned the Projects Bookshelf: introduced dynamic book sizes, 3D linen cloth textures, gold foil stripes, embossed spine ribs, satin bookmark ribbons, alternating elegant typography, and a rich dark mahogany wood shelf.',
+        'Created an immersive 3D Open Book view for project details, featuring leather textures, paper stack depth shadows, curved middle creases, vintage drop-caps, archival stamps, and handwritten signatures.'
+      ],
+      type: 'major'
+    },
+    {
+      version: 'v4.9.0',
+      date: '2026-05-17',
+      title: 'Personal Workspace & Data Visibility',
+      changes: [
+        'Implemented Dynamic Data Access: Restricted users to view only their personal data.',
+        'Enforced Self-Data Filtering on the Personal Workspace module.',
+        'Added Team shielding logic: Leaders/Users only see their own team\'s active status on the Dashboard.',
+        'Updated Dashboard UI to clearly show BUSY, FREE, and LEAVE with aligned tabular numbers.'
+      ],
+      type: 'major'
+    },
+    {
+      version: 'v4.8.5',
+      date: '2026-05-16',
+      title: 'Neumorphic Design & Dashboard Polish',
+      changes: [
+        'Implemented global tactile UI templates with Theme-Aware Shadows.',
+        'Redesigned selectors using 3D Neumorphism and updated Market Intelligence to compact mode.'
+      ],
+      type: 'minor'
+    },
+    {
       version: 'v4.7.0',
       date: '2026-05-11',
       title: 'System Modularization & Performance Optimization',
@@ -64,11 +102,11 @@ const AdminPanel = () => {
               <div className="space-y-[10px]">
                 <div>
                   <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Version</p>
-                  <p className="text-3xl font-black text-[var(--text-contrast)] tracking-tighter mt-1">v4.7.0</p>
+                  <p className="text-3xl font-black text-[var(--text-contrast)] tracking-tighter mt-1">v5.0.0</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Release Date</p>
-                  <p className="text-lg font-bold text-[var(--text-main)] mt-1">May 11, 2026</p>
+                  <p className="text-lg font-bold text-[var(--text-main)] mt-1">May 17, 2026</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Status</p>

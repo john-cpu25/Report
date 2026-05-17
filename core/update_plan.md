@@ -44,30 +44,57 @@
 
 ---
 
-## [VERSION 4.9.0] - 2026-05-15 (DỰ KIẾN)
-### "Security Enforcement & Personal Workspace"
+## [VERSION 4.9.0] - 2026-05-17 (ĐÃ HOÀN THÀNH)
+### "Personal Workspace & Data Visibility"
 
-### 1. Phân quyền & Bảo mật (RBAC & Security)
-- [ ] **Environment Hardening**: Bảo mật Supabase Keys qua file `.env`.
-- [ ] **Dynamic Sidebar**: Ẩn/Hiện Tab dựa trên chức vụ:
-    - Admin/Leader: Xem tất cả.
-    - User: Ẩn "Data Analyst" và "Review".
-- [ ] **Route Protection**: Chặn truy cập trái phép vào các module nhạy cảm từ App logic.
+### 1. Phân quyền Hiển thị (Data Visibility)
+- [x] **Dynamic Data Access**: Lọc dữ liệu hiển thị dựa trên chức vụ (Thay vì ẩn tab):
+    - Admin/Leader: Được xem toàn bộ dữ liệu hệ thống.
+    - User: Chỉ xem được các dữ liệu (task, review) liên quan trực tiếp đến họ.
 
 ### 2. Workspace Cá nhân (Personal Module)
-- [ ] **My Performance Tab**: Tạo không gian riêng cho từng User.
-- [ ] **Self-Data Only**: Tự động lọc chỉ hiển thị task của User đang đăng nhập.
-- [ ] **Weekly Detailed View**: Chế độ xem chi tiết theo từng tuần với biểu đồ hiệu suất cá nhân.
+- [x] **My Performance Tab (Không gian làm việc số)**: 
+    - **Ý nghĩa:** Cấu trúc thẻ (card) và giao diện vẫn giữ nguyên như Dashboard tổng, nhưng chỉ hiển thị các task đang làm của chính User đó (không bị lẫn lộn dữ liệu với người khác).
+- [x] **Self-Data Filtering**: Tự động lọc dữ liệu của User đang đăng nhập.
+    - **Phạm vi áp dụng:** Chính xác, nó được áp dụng làm luật cốt lõi cho tab **Personal** này. Đồng thời, nó cũng sẽ được dùng làm "bộ lọc cứng" cho các tab khác (như Data Analyst) để đảm bảo User thường thì đi đâu cũng chỉ thấy data của họ.
+- [x] **Weekly Detailed View**: Chế độ xem chi tiết theo từng tuần với biểu đồ hiệu suất cá nhân.
 
 ### 3. Quản lý Đội ngũ (Team Management)
-- [ ] **Live Operative Roster**: Trạng thái "Busy/Free" của nhân sự trên Dashboard.
-- [ ] **Capacity Planning**: Thống kê tải trọng công việc của từng team.
+- [x] **Live Operative Roster**: Theo dõi trạng thái làm việc (Busy/Free) của nhân sự trên Dashboard.
+    - **Ý nghĩa:** Tự động phân loại nhân sự trong team thành các nhóm: Đang bận làm task (Busy/WK), Đang rảnh rỗi chờ việc (Free/AV), hoặc Đang nghỉ phép (Leave/LV) dựa trên dữ liệu khai báo thực tế trong ngày.
+    - **Phân quyền:** Admin thấy được tình trạng của tất cả các team. Leader/User chỉ thấy tình trạng (Busy/Free) của team mình, các thẻ team khác sẽ bị ẩn thông tin và hiển thị "NO TASKS TODAY" để bảo mật.
+- [x] **Capacity Planning**: Đánh giá tải trọng công việc (Workload) của từng team.
+    - **Mục đích:** So sánh tổng số giờ task đang được giao với tổng quỹ thời gian có sẵn của team (sau khi trừ người nghỉ phép).
+    - **Lợi ích:** Giúp Leader/Admin nhìn ra ngay team nào đang bị quá tải (Overloaded) hoặc đang rảnh rỗi (Underutilized) để phân bổ dự án hợp lý.
+
+---
+
+## [VERSION 5.0.0] - 2026-05-17 (ĐÃ HOÀN THÀNH)
+### "Architecture Overhaul & Deep Optimization"
+Dựa trên báo cáo `code_review.md` và `deep_analysis.md`, phiên bản này tập trung giải quyết nợ kỹ thuật và cải thiện hiệu năng cốt lõi.
+
+### 1. Refactoring Nguyên khối (Monolithic Refactor)
+- [x] **PersonalSpace Breakdown**: Chia nhỏ tệp `PersonalSpace.jsx` khổng lồ thành các View độc lập (`TimesheetView`, `ProjectView`, `GanttView`, `DeepAnalysisView`).
+- [x] **Centralized Performance Engine**: Dời toàn bộ logic tính toán phức tạp vào bộ não dùng chung (`PersonalSpaceEngine.js`).
+- [x] **Data Normalization Adapter**: Chuẩn hóa dữ liệu thô (`trim()`, `toUpperCase()`) trong `dataProcessor.js` trước khi đẩy vào State.
+
+### 2. Quản lý Luồng Dữ liệu (State Management)
+- [ ] **Context API Integration**: Áp dụng Global State cho `User Profile`, `Project List` thay vì Prop Drilling.
+- [ ] **React Query/SWR**: Quản lý fetching dữ liệu từ Supabase (Cache, Background Sync, Optimistic UI).
+
+### 3. Tối ưu Hiệu năng (Performance Tuning)
+- [ ] **Data Virtualization**: Áp dụng `react-window` cho các bảng dữ liệu quá lớn để chống giật lag UI.
+- [ ] **Web Workers Offloading**: Chuyển các phép tính toán O(N*M) phức tạp sang luồng chạy ngầm.
+- [ ] **Stable Memoization**: Khắc phục lỗi re-render bằng cách ổn định Dependency Array cho `useMemo` và `useCallback`.
 
 ---
 **Kế hoạch tiếp theo (Next Steps):**
-- [/] Áp dụng Neumorphism cho toàn bộ hệ thống Tab (Annual Leave, Review).
-- [ ] Triển khai phân quyền Sidebar ngay lập tức.
-- [ ] Thực hiện fix bảo mật theo file `SECURITY_AUDIT.md`.
+- [x] Áp dụng Neumorphism cho toàn bộ hệ thống Tab (Annual Leave).
+- [x] Triển khai dọn dẹp và xoá bỏ hoàn toàn 2 tab cũ (CSVProcessor & PerformanceReview) khỏi hệ thống.
+- [x] Đại trùng tu giao diện Kệ sách Dự án (Projects Bookshelf) thành 3D chân thực, hỗ trợ cuộn ngang vô tận với nút điều hướng bằng đồng và chặn sách gỗ Mahogany.
+- [x] Triển khai trải nghiệm Mở Sách 3D (3D Open Book) trực quan sinh động khi click xem chi tiết dự án.
+- [x] Sửa lỗi hiển thị bị cắt đầu (clipping) của linh vật mèo cam 3D khi nhảy trên kệ sách.
+- [ ] Triển khai tính năng Kéo thả Sơ đồ Tổ chức (theo `ORG_CHART_DRAG_DROP_PLAN.md`).
 
 ---
 *Vị trí file này: /core/update_plan.md*

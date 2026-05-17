@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FolderKanban, 
@@ -31,6 +31,19 @@ const Projects = () => {
   const [timeFilter, setTimeFilter] = useState('MONTH');
   const [taskCounts, setTaskCounts] = useState(projectsCache?.taskCounts || {});
   const [viewMode, setViewMode] = useState('bookshelf'); // Default to bookshelf
+
+  const shelfRef = useRef(null);
+  const [shelfScrollLeft, setShelfScrollLeft] = useState(0);
+
+  const scrollShelf = (direction) => {
+    if (shelfRef.current) {
+      const scrollAmount = 300;
+      shelfRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   useEffect(() => {
     if (projectsCache) return;
@@ -234,16 +247,44 @@ const Projects = () => {
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-10 min-h-[600px] flex flex-col justify-end shadow-2xl overflow-hidden relative group/shelf">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+              <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-10 min-h-[600px] flex flex-col justify-end shadow-2xl relative group/shelf">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none rounded-2xl" />
                 
-                {/* Persistent Interactive Large Orange Tabby Jumping Cat */}
+                {/* Scroll Navigation Buttons - Brass Arrows */}
+                {filteredProjects.length > 5 && (
+                  <>
+                    <button
+                      onClick={() => scrollShelf('left')}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-gradient-to-b from-[#78350f] to-[#451a03] hover:from-[#92400e] hover:to-[#78350f] text-amber-400 border border-[#b45309]/50 shadow-lg flex items-center justify-center z-30 transition-all active:scale-95 group/btn"
+                      title="Scroll Left"
+                    >
+                      <ArrowRight size={18} className="rotate-180 group-hover/btn:-translate-x-0.5 transition-transform" />
+                    </button>
+                    
+                    <button
+                      onClick={() => scrollShelf('right')}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-gradient-to-b from-[#78350f] to-[#451a03] hover:from-[#92400e] hover:to-[#78350f] text-amber-400 border border-[#b45309]/50 shadow-lg flex items-center justify-center z-30 transition-all active:scale-95 group/btn"
+                      title="Scroll Right"
+                    >
+                      <ArrowRight size={18} className="group-hover/btn:translate-x-0.5 transition-transform" />
+                    </button>
+                  </>
+                )}
+
+                {/* Persistent Interactive Large Orange Tabby Jumping Cat (Outside scroll container so it never gets cropped!) */}
                 <motion.div
                   className="absolute z-[100] pointer-events-none"
-                  initial={{ x: 100, y: -(300 + (Math.abs(0 % 10 - 5) * 15) - 4) }}
+                  initial={{ x: 100, y: -(280 + (Math.abs(0 % 8 - 4) * 18) - 10) }}
                   animate={{ 
-                    x: isHoveringShelf ? (mouseX - 70) : (activeCatIdx * 50.5 + 100),
-                    y: -(300 + (Math.abs(activeCatIdx % 10 - 5) * 15) - 20),
+                    x: isHoveringShelf ? (mouseX - 70) : (() => {
+                      const widths = [42, 50, 58, 46, 54, 62, 38];
+                      let offset = 40; // matches px-10 (40px)
+                      for (let i = 0; i < activeCatIdx; i++) {
+                        offset += widths[i % widths.length] + 2;
+                      }
+                      return offset + (widths[activeCatIdx % widths.length] / 2) + 35 - shelfScrollLeft;
+                    })(),
+                    y: -((280 + (Math.abs(activeCatIdx % 8 - 4) * 18)) - 10),
                     rotate: isHoveringShelf ? 0 : [-15, 5, 0],
                     rotateY: 0
                   }}
@@ -265,8 +306,12 @@ const Projects = () => {
                     />
                 </motion.div>
 
+                {/* Scrollable Books Container */}
                 <div 
-                  className="flex items-end justify-center gap-0.5 relative z-10 px-10"
+                  ref={shelfRef}
+                  className="w-full overflow-x-auto flex items-end justify-start gap-0.5 relative z-10 px-10 py-6 min-h-[450px] scroll-smooth rounded-2xl"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  onScroll={(e) => setShelfScrollLeft(e.currentTarget.scrollLeft)}
                   onMouseMove={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     setMouseX(e.clientX - rect.left);
@@ -275,6 +320,7 @@ const Projects = () => {
                   onMouseEnter={() => setIsHoveringShelf(true)}
                   onMouseLeave={() => setIsHoveringShelf(false)}
                 >
+
                   {filteredProjects.length > 0 ? (
                     filteredProjects.map((project, idx) => (
                       <motion.div
@@ -299,29 +345,77 @@ const Projects = () => {
                           transition: { type: "spring", stiffness: 300 }
                         }}
                         onClick={() => setSelectedId(project.id)}
-                        className="relative group/book cursor-pointer shrink-0"
+                        className="relative group/book cursor-pointer shrink-0 transition-all duration-300"
                         style={{
-                          width: '50px',
-                          height: `${300 + (Math.abs(idx % 10 - 5) * 15)}px`,
+                          width: `${[42, 50, 58, 46, 54, 62, 38][idx % 7]}px`,
+                          height: `${280 + (Math.abs(idx % 8 - 4) * 18)}px`,
                           backgroundColor: project.color || '#1e293b',
-                          borderLeft: '2px solid rgba(255,255,255,0.1)',
-                          borderRight: '2px solid rgba(0,0,0,0.2)',
-                          boxShadow: 'inset 0 0 10px rgba(0,0,0,0.3), 5px 0 15px rgba(0,0,0,0.2)',
-                          borderRadius: '2px 4px 4px 2px',
+                          backgroundImage: `
+                            repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 4px),
+                            repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 4px),
+                            linear-gradient(to right, 
+                              rgba(0,0,0,0.5) 0%, 
+                              rgba(255,255,255,0.18) 12%, 
+                              rgba(255,255,255,0.28) 20%, 
+                              transparent 40%, 
+                              rgba(0,0,0,0.12) 80%, 
+                              rgba(0,0,0,0.55) 100%)
+                          `,
+                          boxShadow: 'inset -2px 0 6px rgba(0,0,0,0.45), inset 2px 0 6px rgba(255,255,255,0.3), 8px 4px 15px rgba(0,0,0,0.4)',
+                          borderRadius: '3px 5px 5px 3px',
+                          border: '1px solid rgba(0,0,0,0.15)',
                         }}
                       >
-                        <div className="absolute inset-0 flex flex-col items-center py-8 px-1">
-                          <div className="w-full h-5 bg-white/10 mb-6" />
-                          <div className="flex-1 flex items-center justify-center overflow-hidden">
-                            <span className="text-[10px] font-black text-white/90 uppercase whitespace-nowrap rotate-90 tracking-[0.3em] origin-center">
+                        {/* Satin Headband (Cloth band at top) */}
+                        <div className="absolute top-0 left-0 w-full h-[6px] bg-slate-950/70 border-b border-white/10 z-10" />
+
+                        {/* Gold Foil Accent Stripes (Top & Bottom) */}
+                        <div className="absolute top-[8%] left-0 w-full h-[2px] bg-gradient-to-r from-amber-600 via-yellow-300 to-amber-600 opacity-90 shadow-[0_1px_2px_rgba(0,0,0,0.3)] z-10" />
+                        <div className="absolute top-[10%] left-0 w-full h-[1px] bg-black/40 z-10" />
+                        
+                        <div className="absolute bottom-[22%] left-0 w-full h-[2px] bg-gradient-to-r from-amber-600 via-yellow-300 to-amber-600 opacity-90 shadow-[0_1px_2px_rgba(0,0,0,0.3)] z-10" />
+                        <div className="absolute bottom-[24%] left-0 w-full h-[1px] bg-black/40 z-10" />
+
+                        {/* Embossed Spine Ribs (Horizontal ridges) */}
+                        <div className="absolute top-[30%] left-0 w-full h-[4px] bg-black/35 border-t border-white/15 border-b border-black/50 z-10" />
+                        <div className="absolute bottom-[35%] left-0 w-full h-[4px] bg-black/35 border-t border-white/15 border-b border-black/50 z-10" />
+
+                        {/* Satin Bookmark Ribbon hanging out from bottom */}
+                        {idx % 3 === 0 && (
+                          <div 
+                            className="absolute bottom-[-18px] left-[40%] w-[6px] h-[22px] rounded-b-[2px] z-[-1] shadow-[1px_2px_4px_rgba(0,0,0,0.4)] transition-transform duration-300 group-hover/book:translate-y-1"
+                            style={{
+                              backgroundColor: idx % 6 === 0 ? '#dc2626' : '#eab308',
+                              transform: 'rotate(6deg)'
+                            }}
+                          />
+                        )}
+
+                        <div className="absolute inset-0 flex flex-col items-center py-10 px-1 z-20">
+                          {/* Top Tag / Category */}
+                          <div className="text-[8px] font-black text-white/50 tracking-widest uppercase mb-6 leading-none select-none">
+                            {project.key?.substring(0, 3)}
+                          </div>
+
+                          <div className="flex-1 flex items-center justify-center overflow-hidden w-full px-0.5">
+                            <span 
+                              className="text-[10px] font-black text-white/90 uppercase whitespace-nowrap rotate-90 tracking-[0.25em] origin-center select-none"
+                              style={{
+                                fontFamily: idx % 2 === 0 ? 'Georgia, serif' : 'system-ui, sans-serif',
+                                fontStyle: idx % 2 === 0 ? 'italic' : 'normal',
+                                textShadow: '1px 1px 1px rgba(255,255,255,0.12), -1px -1px 1px rgba(0,0,0,0.65)'
+                              }}
+                            >
                               {project.name}
                             </span>
                           </div>
+
                           <div className="mt-auto flex flex-col items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center border border-white/30">
-                              <span className="text-[10px] font-bold text-white">{project.taskCount || 0}</span>
+                            {/* Task Count Badge styled like an library catalog circle tag */}
+                            <div className="w-8 h-8 rounded-full bg-slate-900/60 flex items-center justify-center border border-white/20 shadow-inner group-hover/book:border-indigo-400/50 transition-colors">
+                              <span className="text-[9px] font-black text-indigo-300 tracking-tighter pr-0.5">{project.taskCount || 0}</span>
                             </div>
-                            <div className="w-10 h-1 bg-white/40 rounded-full" />
+                            <div className="w-10 h-1 bg-white/10 rounded-full" />
                           </div>
                         </div>
                       </motion.div>
@@ -329,8 +423,27 @@ const Projects = () => {
                   ) : (
                     <div className="text-[var(--text-muted)] font-black uppercase tracking-widest">No Projects Match Your Search</div>
                   )}
+
+                  {/* Decorative Mahogany Bookend */}
+                  {filteredProjects.length > 0 && (
+                    <div 
+                      className="w-[24px] shrink-0 self-end mr-10 relative z-10 transition-transform duration-300 hover:scale-105"
+                      style={{
+                        height: '240px',
+                        background: 'linear-gradient(135deg, #78350f 0%, #451a03 100%)',
+                        boxShadow: 'inset 2px 2px 5px rgba(255,255,255,0.2), 4px 4px 10px rgba(0,0,0,0.4)',
+                        borderRadius: '0 16px 4px 0',
+                        borderLeft: '4px solid #f59e0b', // gold brass accent
+                      }}
+                      title="Archival Bookend"
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center rotate-90 pointer-events-none">
+                        <span className="text-[9px] font-black text-amber-500/50 uppercase tracking-[0.4em] whitespace-nowrap">RINCO</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="w-full h-8 bg-gradient-to-b from-[#334155] to-[#1e293b] rounded-md shadow-2xl mt-[-4px] relative z-[5] border-t border-white/10" />
+                <div className="w-full h-8 bg-gradient-to-b from-[#451a03] to-[#1c1917] rounded-md shadow-2xl mt-[-4px] relative z-[5] border-t-2 border-[#78350f] border-b border-black/40" />
                 <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-10 py-2 bg-indigo-500/10 backdrop-blur-md rounded-full border border-indigo-500/20 opacity-0 group-hover/shelf:opacity-100 transition-all duration-700">
                   <span className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.6em]">Corporate Project Intelligence Vault</span>
                 </div>
@@ -344,54 +457,183 @@ const Projects = () => {
       {/* Selected Project Detail Modal */}
       <AnimatePresence>
         {selectedId && selectedProject && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-[10px]">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 md:p-12 overflow-y-auto" style={{ perspective: 1200 }}>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedId(null)}
-              className="absolute inset-0 bg-[#0B0F1A]/80 backdrop-blur-xl"
+              className="absolute inset-0 bg-[#0B0F1A]/85 backdrop-blur-xl z-10"
             />
             
             <motion.div
               layoutId={`card-${selectedId}`}
-              className="relative w-full max-w-4xl bg-[var(--bg-card)] border border-[var(--border)] rounded-[8px] overflow-hidden shadow-2xl flex flex-col"
+              initial={{ rotateY: 15, scale: 0.85, opacity: 0 }}
+              animate={{ rotateY: 0, scale: 1, opacity: 1 }}
+              exit={{ rotateY: -15, scale: 0.85, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 180, damping: 20 }}
+              className="relative w-full max-w-4xl rounded-[12px] p-[10px] flex flex-col z-20 transition-all select-none"
+              style={{
+                backgroundColor: selectedProject.color || '#3b82f6',
+                backgroundImage: `
+                  repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 4px),
+                  repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 4px),
+                  linear-gradient(to right, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.12) 50%, rgba(0,0,0,0.5) 100%)
+                `,
+                boxShadow: `
+                  0 30px 60px -15px rgba(0,0,0,0.85),
+                  inset 0 1px 1px rgba(255,255,255,0.25),
+                  inset 0 -1px 1px rgba(0,0,0,0.45),
+                  0 0 0 3px ${selectedProject.color || '#3b82f6'},
+                  0 10px 0 #faf8f5,
+                  0 11px 0 rgba(0,0,0,0.3),
+                  0 18px 25px rgba(0,0,0,0.5)
+                `
+              }}
             >
-              <div 
-                className="absolute top-0 left-0 w-full h-1 z-10"
-                style={{ backgroundColor: selectedProject.color || '#6366f1' }}
-              />
+              {/* Protruding Hardcover Spines shadow/overlay */}
+              <div className="absolute inset-[10px] rounded-[6px] bg-slate-900/10 pointer-events-none z-10" />
 
-              <div className="p-8 flex flex-col gap-6">
-                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/20">
-                    <Sparkles size={14} className="text-yellow-400" />
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Project Detail</span>
+              <div className="relative grid grid-cols-1 md:grid-cols-2 bg-[#faf8f5] rounded-[6px] overflow-hidden min-h-[530px] shadow-[inset_0_0_30px_rgba(0,0,0,0.06)] border border-stone-300/40">
+                {/* Left Page overlay shadows for crease/highlights */}
+                <div className="absolute inset-y-0 left-0 w-[12px] bg-gradient-to-r from-black/[0.06] to-transparent pointer-events-none z-30" />
+                <div className="absolute inset-y-0 right-1/2 w-[35px] bg-gradient-to-r from-transparent via-black/[0.015] to-black/[0.12] pointer-events-none z-30 hidden md:block" />
+
+                {/* Right Page overlay shadows for crease/highlights */}
+                <div className="absolute inset-y-0 left-1/2 w-[35px] bg-gradient-to-l from-transparent via-black/[0.015] to-black/[0.12] pointer-events-none z-30 hidden md:block" />
+                <div className="absolute inset-y-0 right-0 w-[12px] bg-gradient-to-l from-black/[0.06] to-transparent pointer-events-none z-30" />
+
+                {/* Vertical Center Crease */}
+                <div className="absolute top-0 bottom-0 left-1/2 w-[1px] -translate-x-1/2 bg-stone-300/60 z-30 pointer-events-none hidden md:block" />
+                <div className="absolute top-0 bottom-0 left-1/2 w-[18px] -translate-x-1/2 bg-gradient-to-r from-black/8 via-transparent to-black/8 z-20 pointer-events-none hidden md:block" />
+
+                {/* LEFT PAGE - COVER & STAMP */}
+                <div className="flex flex-col justify-between p-10 relative select-text z-20 border-b md:border-b-0 md:border-r border-stone-200/60">
+                  {/* Left Page Header */}
+                  <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[8px] font-black text-stone-400 tracking-[0.25em] uppercase">
+                    <span>Rincovitch BIM Registry</span>
+                    <span>Vol. 2026</span>
                   </div>
-                  <h2 className="text-[32px] font-black text-[var(--text-main)] leading-tight uppercase">
-                    {selectedProject.key}
-                  </h2>
-                  <p className="text-[16px] font-bold text-[var(--text-muted)]">
-                    {selectedProject.name}
-                  </p>
+
+                  {/* Left Page Title Page Body */}
+                  <div className="flex-grow flex flex-col justify-center items-center text-center my-6">
+                    {/* Stylized Archival Stamp */}
+                    <div 
+                      className="w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-[0_4px_10px_rgba(0,0,0,0.05)] border-2 border-dashed relative animate-pulse"
+                      style={{ 
+                        borderColor: selectedProject.color || '#3b82f6',
+                        backgroundColor: `${selectedProject.color || '#3b82f6'}08`
+                      }}
+                    >
+                      <Crown size={26} style={{ color: selectedProject.color || '#3b82f6' }} />
+                      <div 
+                        className="absolute inset-[2px] rounded-full border border-dashed opacity-50"
+                        style={{ borderColor: selectedProject.color || '#3b82f6' }}
+                      />
+                    </div>
+
+                    <h3 className="text-[9px] font-black text-stone-400 tracking-[0.3em] uppercase mb-1">Archival Record</h3>
+                    <h2 
+                      className="text-[26px] font-black text-stone-800 leading-tight uppercase tracking-wide mb-3"
+                      style={{ fontFamily: 'Georgia, serif' }}
+                    >
+                      {selectedProject.key}
+                    </h2>
+                    
+                    <div className="w-12 h-[1px] bg-stone-300 my-3" />
+                    
+                    <p className="text-[12px] text-stone-600 font-bold max-w-[260px] leading-relaxed italic">
+                      {selectedProject.name}
+                    </p>
+
+                    <div className="mt-8 space-y-2 text-left w-full max-w-[240px] bg-stone-100/50 p-4 rounded border border-stone-200/50 shadow-inner">
+                      <div className="flex justify-between text-[11px] text-stone-600 leading-none">
+                        <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Registry ID</span>
+                        <span className="font-mono">{selectedProject.id}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px] text-stone-600 leading-none">
+                        <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Registered</span>
+                        <span>{selectedProject.created_at ? new Date(selectedProject.created_at).toLocaleDateString('en-US') : 'Jan 24, 2026'}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px] text-stone-600 leading-none">
+                        <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Environment</span>
+                        <span className="font-black text-indigo-600">Revit {selectedProject.revit_version || '2024'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Left Page Footer */}
+                  <div className="flex justify-between text-[9px] text-stone-400 font-bold tracking-widest uppercase">
+                    <span>ARCHIVE NO. {selectedProject.id}</span>
+                    <span>PAGE 12</span>
+                  </div>
                 </div>
 
-                <div className="space-y-3 pt-4 border-t border-[var(--border)]">
-                  <div className="flex items-center gap-2 text-indigo-400">
-                    <Layers size={18} />
-                    <span className="text-[12px] font-black uppercase tracking-widest">Description</span>
+                {/* RIGHT PAGE - SYNOPSIS & METRICS */}
+                <div className="flex flex-col justify-between p-10 relative select-text z-20">
+                  {/* Right Page Header */}
+                  <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[8px] font-black text-stone-400 tracking-[0.25em] uppercase">
+                    <span>Synchronized System Log</span>
+                    <span>Classified</span>
                   </div>
-                  <p className="text-[15px] text-[var(--text-muted)] leading-relaxed">
-                    {selectedProject.description || "Project documentation and coordination protocols for Rincovitch BIM standards."}
-                  </p>
-                </div>
 
-                <button 
-                  onClick={() => setSelectedId(null)}
-                  className="mt-6 py-3 bg-[var(--bg-surface)] hover:bg-rose-500/10 hover:text-rose-500 text-[var(--text-muted)] rounded-lg text-[12px] font-black uppercase tracking-widest transition-all border border-[var(--border)]"
-                >
-                  Close Detail
-                </button>
+                  {/* Right Page Content */}
+                  <div className="flex-grow flex flex-col justify-center my-6">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase flex items-center gap-2">
+                          <Sparkles size={12} className="text-yellow-600 animate-pulse" /> Description & Scope
+                        </h4>
+                        
+                        {/* Elegant vintage drop cap description */}
+                        <p className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[40px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif">
+                          {selectedProject.description || "Core Rincovitch BIM coordination protocol and database synchronization configurations. This volume holds encrypted transactional schedules for ongoing real-time structural engineering modeling."}
+                        </p>
+                      </div>
+
+                      {/* Vintage Index list representing project stats */}
+                      <div className="pt-6 border-t border-stone-200/80 space-y-3">
+                        <h5 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">Archival Metrics</h5>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-stone-100/50 rounded border border-stone-200/50 flex flex-col shadow-inner">
+                            <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest">Tasks Indexed</span>
+                            <span className="text-[20px] font-black text-stone-800 tabular-nums">{selectedProject.taskCount || 0}</span>
+                          </div>
+                          <div className="p-3 bg-stone-100/50 rounded border border-stone-200/50 flex flex-col shadow-inner">
+                            <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest">Security Status</span>
+                            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mt-1.5 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" /> SECURE
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Signature Block */}
+                    <div className="mt-8 pt-4 border-t border-dashed border-stone-300 flex justify-between items-end">
+                      <div>
+                        <p className="text-[8px] text-stone-400 font-bold uppercase tracking-wider leading-none mb-1">Approved by</p>
+                        <p className="text-[13px] text-stone-700 italic leading-none" style={{ fontFamily: 'Georgia, serif' }}>Rinco Intelligence</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[8px] text-stone-400 font-bold uppercase tracking-wider leading-none mb-1">Classification</p>
+                        <p className="text-[8px] font-black text-rose-600 tracking-widest uppercase bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 leading-none">CONFIDENTIAL</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Page Footer containing the Close Volume Button */}
+                  <div className="flex justify-between items-center text-[9px] text-stone-400 font-bold tracking-widest uppercase">
+                    <span>PAGE 13</span>
+                    <button 
+                      onClick={() => setSelectedId(null)}
+                      className="px-4 py-1.5 bg-stone-800 text-stone-200 hover:bg-rose-600 hover:text-white rounded-[4px] text-[8px] font-black uppercase tracking-widest transition-all shadow-md active:translate-y-0.5 z-50 cursor-pointer"
+                    >
+                      Close Volume
+                    </button>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>

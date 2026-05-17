@@ -23,19 +23,21 @@ export const processTaskData = (tasksData, userMap = {}, teamMap = {}) => {
       const creatorId = (row.create_by || '').toString();
 
       const getSafeName = (id) => {
-        if (!id) return '-';
-        return safeUserMap[id] || safeUserMap[id.toLowerCase()] || id;
+        if (!id) return 'UNKNOWN';
+        const name = safeUserMap[id] || safeUserMap[id.toLowerCase()] || id;
+        return name.toString().trim();
       };
 
       const getSafeTeam = (id) => {
-        if (!id) return '-';
-        return safeTeamMap[id] || safeTeamMap[id.toLowerCase()] || '-';
+        if (!id) return 'UNASSIGNED TEAM';
+        const team = safeTeamMap[id] || safeTeamMap[id.toLowerCase()] || 'UNASSIGNED TEAM';
+        return team.toString().trim().toUpperCase();
       };
 
       return {
         id: row.id,
-        project: parts[0]?.trim() || '-',
-        taskName: parts[1]?.trim() || '-',
+        project: (parts[0] || '').toString().trim().toUpperCase() || 'UNASSIGNED',
+        taskName: (parts[1] || '').toString().trim() || 'UNTITLED',
         createdBy: getSafeName(creatorId),
         userName: getSafeName(userId),
         ...metrics,
@@ -68,5 +70,5 @@ export const processTaskData = (tasksData, userMap = {}, teamMap = {}) => {
       console.error('Error processing row:', row, err);
       return null;
     }
-  }).filter(r => r !== null && r.project !== '-');
+  }).filter(r => r !== null && r.project !== 'UNASSIGNED');
 };
