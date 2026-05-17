@@ -319,14 +319,14 @@ const Workflows = () => {
     mto: {
       id: 'mto',
       title: 'MTO',
-      subtitle: 'Material Takeoff Division',
+      subtitle: 'Maker to order',
       icon: FileText,
       color: '#8b5cf6', // Violet
       desc: 'Thiết lập bảng thống kê khối lượng bê tông, diện tích ván khuôn dầm cột sàn và khối lượng cốt thép tự động từ mô hình Revit.',
       workflows: {
         mto_flow: {
           id: 'mto_flow',
-          title: 'Material Takeoff Flow',
+          title: 'Maker to order Flow',
           subtitle: 'Concrete & Formwork Schedules (Bảng Thống Kê)',
           icon: FileText,
           color: '#8b5cf6',
@@ -334,7 +334,7 @@ const Workflows = () => {
             {
               left: {
                 type: 'cover',
-                title: 'Material Takeoff Flow',
+                title: 'Maker to order Flow',
                 subtitle: 'Automatic Schedules & Export (Quy trình Đo Bóc)',
                 volume: 'Vol. MTO-I',
                 classification: 'VALUATION PROTOCOL',
@@ -564,11 +564,10 @@ const Workflows = () => {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 20 }}
                           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                          className="absolute right-[115%] px-5 py-3 bg-slate-950/95 backdrop-blur-2xl border rounded-xl font-black text-[12px] tracking-[0.2em] whitespace-nowrap shadow-2xl flex flex-col items-start gap-1 z-30"
+                          className="absolute right-[115%] px-8 py-4 bg-slate-950/95 backdrop-blur-2xl border rounded-lg font-black text-[12px] tracking-[0.2em] whitespace-nowrap shadow-2xl flex items-center justify-center z-30"
                           style={{ borderColor: r.color }}
                         >
-                          <span style={{ color: r.color }} className="uppercase text-[13px] font-black">{r.title}</span>
-                          <span className="text-[8px] text-slate-400 font-bold uppercase tracking-widest leading-none">{r.subtitle}</span>
+                          <span style={{ color: r.color }} className="uppercase text-[17px] font-black tracking-wider">{r.title}</span>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -633,15 +632,15 @@ const Workflows = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 mt-3 md:mt-0">
-                  <div className="px-4 py-2 rounded-lg border border-white/5 text-[9px] font-black text-slate-500 tracking-wider uppercase">
+                  <div className="px-5 py-3 rounded-lg border border-white/5 text-[11px] font-black text-slate-500 tracking-wider uppercase flex items-center justify-center">
                     Division Active
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     onClick={() => { setSelectedRoom(null); setSelectedWorkflowId(null); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10 transition-colors shadow-md cursor-pointer"
+                    className="flex items-center gap-2.5 px-6 py-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[13px] font-black uppercase tracking-widest rounded-lg border border-white/10 transition-colors shadow-md cursor-pointer"
                   >
-                    <ArrowLeft size={14} /> Back to Divisions
+                    <ArrowLeft size={16} /> Back to Divisions
                   </motion.button>
                 </div>
               </div>
@@ -910,7 +909,11 @@ const Workflows = () => {
                                     backgroundColor: `${leftData.stampColor}08`
                                   }}
                                 >
-                                  <Crown size={26} style={{ color: leftData.stampColor }} />
+                                  <img 
+                                    src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} 
+                                    className="w-8 h-8 object-contain select-none" 
+                                    alt="Rincovitch Logo" 
+                                  />
                                   <div className="absolute inset-[3px] rounded-full border border-dashed opacity-40" style={{ borderColor: leftData.stampColor }} />
                                 </div>
 
@@ -1082,17 +1085,17 @@ const Workflows = () => {
                         <span>PAGE {currentSpread * 2 + 2}</span>
                         
                         {/* Page turning brass-styled control arrows */}
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           <button
                             disabled={currentSpread === 0}
                             onClick={() => {
                               setPageDirection(-1);
                               setCurrentSpread(prev => prev - 1);
                             }}
-                            className={`p-1.5 rounded bg-stone-200 text-stone-700 hover:bg-stone-300 transition-all border border-stone-300/40 ${currentSpread === 0 ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
+                            className={`p-2.5 rounded-md bg-stone-200 text-stone-700 hover:bg-stone-300 transition-all border border-stone-300/40 ${currentSpread === 0 ? 'opacity-30 cursor-not-allowed' : 'active:scale-95 cursor-pointer'}`}
                             title="Turn Back"
                           >
-                            <ChevronLeft size={10} />
+                            <ChevronLeft size={15} />
                           </button>
                           
                           <button
@@ -1101,17 +1104,17 @@ const Workflows = () => {
                               setPageDirection(1);
                               setCurrentSpread(prev => prev + 1);
                             }}
-                            className={`p-1.5 rounded bg-stone-200 text-stone-700 hover:bg-stone-300 transition-all border border-stone-300/40 ${currentSpread === maxSpreads - 1 ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
+                            className={`p-2.5 rounded-md bg-stone-200 text-stone-700 hover:bg-stone-300 transition-all border border-stone-300/40 ${currentSpread === maxSpreads - 1 ? 'opacity-30 cursor-not-allowed' : 'active:scale-95 cursor-pointer'}`}
                             title="Turn Page"
                           >
-                            <ChevronRight size={10} />
+                            <ChevronRight size={15} />
                           </button>
 
-                          <div className="h-4 w-px bg-stone-300 mx-1" />
+                          <div className="h-6 w-px bg-stone-300 mx-2" />
 
                           <button 
                             onClick={() => setSelectedWorkflowId(null)}
-                            className="px-3 py-1.5 bg-stone-800 text-stone-200 hover:bg-rose-600 hover:text-white rounded text-[8px] font-black uppercase tracking-widest transition-all shadow active:translate-y-0.5"
+                            className="px-5 py-2.5 bg-stone-800 text-stone-200 hover:bg-rose-600 hover:text-white rounded-md text-[12px] font-black uppercase tracking-widest transition-all shadow active:translate-y-0.5 cursor-pointer"
                           >
                             Close Volume
                           </button>

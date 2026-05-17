@@ -53,7 +53,7 @@ const Projects = () => {
       try {
         const [projRes, taskRes] = await Promise.all([
           supabase.from('NMK_Project').select('*').order('index', { ascending: true }),
-          supabase.from('NMK_Task').select('name').limit(10000)
+          supabase.from('NMK_Task').select('project_id, name').limit(15000)
         ]);
         
         if (projRes.error) throw projRes.error;
@@ -64,6 +64,12 @@ const Projects = () => {
         const counts = {};
         if (taskRes.data) {
           taskRes.data.forEach(t => {
+            // Group by real database project ID UUID
+            if (t.project_id) {
+              counts[t.project_id] = (counts[t.project_id] || 0) + 1;
+            }
+            
+            // Fallback split name matching for backward compatibility
             const rawName = t.name || '';
             const parts = rawName.toString().split(':');
             if (parts.length > 0) {
@@ -87,8 +93,8 @@ const Projects = () => {
 
   const projectsWithStats = useMemo(() => {
     return projects.map(p => {
-      // Use real count if available
-      let taskCount = taskCounts[p.key?.toUpperCase()] || taskCounts[p.name?.toUpperCase()] || 0;
+      // Fetch precise task count by UUID, fallback to split names
+      let taskCount = taskCounts[p.id] || taskCounts[p.key?.toUpperCase()] || taskCounts[p.name?.toUpperCase()] || 0;
       
       return { ...p, taskCount };
     });
@@ -508,7 +514,7 @@ const Projects = () => {
                 <div className="absolute top-0 bottom-0 left-1/2 w-[18px] -translate-x-1/2 bg-gradient-to-r from-black/8 via-transparent to-black/8 z-20 pointer-events-none hidden md:block" />
 
                 {/* LEFT PAGE - COVER & STAMP */}
-                <div className="flex flex-col justify-between p-10 relative select-text z-20 border-b md:border-b-0 md:border-r border-stone-200/60">
+                <div className="flex flex-col justify-between book-page-left relative select-text z-20 border-b md:border-b-0 md:border-r border-stone-200/60">
                   {/* Left Page Header */}
                   <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[8px] font-black text-stone-400 tracking-[0.25em] uppercase">
                     <span>Rincovitch BIM Registry</span>
@@ -519,13 +525,17 @@ const Projects = () => {
                   <div className="flex-grow flex flex-col justify-center items-center text-center my-6">
                     {/* Stylized Archival Stamp */}
                     <div 
-                      className="w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-[0_4px_10px_rgba(0,0,0,0.05)] border-2 border-dashed relative animate-pulse"
+                      className="w-16 h-16 rounded-full border border-dashed flex items-center justify-center mb-6 relative animate-pulse shadow-sm"
                       style={{ 
                         borderColor: selectedProject.color || '#3b82f6',
                         backgroundColor: `${selectedProject.color || '#3b82f6'}08`
                       }}
                     >
-                      <Crown size={26} style={{ color: selectedProject.color || '#3b82f6' }} />
+                      <img 
+                        src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} 
+                        className="w-8 h-8 object-contain select-none" 
+                        alt="Rincovitch Logo" 
+                      />
                       <div 
                         className="absolute inset-[2px] rounded-full border border-dashed opacity-50"
                         style={{ borderColor: selectedProject.color || '#3b82f6' }}
@@ -549,7 +559,7 @@ const Projects = () => {
                     <div className="mt-8 space-y-2 text-left w-full max-w-[240px] bg-stone-100/50 p-4 rounded border border-stone-200/50 shadow-inner">
                       <div className="flex justify-between text-[11px] text-stone-600 leading-none">
                         <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Registry ID</span>
-                        <span className="font-mono">{selectedProject.id}</span>
+                        <span className="font-mono text-[9px] max-w-[120px] truncate">{selectedProject.id}</span>
                       </div>
                       <div className="flex justify-between text-[11px] text-stone-600 leading-none">
                         <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Registered</span>
@@ -558,6 +568,15 @@ const Projects = () => {
                       <div className="flex justify-between text-[11px] text-stone-600 leading-none">
                         <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Environment</span>
                         <span className="font-black text-indigo-600">Revit {selectedProject.revit_version || '2024'}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px] text-stone-600 leading-none border-t border-stone-200/60 pt-2.5 mt-1">
+                        <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Active Tasks</span>
+                        <span 
+                          className="font-black text-[12px] tabular-nums"
+                          style={{ color: selectedProject.color || '#3b82f6' }}
+                        >
+                          {selectedProject.taskCount || 0}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -570,7 +589,7 @@ const Projects = () => {
                 </div>
 
                 {/* RIGHT PAGE - SYNOPSIS & METRICS */}
-                <div className="flex flex-col justify-between p-10 relative select-text z-20">
+                <div className="flex flex-col justify-between book-page-right relative select-text z-20">
                   {/* Right Page Header */}
                   <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[8px] font-black text-stone-400 tracking-[0.25em] uppercase">
                     <span>Synchronized System Log</span>
@@ -586,7 +605,7 @@ const Projects = () => {
                         </h4>
                         
                         {/* Elegant vintage drop cap description */}
-                        <p className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[40px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif">
+                        <p className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif">
                           {selectedProject.description || "Core Rincovitch BIM coordination protocol and database synchronization configurations. This volume holds encrypted transactional schedules for ongoing real-time structural engineering modeling."}
                         </p>
                       </div>
@@ -628,7 +647,7 @@ const Projects = () => {
                     <span>PAGE 13</span>
                     <button 
                       onClick={() => setSelectedId(null)}
-                      className="px-4 py-1.5 bg-stone-800 text-stone-200 hover:bg-rose-600 hover:text-white rounded-[4px] text-[8px] font-black uppercase tracking-widest transition-all shadow-md active:translate-y-0.5 z-50 cursor-pointer"
+                      className="px-5 py-2.5 bg-stone-800 text-stone-200 hover:bg-rose-600 hover:text-white rounded-md text-[12px] font-black uppercase tracking-widest transition-all shadow-md active:translate-y-0.5 z-50 cursor-pointer"
                     >
                       Close Volume
                     </button>
