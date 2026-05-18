@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Camera, MapPin, Briefcase, Mail, Users, Award, Shield, Loader2, Check, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
+import AvatarWithFrame from './AvatarWithFrame';
 
 export default function ProfileModal({ isOpen, onClose }) {
   const { user, updateUserProfile } = useAuth();
   const { theme } = useApp();
   
   const [selectedAvatar, setSelectedAvatar] = useState(0);
+  const [selectedFrame, setSelectedFrame] = useState('none');
   const [formData, setFormData] = useState({
     shortName: '',
     fullName: '',
@@ -45,6 +47,7 @@ export default function ProfileModal({ isOpen, onClose }) {
         email: user.email || ''
       });
       setProfileImage(user.image || null);
+      setSelectedFrame(user.avatarFrame || 'none');
       
       // Try to find if user's current image matches a gradient preset
       if (user.image && !user.image.startsWith('data:image')) {
@@ -116,7 +119,8 @@ export default function ProfileModal({ isOpen, onClose }) {
         team: formData.team,
         location: formData.location,
         position: formData.position,
-        image: profileImage || presetAvatars[selectedAvatar]
+        image: profileImage || presetAvatars[selectedAvatar],
+        avatarFrame: selectedFrame // Stage and save selected frame!
       });
       
       setSaveSuccess(true);
@@ -173,40 +177,29 @@ export default function ProfileModal({ isOpen, onClose }) {
               <X size={24} />
             </button>
             <h1 className="text-3xl font-bold text-white">User Profile</h1>
-            <p className="text-indigo-100 mt-2">Manage your personal information</p>
+            <p className="text-indigo-100 mt-2">Manage your personal information and avatar</p>
           </div>
 
           {/* Avatar Section */}
           <div className="relative z-10" style={{ paddingLeft: '32px', paddingRight: '32px', marginTop: '-64px', marginBottom: '32px' }}>
             <div className="flex items-end gap-6">
+              {/* BIG AVATAR PREVIEW WITH FRAME */}
               <div className="relative">
-                <div
-                  className="w-32 h-32 rounded-[8px] shadow-lg flex items-center justify-center overflow-hidden border-2 border-white"
-                  style={{ 
-                    background: profileImage && profileImage.startsWith('linear-gradient') 
-                      ? profileImage 
-                      : (profileImage ? 'transparent' : presetAvatars[selectedAvatar]) 
-                  }}
-                >
-                  {profileImage && !profileImage.startsWith('linear-gradient') ? (
-                    <img src={profileImage} alt={formData.fullName} className="w-full h-full object-cover" />
-                  ) : (
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" fill="white"/>
-                      <path d="M12 14C6.47715 14 2 18.4772 2 24H22C22 18.4772 17.5228 14 12 14Z" fill="white"/>
-                    </svg>
-                  )}
-                </div>
+                <AvatarWithFrame 
+                  user={{ 
+                    ...user, 
+                    image: profileImage || presetAvatars[selectedAvatar], 
+                    avatarFrame: selectedFrame 
+                  }} 
+                  sizeClass="w-32 h-32" 
+                  borderClass="border-2 border-white shadow-lg"
+                />
                 
                 {/* File picker button */}
                 <button 
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className={`absolute bottom-0 right-0 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-colors cursor-pointer border ${
-                    isDark 
-                      ? 'bg-slate-800 hover:bg-slate-700 border-white/10 text-white' 
-                      : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
-                  }`}
+                  className={`absolute bottom-0 right-0 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-colors cursor-pointer border z-20 bg-white hover:bg-slate-50 border-slate-200 text-slate-700`}
                 >
                   <Camera size={18} />
                 </button>
@@ -235,31 +228,67 @@ export default function ProfileModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            {/* Preset Avatars */}
-            <div style={{ marginTop: '24px' }}>
-              <p className={isDark ? "text-xs font-black uppercase tracking-widest text-indigo-400" : "text-xs font-black uppercase tracking-widest text-emerald-600"} style={{ marginBottom: '12px' }}>Preset Avatars</p>
-              <div className="flex gap-3">
-                {presetAvatars.map((gradient, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => handlePresetSelect(index)}
-                    className={`w-14 h-14 rounded-[8px] shadow border border-white/5 active:scale-95 transition-all overflow-hidden relative group/preset ${
-                      selectedAvatar === index && (!profileImage || profileImage.startsWith('linear-gradient'))
-                        ? 'ring-4 ring-indigo-500 ring-offset-2 scale-105'
-                        : 'hover:scale-105 opacity-70 hover:opacity-100'
-                    }`}
-                    style={{ background: gradient }}
-                    aria-label={`Select avatar ${index + 1}`}
-                  >
-                    <span className="absolute inset-0 bg-black/10 opacity-0 group-hover/preset:opacity-100 transition-opacity" />
-                  </button>
-                ))}
+            {/* Avatar customization panels side-by-side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ marginTop: '24px' }}>
+              {/* Preset Avatars */}
+              <div>
+                <p className={isDark ? "text-xs font-black uppercase tracking-widest text-indigo-400" : "text-xs font-black uppercase tracking-widest text-emerald-600"} style={{ marginBottom: '12px' }}>Preset Avatars</p>
+                <div className="flex flex-wrap gap-2.5">
+                  {presetAvatars.map((gradient, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handlePresetSelect(index)}
+                      className={`w-12 h-12 rounded-[8px] shadow border border-white/5 active:scale-95 transition-all overflow-hidden relative group/preset ${
+                        selectedAvatar === index && (!profileImage || profileImage.startsWith('linear-gradient'))
+                          ? 'ring-4 ring-indigo-500 ring-offset-2 scale-105'
+                          : 'hover:scale-105 opacity-70 hover:opacity-100'
+                      }`}
+                      style={{ background: gradient }}
+                      aria-label={`Select avatar ${index + 1}`}
+                    >
+                      <span className="absolute inset-0 bg-black/10 opacity-0 group-hover/preset:opacity-100 transition-opacity" />
+                    </button>
+                  ))}
+                </div>
               </div>
-              <p className={`text-[10px] font-bold mt-2 ${isDark ? 'text-slate-500' : 'text-stone-400'}`}>
-                Select a gradient template or hover your avatar to upload a custom picture.
-              </p>
+
+              {/* PREMIUM AVATAR FRAMES */}
+              <div>
+                <p className={isDark ? "text-xs font-black uppercase tracking-widest text-indigo-400" : "text-xs font-black uppercase tracking-widest text-emerald-600"} style={{ marginBottom: '12px' }}>
+                  <Sparkles size={12} className="inline mr-1 mb-0.5 animate-pulse" />
+                  Avatar Frames
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { id: 'none', label: 'None', style: 'bg-slate-800' },
+                    { id: 'crystal', label: 'Glacier', style: 'bg-gradient-to-br from-cyan-400 to-indigo-500 border-cyan-300' },
+                    { id: 'gold', label: 'Royal', style: 'bg-gradient-to-br from-yellow-400 to-amber-600 border-amber-300' },
+                    { id: 'cyber', label: 'Cyber', style: 'bg-gradient-to-br from-pink-500 to-purple-600 border-pink-400' }
+                  ].map((frm) => (
+                    <button
+                      key={frm.id}
+                      type="button"
+                      onClick={() => setSelectedFrame(frm.id)}
+                      className={`w-12 h-12 rounded-[8px] border active:scale-95 transition-all flex flex-col items-center justify-center relative ${
+                        selectedFrame === frm.id
+                          ? 'ring-4 ring-indigo-500 ring-offset-2 scale-105 border-white'
+                          : 'border-white/5 opacity-70 hover:opacity-100 hover:scale-105'
+                      } ${isDark ? 'bg-slate-950/60' : 'bg-stone-50'}`}
+                      aria-label={`Select frame ${frm.label}`}
+                    >
+                      <div className={`w-5 h-5 rounded ${frm.style} flex items-center justify-center text-[7px] font-black text-white`}>
+                        {frm.label.substring(0, 2).toUpperCase()}
+                      </div>
+                      <span className="text-[8px] font-black uppercase mt-1 text-slate-400 leading-none">{frm.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
+            <p className={`text-[10px] font-bold mt-3 ${isDark ? 'text-slate-500' : 'text-stone-400'}`}>
+              Select a gradient background, choose a premium avatar frame, or upload your own custom picture!
+            </p>
           </div>
 
           {/* Form Section */}

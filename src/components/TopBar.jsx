@@ -6,6 +6,7 @@ import RincovitchLogo from '../RincovitchLogo'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
+import AvatarWithFrame from './AvatarWithFrame'
 
 const TopBar = () => {
   const { user } = useAuth();
@@ -135,7 +136,7 @@ const TopBar = () => {
                      initial={{ opacity: 0, y: 10, scale: 0.99 }}
                      animate={{ opacity: 1, y: 0, scale: 1 }}
                      exit={{ opacity: 0, y: 10, scale: 0.99 }}
-                     className="absolute top-[calc(100%+12px)] left-0 w-96 bg-[var(--bg-card)]/98 backdrop-blur-2xl border border-[var(--border)] rounded-md shadow-2xl z-50 overflow-hidden"
+                     className="absolute top-[calc(100%+28px)] left-0 w-96 bg-[var(--bg-card)]/98 backdrop-blur-2xl border border-[var(--border)] rounded-md shadow-2xl z-50 overflow-hidden"
                    >
                      <div className="px-5 py-4 pt-5 border-b border-[var(--border)] bg-white/5">
                         <div className="flex items-center justify-between">
@@ -226,7 +227,7 @@ const TopBar = () => {
                     initial={{ opacity: 0, y: 10, scale: 0.99 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.99 }}
-                    className="absolute right-0 top-[calc(100%+12px)] bg-[var(--bg-card)]/98 backdrop-blur-2xl border border-[var(--border)] rounded-[8px] shadow-2xl z-50 overflow-hidden"
+                    className="absolute right-0 top-[calc(100%+28px)] bg-[var(--bg-card)]/98 backdrop-blur-2xl border border-[var(--border)] rounded-[8px] shadow-2xl z-50 overflow-hidden"
                     style={{ width: '600px', maxWidth: 'calc(100vw - 20px)' }}
                   >
                     <div className="px-5 py-4 pt-5 border-b border-[var(--border)] bg-white/5 flex items-center justify-between">
@@ -280,15 +281,11 @@ const TopBar = () => {
                             >
                               {/* Sender Avatar with Type Badge Overlay */}
                               <div className="relative shrink-0 mt-0.5">
-                                <div className="w-9 h-9 rounded-lg overflow-hidden bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-xs">
-                                  {avatarImg ? (
-                                    <img src={avatarImg} alt="sender" className="w-full h-full object-cover" />
-                                  ) : (
-                                    (n.senderName || 'H').substring(0, 1).toUpperCase()
-                                  )}
-                                </div>
-                                
-                                {/* Type Badge Overlay */}
+                                <AvatarWithFrame 
+                                  user={senderUser || { name: n.senderName || 'H' }} 
+                                  sizeClass="w-9 h-9" 
+                                  borderClass="border border-indigo-500/20"
+                                />
                                 <div className={`absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white shadow-md border-2 border-[var(--bg-card)] ${
                                   n.type === 'TASK_ASSIGNED' ? 'bg-blue-500' :
                                   n.type === 'TASK_COMPLETED' ? 'bg-emerald-500' :
@@ -332,13 +329,11 @@ const TopBar = () => {
               onClick={() => setShowProfileModal(true)}
               className="flex items-center gap-[10px] p-[10px] rounded-[8px] hover:bg-white/5 transition-all group border border-transparent hover:border-[var(--border)]"
             >
-              <div className="w-10 h-10 rounded-[8px] overflow-hidden bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm shrink-0">
-                {user?.image ? (
-                  <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
-                ) : (
-                  <User size={20} />
-                )}
-              </div>
+              <AvatarWithFrame 
+                user={user} 
+                sizeClass="w-10 h-10" 
+                borderClass="border border-indigo-500/20 group-hover:border-indigo-500/40 transition-all shadow-sm"
+              />
               <div className="text-left hidden sm:block">
                 <p className="text-[14px] font-bold text-[var(--text-main)] leading-tight">
                   {user?.name || user?.displayName || 'Authorized User'}
