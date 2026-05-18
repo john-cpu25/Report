@@ -5,23 +5,65 @@
  */
 
 const readline = require('readline');
-
-// Supabase Configuration from core/supabase_keys.md
-const SUPABASE_URL = 'https://fabuhzarlzstcsaerfut.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_gmnEl52U7VAkWW_3lZLTFw_hJ9BgLLm';
-
-// Headers for Supabase REST API
-const headers = {
-  'apikey': SUPABASE_KEY,
-  'Authorization': `Bearer ${SUPABASE_KEY}`,
-  'Content-Type': 'application/json',
-  'Prefer': 'return=representation'
-};
+const fs = require('fs');
+const path = require('path');
 
 // Logger helper (send debug info to stderr so it doesn't mess with JSON-RPC stdio)
 function debugLog(...args) {
   console.error('[MCP Debug]', ...args);
 }
+
+// Load environment variables from .env file securely without dependencies
+function loadEnv() {
+  try {
+    const envPaths = [
+      path.join(__dirname, '../.env'),
+      path.join(__dirname, '.env'),
+      path.join(process.cwd(), '.env'),
+      path.join(process.cwd(), 'mcp-supabase-server/.env')
+    ];
+    
+    for (const envPath of envPaths) {
+      if (fs.existsSync(envPath)) {
+        debugLog(`Loading credentials from secure local file: ${envPath}`);
+        const content = fs.readFileSync(envPath, 'utf-8');
+        content.split('\n').forEach(line => {
+          const trimmed = line.trim();
+          if (trimmed && !trimmed.startsWith('#')) {
+            const index = trimmed.indexOf('=');
+            if (index !== -1) {
+              const key = trimmed.substring(0, index).trim();
+              const val = trimmed.substring(index + 1).trim();
+              process.env[key] = val;
+            }
+          }
+        });
+        break;
+      }
+    }
+  } catch (e) {
+    debugLog('Failed to read secure environment file:', e.message);
+  }
+}
+
+// Initialize secure environment variables
+loadEnv();
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  debugLog('CRITICAL ERROR: Supabase URL or Key is missing from secure local environment variables!');
+}
+
+// Headers for Supabase REST API
+const headers = {
+  'apikey': SUPABASE_KEY || '',
+  'Authorization': SUPABASE_KEY ? `Bearer ${SUPABASE_KEY}` : '',
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+};
+
 
 // 1. Fetch Projects from Supabase to match keys with UUIDs
 async function fetchProjects() {
