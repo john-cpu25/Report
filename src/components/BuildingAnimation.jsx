@@ -76,9 +76,11 @@ const BuildingAnimation = ({ progress: externalProgress }) => {
   const showScaffold4 = progress >= 75 && progress < 97;
 
   // 3D Isometric Tower Crane positioning
-  // Mast base is at back-right (380, 260), jib stretches diagonally to building center
+  // Mast base is at back-right (390, 410). The crane climbs (grows) upwards alongside the building!
+  // At 0% progress, craneY = 260. At 100% progress, craneY = 70.
+  const craneY = 260 - Math.min((progress / 100) * 190, 190);
   const isCraneActive = progress < 98;
-  const cargoY = Math.max(320 - currentYOffset - 18, 100);
+  const cargoY = Math.max(320 - currentYOffset - 18, craneY + 15);
 
   return (
     <div className="relative w-full h-[400px] lg:h-[550px] flex items-center justify-center bg-[#020617] rounded-3xl overflow-hidden border border-slate-800 shadow-[inset_0_0_40px_rgba(30,41,59,0.3)] group">
@@ -119,6 +121,10 @@ const BuildingAnimation = ({ progress: externalProgress }) => {
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          {/* Dynamic climbing mast clip-path */}
+          <clipPath id="crane-mast-clip">
+            <rect x="380" y={craneY} width="40" height={410 - craneY} />
+          </clipPath>
         </defs>
 
         <style>{`
@@ -341,36 +347,35 @@ const BuildingAnimation = ({ progress: externalProgress }) => {
 
         {/* ================= 3D ISOMETRIC TOWER CRANE ASSEMBLY ================= */}
         <g stroke="#cbd5e1" strokeWidth="1.5" fill="none">
-          {/* Tower Mast (Right-back corner, stable foundation) */}
-          <g stroke="#cbd5e1" opacity="0.4">
-            <line x1="390" y1="410" x2="390" y2="90" />
-            <line x1="410" y1="410" x2="410" y2="90" />
-            <path d="M 390 410 L 410 390 M 390 390 L 410 410 M 390 370 L 410 350 M 390 350 L 410 370 M 390 330 L 410 310 M 390 310 L 410 330 M 390 290 L 410 270 M 390 270 L 410 290 M 390 250 L 410 230 M 390 230 L 410 250 M 390 210 L 410 190 M 390 190 L 410 210 M 390 170 L 410 150 M 390 150 L 410 170 M 390 130 L 410 110 M 390 110 L 410 130" strokeWidth="0.8" />
+          {/* Tower Mast (Right-back corner, grows dynamically using a clipPath) */}
+          <g stroke="#cbd5e1" opacity="0.4" clipPath="url(#crane-mast-clip)">
+            <line x1="390" y1="410" x2="390" y2="40" />
+            <line x1="410" y1="410" x2="410" y2="40" />
+            <path d="M 390 410 L 410 390 M 390 390 L 410 410 M 390 370 L 410 350 M 390 350 L 410 370 M 390 330 L 410 310 M 390 310 L 410 330 M 390 290 L 410 270 M 390 270 L 410 290 M 390 250 L 410 230 M 390 230 L 410 250 M 390 210 L 410 190 M 390 190 L 410 210 M 390 170 L 410 150 M 390 150 L 410 170 M 390 130 L 410 110 M 390 110 L 410 130 M 390 90 L 410 70 M 390 70 L 410 90 M 390 50 L 410 30 M 390 30 L 410 50" strokeWidth="0.8" />
           </g>
 
-          {/* Crane Cabin */}
-          <rect x="382" y="70" width="36" height="20" rx="3" fill="#1e293b" stroke="#f59e0b" strokeWidth="2" filter="url(#soft-glow)" />
-          <circle cx="395" cy="80" r="2.5" fill="#f59e0b" className="animate-pulse" />
+          {/* Crane Cabin (Climbs dynamically with craneY) */}
+          <rect x="382" y={craneY - 20} width="36" height="20" rx="3" fill="#1e293b" stroke="#f59e0b" strokeWidth="2" filter="url(#soft-glow)" />
+          <circle cx="395" cy={craneY - 10} r="2.5" fill="#f59e0b" className="animate-pulse" />
 
-          {/* 3D Diagonal Jib stretching across the 3D grid center */}
-          {/* Streches along isometric angle from (440, 50) to mast center (400, 70) down to grid center (250, 145) */}
-          <line x1="220" y1="155" x2="450" y2="45" stroke="#f59e0b" strokeWidth="3" filter="url(#glow)" />
-          <line x1="425" y1="55" x2="425" y2="70" stroke="#cbd5e1" strokeWidth="2" />
-          <rect x="415" y="70" width="20" height="15" fill="#475569" rx="2" /> {/* Counterweight */}
+          {/* 3D Diagonal Jib stretching across the 3D grid center (Climbs dynamically) */}
+          <line x1="220" y1={craneY + 66} x2="450" y2={craneY - 44} stroke="#f59e0b" strokeWidth="3" filter="url(#glow)" />
+          <line x1="425" y1={craneY - 32} x2="425" y2={craneY - 17} stroke="#cbd5e1" strokeWidth="2" />
+          <rect x="415" y={craneY - 17} width="20" height="15" fill="#475569" rx="2" /> {/* Counterweight */}
 
-          {/* 3D Jib support cable ties */}
-          <line x1="400" y1="45" x2="280" y2="128" stroke="#cbd5e1" strokeWidth="1" />
-          <line x1="400" y1="45" x2="440" y2="50" stroke="#cbd5e1" strokeWidth="1" />
-          <line x1="400" y1="45" x2="400" y2="70" stroke="#cbd5e1" strokeWidth="1.5" />
+          {/* 3D Jib support cable ties (Climbs dynamically) */}
+          <line x1="400" y1={craneY - 45} x2="280" y2={craneY + 37} stroke="#cbd5e1" strokeWidth="1" />
+          <line x1="400" y1={craneY - 45} x2="440" y2={craneY - 39} stroke="#cbd5e1" strokeWidth="1" />
+          <line x1="400" y1={craneY - 45} x2="400" y2={craneY - 20} stroke="#cbd5e1" strokeWidth="1.5" />
 
           {/* 3D Cable & Girder Lift Hoist Assembly */}
           {isCraneActive && (
             <g>
-              {/* Hoist Trolley positioned right over grid center (250, 140) */}
-              <rect x="242" y="137" width="16" height="6" fill="#f59e0b" transform="rotate(15 250 140)" />
+              {/* Hoist Trolley positioned right over grid center (Climbs dynamically) */}
+              <rect x="242" y={craneY + 49} width="16" height="6" fill="#f59e0b" transform={`rotate(15 250 ${craneY + 52})`} />
               
-              {/* Cable extends straight down dynamically to cargoY! */}
-              <line x1="250" y1="143" x2="250" y2={cargoY} stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,3" />
+              {/* Cable extends straight down dynamically from trolley to cargoY */}
+              <line x1="250" y1={craneY + 55} x2="250" y2={cargoY} stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,3" />
 
               {/* Crane Girder in 3D Isometric Projection */}
               <g filter="url(#glow)">
