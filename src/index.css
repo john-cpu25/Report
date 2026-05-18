@@ -364,13 +364,84 @@ body.theme-news select option {
   color: #0F172A;
 }
 
-/* Premium Book Page Layout Margins */
+/* Premium Book Page Layout Margins & Luxury Parchment with Page Lines */
 .book-page-left {
   padding: 24px;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      rgba(120, 110, 90, 0.045) 0px,
+      rgba(120, 110, 90, 0.045) 1px,
+      transparent 1px,
+      transparent 24px
+    ),
+    linear-gradient(to right, #f2ead4 0%, #fbf9f4 4%, #faf8f3 96%, #ebdcb9 100%) !important;
 }
 .book-page-right {
   padding: 24px;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      rgba(120, 110, 90, 0.045) 0px,
+      rgba(120, 110, 90, 0.045) 1px,
+      transparent 1px,
+      transparent 24px
+    ),
+    linear-gradient(to left, #f2ead4 0%, #fbf9f4 4%, #faf8f3 96%, #ebdcb9 100%) !important;
 }
+
+/* StPageFlip Professional 3D Layout Styles */
+.page-flip-book {
+  position: relative;
+  width: 960px; /* Double page total width */
+  height: 600px; /* Double page height */
+  margin: 0 auto;
+  overflow: visible !important; /* ALLOW 3D CANVAS PAGES TO BREATHE */
+}
+
+.page-item {
+  display: none; /* StPageFlip will show pages dynamically after initialization */
+  overflow: hidden;
+  height: 100%;
+  background-color: #faf8f3;
+  box-shadow: 0 0 12px rgba(0,0,0,0.06);
+}
+
+.page-item .book-page-left,
+.page-item .book-page-right {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Professional Soft Atmospheric 3D Book Shadows */
+.stf__parent .stf__outerShadow {
+  mix-blend-mode: multiply !important; /* Perfect natural light overlay! */
+  filter: blur(10px) !important;       /* Butter-soft feathering border! */
+  opacity: 0.18 !important;            /* Very elegant subtle shade! */
+  transition: opacity 0.3s ease;
+}
+
+.stf__parent .stf__innerShadow {
+  mix-blend-mode: multiply !important;
+  filter: blur(8px) !important;
+  opacity: 0.22 !important;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0) 100%) !important;
+}
+
+.stf__parent .stf__hardShadow {
+  mix-blend-mode: multiply !important;
+  filter: blur(12px) !important;
+  opacity: 0.15 !important;
+}
+
+.stf__parent .stf__hardInnerShadow {
+  mix-blend-mode: multiply !important;
+  filter: blur(6px) !important;
+  opacity: 0.2 !important;
+}
+
 
 @media (min-width: 768px) {
   .book-page-left {
@@ -385,4 +456,119 @@ body.theme-news select option {
     padding-left: 68px !important;
     padding-right: 56px !important;
   }
+}
+
+/* ===== Realistic 3D Book Page Flip ===== */
+
+/* Page edge stacking - shows book thickness */
+.book-page-edges-left {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  z-index: 5;
+  background: repeating-linear-gradient(
+    to right,
+    #ede9e1 0px, #f5f1eb 1px, #ddd9d1 2px
+  );
+  border-radius: 3px 0 0 3px;
+  box-shadow: -2px 1px 5px rgba(0,0,0,0.1);
+}
+.book-page-edges-right {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  z-index: 5;
+  background: repeating-linear-gradient(
+    to right,
+    #ddd9d1 0px, #f5f1eb 1px, #ede9e1 2px
+  );
+  border-radius: 0 3px 3px 0;
+  box-shadow: 2px 1px 5px rgba(0,0,0,0.1);
+}
+
+/* Corner peel hint */
+.book-corner-peel {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  z-index: 40;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.book-corner-peel::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 28px 28px;
+  border-color: transparent transparent #e0dcd4 transparent;
+  transition: border-width 0.3s ease;
+  filter: drop-shadow(-2px -2px 3px rgba(0,0,0,0.12));
+}
+.book-corner-peel:hover::after {
+  border-width: 0 0 50px 50px;
+}
+
+/* Spine shadow */
+.book-spine-shadow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 30px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0,0,0,0.04) 20%,
+    rgba(0,0,0,0.14) 48%,
+    rgba(0,0,0,0.18) 50%,
+    rgba(0,0,0,0.14) 52%,
+    rgba(0,0,0,0.04) 80%,
+    transparent 100%
+  );
+  z-index: 35;
+  pointer-events: none;
+}
+
+/* Page number indicators */
+.book-page-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.book-page-indicator .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d4d0ca;
+  transition: all 0.3s ease;
+}
+.book-page-indicator .dot.active {
+  background: #78716c;
+  width: 18px;
+  border-radius: 3px;
+}
+
+/* Flip transition overlay shadow */
+.book-flip-shadow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 120px;
+  background: linear-gradient(to left, rgba(0,0,0,0.15), transparent);
+  z-index: 36;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.book-flip-shadow.active {
+  opacity: 1;
 }

@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { PageFlip } from 'page-flip';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronRight, 
@@ -31,8 +32,70 @@ const Workflows = () => {
   const [currentSpread, setCurrentSpread] = useState(0);
   const [pageDirection, setPageDirection] = useState(1);
   const [hoveredRoom, setHoveredRoom] = useState(null);
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [prevSpread, setPrevSpread] = useState(0);
+  const [flipHalf, setFlipHalf] = useState('front');
 
   const shelfRef = useRef(null);
+  const bookRef = useRef(null);
+  const pageFlipRef = useRef(null);
+
+  useEffect(() => {
+    let flipTimer = null;
+    if (selectedWorkflowId && bookRef.current) {
+      // Small delay of 150ms allows the AnimatePresence modal to paint, ensuring proper box measurement
+      flipTimer = setTimeout(() => {
+        if (pageFlipRef.current) {
+          try {
+            pageFlipRef.current.destroy();
+          } catch (e) {
+            console.error(e);
+          }
+          pageFlipRef.current = null;
+        }
+
+        const pageFlip = new PageFlip(bookRef.current, {
+          width: 480, // Base page width (single page)
+          height: 600, // Base page height
+          size: 'stretch',
+          minWidth: 320,
+          maxWidth: 480,
+          minHeight: 400,
+          maxHeight: 600,
+          drawShadow: true, // Dynamic soft shadow casting!
+          maxShadowOpacity: 0.3, // ULTRA SOFT SHADOWS FOR ENHANCED VINTAGE REALISM!
+          showCover: false, // Set to false to prevent the library from forcing rigid 'hard' cover rendering
+          usePortrait: false, // Forces dual-page spread
+          flippingTime: 1200, // Butter-smooth slower organic timing (makes paper feel soft & heavy)
+          swipeDistance: 30, // Responsive corner dragging
+        });
+
+        try {
+          pageFlip.loadFromHTML(bookRef.current.querySelectorAll('.page-item'));
+          pageFlipRef.current = pageFlip;
+
+          pageFlip.on('flip', (e) => {
+            const spreadIdx = Math.floor(e.data / 2);
+            setCurrentSpread(spreadIdx);
+          });
+        } catch (err) {
+          console.error("Failed to load PageFlip:", err);
+        }
+      }, 150);
+    }
+
+    return () => {
+      if (flipTimer) clearTimeout(flipTimer);
+      if (pageFlipRef.current) {
+        try {
+          pageFlipRef.current.destroy();
+        } catch (e) {
+          console.error(e);
+        }
+        pageFlipRef.current = null;
+      }
+    };
+  }, [selectedWorkflowId]);
 
   const rooms = {
     str: {
@@ -504,6 +567,250 @@ const Workflows = () => {
 
   const selectedWorkflow = currentRoomData?.workflows[selectedWorkflowId];
   const maxSpreads = selectedWorkflow?.spreads?.length || 0;
+  const leftThickness = maxSpreads > 1 ? (currentSpread / (maxSpreads - 1)) * 10 + 2 : 2;
+  const rightThickness = maxSpreads > 1 ? ((maxSpreads - 1 - currentSpread) / (maxSpreads - 1)) * 10 + 2 : 2;
+
+  const handlePageTurn = (direction) => {
+    if (isFlipping) return;
+    const next = currentSpread + direction;
+    if (next < 0 || next >= maxSpreads) return;
+
+    setPrevSpread(currentSpread);
+    setPageDirection(direction);
+    setIsFlipping(true);
+    setFlipHalf('front');
+    setCurrentSpread(next);
+
+    setTimeout(() => {
+      setFlipHalf('back');
+    }, 475); // Set to back face exactly halfway through 950ms flip
+
+    setTimeout(() => {
+      setIsFlipping(false);
+    }, 950); // 0.95s flip animation duration
+  };
+
+  const renderLeftPageContent = (spreadIndex) => {
+    const leftData = selectedWorkflow?.spreads[spreadIndex]?.left;
+    if (!leftData) return null;
+    return (
+      <div className="flex flex-col justify-between h-full">
+        {/* Left Page Header */}
+        <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[9px] font-black text-stone-400 tracking-[0.25em] uppercase shrink-0">
+          <span>Rincovitch Standard Log</span>
+          <span>{selectedWorkflow.title}</span>
+        </div>
+
+        {/* Left page content switcher */}
+        <div className="flex-grow flex flex-col justify-center my-6">
+          {leftData.type === 'cover' && (
+            <div className="flex-grow flex flex-col justify-center items-center text-center">
+              <div 
+                className="w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-md border-2 border-dashed relative animate-pulse"
+                style={{ 
+                  borderColor: leftData.stampColor,
+                  backgroundColor: `${leftData.stampColor}08`
+                }}
+              >
+                <img 
+                  src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} 
+                  className="w-8 h-8 object-contain select-none" 
+                  alt="Rincovitch Logo" 
+                />
+                <div className="absolute inset-[3px] rounded-full border border-dashed opacity-40" style={{ borderColor: leftData.stampColor }} />
+              </div>
+
+              <h3 className="text-[10px] font-black text-stone-400 tracking-[0.3em] uppercase mb-1">{leftData.classification}</h3>
+              <h2 className="text-[28px] font-black text-stone-800 leading-tight uppercase tracking-wide mb-3 font-serif" style={{ fontFamily: 'Georgia, serif' }}>
+                {leftData.title}
+              </h2>
+              <div className="w-12 h-[1.5px] bg-stone-300 my-2" />
+              <p className="text-[13px] text-stone-500 font-bold max-w-[260px] leading-relaxed italic">
+                {leftData.subtitle}
+              </p>
+              <span className="mt-8 px-3 py-1 bg-stone-200/50 text-stone-600 text-[9px] font-black uppercase rounded tracking-wider border border-stone-300/40">{leftData.volume}</span>
+            </div>
+          )}
+
+          {leftData.type === 'steps' && (
+            <div className="space-y-6">
+              <h3 className="text-[10px] font-black text-stone-400 tracking-[0.25em] uppercase border-b border-stone-200 pb-2">{leftData.title}</h3>
+              <div className="space-y-6 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
+                {leftData.steps.map((step, sIdx) => (
+                  <div key={sIdx} className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-md shrink-0"
+                        style={{ backgroundColor: selectedWorkflow.color }}
+                      >
+                        {React.createElement(step.icon, { size: 16 })}
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-black tracking-widest uppercase" style={{ color: selectedWorkflow.color }}>{step.step}</span>
+                        <h4 className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
+                      </div>
+                    </div>
+                    <div className="pl-12 space-y-1.5 border-l-2 border-stone-200 ml-4.5">
+                      <p className="text-[11px] text-stone-600 font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
+                      <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2">{step.descVn}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Left Page Footer */}
+        <div className="flex justify-between text-[9px] text-stone-400 font-bold tracking-widest uppercase shrink-0">
+          <span>PAGE {spreadIndex * 2 + 1}</span>
+          <span>CONFIDENTIAL</span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderRightPageContent = (spreadIndex, showControls = false) => {
+    const rightData = selectedWorkflow?.spreads[spreadIndex]?.right;
+    if (!rightData) return null;
+    return (
+      <div className="flex flex-col justify-between h-full">
+        {/* Right Page Header */}
+        <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[9px] font-black text-stone-400 tracking-[0.25em] uppercase shrink-0">
+          <span>Standard Operating Guidelines</span>
+          <span>Classified</span>
+        </div>
+
+        {/* Right page content switcher */}
+        <div className="flex-grow flex flex-col justify-center my-6">
+          {rightData.type === 'intro' && (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase flex items-center gap-2">
+                  <Sparkles size={12} className="text-yellow-600" /> Executive Overview
+                </h4>
+                <p className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif">
+                  {rightData.desc}
+                </p>
+              </div>
+
+              <div className="pt-6 border-t border-stone-200 space-y-4">
+                <h5 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">Volume Index</h5>
+                <div className="space-y-2">
+                  {rightData.meta.map((m, mIdx) => (
+                    <div key={mIdx} className="flex justify-between text-[11px] text-stone-600 border-b border-stone-100 pb-1.5 last:border-0">
+                      <span className="font-bold text-stone-400 uppercase tracking-widest text-[8px]">{m.label}</span>
+                      <span className="font-black text-stone-800">{m.val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {rightData.type === 'steps' && (
+            <div className="space-y-6">
+              <h3 className="text-[10px] font-black text-stone-400 tracking-[0.25em] uppercase border-b border-stone-200 pb-2">{rightData.title}</h3>
+              <div className="space-y-6 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
+                {rightData.steps.map((step, sIdx) => (
+                  <div key={sIdx} className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-md shrink-0"
+                        style={{ backgroundColor: selectedWorkflow.color }}
+                      >
+                        {React.createElement(step.icon, { size: 16 })}
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-black tracking-widest uppercase" style={{ color: selectedWorkflow.color }}>{step.step}</span>
+                        <h4 className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
+                      </div>
+                    </div>
+                    <div className="pl-12 space-y-1.5 border-l-2 border-stone-200 ml-4.5">
+                      <p className="text-[11px] text-stone-600 font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
+                      <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2">{step.descVn}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {rightData.type === 'signoff' && (
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">{rightData.title}</h4>
+                <div className="grid grid-cols-1 gap-2">
+                  {rightData.checklist.map((c, cIdx) => (
+                    <div key={cIdx} className="flex items-center gap-2.5 p-2 bg-stone-100/50 rounded border border-stone-200/40">
+                      <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+                      <span className="text-[10px] font-bold text-stone-700 leading-tight">{c}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-stone-200">
+                <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest leading-none mb-1 block">Authoritative Note</span>
+                <p className="text-[11px] font-medium text-stone-600 italic leading-relaxed bg-amber-500/5 p-3 border-l-2 border-amber-500/50 rounded-r">{rightData.notes}</p>
+              </div>
+
+              <div className="pt-3 border-t border-dashed border-stone-300 flex justify-between items-end">
+                <div>
+                  <p className="text-[8px] text-stone-400 font-bold uppercase tracking-wider leading-none mb-1">Standardized by</p>
+                  <p className="text-[12px] text-stone-700 italic font-serif leading-none" style={{ fontFamily: 'Georgia, serif' }}>Rincovitch Engineering</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[8px] text-stone-400 font-bold uppercase tracking-wider leading-none mb-1">Status</p>
+                  <p className="text-[8px] font-black text-emerald-700 tracking-widest uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 leading-none">VERIFIED</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Page Footer */}
+        <div className="flex justify-between items-center text-[9px] text-stone-400 font-bold tracking-widest uppercase shrink-0">
+          <span>PAGE {spreadIndex * 2 + 2}</span>
+          
+          {showControls && (
+            <>
+              {/* Page turning brass-styled control arrows */}
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={currentSpread === 0 || isFlipping}
+                  onClick={() => handlePageTurn(-1)}
+                  className={`p-2.5 rounded-full bg-gradient-to-b from-[#f3dfa2] via-[#cfa043] to-[#8d6a1f] text-[#2c1e03] hover:from-[#fbecc0] hover:to-[#ae8129] transition-all border border-[#ffe9b3]/30 shadow-[0_4px_10px_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.4)] ${currentSpread === 0 ? 'opacity-35 cursor-not-allowed' : 'active:scale-90 active:shadow-inner cursor-pointer'}`}
+                  title="Turn Back"
+                >
+                  <ChevronLeft size={15} className="stroke-[2.5]" />
+                </button>
+                
+                <button
+                  disabled={currentSpread === maxSpreads - 1 || isFlipping}
+                  onClick={() => handlePageTurn(1)}
+                  className={`p-2.5 rounded-full bg-gradient-to-b from-[#f3dfa2] via-[#cfa043] to-[#8d6a1f] text-[#2c1e03] hover:from-[#fbecc0] hover:to-[#ae8129] transition-all border border-[#ffe9b3]/30 shadow-[0_4px_10px_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.4)] ${currentSpread === maxSpreads - 1 || isFlipping ? 'opacity-35 cursor-not-allowed' : 'active:scale-90 active:shadow-inner cursor-pointer'}`}
+                  title="Turn Page"
+                >
+                  <ChevronRight size={15} className="stroke-[2.5]" />
+                </button>
+
+                <div className="h-6 w-px bg-stone-300 mx-2" />
+
+                <button 
+                  onClick={() => setSelectedWorkflowId(null)}
+                  className="px-5 py-2.5 bg-stone-800 text-stone-200 hover:bg-rose-600 hover:text-white rounded-md text-[12px] font-black uppercase tracking-widest transition-all shadow active:translate-y-0.5 cursor-pointer"
+                >
+                  Close Volume
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
 
   const scrollShelf = (direction) => {
     if (shelfRef.current) {
@@ -828,301 +1135,81 @@ const Workflows = () => {
               style={{
                 backgroundColor: selectedWorkflow.color,
                 backgroundImage: `
-                  repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 4px),
-                  repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 4px),
-                  linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(255,255,255,0.15) 50%, rgba(0,0,0,0.55) 100%)
+                  linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.25)),
+                  radial-gradient(circle at 50% 50%, transparent 10%, rgba(0,0,0,0.35) 100%),
+                  repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px),
+                  repeating-linear-gradient(-45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px)
                 `,
                 boxShadow: `
-                  0 35px 70px -15px rgba(0,0,0,0.9),
-                  inset 0 1px 1px rgba(255,255,255,0.25),
-                  inset 0 -1px 1px rgba(0,0,0,0.5),
-                  0 0 0 3px ${selectedWorkflow.color},
-                  0 10px 0 #faf8f5,
-                  0 11px 0 rgba(0,0,0,0.3),
-                  0 20px 30px rgba(0,0,0,0.65)
+                  0 35px 70px -15px rgba(0,0,0,0.85),
+                  inset 0 1px 2px rgba(255,255,255,0.25),
+                  inset 0 -1px 2px rgba(0,0,0,0.5),
+                  0 0 0 4px ${selectedWorkflow.color},
+                  0 8px 0 #d9d2c5,
+                  0 9px 0 rgba(0,0,0,0.4),
+                  0 25px 35px rgba(0,0,0,0.6)
                 `
               }}
             >
               {/* Inner hardcover soft shadow */}
               <div className="absolute inset-[10px] rounded-[6px] bg-slate-900/10 pointer-events-none z-10" />
+              
+              {/* Embossed Luxury Gold Foil Cover Borders */}
+              <div className="absolute inset-[14px] border border-yellow-500/20 rounded-[8px] pointer-events-none z-10" />
+              <div className="absolute inset-y-[14px] left-[28px] w-[1px] bg-yellow-500/15 pointer-events-none z-10 hidden md:block" />
+              <div className="absolute inset-y-[14px] right-[28px] w-[1px] bg-yellow-500/15 pointer-events-none z-10 hidden md:block" />
+
+              {/* DYNAMIC PAGE EDGES STACKING (Book thickness) */}
+              <div 
+                className="book-page-edges-left hidden md:block" 
+                style={{ 
+                  width: `${leftThickness}px`, 
+                  left: `-${leftThickness - 10}px`,
+                  transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)' 
+                }} 
+              />
+              <div 
+                className="book-page-edges-right hidden md:block" 
+                style={{ 
+                  width: `${rightThickness}px`, 
+                  right: `-${rightThickness - 10}px`,
+                  transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)' 
+                }} 
+              />
 
               {/* Realistic Paper spreads wrapper */}
-              <div className="relative bg-[#faf8f5] rounded-[6px] overflow-hidden min-h-[580px] md:h-[600px] shadow-[inset_0_0_40px_rgba(0,0,0,0.08)] border border-stone-300/50 z-20">
-                {/* Vintage Left/Right paper page creases & gradients */}
+              <div className="relative bg-[#faf8f5] rounded-[6px] min-h-[580px] md:h-[600px] shadow-[inset_0_0_40px_rgba(0,0,0,0.08)] border border-stone-300/50 z-20 flex justify-center items-center">
+                
+                {/* Vintage Left/Right paper page creases & gradients (overlay decoration) */}
                 <div className="absolute inset-y-0 left-0 w-[15px] bg-gradient-to-r from-black/[0.08] to-transparent pointer-events-none z-30" />
                 <div className="absolute inset-y-0 right-1/2 w-[40px] bg-gradient-to-r from-transparent via-black/[0.015] to-black/[0.15] pointer-events-none z-30 hidden md:block" />
                 
                 <div className="absolute inset-y-0 left-1/2 w-[40px] bg-gradient-to-l from-transparent via-black/[0.015] to-black/[0.15] pointer-events-none z-30 hidden md:block" />
                 <div className="absolute inset-y-0 right-0 w-[15px] bg-gradient-to-l from-black/[0.08] to-transparent pointer-events-none z-30" />
 
-                {/* Book Spine Crease Line */}
-                <div className="absolute top-0 bottom-0 left-1/2 w-[1px] -translate-x-1/2 bg-stone-300/70 z-30 pointer-events-none hidden md:block" />
-                <div className="absolute top-0 bottom-0 left-1/2 w-[22px] -translate-x-1/2 bg-gradient-to-r from-black/10 via-transparent to-black/10 z-25 pointer-events-none hidden md:block" />
+                {/* Book Spine Crease Line & Deep Cleft Shadow */}
+                <div className="absolute top-0 bottom-0 left-1/2 w-[1px] -translate-x-1/2 bg-black/25 z-35 pointer-events-none hidden md:block" />
+                <div className="absolute top-0 bottom-0 left-1/2 w-[12px] -translate-x-1/2 bg-gradient-to-r from-black/15 via-transparent to-black/15 z-30 pointer-events-none hidden md:block" />
+                <div className="absolute top-0 bottom-0 left-1/2 w-[28px] -translate-x-1/2 bg-gradient-to-r from-black/10 via-transparent to-black/10 z-25 pointer-events-none hidden md:block" />
 
-                {/* Animated Spread Content */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentSpread}
-                    initial={{ 
-                      opacity: 0, 
-                      scale: 0.96, 
-                      rotateY: pageDirection === 1 ? 35 : -35,
-                      transformOrigin: pageDirection === 1 ? 'center right' : 'center left'
-                    }}
-                    animate={{ 
-                      opacity: 1, 
-                      scale: 1, 
-                      rotateY: 0,
-                      transformOrigin: 'center center'
-                    }}
-                    exit={{ 
-                      opacity: 0, 
-                      scale: 0.96, 
-                      rotateY: pageDirection === 1 ? -35 : 35,
-                      transformOrigin: pageDirection === 1 ? 'center left' : 'center right'
-                    }}
-                    transition={{ duration: 0.45, ease: "easeOut" }}
-                    className="absolute inset-0 grid grid-cols-1 md:grid-cols-2"
-                    style={{ backfaceVisibility: 'hidden' }}
-                  >
-                    {/* LEFT PAGE RENDER */}
-                    <div className="flex flex-col justify-between book-page-left relative z-25 border-b md:border-b-0 md:border-r border-stone-200/70">
-                      {/* Left Page Header */}
-                      <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[9px] font-black text-stone-400 tracking-[0.25em] uppercase">
-                        <span>Rincovitch Standard Log</span>
-                        <span>{selectedWorkflow.title}</span>
+                {/* ST PAGE FLIP CONTAINER - REBUILD FROM SCRATCH FOR ULTIMATE REALISM */}
+                <div ref={bookRef} className="page-flip-book">
+                  {selectedWorkflow.spreads.flatMap((spread, spreadIdx) => [
+                    // LEFT PAGE
+                    <div key={`page-${spreadIdx}-left`} className="page-item" data-density="soft">
+                      <div className="book-page-left h-full border-r border-stone-200/70 relative">
+                        {renderLeftPageContent(spreadIdx)}
                       </div>
-
-                      {/* Left page content switcher */}
-                      <div className="flex-grow flex flex-col justify-center my-6">
-                        {(() => {
-                          const leftData = selectedWorkflow.spreads[currentSpread]?.left;
-                          if (!leftData) return null;
-
-                          if (leftData.type === 'cover') {
-                            return (
-                              <div className="flex-grow flex flex-col justify-center items-center text-center">
-                                <div 
-                                  className="w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-md border-2 border-dashed relative animate-pulse"
-                                  style={{ 
-                                    borderColor: leftData.stampColor,
-                                    backgroundColor: `${leftData.stampColor}08`
-                                  }}
-                                >
-                                  <img 
-                                    src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} 
-                                    className="w-8 h-8 object-contain select-none" 
-                                    alt="Rincovitch Logo" 
-                                  />
-                                  <div className="absolute inset-[3px] rounded-full border border-dashed opacity-40" style={{ borderColor: leftData.stampColor }} />
-                                </div>
-
-                                <h3 className="text-[10px] font-black text-stone-400 tracking-[0.3em] uppercase mb-1">{leftData.classification}</h3>
-                                <h2 className="text-[28px] font-black text-stone-800 leading-tight uppercase tracking-wide mb-3 font-serif" style={{ fontFamily: 'Georgia, serif' }}>
-                                  {leftData.title}
-                                </h2>
-                                <div className="w-12 h-[1.5px] bg-stone-300 my-2" />
-                                <p className="text-[13px] text-stone-500 font-bold max-w-[260px] leading-relaxed italic">
-                                  {leftData.subtitle}
-                                </p>
-                                <span className="mt-8 px-3 py-1 bg-stone-200/50 text-stone-600 text-[9px] font-black uppercase rounded tracking-wider border border-stone-300/40">{leftData.volume}</span>
-                              </div>
-                            );
-                          }
-
-                          if (leftData.type === 'steps') {
-                            return (
-                              <div className="space-y-6">
-                                <h3 className="text-[10px] font-black text-stone-400 tracking-[0.25em] uppercase border-b border-stone-200 pb-2">{leftData.title}</h3>
-                                <div className="space-y-6 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
-                                  {leftData.steps.map((step, sIdx) => (
-                                    <div key={sIdx} className="space-y-3">
-                                      <div className="flex items-center gap-3">
-                                        <div 
-                                          className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-md shrink-0"
-                                          style={{ backgroundColor: selectedWorkflow.color }}
-                                        >
-                                          {React.createElement(step.icon, { size: 16 })}
-                                        </div>
-                                        <div>
-                                          <span className="text-[9px] font-black tracking-widest uppercase" style={{ color: selectedWorkflow.color }}>{step.step}</span>
-                                          <h4 className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
-                                        </div>
-                                      </div>
-                                      <div className="pl-12 space-y-1.5 border-l-2 border-stone-200 ml-4.5">
-                                        <p className="text-[11px] text-stone-600 font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
-                                        <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2">{step.descVn}</p>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          }
-
-                          return null;
-                        })()}
-                      </div>
-
-                      {/* Left Page Footer */}
-                      <div className="flex justify-between text-[9px] text-stone-400 font-bold tracking-widest uppercase">
-                        <span>PAGE {currentSpread * 2 + 1}</span>
-                        <span>CONFIDENTIAL</span>
+                    </div>,
+                    
+                    // RIGHT PAGE
+                    <div key={`page-${spreadIdx}-right`} className="page-item" data-density="soft">
+                      <div className="book-page-right h-full relative">
+                        {renderRightPageContent(spreadIdx, false)}
                       </div>
                     </div>
-
-                    {/* RIGHT PAGE RENDER */}
-                    <div className="flex flex-col justify-between book-page-right relative z-25">
-                      {/* Right Page Header */}
-                      <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[9px] font-black text-stone-400 tracking-[0.25em] uppercase">
-                        <span>Standard Operating Guidelines</span>
-                        <span>Classified</span>
-                      </div>
-
-                      {/* Right page content switcher */}
-                      <div className="flex-grow flex flex-col justify-center my-6">
-                        {(() => {
-                          const rightData = selectedWorkflow.spreads[currentSpread]?.right;
-                          if (!rightData) return null;
-
-                          if (rightData.type === 'intro') {
-                            return (
-                              <div className="space-y-6">
-                                <div className="space-y-2">
-                                  <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase flex items-center gap-2">
-                                    <Sparkles size={12} className="text-yellow-600" /> Executive Overview
-                                  </h4>
-                                  <p className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif">
-                                    {rightData.desc}
-                                  </p>
-                                </div>
-
-                                <div className="pt-6 border-t border-stone-200 space-y-4">
-                                  <h5 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">Volume Index</h5>
-                                  <div className="space-y-2">
-                                    {rightData.meta.map((m, mIdx) => (
-                                      <div key={mIdx} className="flex justify-between text-[11px] text-stone-600 border-b border-stone-100 pb-1.5 last:border-0">
-                                        <span className="font-bold text-stone-400 uppercase tracking-widest text-[8px]">{m.label}</span>
-                                        <span className="font-black text-stone-800">{m.val}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }
-
-                          if (rightData.type === 'steps') {
-                            return (
-                              <div className="space-y-6">
-                                <h3 className="text-[10px] font-black text-stone-400 tracking-[0.25em] uppercase border-b border-stone-200 pb-2">{rightData.title}</h3>
-                                <div className="space-y-6 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
-                                  {rightData.steps.map((step, sIdx) => (
-                                    <div key={sIdx} className="space-y-3">
-                                      <div className="flex items-center gap-3">
-                                        <div 
-                                          className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-md shrink-0"
-                                          style={{ backgroundColor: selectedWorkflow.color }}
-                                        >
-                                          {React.createElement(step.icon, { size: 16 })}
-                                        </div>
-                                        <div>
-                                          <span className="text-[9px] font-black tracking-widest uppercase" style={{ color: selectedWorkflow.color }}>{step.step}</span>
-                                          <h4 className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
-                                        </div>
-                                      </div>
-                                      <div className="pl-12 space-y-1.5 border-l-2 border-stone-200 ml-4.5">
-                                        <p className="text-[11px] text-stone-600 font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
-                                        <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2">{step.descVn}</p>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          }
-
-                          if (rightData.type === 'signoff') {
-                            return (
-                              <div className="space-y-6">
-                                <div className="space-y-3">
-                                  <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">{rightData.title}</h4>
-                                  <div className="grid grid-cols-1 gap-2">
-                                    {rightData.checklist.map((c, cIdx) => (
-                                      <div key={cIdx} className="flex items-center gap-2.5 p-2 bg-stone-100/50 rounded border border-stone-200/40">
-                                        <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
-                                        <span className="text-[10px] font-bold text-stone-700 leading-tight">{c}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <div className="pt-4 border-t border-stone-200">
-                                  <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest leading-none mb-1 block">Authoritative Note</span>
-                                  <p className="text-[11px] font-medium text-stone-600 italic leading-relaxed bg-amber-500/5 p-3 border-l-2 border-amber-500/50 rounded-r">{rightData.notes}</p>
-                                </div>
-
-                                <div className="pt-3 border-t border-dashed border-stone-300 flex justify-between items-end">
-                                  <div>
-                                    <p className="text-[8px] text-stone-400 font-bold uppercase tracking-wider leading-none mb-1">Standardized by</p>
-                                    <p className="text-[12px] text-stone-700 italic font-serif leading-none" style={{ fontFamily: 'Georgia, serif' }}>Rincovitch Engineering</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-[8px] text-stone-400 font-bold uppercase tracking-wider leading-none mb-1">Status</p>
-                                    <p className="text-[8px] font-black text-emerald-700 tracking-widest uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 leading-none">VERIFIED</p>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }
-
-                          return null;
-                        })()}
-                      </div>
-
-                      {/* Right Page Footer */}
-                      <div className="flex justify-between items-center text-[9px] text-stone-400 font-bold tracking-widest uppercase">
-                        <span>PAGE {currentSpread * 2 + 2}</span>
-                        
-                        {/* Page turning brass-styled control arrows */}
-                        <div className="flex items-center gap-2">
-                          <button
-                            disabled={currentSpread === 0}
-                            onClick={() => {
-                              setPageDirection(-1);
-                              setCurrentSpread(prev => prev - 1);
-                            }}
-                            className={`p-2.5 rounded-md bg-stone-200 text-stone-700 hover:bg-stone-300 transition-all border border-stone-300/40 ${currentSpread === 0 ? 'opacity-30 cursor-not-allowed' : 'active:scale-95 cursor-pointer'}`}
-                            title="Turn Back"
-                          >
-                            <ChevronLeft size={15} />
-                          </button>
-                          
-                          <button
-                            disabled={currentSpread === maxSpreads - 1}
-                            onClick={() => {
-                              setPageDirection(1);
-                              setCurrentSpread(prev => prev + 1);
-                            }}
-                            className={`p-2.5 rounded-md bg-stone-200 text-stone-700 hover:bg-stone-300 transition-all border border-stone-300/40 ${currentSpread === maxSpreads - 1 ? 'opacity-30 cursor-not-allowed' : 'active:scale-95 cursor-pointer'}`}
-                            title="Turn Page"
-                          >
-                            <ChevronRight size={15} />
-                          </button>
-
-                          <div className="h-6 w-px bg-stone-300 mx-2" />
-
-                          <button 
-                            onClick={() => setSelectedWorkflowId(null)}
-                            className="px-5 py-2.5 bg-stone-800 text-stone-200 hover:bg-rose-600 hover:text-white rounded-md text-[12px] font-black uppercase tracking-widest transition-all shadow active:translate-y-0.5 cursor-pointer"
-                          >
-                            Close Volume
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
+                  ])}
+                </div>
               </div>
             </motion.div>
           </div>
