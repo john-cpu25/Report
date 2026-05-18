@@ -25,3 +25,10 @@ dist-ssr
 
 # Scratch
 scratch/
+
+# Environment Variables
+.env
+.env.*
+.env.local
+*.env
+

@@ -3,11 +3,146 @@ import { format, startOfWeek, addDays, parseISO } from 'date-fns';
 import { fetchProjects } from '../services/supabaseService';
 import projectsData from '../data/projects.json';
 import { useNotifications } from './NotificationContext';
+import { supabase } from '../supabaseClient';
+
+const DEFAULT_WEEKLY_PLANNER_TASKS = [
+  {
+    id: 1779075000001,
+    project: 'DLD',
+    team: 'CIVIL',
+    task: 'LEVEL 5 TO LEVEL 10',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '17:30', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000002,
+    project: 'DLD',
+    team: 'CIVIL',
+    task: 'LEVEL 11 TO LEVEL 17',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '17:30' }
+  },
+  {
+    id: 1779075000003,
+    project: 'MEL02',
+    team: 'CIVIL',
+    task: 'LEVEL 4 (UPDATING)',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000004,
+    project: 'MAC',
+    team: 'CIVIL',
+    task: 'LEVEL 1 TO ROOF:',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '16:30', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000005,
+    project: 'RIVER TERRACE',
+    team: 'CIVIL',
+    task: 'LEVEL 7 - TYPICAL REO',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000006,
+    project: 'RIVER TERRACE',
+    team: 'CIVIL',
+    task: 'LEVEL 17 - TYPICAL REO',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000007,
+    project: 'RIVER TERRACE',
+    team: 'CIVIL',
+    task: 'PT MARKUP',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000008,
+    project: 'CW2',
+    team: 'CIVIL',
+    task: 'LEVEL – MARKUP (MAYBE)',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000009,
+    project: 'CW3',
+    team: 'CIVIL',
+    task: 'LEVEL – MARKUP (MAYBE)',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000010,
+    project: 'MORAY',
+    team: 'CIVIL',
+    task: 'LEVEL – MARKUP (MAYBE)',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000011,
+    project: 'LEEDS',
+    team: 'CIVIL',
+    task: 'L3 TO RF – AB BACK DRAFTING',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000012,
+    project: 'LEEDS',
+    team: 'CIVIL',
+    task: 'L3 TO RF – CD BACK DRAFTING',
+    status: 'WIP',
+    markupDate: null,
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
+  },
+  {
+    id: 1779075000013,
+    project: 'FGWB',
+    team: 'CIVIL',
+    task: 'PT MARKUP',
+    status: 'WIP',
+    markupDate: '2026-05-20',
+    markupTime: null,
+    days: { Monday: '', Tuesday: '', Wednesday: '17:30', Thursday: '', Friday: '' }
+  }
+];
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const { sendNotification } = useNotifications();
+  const isAdminMode = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('admin_mode') === 'true' : false;
 
   // Navigation & UI States
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -37,30 +172,28 @@ export const AppProvider = ({ children }) => {
     project: '',
     level: '',
     showLevel: true,
-    team: 'STR MODELING TEAM',
+    team: 'CIVIL',
     tasks: [],
     note: '',
-    day: format(new Date(), 'EEEE'),
+    day: 'Monday',
     status: 'WIP',
     eta: '',
     etaMode: ''
   });
 
-  // Dashboard Data States (Synced with Supabase)
+  // Global Dashboard & Admin Analytics Data
   const [dashboardProjects, setDashboardProjects] = useState([]);
   const [dashboardUsers, setDashboardUsers] = useState([]);
   const [dashboardTasks, setDashboardTasks] = useState([]);
   const [dashboardLeave, setDashboardLeave] = useState([]);
   const [isDashboardLoading, setIsDashboardLoading] = useState(false);
+  const [projectsCache, setProjectsCache] = useState(null);
 
   // Data Analyst Persistence States
   const [analystTasks, setAnalystTasks] = useState([]);
   const [analystUserMap, setAnalystUserMap] = useState({});
   const [analystUserTeamMap, setAnalystUserTeamMap] = useState({});
   const [lastAnalystFetch, setLastAnalystFetch] = useState(null);
-
-  // Projects Persistence States
-  const [projectsCache, setProjectsCache] = useState(null);
 
   // Effects for Persistance
   useEffect(() => {
@@ -90,14 +223,23 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const savedLogs = localStorage.getItem('weeklyReportData');
     const savedProjects = localStorage.getItem('customProjects');
-    if (savedLogs) {
+    
+    if (savedLogs && JSON.parse(savedLogs).length > 0) {
       const logs = JSON.parse(savedLogs);
       const migratedLogs = logs.map(log =>
         log.status === 'PLANING' ? { ...log, status: 'PLANNING' } : log
       );
       setReportData(migratedLogs);
+    } else {
+      // Auto-seed on first load or when empty
+      setReportData(DEFAULT_WEEKLY_PLANNER_TASKS);
+      localStorage.setItem('weeklyReportData', JSON.stringify(DEFAULT_WEEKLY_PLANNER_TASKS));
+      
+      const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
+      const updatedCustom = Array.from(new Set([...(savedProjects ? JSON.parse(savedProjects) : []), ...requiredProjects]));
+      setCustomProjects(updatedCustom);
+      localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
     }
-    if (savedProjects) setCustomProjects(JSON.parse(savedProjects));
 
     const fetchSupabaseProjects = async () => {
       try {
@@ -114,31 +256,22 @@ export const AppProvider = ({ children }) => {
     fetchDashboardData();
     
     // Subscribe to changes
-    let channel;
-    const setupSubscription = async () => {
-      const { supabase: supabaseClient } = await import('../supabaseClient');
-      channel = supabaseClient
-        .channel('public_dashboard')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Project' }, () => fetchDashboardData())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task' }, () => fetchDashboardData())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_User' }, () => fetchDashboardData())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Leave' }, () => fetchDashboardData())
-        .subscribe();
-    };
-
-    setupSubscription();
+    const channel = supabase
+      .channel('public_dashboard')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Project' }, () => fetchDashboardData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task' }, () => fetchDashboardData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_User' }, () => fetchDashboardData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Leave' }, () => fetchDashboardData())
+      .subscribe();
 
     return () => {
       if (channel) {
-        import('../supabaseClient').then(({ supabase: supabaseClient }) => {
-          supabaseClient.removeChannel(channel);
-        });
+        supabase.removeChannel(channel);
       }
     };
   }, []);
 
   const fetchDashboardData = async () => {
-    const { supabase } = await import('../supabaseClient');
     setIsDashboardLoading(true);
     try {
       const [projRes, userRes, taskRes, leaveRes] = await Promise.all([
@@ -156,6 +289,26 @@ export const AppProvider = ({ children }) => {
     } finally {
       setIsDashboardLoading(false);
     }
+  };
+
+  const seedPlannerData = () => {
+    setReportData(DEFAULT_WEEKLY_PLANNER_TASKS);
+    localStorage.setItem('weeklyReportData', JSON.stringify(DEFAULT_WEEKLY_PLANNER_TASKS));
+    
+    const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
+    const updatedCustom = Array.from(new Set([...customProjects, ...requiredProjects]));
+    setCustomProjects(updatedCustom);
+    localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
+
+    sendNotification({
+      recipient: 'admin@bypass.local',
+      sender: 'system',
+      senderName: 'Hệ thống',
+      type: 'SYSTEM',
+      title: 'Đồng bộ Weekly Planner thành công 📋',
+      content: 'Đã tạo và thiết lập lịch làm việc tuần này của bạn theo đúng yêu cầu thiết kế.',
+      link: '?tab=weekly'
+    });
   };
 
   // Save data on change
@@ -363,7 +516,8 @@ export const AppProvider = ({ children }) => {
     lastAnalystFetch, setLastAnalystFetch,
     dashboardProjects, dashboardUsers, dashboardTasks, dashboardLeave, isDashboardLoading, dashboardStats, fetchDashboardData,
     projectsCache, setProjectsCache,
-    handleAddTask, deleteRow, moveRow, updateStatus, updateDayTime, updateMarkup, bulkUpdateMarkup
+    handleAddTask, deleteRow, moveRow, updateStatus, updateDayTime, updateMarkup, bulkUpdateMarkup,
+    seedPlannerData
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

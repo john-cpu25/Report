@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import UnifiedTable from './CSVProcessor/UnifiedTable';
@@ -65,9 +65,10 @@ const PersonalSpace = () => {
     const map = {};
     if (dashboardProjects) {
       dashboardProjects.forEach(p => {
-        if (p.name && p.color) {
-          map[p.name.toUpperCase()] = p.color;
-        }
+        const key = (p.key || '').toUpperCase();
+        const name = (p.name || '').toUpperCase();
+        if (key && p.color) map[key] = p.color;
+        if (name && p.color) map[name] = p.color;
       });
     }
     return map;
@@ -122,9 +123,13 @@ const PersonalSpace = () => {
 
   const loadData = async (force = false) => {
     if (!user) return;
-    if (!force && analystTasks && analystTasks.length > 0) return;
     
-    setIsLoading(true);
+    const hasCache = analystTasks && analystTasks.length > 0;
+    if (!force && hasCache) {
+      // Stale-while-revalidate: fetch silently in the background
+    } else {
+      setIsLoading(true);
+    }
     try {
       // 1. Always fetch ALL users for complete name/team mapping
       const usersList = await fetchUsers();
