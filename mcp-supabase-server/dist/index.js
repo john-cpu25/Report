@@ -95,8 +95,8 @@ async function parseAndSyncPlan(text) {
     const timestampStr = parts[1] || '';
     const issueDateStr = parts[2] || '';
 
-    // Build standard Name string: "DLD: LEVEL 5 TO LEVEL 10"
-    const standardName = `${currentProjectKey}: ${taskDetails.toUpperCase()}`;
+    // Build standard Name string: "DLD : LEVEL 5 TO LEVEL 10"
+    const standardName = `${currentProjectKey} : ${taskDetails.toUpperCase()}`;
     const projectId = projectMap[currentProjectKey] || null;
 
     // Prepare task object matching the database schema
