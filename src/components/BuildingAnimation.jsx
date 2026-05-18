@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-const BuildingAnimation = () => {
-  const [progress, setProgress] = useState(0);
+const BuildingAnimation = ({ progress: externalProgress }) => {
+  const [internalProgress, setInternalProgress] = useState(0);
 
-  // Digital build progress count loop
+  // Digital build progress count loop (fallback if externalProgress is not provided)
   useEffect(() => {
+    if (externalProgress !== undefined) return;
     const interval = setInterval(() => {
-      setProgress((prev) => {
+      setInternalProgress((prev) => {
         if (prev >= 100) return 0;
         return +(prev + 0.1).toFixed(1);
       });
     }, 40);
     return () => clearInterval(interval);
-  }, []);
+  }, [externalProgress]);
+
+  const progress = externalProgress !== undefined ? externalProgress : internalProgress;
 
   return (
     <div className="relative w-full h-[400px] lg:h-[550px] flex items-center justify-center bg-[#020617] rounded-3xl overflow-hidden border border-slate-800 shadow-[inset_0_0_40px_rgba(30,41,59,0.3)] group">

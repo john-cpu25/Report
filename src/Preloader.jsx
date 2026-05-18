@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import RincovitchLogo from './RincovitchLogo'
+import BuildingAnimation from './components/BuildingAnimation'
 
 const STATUS_MESSAGES = [
   "INITIALIZING CORE...",
@@ -40,70 +41,59 @@ const Preloader = ({ onLoadingComplete }) => {
   return (
     <motion.div 
       exit={{ opacity: 0, scale: 1.1 }}
-      className="fixed inset-0 z-[9999] bg-[#020617] flex flex-col items-center justify-center overflow-hidden"
+      transition={{ duration: 0.8, ease: "easeInOut" }}
+      className="fixed inset-0 z-[9999] bg-[#020617] flex flex-col items-center justify-center overflow-hidden px-6"
     >
       {/* Background Glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.1)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.08)_0%,transparent_70%)]" />
 
-      {/* Main Scanner Container */}
-      <div className="relative flex flex-col items-center">
-        {/* Rotating Rings */}
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          className="absolute w-64 h-64 border-t-2 border-b-2 border-indigo-500/20 rounded-full"
-        />
-        <motion.div 
-          animate={{ rotate: -360 }}
-          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-          className="absolute w-48 h-48 border-l-2 border-r-2 border-indigo-500/40 rounded-full"
-        />
+      {/* Main Container */}
+      <div className="relative w-full max-w-lg flex flex-col items-center gap-6">
         
-        {/* Pulsing Logo */}
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], filter: ["brightness(1)", "brightness(1.5)", "brightness(1)"] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="z-10"
-        >
-          <RincovitchLogo size={80} />
-        </motion.div>
+        {/* Growing Architectural Building Construction Animation */}
+        <div className="w-full shadow-2xl shadow-indigo-500/5 rounded-3xl overflow-hidden">
+          <BuildingAnimation progress={progress} />
+        </div>
 
-        {/* Text Area */}
-        <div className="mt-24 flex flex-col items-center gap-4">
-          <motion.h2 
-            className="text-2xl font-black text-white tracking-[0.3em]"
-          >
-            RINCOVITCH
-          </motion.h2>
+        {/* Corporate Status Information */}
+        <div className="flex flex-col items-center gap-3 mt-2 w-full text-center">
           
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center gap-3 justify-center">
+            <RincovitchLogo size={24} />
+            <h2 className="text-sm font-black text-white uppercase tracking-[0.25em]">
+              RINCOVITCH
+            </h2>
+          </div>
+          
+          <div className="flex flex-col items-center gap-2.5 w-full">
             <motion.p 
               key={statusIdx}
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-[10px] font-black text-indigo-400/60 uppercase tracking-[0.4em] h-4"
+              className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] h-4"
             >
               {STATUS_MESSAGES[statusIdx]}
             </motion.p>
             
             {/* Progress Bar Container */}
-            <div className="w-64 h-1 bg-slate-900 rounded-full overflow-hidden border border-white/5 mt-4">
+            <div className="w-full max-w-[320px] h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/5 relative shadow-inner">
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
-                className="h-full bg-gradient-to-r from-indigo-600 via-indigo-400 to-indigo-600 shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                transition={{ ease: "easeOut" }}
+                className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 shadow-[0_0_12px_rgba(99,102,241,0.5)]"
               />
             </div>
             
-            <span className="text-[10px] font-black text-white/20 mt-1">
+            <span className="text-[10px] font-black text-white/40 tracking-wider">
               {Math.min(Math.round(progress), 100)}%
             </span>
           </div>
         </div>
       </div>
 
-      {/* Decorative Lines */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-10">
+      {/* Tech Grid Coordinate Overlay */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-[0.03]">
         <div className="absolute top-1/2 left-0 w-full h-[1px] bg-indigo-500 shadow-[0_0_20px_rgba(99,102,241,1)]" />
         <div className="absolute top-0 left-1/2 w-[1px] h-full bg-indigo-500 shadow-[0_0_20px_rgba(99,102,241,1)]" />
       </div>
