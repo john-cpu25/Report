@@ -44,6 +44,7 @@ import { useApp } from './context/AppContext'
 const WeeklyReport = ({ exportExcel }) => {
   const {
     reportData, setReportData,
+    customProjects, setCustomProjects,
     selectedDate, setSelectedDate,
     weekDates,
     formData, setFormData,
@@ -52,7 +53,9 @@ const WeeklyReport = ({ exportExcel }) => {
     allProjects,
     isSidebarOpen, setIsSidebarOpen,
     sidebarCollapsed,
-    showProjectGroups
+    showProjectGroups,
+    dashboardProjects,
+    seedPlannerData
   } = useApp();
   const [newProjectName, setNewProjectName] = React.useState('')
   const [showAddProject, setShowAddProject] = React.useState(false)
@@ -72,6 +75,49 @@ const WeeklyReport = ({ exportExcel }) => {
   const [visibleStatuses, setVisibleStatuses] = React.useState(ALL_STATUSES)
   const [showStatusFilter, setShowStatusFilter] = React.useState(false)
 
+  const exportWeeklyData = () => {
+    const dataStr = JSON.stringify(reportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = 'weekly_planner_data.json';
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
+  const handleImportJson = (e) => {
+    const fileReader = new FileReader();
+    if (e.target.files && e.target.files[0]) {
+      fileReader.readAsText(e.target.files[0], "UTF-8");
+      fileReader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (Array.isArray(imported)) {
+            const valid = imported.every(item => item.project && item.task);
+            if (valid) {
+              setReportData(imported);
+              localStorage.setItem('weeklyReportData', JSON.stringify(imported));
+              
+              // Automatically extract and load custom projects
+              const importedProjects = Array.from(new Set(imported.map(item => item.project).filter(Boolean)));
+              const updatedCustom = Array.from(new Set([...customProjects, ...importedProjects]));
+              setCustomProjects(updatedCustom);
+              localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
+              
+              alert(`Nhập dữ liệu thành công! Đã tải ${imported.length} nhiệm vụ.`);
+            } else {
+              alert('Dữ liệu không đúng định dạng. Các mục phải có trường project và task.');
+            }
+          } else {
+            alert('Tệp dữ liệu phải là một mảng JSON.');
+          }
+        } catch (err) {
+          alert('Không thể đọc tệp JSON này. Vui lòng kiểm tra lại định dạng tệp.');
+        }
+      };
+    }
+  };
+
   // Derived state for Batch Engine (Transformation Layer)
   const batchValidation = React.useMemo(() => {
     return validateTaskInput({
@@ -82,6 +128,19 @@ const WeeklyReport = ({ exportExcel }) => {
       rawLines: batchTasksText
     });
   }, [batchProjects, batchLevelsText, batchLevelEnabled, batchWorkflows, batchTasksText]);
+
+  const projectColorMap = React.useMemo(() => {
+    const map = {};
+    if (dashboardProjects) {
+      dashboardProjects.forEach(p => {
+        const key = (p.key || p.name || '').toUpperCase();
+        if (key) {
+          map[key] = p.color;
+        }
+      });
+    }
+    return map;
+  }, [dashboardProjects]);
 
 
 
@@ -403,6 +462,34 @@ const WeeklyReport = ({ exportExcel }) => {
             {showProjectGroups && (
               <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
                 <button 
+                  onClick={seedPlannerData}
+                  className="neu-button px-6 py-2 text-[10px] text-indigo-400 border border-indigo-500/20"
+                  title="Tải lại toàn bộ lịch làm việc tuần này"
+                >
+                  SEED PLANNER
+                </button>
+                <button 
+                  onClick={exportWeeklyData}
+                  className="neu-button px-6 py-2 text-[10px] text-emerald-400 border border-emerald-500/20"
+                  title="Xuất dữ liệu lịch làm việc hiện tại ra file JSON"
+                >
+                  EXPORT JSON
+                </button>
+                <button 
+                  onClick={() => document.getElementById('import-weekly-json-input').click()}
+                  className="neu-button px-6 py-2 text-[10px] text-amber-400 border border-amber-500/20"
+                  title="Nhập dữ liệu từ file JSON vào lịch làm việc"
+                >
+                  IMPORT JSON
+                </button>
+                <input 
+                  type="file"
+                  id="import-weekly-json-input"
+                  accept=".json"
+                  className="hidden"
+                  onChange={handleImportJson}
+                />
+                <button 
                   onClick={expandAll}
                   className="neu-button px-6 py-2 text-[10px]"
                 >
@@ -518,11 +605,15 @@ const WeeklyReport = ({ exportExcel }) => {
                                       <motion.div animate={{ rotate: isCollapsed ? 0 : 90 }} className="text-indigo-500">
                                         <ArrowDown size={14} />
                                       </motion.div>
-                                      <div className="w-1.5 h-6 bg-indigo-500 rounded-full shadow-lg"></div>
+                                      <div style={{ backgroundColor: projectColorMap[(projectName || '').toUpperCase()] || '#6366f1' }} className="w-1.5 h-6 rounded-full shadow-lg"></div>
                                       <div className="flex flex-col">
                                         <div className="flex items-center gap-[10px]">
                                           <span className="text-[14px] font-black text-white uppercase tracking-[0.2em] leading-none">{projectName}</span>
-                                          <span className="px-[10px] py-[2px] bg-indigo-500/20 text-indigo-400 text-[10px] font-black rounded-[4px] uppercase border border-indigo-500/30">
+                                          <span style={{
+                                            backgroundColor: `${projectColorMap[(projectName || '').toUpperCase()] || '#6366f1'}15`,
+                                            color: projectColorMap[(projectName || '').toUpperCase()] || '#818cf8',
+                                            borderColor: `${projectColorMap[(projectName || '').toUpperCase()] || '#6366f1'}30`
+                                          }} className="px-[10px] py-[2px] text-[10px] font-black rounded-[4px] uppercase border">
                                             {tasks.length} UNIT{tasks.length > 1 ? 'S' : ''}
                                           </span>
                                         </div>
@@ -565,7 +656,7 @@ const WeeklyReport = ({ exportExcel }) => {
                                   />
                                 </td>
                                 <td className="p-[10px]">
-                                  <span className="text-indigo-400 text-[10px] font-black uppercase tracking-tighter">{row.project}</span>
+                                  <span style={{ color: projectColorMap[(row.project || '').toUpperCase()] || '#818cf8' }} className="text-[10px] font-black uppercase tracking-tighter">{row.project}</span>
                                 </td>
                                 <td className="p-[10px]">
                                   <div className="text-[10px] font-bold text-white tracking-tight uppercase leading-relaxed">{row.task}</div>
@@ -657,7 +748,7 @@ const WeeklyReport = ({ exportExcel }) => {
                             />
                           </td>
                           <td className="px-3 py-3">
-                            <span className="text-indigo-400 text-[10px] font-black tracking-tight group-hover:text-indigo-300 transition-colors uppercase">{row.project}</span>
+                            <span style={{ color: projectColorMap[(row.project || '').toUpperCase()] || '#818cf8' }} className="text-[10px] font-black tracking-tight transition-colors uppercase">{row.project}</span>
                           </td>
                           <td className="px-3 py-3">
                             <div className="text-[10px] font-bold text-[var(--text-main)] tracking-tight leading-relaxed">{row.task}</div>

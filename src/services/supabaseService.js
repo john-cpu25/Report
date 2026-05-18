@@ -99,11 +99,19 @@ export const fetchPersonalSpaceData = async (userObj, limit = 50000) => {
 export const fetchOrgChartData = async () => {
   const { data, error } = await supabase
     .from('NMK_User')
-    .select('id, full_name, position, is_assistant, level, manager_id, team_name, location')
+    .select('id, email, full_name, position, is_assistant, level, manager_id, team_name, location, layout, offset_xy')
     .order('level');
     
   if (error) throw error;
   return data || [];
+};
+
+export const updateUserOrgNode = async (userId, updates) => {
+  const { error } = await supabase
+    .from('NMK_User')
+    .update(updates)
+    .eq('id', userId);
+  if (error) throw error;
 };
 
 export const fetchUsers = async (vietnamOnly = false) => {

@@ -386,3 +386,44 @@ body.theme-news select option {
     padding-right: 56px !important;
   }
 }
+
+/* ==========================================================================
+   3D BOOK PAGE FLIP TRANSITIONS (vanilla CSS & GPU accelerated)
+   ========================================================================== */
+.book-perspective {
+  perspective: 2500px;
+  transform-style: preserve-3d;
+  position: relative;
+}
+
+.book-page-turn-container {
+  transform-style: preserve-3d;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Central Book Spine shadow line */
+.book-spine-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 6px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.4), rgba(255, 255, 255, 0.05), transparent);
+  z-index: 45;
+  pointer-events: none;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+}
+
+/* Page inner shadow gradient simulating sheet curvature */
+.book-page-inner-shadow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.15) 0%, transparent 8%, transparent 92%, rgba(0, 0, 0, 0.08) 100%);
+  z-index: 40;
+  border-radius: inherit;
+}
+
