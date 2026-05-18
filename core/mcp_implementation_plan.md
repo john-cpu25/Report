@@ -49,7 +49,22 @@ sequenceDiagram
 2. **Gemini 1.5 Pro / Gemini 2.0 Flash**: Tốc độ xử lý cực kỳ nhanh, hỗ trợ context window khổng lồ giúp đọc toàn bộ database schema dễ dàng.
 3. **GPT-4o**: Tính toán logic và lập kế hoạch rất tốt.
 
+### 🆓 CÁC LỰA CHỌN MODEL MIỄN PHÍ (FREE MODELS):
+Nếu bạn muốn sử dụng các mô hình miễn phí nhưng vẫn đảm bảo khả năng gọi Tool MCP xuất sắc:
+
+#### A. Gemini 2.0 Flash / Gemini 1.5 Flash (Google AI Studio Key - KHUYÊN DÙNG HÀNG ĐẦU)
+* **Chi phí:** **100% MIỄN PHÍ** (Free Tier thông qua Google AI Studio).
+* **Giới hạn:** Lên tới 15 yêu cầu/phút (RPM) và 1.5 triệu token/ngày cho bản 2.0 Flash – hoàn toàn dư dả cho nhu cầu cá nhân/đội nhóm nhỏ.
+* **Đặc tính:** Hỗ trợ Native Function Calling siêu nhanh, cửa sổ ngữ cảnh (Context Window) lớn giúp đọc hiểu Database Schema của bạn cực tốt mà không tốn phí.
+* **Cách dùng:** Tạo API Key miễn phí tại [Google AI Studio](https://aistudio.google.com/) rồi kết nối trực tiếp qua Cursor hoặc Client MCP.
+
+#### B. Qwen 2.5 Coder 32B / Llama 3.3 70B (Chạy Local hoặc qua API Groq)
+* **Chạy Local (Ollama):** Bạn có thể chạy model **`qwen2.5-coder:32b`** hoặc **`llama3.1:8b`** trực tiếp trên máy tính của bạn hoàn toàn miễn phí, bảo mật 100% dữ liệu dự án.
+* **Chạy qua Groq Cloud API (Free Tier):** Cung cấp các model Llama 3.3 70B và Llama 3.1 8B miễn phí với tốc độ cực nhanh (300+ tokens/giây), hỗ trợ Function Calling cực kỳ chuẩn xác.
+* **Cách dùng:** Tải Ollama về máy gõ `ollama run qwen2.5-coder:32b` hoặc đăng ký tài khoản Groq miễn phí để lấy API Key.
+
 ---
+
 
 ## 3. Thiết Kế Cú Pháp Tạo Kế Hoạch Tự Động (DSL - Domain Specific Language)
 Để AI và bạn có thể tự tạo kế hoạch theo một cú pháp cố định nhưng vẫn tự nhiên, chúng ta sẽ thiết kế bộ cú pháp chuẩn hóa sau:
