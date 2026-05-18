@@ -1,0 +1,50 @@
+{
+  "WIP": {
+    "colorName": "Indigo",
+    "hex": "#6366f1",
+    "rgb": "rgb(99, 102, 241)",
+    "rgba": "rgba(99, 102, 241, 0.6)"
+  },
+  "DONE": {
+    "colorName": "Emerald Green",
+    "hex": "#10b981",
+    "rgb": "rgb(16, 185, 129)",
+    "rgba": "rgba(16, 185, 129, 0.6)"
+  },
+  "PENDING": {
+    "colorName": "Slate Grey",
+    "hex": "#64748b",
+    "rgb": "rgb(100, 116, 139)",
+    "rgba": "rgba(100, 116, 139, 0.6)"
+  },
+  "TMR": {
+    "colorName": "Orange",
+    "hex": "#f97316",
+    "rgb": "rgb(249, 115, 22)",
+    "rgba": "rgba(249, 115, 22, 0.6)"
+  },
+  "PLANNING": {
+    "colorName": "Amber Yellow",
+    "hex": "#fbbf24",
+    "rgb": "rgb(251, 191, 36)",
+    "rgba": "rgba(251, 191, 36, 0.6)"
+  },
+  "URGENT": {
+    "colorName": "Rose Red",
+    "hex": "#f43f5e",
+    "rgb": "rgb(244, 63, 94)",
+    "rgba": "rgba(244, 63, 94, 0.6)"
+  },
+  "HIGH PRIORITY": {
+    "colorName": "Violet Purple",
+    "hex": "#8b5cf6",
+    "rgb": "rgb(139, 92, 246)",
+    "rgba": "rgba(139, 92, 246, 0.6)"
+  },
+  "ISSUE": {
+    "colorName": "Red",
+    "hex": "#ef4444",
+    "rgb": "rgb(239, 68, 68)",
+    "rgba": "rgba(239, 68, 68, 0.6)"
+  }
+}

@@ -1,8 +1,79 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Search, Edit3, Plus, Trash2, Save, UserPlus, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
+import { Search, Edit3, Plus, Trash2, Save, UserPlus, ZoomIn, ZoomOut, Maximize2, GitBranch, RotateCcw, ArrowLeftRight, ArrowUpDown, LayoutGrid } from 'lucide-react'
 import initialOrgData from '../data/orgData.json'
 import { useApp } from '../context/AppContext'
-import { fetchOrgChartData } from '../services/supabaseService'
+import { fetchOrgChartData, updateUserOrgNode } from '../services/supabaseService'
+import { useAuth } from '../context/AuthContext'
+import { supabase } from '../supabaseClient'
+
+// ==================== UTILITIES FOR MERGING & ALIGNMENT ====================
+function isDescendant(parent, childId) {
+  if (!parent.children) return false
+  for (const child of parent.children) {
+    if (child.id === childId) return true
+    if (isDescendant(child, childId)) return true
+  }
+  return false
+}
+
+function findNodeInfo(nodes, id, parent = null) {
+  for (const node of nodes) {
+    if (node.id === id) {
+      return { node, parent, siblings: parent ? parent.children.filter(c => c.id !== id) : [] }
+    }
+    if (node.children) {
+      const res = findNodeInfo(node.children, id, node)
+      if (res) return res
+    }
+  }
+  return null
+}
+
+function mergeBranch(nodes, dragId, targetId) {
+  let dragNode = null
+
+  // Helper to find and remove the drag node from its parent
+  const removeNode = (list) => {
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].id === dragId) {
+        dragNode = list[i]
+        list.splice(i, 1)
+        return true
+      }
+      if (list[i].children && list[i].children.length > 0) {
+        if (removeNode(list[i].children)) return true
+      }
+    }
+    return false
+  }
+
+  // Clone current state to manipulate
+  const cloned = JSON.parse(JSON.stringify(nodes))
+  removeNode(cloned)
+
+  if (!dragNode) return nodes // If node not found
+
+  // Update dragged node properties
+  dragNode.manager_id = targetId
+  dragNode.offset = { x: 0, y: 0 } // reset offset on merge
+
+  // Helper to add the drag node as a child of target node
+  const addNode = (list) => {
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].id === targetId) {
+        list[i].children = [...(list[i].children || []), dragNode]
+        return true
+      }
+      if (list[i].children && list[i].children.length > 0) {
+        if (addNode(list[i].children)) return true
+      }
+    }
+    return false
+  }
+
+  addNode(cloned)
+  return cloned
+}
 
 // ==================== LAYOUT ENGINE ====================
 const CARD_W = 210
@@ -92,14 +163,14 @@ function measure(node) {
 // Pass 2: assign x, y positions
 function layoutPos(node, left, top) {
   const kids = getKids(node)
-  node._x = left + node._px
-  node._y = top
+  node._x = left + node._px + (node.offset?.x || 0)
+  node._y = top + (node.offset?.y || 0)
 
   if (kids.length === 0) return
 
   if (node.layout === 'vertical') {
     const childCardX = node._x + CARD_W / 2 + INDENT
-    let childTop = top + CARD_H + V_SEP
+    let childTop = node._y + CARD_H + V_SEP
     kids.forEach(child => {
       const childLeft = childCardX - child._px
       layoutPos(child, childLeft, childTop)
@@ -107,8 +178,8 @@ function layoutPos(node, left, top) {
     })
   } else {
     const totalCW = kids.reduce((s, c) => s + c._sw, 0) + (kids.length - 1) * H_SEP
-    let childLeft = left + (node._sw - totalCW) / 2
-    const childTop = top + CARD_H + V_SEP
+    let childLeft = node._x + CARD_W / 2 - totalCW / 2
+    const childTop = node._y + CARD_H + V_SEP
     kids.forEach(child => {
       layoutPos(child, childLeft, childTop)
       childLeft += child._sw + H_SEP
@@ -162,7 +233,7 @@ function collectAll(node, nodes, edges) {
 }
 
 // ==================== CARD COMPONENT ====================
-const OrgCard = ({ node, isSelected, onSelect, onEdit, onAdd, onDelete }) => {
+const OrgCard = ({ node, isSelected, isMergeTarget, onSelect, onEdit, onAdd, onDelete, onDragStart, onToggleLayout, onResetPosition, onAlignSiblings, isAdmin, isDark, hasMovedRef }) => {
   const tc = getColor(node.team)
   const [hovered, setHovered] = useState(false)
 
@@ -170,7 +241,21 @@ const OrgCard = ({ node, isSelected, onSelect, onEdit, onAdd, onDelete }) => {
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={(e) => { e.stopPropagation(); onSelect(node) }}
+      onMouseDown={(e) => {
+        // Only admins can drag, only left click, and not clicking on action buttons
+        if (!isAdmin) return
+        if (e.button !== 0) return
+        e.stopPropagation()
+        onDragStart(node, e)
+      }}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (hasMovedRef && hasMovedRef.current) {
+          hasMovedRef.current = false // Reset drag flag
+          return
+        }
+        onSelect(node)
+      }}
       style={{
         position: 'absolute',
         left: node._x,
@@ -178,12 +263,16 @@ const OrgCard = ({ node, isSelected, onSelect, onEdit, onAdd, onDelete }) => {
         width: CARD_W,
         height: CARD_H,
         borderRadius: 12,
-        background: '#fff',
-        border: `2px solid ${isSelected ? tc.accent : tc.border}`,
-        boxShadow: isSelected
-          ? `0 0 0 3px ${tc.accent}33, 0 8px 25px rgba(0,0,0,0.12)`
-          : '0 4px 15px rgba(0,0,0,0.08)',
-        cursor: 'pointer',
+        background: isDark ? '#1E293B' : '#fff',
+        border: isMergeTarget
+          ? '3px dashed #10B981'
+          : `2px solid ${isSelected ? tc.accent : (isDark ? 'rgba(255,255,255,0.1)' : tc.border)}`,
+        boxShadow: isMergeTarget
+          ? '0 0 25px rgba(16, 185, 129, 0.6), 0 8px 30px rgba(16, 185, 129, 0.3)'
+          : (isSelected
+            ? `0 0 0 3px ${tc.accent}33, 0 8px 25px rgba(0,0,0,0.12)`
+            : '0 4px 15px rgba(0,0,0,0.08)'),
+        cursor: isAdmin ? 'grab' : 'pointer',
         transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.2s',
         transform: hovered ? 'scale(1.03)' : 'scale(1)',
         zIndex: hovered ? 50 : 10,
@@ -193,11 +282,34 @@ const OrgCard = ({ node, isSelected, onSelect, onEdit, onAdd, onDelete }) => {
         alignItems: 'center',
       }}
     >
+      {/* Merge Target Badge */}
+      {isMergeTarget && (
+        <div style={{
+          position: 'absolute',
+          top: -30,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#10B981',
+          color: '#fff',
+          fontSize: 9,
+          fontWeight: 900,
+          padding: '4px 10px',
+          borderRadius: 20,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 4px 10px rgba(16, 185, 129, 0.4)',
+          border: '1px solid #059669',
+          zIndex: 100,
+          animation: 'pulse 1s infinite'
+        }}>
+          GỘP NHÁNH VÀO ĐÂY 📥
+        </div>
+      )}
+
       {/* Avatar circle */}
       <div style={{
         position: 'absolute', left: -26,
         width: 52, height: 52, borderRadius: '50%',
-        background: '#fff', border: `3px solid ${tc.accent}`,
+        background: isDark ? '#1E293B' : '#fff', border: `3px solid ${tc.accent}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: tc.accent, fontWeight: 900, fontSize: 32,
         boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
@@ -208,7 +320,7 @@ const OrgCard = ({ node, isSelected, onSelect, onEdit, onAdd, onDelete }) => {
       {/* Info */}
       <div style={{ flex: 1, paddingLeft: 36, paddingRight: 8, overflow: 'hidden' }}>
         <div style={{
-          fontSize: 13, fontWeight: 800, color: '#1E293B',
+          fontSize: 13, fontWeight: 800, color: isDark ? '#F8FAFC' : '#1E293B',
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           lineHeight: '1.2', marginBottom: 3,
         }}>{node.name}</div>
@@ -219,21 +331,52 @@ const OrgCard = ({ node, isSelected, onSelect, onEdit, onAdd, onDelete }) => {
         }}>{node.position}</div>
       </div>
 
-      {/* Hover actions */}
-      {hovered && (
-        <div style={{
-          position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.92)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          borderRadius: 10,
-        }}>
-          <button onClick={(e) => { e.stopPropagation(); onEdit(node) }}
-            style={actionBtnStyle('#6366F1')}><Edit3 size={14} /></button>
-          <button onClick={(e) => { e.stopPropagation(); onAdd(node) }}
-            style={actionBtnStyle('#10B981')}><Plus size={14} /></button>
-          {node.level !== 0 && (
-            <button onClick={(e) => { e.stopPropagation(); onDelete(node.id) }}
-              style={actionBtnStyle('#EF4444')}><Trash2 size={14} /></button>
-          )}
+      {/* Hover actions - Structured 2-row premium design */}
+      {hovered && isAdmin && (
+        <div 
+          onMouseDown={(e) => e.stopPropagation()} // Stop drag when clicking buttons
+          style={{
+            position: 'absolute', inset: -2, background: isDark ? 'rgba(30,41,59,0.97)' : 'rgba(255,255,255,0.97)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+            borderRadius: 12,
+            border: `2px solid ${tc.accent}`,
+            zIndex: 100,
+            padding: 4,
+            boxShadow: '0 10px 25px rgba(0,0,0,0.15)'
+          }}
+        >
+          {/* Row 1: Administrative CRUD */}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <button onClick={(e) => { e.stopPropagation(); onEdit(node) }}
+              style={actionBtnStyle('#6366F1')} title="Chỉnh sửa"><Edit3 size={12} /></button>
+            <button onClick={(e) => { e.stopPropagation(); onAdd(node) }}
+              style={actionBtnStyle('#10B981')} title="Thêm nhân sự cấp dưới"><Plus size={12} /></button>
+            {node.level !== 0 && (
+              <button onClick={(e) => { e.stopPropagation(); onDelete(node.id) }}
+                style={actionBtnStyle('#EF4444')} title="Xóa nhân sự"><Trash2 size={12} /></button>
+            )}
+          </div>
+
+          {/* Row 2: Layout & Alignment Positioning */}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <button onClick={(e) => { e.stopPropagation(); onToggleLayout(node) }}
+              style={actionBtnStyle('#F59E0B')} title={`Đổi layout sang ${node.layout === 'vertical' ? 'Ngang' : 'Dọc'}`}><GitBranch size={12} style={{ transform: node.layout === 'vertical' ? 'rotate(90deg)' : 'none' }} /></button>
+
+            {node.level !== 0 && (
+              <button onClick={(e) => { e.stopPropagation(); onAlignSiblings(node, 'horizontal') }}
+                style={actionBtnStyle('#8B5CF6')} title="Căn ngang hàng các thẻ cùng cấp"><ArrowLeftRight size={12} /></button>
+            )}
+
+            {node.level !== 0 && (
+              <button onClick={(e) => { e.stopPropagation(); onAlignSiblings(node, 'vertical') }}
+                style={actionBtnStyle('#EC4899')} title="Căn dọc hàng các thẻ cùng cấp"><ArrowUpDown size={12} /></button>
+            )}
+
+            {(node.offset?.x !== 0 || node.offset?.y !== 0) && (
+              <button onClick={(e) => { e.stopPropagation(); onResetPosition(node) }}
+                style={actionBtnStyle('#3B82F6')} title="Đặt lại vị trí mặc định"><RotateCcw size={12} /></button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -250,6 +393,7 @@ const actionBtnStyle = (color) => ({
 // ==================== MAIN COMPONENT ====================
 const OrgChart = () => {
   const { theme } = useApp()
+  const { isAdmin } = useAuth()
   const isDark = theme === 'GALAXY' || theme === 'DARK'
 
   const [orgData, setOrgData] = useState([])
@@ -258,12 +402,30 @@ const OrgChart = () => {
   const [editingNode, setEditingNode] = useState(null)
   const [addingToNode, setAddingToNode] = useState(null)
 
+  // Temporary draft/offline sync states
+  const [originalOrgData, setOriginalOrgData] = useState([])
+  const [deletedNodeIds, setDeletedNodeIds] = useState([])
+  const [hasPendingChanges, setHasPendingChanges] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+
   // Pan & Zoom state
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(0.85)
   const [dragging, setDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const containerRef = useRef(null)
+
+  // Drag and drop card state
+  const [draggedNodeId, setDraggedNodeId] = useState(null)
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 })
+  const [dragStartOffset, setDragStartOffset] = useState({ x: 0, y: 0 })
+
+  // Alignment, Grid Snapping & Branch Merging States
+  const [snapToGrid, setSnapToGrid] = useState(true)
+  const [dragGuidelines, setDragGuidelines] = useState([])
+  const [hoveredMergeNodeId, setHoveredMergeNodeId] = useState(null)
+  const hasMovedRef = useRef(false)
+  const hasCenteredRef = useRef(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -291,8 +453,16 @@ const OrgChart = () => {
             team: item.team_name,
             isAssistant: item.is_assistant,
             children: [],
-            // Auto-layout: roots horizontal, kids vertical
-            layout: (item.manager_id === null || item.manager_id === "" || item.level === 0) ? 'horizontal' : 'vertical'
+            // Check custom layout or use auto-layout logic
+            layout: item.layout || ((item.manager_id === null || item.manager_id === "" || item.level === 0) ? 'horizontal' : 'vertical'),
+            // Check custom offset or use default
+            offset: item.offset_xy ? (() => {
+              try {
+                return JSON.parse(item.offset_xy)
+              } catch(e) {
+                return { x: 0, y: 0 }
+              }
+            })() : { x: 0, y: 0 }
           }
           nodesMap[item.id] = node
           if (item.full_name) nameToNodeMap[item.full_name.trim()] = node
@@ -317,6 +487,8 @@ const OrgChart = () => {
         // Sort roots by level to ensure top-down order
         roots.sort((a, b) => (a.level || 0) - (b.level || 0))
         setOrgData(roots)
+        setOriginalOrgData(deepClone(roots))
+        hasCenteredRef.current = false
       } catch (err) {
         console.error('Failed to load org chart data:', err)
       } finally {
@@ -354,9 +526,9 @@ const OrgChart = () => {
     return { nodes, edges, bounds: { minX, minY, maxX, maxY, w: maxX - minX + 100, h: maxY - minY + 100 } }
   }, [orgData])
 
-  // Center on mount
+  // Center on mount (runs only once upon initial load)
   useEffect(() => {
-    if (containerRef.current && bounds.w) {
+    if (containerRef.current && bounds.w && !hasCenteredRef.current) {
       const cw = containerRef.current.clientWidth
       const ch = containerRef.current.clientHeight
       const headerH = 60
@@ -367,22 +539,319 @@ const OrgChart = () => {
         x: (cw - bounds.w * z) / 2 - bounds.minX * z,
         y: headerH + (ch - headerH - bounds.h * z) / 2 - bounds.minY * z,
       })
+      hasCenteredRef.current = true
     }
   }, [bounds])
 
-  // Pan handlers
+  // Drag handlers for cards
+  const handleDragStart = useCallback((node, e) => {
+    setDraggedNodeId(node.id)
+    setDragStartPos({ x: e.clientX, y: e.clientY })
+    setDragStartOffset({ x: node.offset?.x || 0, y: node.offset?.y || 0 })
+    hasMovedRef.current = false
+  }, [])
+
+  // Pan handlers for canvas
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return
     setDragging(true)
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
   }, [pan])
 
-  const handleMouseMove = useCallback((e) => {
-    if (!dragging) return
-    setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y })
-  }, [dragging, dragStart])
+  // Helper to check descendants recursively
+  const checkDescendant = useCallback((parent, childId) => {
+    return isDescendant(parent, childId)
+  }, [])
 
-  const handleMouseUp = useCallback(() => setDragging(false), [])
+  const handleMouseMove = useCallback((e) => {
+    if (draggedNodeId) {
+      const clientDx = e.clientX - dragStartPos.x
+      const clientDy = e.clientY - dragStartPos.y
+      
+      // If moved more than 4px, treat it as drag and prevent opening detail/edit panel
+      if (Math.abs(clientDx) > 4 || Math.abs(clientDy) > 4) {
+        hasMovedRef.current = true
+      }
+
+      // Calculate scaled drag coordinates based on zoom factor
+      const dx = clientDx / zoom
+      const dy = clientDy / zoom
+      
+      let newOffsetX = Math.round(dragStartOffset.x + dx)
+      let newOffsetY = Math.round(dragStartOffset.y + dy)
+      
+      // 1. Grid Snapping
+      if (snapToGrid) {
+        newOffsetX = Math.round(newOffsetX / 20) * 20
+        newOffsetY = Math.round(newOffsetY / 20) * 20
+      }
+
+      // 2. Intelligent Auto-Align Guidelines
+      const threshold = 15
+      let finalOffsetX = newOffsetX
+      let finalOffsetY = newOffsetY
+      let guidelines = []
+
+      // Snap offset to center (0,0)
+      if (Math.abs(finalOffsetX) < threshold) {
+        finalOffsetX = 0
+      }
+      if (Math.abs(finalOffsetY) < threshold) {
+        finalOffsetY = 0
+      }
+
+      const info = findNodeInfo(orgData, draggedNodeId)
+      if (info) {
+        const renderedSelf = nodes.find(n => n.id === draggedNodeId)
+        if (renderedSelf) {
+          const baseY = renderedSelf._y - (renderedSelf.offset?.y || 0)
+          const baseX = renderedSelf._x - (renderedSelf.offset?.x || 0)
+          
+          const currentAbsX = baseX + finalOffsetX
+          const currentAbsY = baseY + finalOffsetY
+          
+          // A. Snap to siblings
+          if (info.siblings && info.siblings.length > 0) {
+            for (const sib of info.siblings) {
+              const renderedSib = nodes.find(n => n.id === sib.id)
+              if (renderedSib) {
+                // Snap horizontally (Y axis)
+                if (Math.abs(currentAbsY - renderedSib._y) < threshold) {
+                  finalOffsetY = renderedSib._y - baseY
+                  guidelines.push({
+                    x1: currentAbsX + CARD_W / 2,
+                    y1: renderedSib._y + CARD_H / 2,
+                    x2: renderedSib._x + CARD_W / 2,
+                    y2: renderedSib._y + CARD_H / 2,
+                    type: 'horizontal'
+                  })
+                }
+                
+                // Snap vertically (X axis)
+                if (Math.abs(currentAbsX - renderedSib._x) < threshold) {
+                  finalOffsetX = renderedSib._x - baseX
+                  guidelines.push({
+                    x1: renderedSib._x + CARD_W / 2,
+                    y1: currentAbsY + CARD_H / 2,
+                    x2: renderedSib._x + CARD_W / 2,
+                    y2: renderedSib._y + CARD_H / 2,
+                    type: 'vertical'
+                  })
+                }
+              }
+            }
+          }
+
+          // B. Snap to parent vertical center
+          if (info.parent) {
+            const renderedParent = nodes.find(n => n.id === info.parent.id)
+            if (renderedParent) {
+              const parentCenterX = renderedParent._x + CARD_W / 2
+              const selfCenterX = currentAbsX + CARD_W / 2
+              if (Math.abs(selfCenterX - parentCenterX) < threshold) {
+                finalOffsetX = parentCenterX - CARD_W / 2 - baseX
+                guidelines.push({
+                  x1: parentCenterX,
+                  y1: renderedParent._y + CARD_H,
+                  x2: parentCenterX,
+                  y2: currentAbsY,
+                  type: 'parent-vertical'
+                })
+              }
+            }
+          }
+        }
+      }
+
+      setDragGuidelines(guidelines)
+
+      // 3. Branch Merging Dropzone Identification
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        const mouseX = e.clientX - rect.left
+        const mouseY = e.clientY - rect.top
+        
+        // Convert mouse coordinate to zoomed canvas space
+        const canvasX = (mouseX - pan.x) / zoom
+        const canvasY = (mouseY - pan.y) / zoom
+        
+        let targetMergeId = null
+        
+        for (const n of nodes) {
+          if (n.id === draggedNodeId) continue
+          
+          // Exclude descendants to avoid circular cycles
+          const dragNodeObj = nodes.find(item => item.id === draggedNodeId)
+          if (dragNodeObj && isDescendant(dragNodeObj, n.id)) continue
+          
+          if (
+            canvasX >= n._x && canvasX <= n._x + CARD_W &&
+            canvasY >= n._y && canvasY <= n._y + CARD_H
+          ) {
+            targetMergeId = n.id
+            break
+          }
+        }
+        setHoveredMergeNodeId(targetMergeId)
+      }
+
+      setOrgData(prevData => {
+        const updateOffset = (items) => items.map(item => {
+          if (item.id === draggedNodeId) {
+            return {
+              ...item,
+              offset: { x: finalOffsetX, y: finalOffsetY }
+            }
+          }
+          if (item.children && item.children.length > 0) {
+            return {
+              ...item,
+              children: updateOffset(item.children)
+            }
+          }
+          return item
+        })
+        return updateOffset(prevData)
+      })
+    } else if (dragging) {
+      setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y })
+    }
+  }, [draggedNodeId, dragStartPos, dragStartOffset, zoom, dragging, dragStart, snapToGrid, nodes, orgData, pan])
+
+  const fitToScreen = useCallback(() => {
+    if (!containerRef.current || !bounds.w) return
+    const cw = containerRef.current.clientWidth
+    const ch = containerRef.current.clientHeight
+    const headerH = 60
+    const fitZoom = Math.min((cw - 40) / bounds.w, (ch - headerH - 40) / bounds.h, 1)
+    const z = Math.max(0.25, fitZoom)
+    setZoom(z)
+    setPan({
+      x: (cw - bounds.w * z) / 2 - bounds.minX * z,
+      y: headerH + (ch - headerH - bounds.h * z) / 2 - bounds.minY * z,
+    })
+  }, [bounds])
+
+  const handleMouseUp = useCallback(() => {
+    if (draggedNodeId) {
+      // Handle interactive branch merge drop
+      if (hoveredMergeNodeId) {
+        const dragNode = nodes.find(n => n.id === draggedNodeId)
+        const targetNode = nodes.find(n => n.id === hoveredMergeNodeId)
+        
+        if (dragNode && targetNode) {
+          const confirmMsg = `Bạn có chắc chắn muốn GỘP NHÁNH của nhân sự "${dragNode.name}" vào làm cấp dưới của "${targetNode.name}" không?\n(Toàn bộ nhân sự cấp dưới của ${dragNode.name} cũng sẽ chuyển theo)`
+          if (window.confirm(confirmMsg)) {
+            setOrgData(prev => mergeBranch(prev, draggedNodeId, hoveredMergeNodeId))
+            setHasPendingChanges(true)
+          }
+        }
+        setHoveredMergeNodeId(null)
+      }
+      
+      setDraggedNodeId(null)
+      setDragGuidelines([])
+      setHasPendingChanges(true)
+    }
+    setDragging(false)
+  }, [draggedNodeId, hoveredMergeNodeId, nodes, fitToScreen])
+
+  const handleToggleLayout = useCallback((node) => {
+    const newLayout = node.layout === 'vertical' ? 'horizontal' : 'vertical'
+    
+    // Update local state
+    const updateLayout = (nodes) => nodes.map(n => {
+      if (n.id === node.id) {
+        return { ...n, layout: newLayout }
+      }
+      if (n.children) {
+        return { ...n, children: updateLayout(n.children) }
+      }
+      return n
+    })
+    setOrgData(updateLayout(orgData))
+    setHasPendingChanges(true)
+  }, [orgData])
+
+  const handleResetPosition = useCallback((node) => {
+    // Update local state
+    const resetOffset = (nodes) => nodes.map(n => {
+      if (n.id === node.id) {
+        return { ...n, offset: { x: 0, y: 0 } }
+      }
+      if (n.children) {
+        return { ...n, children: resetOffset(n.children) }
+      }
+      return n
+    })
+    setOrgData(resetOffset(orgData))
+    setHasPendingChanges(true)
+  }, [orgData])
+
+  // Explicitly align siblings horizontally/vertically
+  const handleAlignSiblings = useCallback((node, direction) => {
+    const info = findNodeInfo(orgData, node.id)
+    if (!info || info.siblings.length === 0) {
+      alert('Thẻ này không có thẻ nào khác cùng cấp!')
+      return
+    }
+
+    const targetOffsetY = node.offset?.y || 0
+    const targetOffsetX = node.offset?.x || 0
+
+    const updateSiblings = (nodes) => nodes.map(n => {
+      const isSibling = info.siblings.some(sib => sib.id === n.id)
+      if (isSibling) {
+        return {
+          ...n,
+          offset: {
+            x: direction === 'vertical' ? targetOffsetX : (n.offset?.x || 0),
+            y: direction === 'horizontal' ? targetOffsetY : (n.offset?.y || 0)
+          }
+        }
+      }
+      if (n.children) {
+        return { ...n, children: updateSiblings(n.children) }
+      }
+      return n
+    })
+
+    setOrgData(updateSiblings(orgData))
+    setHasPendingChanges(true)
+  }, [orgData])
+
+  // Helper to fetch flat list of valid potential managers (excluding self and descendants)
+  const getPotentialManagers = useCallback((nodeId) => {
+    const flatList = []
+    const flatten = (items) => {
+      items.forEach(item => {
+        flatList.push(item)
+        if (item.children) flatten(item.children)
+      })
+    }
+    flatten(orgData)
+    
+    if (!nodeId) return flatList
+    
+    // Find the node to check descendants
+    const findNodeObj = (items, id) => {
+      for (const item of items) {
+        if (item.id === id) return item
+        if (item.children) {
+          const found = findNodeObj(item.children, id)
+          if (found) return found
+        }
+      }
+      return null
+    }
+    const nodeObj = findNodeObj(orgData, nodeId)
+    
+    return flatList.filter(item => {
+      if (item.id === nodeId) return false
+      if (nodeObj && isDescendant(nodeObj, item.id)) return false
+      return true
+    })
+  }, [orgData])
 
   const handleWheel = useCallback((e) => {
     e.preventDefault()
@@ -414,19 +883,7 @@ const OrgChart = () => {
     return () => el.removeEventListener('wheel', handleWheel)
   }, [handleWheel])
 
-  const fitToScreen = () => {
-    if (!containerRef.current) return
-    const cw = containerRef.current.clientWidth
-    const ch = containerRef.current.clientHeight
-    const headerH = 60
-    const fitZoom = Math.min((cw - 40) / bounds.w, (ch - headerH - 40) / bounds.h, 1)
-    const z = Math.max(0.25, fitZoom)
-    setZoom(z)
-    setPan({
-      x: (cw - bounds.w * z) / 2 - bounds.minX * z,
-      y: headerH + (ch - headerH - bounds.h * z) / 2 - bounds.minY * z,
-    })
-  }
+
 
   // CRUD helpers
   const findAndReplace = (nodes, id, data) => nodes.map(n => {
@@ -444,32 +901,224 @@ const OrgChart = () => {
     return n
   })
 
+  const handleDiscardChanges = () => {
+    if (window.confirm("Bạn có chắc chắn muốn hủy bỏ toàn bộ những thay đổi chưa đồng bộ không?")) {
+      setOrgData(deepClone(originalOrgData))
+      setDeletedNodeIds([])
+      setHasPendingChanges(false)
+      hasCenteredRef.current = false
+    }
+  }
+
+  const handleSaveChanges = async () => {
+    if (isSaving) return
+    try {
+      setIsSaving(true)
+      
+      // 1. Delete nodes in deletedNodeIds
+      if (deletedNodeIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('NMK_User')
+          .delete()
+          .in('id', deletedNodeIds)
+        
+        if (deleteError) {
+          console.error('Error deleting nodes from Supabase:', deleteError)
+          throw new Error('Không thể xóa nhân sự khỏi hệ thống Supabase.')
+        }
+      }
+      
+      // 2. Flatten current tree to flat list to prepare for upsert
+      const flatCurrentNodes = []
+      const flatten = (nodes, parentId = null) => {
+        nodes.forEach(node => {
+          flatCurrentNodes.push({
+            ...node,
+            manager_id: parentId
+          })
+          if (node.children && node.children.length > 0) {
+            flatten(node.children, node.id)
+          }
+        })
+      }
+      flatten(orgData)
+      
+      // 3. Perform batch upsert
+      const upsertPayload = flatCurrentNodes.map(node => {
+        const offsetStr = node.offset ? JSON.stringify(node.offset) : JSON.stringify({ x: 0, y: 0 })
+        
+        return {
+          id: node.id,
+          full_name: node.name,
+          name: node.name, // compatibility
+          position: node.position,
+          email: node.email || `${node.name.toLowerCase().replace(/\s+/g, '')}@rincovitch.com.au`,
+          level: node.level || 0,
+          manager_id: node.manager_id || null,
+          team_name: node.team || 'General',
+          layout: node.layout || 'horizontal',
+          offset_xy: offsetStr,
+          location: node.location || 'VIETNAM',
+          is_assistant: node.isAssistant || false
+        }
+      })
+      
+      if (upsertPayload.length > 0) {
+        const { error: upsertError } = await supabase
+          .from('NMK_User')
+          .upsert(upsertPayload, { onConflict: 'id' })
+        
+        if (upsertError) {
+          console.error('Error upserting nodes to Supabase:', upsertError)
+          throw new Error('Không thể lưu thông tin nhân sự vào Supabase.')
+        }
+      }
+      
+      // 4. Re-fetch data to confirm everything matches Supabase database
+      const rawData = await fetchOrgChartData()
+      
+      const localData = rawData.filter(u => 
+        u.location?.toUpperCase() === 'VIETNAM' && 
+        u.full_name && 
+        u.full_name.trim() !== ''
+      )
+      
+      const nodesMap = {}
+      const nameToNodeMap = {}
+      const roots = []
+      
+      localData.forEach(item => {
+        const node = {
+          ...item,
+          name: item.full_name,
+          team: item.team_name,
+          isAssistant: item.is_assistant,
+          children: [],
+          layout: item.layout || ((item.manager_id === null || item.manager_id === "" || item.level === 0) ? 'horizontal' : 'vertical'),
+          offset: item.offset_xy ? (() => {
+            try {
+              return JSON.parse(item.offset_xy)
+            } catch(e) {
+              return { x: 0, y: 0 }
+            }
+          })() : { x: 0, y: 0 }
+        }
+        nodesMap[item.id] = node
+        if (item.full_name) nameToNodeMap[item.full_name.trim()] = node
+      })
+      
+      localData.forEach(item => {
+        const node = nodesMap[item.id]
+        let mid = item.manager_id
+        if (typeof mid === 'string') mid = mid.trim()
+        
+        const parent = nodesMap[mid] || nameToNodeMap[mid]
+        
+        if (parent && parent.id !== node.id) {
+          parent.children.push(node)
+        } else {
+          roots.push(node)
+        }
+      })
+      
+      roots.sort((a, b) => (a.level || 0) - (b.level || 0))
+      
+      setOrgData(roots)
+      setOriginalOrgData(deepClone(roots))
+      setDeletedNodeIds([])
+      setHasPendingChanges(false)
+      hasCenteredRef.current = false
+      
+      alert('Đồng bộ sơ đồ tổ chức lên Supabase thành công!')
+    } catch (err) {
+      console.error('Save error:', err)
+      alert(`Đồng bộ thất bại: ${err.message || err}`)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const handleEdit = (e) => {
     e.preventDefault()
     const fd = new FormData(e.target)
-    setOrgData(findAndReplace(orgData, editingNode.id, { 
-      name: fd.get('name'), 
-      position: fd.get('position'),
-      layout: fd.get('layout'),
-      dob: fd.get('dob'),
-      level: parseInt(fd.get('level')) || 0
-    }))
+    const newManagerId = fd.get('manager_id') || null
+    const name = fd.get('name')
+    const position = fd.get('position')
+    const email = fd.get('email')
+    const layout = fd.get('layout')
+    const dob = fd.get('dob')
+    const level = parseInt(fd.get('level')) || 0
+    const team = fd.get('team')
+
+    // Update node details first
+    let updatedData = findAndReplace(orgData, editingNode.id, {
+      name,
+      position,
+      email,
+      layout,
+      dob,
+      level,
+      team
+    })
+
+    // If manager_id changed, restructure the tree (gộp nhánh)
+    if (newManagerId !== editingNode.manager_id) {
+      if (!newManagerId) {
+        // Move to root level (no parent)
+        let dragNode = null
+        const removeNode = (list) => {
+          for (let i = 0; i < list.length; i++) {
+            if (list[i].id === editingNode.id) {
+              dragNode = list[i]
+              list.splice(i, 1)
+              return true
+            }
+            if (list[i].children && list[i].children.length > 0) {
+              if (removeNode(list[i].children)) return true
+            }
+          }
+          return false
+        }
+        const cloned = deepClone(updatedData)
+        removeNode(cloned)
+        if (dragNode) {
+          dragNode.manager_id = null
+          dragNode.offset = { x: 0, y: 0 }
+          cloned.push(dragNode)
+        }
+        updatedData = cloned
+      } else {
+        updatedData = mergeBranch(updatedData, editingNode.id, newManagerId)
+      }
+    }
+
+    setOrgData(updatedData)
     setEditingNode(null)
+    setHasPendingChanges(true)
   }
+
   const handleAdd = (e) => {
     e.preventDefault()
     const fd = new FormData(e.target)
-    setOrgData(findAndAdd(orgData, addingToNode.id, {
-      id: Date.now().toString(), 
+    const targetManagerId = fd.get('manager_id')
+    const newId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15)
+    
+    const newNode = {
+      id: newId, 
       name: fd.get('name'), 
       position: fd.get('position'),
+      email: fd.get('email') || `${fd.get('name').toLowerCase().replace(/\s+/g, '')}@rincovitch.com.au`,
       layout: fd.get('layout'),
       dob: fd.get('dob'),
       level: parseInt(fd.get('level')) || 0,
-      team: addingToNode.team, 
+      team: fd.get('team') || 'General', 
       children: [],
-    }))
+      offset: { x: 0, y: 0 }
+    }
+
+    setOrgData(prev => findAndAdd(prev, targetManagerId, newNode))
     setAddingToNode(null)
+    setHasPendingChanges(true)
   }
 
   return (
@@ -487,10 +1136,107 @@ const OrgChart = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={() => setZoom(z => Math.min(2, z * 1.2))} style={toolBtnStyle(isDark)}><ZoomIn size={16} /></button>
-          <button onClick={() => setZoom(z => Math.max(0.2, z * 0.8))} style={toolBtnStyle(isDark)}><ZoomOut size={16} /></button>
-          <button onClick={fitToScreen} style={toolBtnStyle(isDark)}><Maximize2 size={16} /></button>
-          <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, minWidth: 45, textAlign: 'center' }}>{Math.round(zoom * 100)}%</div>
+          {/* Draft indicator */}
+          {isAdmin && hasPendingChanges && (
+            <span style={{
+              fontSize: 11,
+              fontWeight: 800,
+              color: '#F59E0B',
+              background: 'rgba(245, 158, 11, 0.1)',
+              padding: '6px 12px',
+              borderRadius: 20,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              border: '1px solid rgba(245, 158, 11, 0.25)',
+              marginRight: 10,
+              animation: 'pulse 2s infinite'
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B' }} />
+              Bản nháp (chưa đồng bộ)
+            </span>
+          )}
+
+          {/* Snap grid / Auto-align switch */}
+          <button 
+            onClick={() => setSnapToGrid(s => !s)} 
+            style={{
+              ...toolBtnStyle(isDark),
+              background: snapToGrid ? 'rgba(245, 158, 11, 0.15)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
+              border: `1px solid ${snapToGrid ? '#F59E0B' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)')}`,
+              color: snapToGrid ? '#F59E0B' : (isDark ? '#94A3B8' : '#475569'),
+              transition: 'all 0.2s',
+              marginRight: 6
+            }} 
+            title={snapToGrid ? "Đang BẬT tự dóng hàng / Hít lưới (20px)" : "Đang TẮT tự dóng hàng / Hít lưới"}
+          >
+            <LayoutGrid size={16} />
+          </button>
+
+          {/* Zoom controls */}
+          <button onClick={() => setZoom(z => Math.min(2, z * 1.2))} style={toolBtnStyle(isDark)} title="Phóng to"><ZoomIn size={16} /></button>
+          <button onClick={() => setZoom(z => Math.max(0.2, z * 0.8))} style={toolBtnStyle(isDark)} title="Thu nhỏ"><ZoomOut size={16} /></button>
+          <button onClick={fitToScreen} style={toolBtnStyle(isDark)} title="Vừa khít màn hình"><Maximize2 size={16} /></button>
+          <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, minWidth: 45, textAlign: 'center', marginRight: 10 }}>{Math.round(zoom * 100)}%</div>
+
+          {/* Sync controls */}
+          {isAdmin && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {hasPendingChanges && (
+                <button
+                  onClick={handleDiscardChanges}
+                  disabled={isSaving}
+                  style={{
+                    padding: '8px 14px',
+                    background: isDark ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)',
+                    color: '#EF4444',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    borderRadius: 10,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  title="Hủy toàn bộ thay đổi chưa đồng bộ"
+                >
+                  <RotateCcw size={14} /> HỦY
+                </button>
+              )}
+              <button
+                onClick={handleSaveChanges}
+                disabled={!hasPendingChanges || isSaving}
+                style={{
+                  padding: '8px 16px',
+                  background: hasPendingChanges 
+                    ? 'linear-gradient(135deg, #10B981, #059669)' 
+                    : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
+                  color: hasPendingChanges ? '#fff' : (isDark ? '#475569' : '#94A3B8'),
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 11,
+                  fontWeight: 900,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  cursor: (hasPendingChanges && !isSaving) ? 'pointer' : 'not-allowed',
+                  boxShadow: hasPendingChanges ? '0 4px 14px rgba(16, 185, 129, 0.2)' : 'none',
+                  opacity: isSaving ? 0.7 : 1,
+                  transition: 'all 0.2s',
+                }}
+                title="Đồng bộ sơ đồ hiện tại lên Supabase"
+              >
+                {isSaving ? (
+                  <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                ) : (
+                  <Save size={14} />
+                )}
+                {isSaving ? 'ĐANG LƯU...' : 'ĐỒNG BỘ SUPABASE'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -502,7 +1248,7 @@ const OrgChart = () => {
         </div>
       ) : (
         <div ref={containerRef}
-          style={{ position: 'absolute', inset: 0, cursor: dragging ? 'grabbing' : 'grab', overflow: 'hidden' }}
+          style={{ position: 'absolute', inset: 0, cursor: (draggedNodeId || dragging) ? 'grabbing' : 'grab', overflow: 'hidden' }}
           onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
         >
         <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0', position: 'relative' }}>
@@ -531,16 +1277,51 @@ const OrgChart = () => {
                 </g>
               )
             })}
+
+            {/* Alignment Guidelines (Snapping lines) */}
+            {dragGuidelines.map((gl, idx) => (
+              <g key={`gl-${idx}`}>
+                <line
+                  x1={gl.x1}
+                  y1={gl.y1}
+                  x2={gl.x2}
+                  y2={gl.y2}
+                  stroke="#F59E0B"
+                  strokeWidth="2"
+                  strokeDasharray="6 4"
+                  style={{
+                    filter: 'drop-shadow(0 0 4px #F59E0B)',
+                    opacity: 0.85
+                  }}
+                />
+                <circle cx={gl.x1} cy={gl.y1} r="4" fill="#F59E0B" />
+                <circle cx={gl.x2} cy={gl.y2} r="4" fill="#F59E0B" />
+              </g>
+            ))}
           </svg>
 
           {/* Cards */}
           {nodes.map(node => (
             <OrgCard key={node.id} node={node}
               isSelected={selectedNode?.id === node.id}
+              isMergeTarget={hoveredMergeNodeId === node.id}
               onSelect={setSelectedNode}
               onEdit={setEditingNode}
               onAdd={setAddingToNode}
-              onDelete={(id) => setOrgData(findAndDelete(orgData, id))}
+              onDelete={(id) => {
+                if (window.confirm("Bạn có chắc chắn muốn xóa nhân sự này khỏi sơ đồ tổ chức không?")) {
+                  setOrgData(findAndDelete(orgData, id))
+                  setDeletedNodeIds(prev => [...prev, id])
+                  setHasPendingChanges(true)
+                }
+              }}
+              onDragStart={handleDragStart}
+              onToggleLayout={handleToggleLayout}
+              onResetPosition={handleResetPosition}
+              onAlignSiblings={handleAlignSiblings}
+              isAdmin={isAdmin}
+              isDark={isDark}
+              hasMovedRef={hasMovedRef}
             />
           ))}
         </div>
@@ -592,6 +1373,7 @@ const OrgChart = () => {
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
               <tbody>
                 {[
+                  { label: 'Email', value: selectedNode.email || '—' },
                   { label: 'Ngày sinh', value: selectedNode.dob ? new Date(selectedNode.dob).toLocaleDateString('vi-VN') : '—' },
                   { label: 'Con giáp', value: getZodiac(selectedNode.dob).name },
                   { label: 'Team', value: selectedNode.team },
@@ -615,20 +1397,22 @@ const OrgChart = () => {
             </div>
 
             {/* Action buttons */}
-            <div style={{ marginTop: 20, display: 'flex', gap: 8 }}>
-              <button onClick={() => { setEditingNode(selectedNode); setSelectedNode(null) }} style={{
-                flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(99,102,241,0.3)',
-                background: 'rgba(99,102,241,0.1)', color: '#818CF8', fontWeight: 800, fontSize: 11,
-                textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              }}><Edit3 size={13} /> Edit</button>
-              <button onClick={() => { setAddingToNode(selectedNode); setSelectedNode(null) }} style={{
-                flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(16,185,129,0.3)',
-                background: 'rgba(16,185,129,0.1)', color: '#34D399', fontWeight: 800, fontSize: 11,
-                textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              }}><Plus size={13} /> Add Sub</button>
-            </div>
+            {isAdmin && (
+              <div style={{ marginTop: 20, display: 'flex', gap: 8 }}>
+                <button onClick={() => { setEditingNode(selectedNode); setSelectedNode(null) }} style={{
+                  flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(99,102,241,0.3)',
+                  background: 'rgba(99,102,241,0.1)', color: '#818CF8', fontWeight: 800, fontSize: 11,
+                  textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}><Edit3 size={13} /> Edit</button>
+                <button onClick={() => { setAddingToNode(selectedNode); setSelectedNode(null) }} style={{
+                  flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(16,185,129,0.3)',
+                  background: 'rgba(16,185,129,0.1)', color: '#34D399', fontWeight: 800, fontSize: 11,
+                  textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}><Plus size={13} /> Add Sub</button>
+              </div>
+            )}
           </div>
         </div>
         </div>
@@ -644,13 +1428,20 @@ const OrgChart = () => {
           from { stroke-dashoffset: 262; }
           to { stroke-dashoffset: 0; }
         }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.65; }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
       `}</style>
 
       {/* Edit / Add Modal */}
       {(editingNode || addingToNode) && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'absolute', inset: 0, background: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.5)', backdropFilter: 'blur(8px)' }} onClick={() => { setEditingNode(null); setAddingToNode(null) }} />
-          <form onSubmit={editingNode ? handleEdit : handleAdd} style={{ position: 'relative', width: '100%', maxWidth: 420, background: isDark ? '#1E293B' : '#fff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 16, padding: 28, boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.6)' : '0 30px 80px rgba(0,0,0,0.15)' }}>
+          <form onSubmit={editingNode ? handleEdit : handleAdd} style={{ position: 'relative', width: '100%', maxWidth: 420, background: isDark ? '#1E293B' : '#fff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 16, padding: 28, boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.6)' : '0 30px 80px rgba(0,0,0,0.15)', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366F1' }}>
                 {editingNode ? <Edit3 size={20} /> : <UserPlus size={20} />}
@@ -665,6 +1456,10 @@ const OrgChart = () => {
               <input name="name" defaultValue={editingNode?.name || ''} required style={inputStyle(isDark)} />
             </div>
             <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle(isDark)}>Email</label>
+              <input type="email" name="email" defaultValue={editingNode?.email || ''} placeholder="example@rincovitch.com.au" style={inputStyle(isDark)} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
               <label style={labelStyle(isDark)}>Position</label>
               <input name="position" defaultValue={editingNode?.position || ''} required style={inputStyle(isDark)} />
             </div>
@@ -676,6 +1471,48 @@ const OrgChart = () => {
               <label style={labelStyle(isDark)}>Ngày sinh (DOB)</label>
               <input type="date" name="dob" defaultValue={editingNode?.dob || ''} style={inputStyle(isDark)} />
             </div>
+
+            {/* Direct Manager (Branch Merge) select */}
+            {editingNode && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle(isDark)}>Quản lý trực tiếp (Gộp nhánh)</label>
+                <select name="manager_id" defaultValue={editingNode.manager_id || ''} style={inputStyle(isDark)}>
+                  <option value="">-- Không có (Cấp cao nhất) --</option>
+                  {getPotentialManagers(editingNode.id).map(mgr => (
+                    <option key={mgr.id} value={mgr.id}>
+                      {mgr.name} ({mgr.position})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {addingToNode && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle(isDark)}>Quản lý trực tiếp</label>
+                <select name="manager_id" defaultValue={addingToNode.id} style={inputStyle(isDark)}>
+                  {getPotentialManagers(null).map(mgr => (
+                    <option key={mgr.id} value={mgr.id}>
+                      {mgr.name} ({mgr.position})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle(isDark)}>Phòng ban / Màu sắc (Team)</label>
+              <select name="team" defaultValue={editingNode?.team || addingToNode?.team || 'General'} style={inputStyle(isDark)}>
+                <option value="Leadership">Leadership (Vàng hổ phách)</option>
+                <option value="Slab Design">Slab Design (Tím)</option>
+                <option value="BIM / REO / MTO">BIM / REO / MTO (Xanh ngọc)</option>
+                <option value="BIM">BIM (Xanh ngọc)</option>
+                <option value="Lateral Design">Lateral Design (Xanh lá)</option>
+                <option value="Support">Support (Đỏ hồng)</option>
+                <option value="General">General (Xanh lam)</option>
+              </select>
+            </div>
+
             <div style={{ marginBottom: 24 }}>
               <label style={labelStyle(isDark)}>Children Layout</label>
               <select name="layout" defaultValue={editingNode?.layout || 'horizontal'} style={inputStyle(isDark)}>
