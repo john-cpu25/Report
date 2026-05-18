@@ -372,19 +372,7 @@ const BuildingAnimation = ({ progress: externalProgress }) => {
           )}
         </g>
 
-        {/* ================= BLUEPRINT 3D LASER SCANNER ================= */}
-        <g className="laser-scanner-3d" filter="url(#glow)">
-          {/* Sweeps across the 3D isometric structure boundary */}
-          <polygon points="135,140 250,80 365,140 250,200" fill="url(#laser-gradient-3d)" stroke="#06b6d4" strokeWidth="2" strokeOpacity="0.8" />
-        </g>
 
-        <defs>
-          <linearGradient id="laser-gradient-3d" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#06b6d4" stopOpacity="0" />
-            <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
-          </linearGradient>
-        </defs>
 
         {/* ================= INTERACTIVE CAD CALLOUT NODES (3D Anchors) ================= */}
         <g fill="#10b587" stroke="#10b587" strokeWidth="1" filter="url(#glow)">
