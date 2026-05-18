@@ -305,18 +305,37 @@ const BuildingAnimation = ({ progress: externalProgress }) => {
           </g>
         )}
 
-        {/* Triangular structural pitch crown truss (3D isometric roof pitch!) */}
+        {/* Modern Flat Roof Extras: Stairwell/Elevator Penthouse & Rooftop Helipad */}
         {showRoofTruss && (
-          <g stroke="#10b587" strokeWidth="1.5" fill="none" opacity="0.9" filter="url(#glow)">
-            {/* Front pitch */}
-            <path d="M 146,140 L 250,30 L 354,140" />
-            {/* Center strut */}
-            <line x1="250" y1="30" x2="250" y2="200" strokeDasharray="3,3" />
-            {/* Diagonal depth bracing */}
-            <line x1="250" y1="30" x2="250" y2="80" stroke="#10b587" />
-            {/* Crown node beacon */}
-            <circle cx="250" cy="30" r="4.5" fill="#f43f5e" className="animate-ping" />
-            <circle cx="250" cy="30" r="3" fill="#f43f5e" />
+          <g filter="url(#glow)">
+            {/* 1. Elevator/Stairwell Penthouse Core (3D box on the back section of the roof) */}
+            <g stroke="#38bdf8" strokeWidth="1.5" fill="none" opacity="0.9">
+              {/* Vertical columns from roof deck up to penthouse ceiling */}
+              <line x1="250" y1="80" x2="250" y2="50" />
+              <line x1="198" y1="110" x2="198" y2="80" />
+              <line x1="302" y1="110" x2="302" y2="80" />
+              <line x1="250" y1="140" x2="250" y2="110" />
+              
+              {/* Penthouse Ceiling slab */}
+              <polygon points="250,50 302,80 250,110 198,80" stroke="#22d3ee" strokeWidth="2" fill="#0ea5e9" fillOpacity="0.1" />
+              
+              {/* Stairwell door indicator on isometric facade */}
+              <path d="M 220,103 L 220,89 L 230,95 L 230,109 Z" stroke="#10b587" strokeWidth="1" fill="#0f172a" fillOpacity="0.4" />
+            </g>
+
+            {/* 2. Rooftop Helipad (Isometric circle at the center of the roof slab) */}
+            <g opacity="0.95">
+              {/* Isometric boundary ring */}
+              <ellipse cx="250" cy="140" rx="42" ry="22" fill="none" stroke="#22d3ee" strokeWidth="2.5" strokeDasharray="5,2.5" />
+              <ellipse cx="250" cy="140" rx="36" ry="19" fill="none" stroke="#6366f1" strokeWidth="1" strokeOpacity="0.5" />
+              
+              {/* Bold letter "H" perfectly slanted along the isometric left-diagonal axis */}
+              <path d="M 238,135 L 244,145 M 256,135 L 262,145 M 241,140 L 259,140" stroke="#10b587" strokeWidth="3.5" strokeLinecap="round" />
+            </g>
+            
+            {/* Beacon flashes on elevator penthouse ceiling */}
+            <circle cx="250" cy="50" r="4.5" fill="#f43f5e" className="animate-ping" />
+            <circle cx="250" cy="50" r="2.5" fill="#f43f5e" />
           </g>
         )}
 
