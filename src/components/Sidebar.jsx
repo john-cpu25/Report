@@ -19,7 +19,8 @@ import {
   Battery,
   Network,
   User as UserIcon,
-  Workflow as WorkflowIcon
+  Workflow as WorkflowIcon,
+  Brain
 } from 'lucide-react'
 import NavItem from './NavItem'
 import { useApp } from '../context/AppContext'
@@ -43,6 +44,7 @@ const Sidebar = () => {
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'personal', label: 'Personal', icon: UserIcon }, // Changed from My Space
+        { id: 'neural-brain', label: 'Neural Brain', icon: Brain },
         { id: 'projects', label: 'Projects', icon: FolderKanban },
         { id: 'organization', label: 'Organization', icon: Network },
         { id: 'report', label: 'Weekly Planner', icon: CalendarClock },

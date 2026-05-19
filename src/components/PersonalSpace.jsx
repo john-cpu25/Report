@@ -104,7 +104,14 @@ const PersonalSpace = () => {
   const [expandedProjects, setExpandedProjects] = useState([]);
   const [expandedWeeks, setExpandedWeeks] = useState({});
   const [expandedTeams, setExpandedTeams] = useState({});
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+
+  const weekOffset = useMemo(() => {
+    const currentMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const targetMonday = startOfWeek(currentDate, { weekStartsOn: 1 });
+    return Math.round((targetMonday - currentMonday) / (7 * 24 * 60 * 60 * 1000));
+  }, [currentDate]);
+
   const [localMaps, setLocalMaps] = useState({ userMap: {}, teamMap: {} });
   const [selectedTimeMetric, setSelectedTimeMetric] = useState('t4'); // Default to T4 (Processing Time)
   
@@ -180,25 +187,23 @@ const PersonalSpace = () => {
     const tasks = analystTasks || [];
     if (tasks.length === 0) return [];
     
-    const now = new Date();
-    const targetDate = addDays(now, weekOffset * 7);
-    const startOfCurrentWeek = startOfWeek(targetDate, { weekStartsOn: 1 });
-    const endOfCurrentWeek = endOfWeek(targetDate, { weekStartsOn: 1 });
-    const startOfCurrentMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-    const endOfCurrentMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
+    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const startOfCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const endOfCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
     const filtered = tasks.filter(t => {
       // 1. Date Range Filter
       let dateMatch = true;
       if (t.dateObj && viewMode !== 'project' && viewMode !== 'daily' && viewMode !== 'gantt') {
         if (timeRange === 'day') {
-          dateMatch = isSameDay(t.dateObj, targetDate);
+          dateMatch = isSameDay(t.dateObj, currentDate);
         } else if (timeRange === 'week') {
           dateMatch = isWithinInterval(t.dateObj, { start: startOfCurrentWeek, end: endOfCurrentWeek });
         } else if (timeRange === 'month') {
           dateMatch = isWithinInterval(t.dateObj, { start: startOfCurrentMonth, end: endOfCurrentMonth });
         } else if (timeRange === 'year') {
-          dateMatch = t.dateObj.getFullYear() === targetDate.getFullYear();
+          dateMatch = t.dateObj.getFullYear() === currentDate.getFullYear();
         }
       }
 
@@ -246,7 +251,7 @@ const PersonalSpace = () => {
       default: break;
     }
     return sorted;
-  }, [analystTasks, localFilters, timeRange, localSort, user]);
+  }, [analystTasks, localFilters, timeRange, localSort, user, currentDate, viewMode]);
 
   const { projectGroups, teamGroups, ganttTimeline, workloadData, weeklyData, timesheetData, projectTimesheetData, deepAnalysisData, efficiencyData } = usePersonalSpaceEngine({ filteredData, analystTasks, filterOptions, weekOffset, timeRange, selectedTimeMetric, manualData });
 
@@ -564,53 +569,98 @@ const PersonalSpace = () => {
             )}
           </div>
 
-          {/* Enhanced Year/Week Picker + Navigation */}
+          {/* Enhanced Year/Week/Month Picker + Navigation */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 bg-indigo-500/10 p-1.5 rounded-xl border border-indigo-500/30 shadow-sm">
               <select 
                 className="bg-[var(--bg-surface)] border border-indigo-500/20 rounded-lg h-[32px] px-2 text-[12px] font-black text-indigo-400 outline-none cursor-pointer hover:border-indigo-500 transition-all"
-                value={format(addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset * 7), 'yyyy')}
+                value={currentDate.getFullYear()}
                 onChange={(e) => {
                   const targetYear = parseInt(e.target.value);
-                  const targetMonday = new Date(targetYear, 0, 4);
-                  const currentMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
-                  const diffWeeks = Math.round((targetMonday - currentMonday) / (7 * 24 * 60 * 60 * 1000));
-                  setWeekOffset(diffWeeks);
-                  if (timeRange === 'custom') setTimeRange('week');
+                  const newDate = new Date(currentDate);
+                  newDate.setFullYear(targetYear);
+                  setCurrentDate(newDate);
                 }}
               >
                 {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
               
-              <div className="w-[1px] h-4 bg-indigo-500/20" />
-              
-              <div className="flex items-center gap-1.5 px-1">
-                <span className="text-[10px] font-black text-indigo-500/60">W</span>
-                <select 
-                  className="bg-[var(--bg-surface)] border border-emerald-500/20 rounded-lg h-[32px] px-2 text-[12px] font-black text-emerald-500 outline-none cursor-pointer hover:border-emerald-500 transition-all"
-                  value={format(addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset * 7), 'I')}
-                  onChange={(e) => {
-                    const targetWeek = parseInt(e.target.value);
-                    const date = addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset * 7);
-                    const currentWeek = parseInt(format(date, 'I'));
-                    setWeekOffset(prev => prev + (targetWeek - currentWeek));
-                    if (timeRange === 'custom') setTimeRange('week');
-                  }}
-                >
-                  {[...Array(53)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
-                </select>
-              </div>
+              {timeRange !== 'year' && (
+                <>
+                  <div className="w-[1px] h-4 bg-indigo-500/20" />
+                  
+                  <div className="flex items-center gap-1.5 px-1">
+                    <span className="text-[10px] font-black text-indigo-500/60">
+                      {timeRange === 'week' ? 'W' : 'M'}
+                    </span>
+                    {timeRange === 'week' ? (
+                      <select 
+                        className="bg-[var(--bg-surface)] border border-emerald-500/20 rounded-lg h-[32px] px-2 text-[12px] font-black text-emerald-500 outline-none cursor-pointer hover:border-emerald-500 transition-all"
+                        value={getISOWeek(currentDate)}
+                        onChange={(e) => {
+                          const targetWeek = parseInt(e.target.value);
+                          const currentWeek = getISOWeek(currentDate);
+                          setCurrentDate(addDays(currentDate, (targetWeek - currentWeek) * 7));
+                        }}
+                      >
+                        {[...Array(53)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
+                      </select>
+                    ) : (
+                      <select 
+                        className="bg-[var(--bg-surface)] border border-emerald-500/20 rounded-lg h-[32px] px-2 text-[12px] font-black text-emerald-500 outline-none cursor-pointer hover:border-emerald-500 transition-all"
+                        value={currentDate.getMonth() + 1}
+                        onChange={(e) => {
+                          const targetMonth = parseInt(e.target.value) - 1;
+                          const newDate = new Date(currentDate);
+                          newDate.setMonth(targetMonth);
+                          setCurrentDate(newDate);
+                        }}
+                      >
+                        {[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
+                      </select>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setWeekOffset(o => o - 1)}
+                onClick={() => {
+                  if (timeRange === 'week') {
+                    setCurrentDate(addDays(currentDate, -7));
+                  } else if (timeRange === 'month') {
+                    const newDate = new Date(currentDate);
+                    newDate.setMonth(currentDate.getMonth() - 1);
+                    setCurrentDate(newDate);
+                  } else if (timeRange === 'year') {
+                    const newDate = new Date(currentDate);
+                    newDate.setFullYear(currentDate.getFullYear() - 1);
+                    setCurrentDate(newDate);
+                  } else {
+                    setCurrentDate(addDays(currentDate, -1));
+                  }
+                }}
                 className="w-[32px] h-[32px] rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all text-[var(--text-muted)] hover:text-[var(--text-main)]"
               >
                 <ChevronLeft size={16} />
               </button>
               <button
-                onClick={() => setWeekOffset(o => o + 1)}
+                onClick={() => {
+                  if (timeRange === 'week') {
+                    setCurrentDate(addDays(currentDate, 7));
+                  } else if (timeRange === 'month') {
+                    const newDate = new Date(currentDate);
+                    newDate.setMonth(currentDate.getMonth() + 1);
+                    setCurrentDate(newDate);
+                  } else if (timeRange === 'year') {
+                    const newDate = new Date(currentDate);
+                    newDate.setFullYear(currentDate.getFullYear() + 1);
+                    setCurrentDate(newDate);
+                  } else {
+                    setCurrentDate(addDays(currentDate, 1));
+                  }
+                }}
                 className="w-[32px] h-[32px] rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all text-[var(--text-muted)] hover:text-[var(--text-main)]"
               >
                 <ChevronRight size={16} />
@@ -619,10 +669,10 @@ const PersonalSpace = () => {
 
             {weekOffset !== 0 && (
               <button
-                onClick={() => setWeekOffset(0)}
+                onClick={() => setCurrentDate(new Date())}
                 className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider px-3 py-1.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 transition-all border border-indigo-500/20"
               >
-                Current Week
+                {timeRange === 'week' ? 'Current Week' : timeRange === 'month' ? 'Current Month' : timeRange === 'year' ? 'Current Year' : 'Today'}
               </button>
             )}
           </div>

@@ -27,6 +27,7 @@ import AdminPanel from './components/AdminPanel'
 import PersonalSpace from './components/PersonalSpace'
 import DrawingsManager from './components/DrawingsManager'
 import ProfileModal from './components/ProfileModal'
+import NeuralBrain from './components/NeuralBrain'
 
 function App() {
   const {
@@ -84,6 +85,7 @@ function App() {
     switch (activeTab) {
       case 'report': return <WeeklyReport exportExcel={exportExcel} />;
       case 'personal': return <PersonalSpace />;
+      case 'neural-brain': return <NeuralBrain />;
       case 'leave': return <AnnualLeave />;
       case 'projects': return <Projects />;
       case 'dashboard': return <Dashboard />;

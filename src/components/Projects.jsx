@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useApp } from '../context/AppContext';
-import userCat from '../assets/user_cat.png';
 
 const Projects = () => {
   const { projectsCache, setProjectsCache } = useApp();
@@ -25,9 +24,6 @@ const Projects = () => {
   const [loading, setLoading] = useState(!projectsCache);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
-  const [activeCatIdx, setActiveCatIdx] = useState(0); // Start cat at index 0
-  const [mouseX, setMouseX] = useState(100);
-  const [isHoveringShelf, setIsHoveringShelf] = useState(false);
   const [timeFilter, setTimeFilter] = useState('MONTH');
   const [taskCounts, setTaskCounts] = useState(projectsCache?.taskCounts || {});
   const [viewMode, setViewMode] = useState('bookshelf'); // Default to bookshelf
@@ -277,54 +273,12 @@ const Projects = () => {
                   </>
                 )}
 
-                {/* Persistent Interactive Large Orange Tabby Jumping Cat (Outside scroll container so it never gets cropped!) */}
-                <motion.div
-                  className="absolute z-[100] pointer-events-none"
-                  initial={{ x: 100, y: -(280 + (Math.abs(0 % 8 - 4) * 18) - 10) }}
-                  animate={{ 
-                    x: isHoveringShelf ? (mouseX - 70) : (() => {
-                      const widths = [42, 50, 58, 46, 54, 62, 38];
-                      let offset = 40; // matches px-10 (40px)
-                      for (let i = 0; i < activeCatIdx; i++) {
-                        offset += widths[i % widths.length] + 2;
-                      }
-                      return offset + (widths[activeCatIdx % widths.length] / 2) + 35 - shelfScrollLeft;
-                    })(),
-                    y: -((280 + (Math.abs(activeCatIdx % 8 - 4) * 18)) - 10),
-                    rotate: isHoveringShelf ? 0 : [-15, 5, 0],
-                    rotateY: 0
-                  }}
-                  transition={{
-                    x: { type: "spring", stiffness: 250, damping: 30 },
-                    y: { type: "spring", stiffness: 200, damping: 25 },
-                    rotate: { duration: 0.6 }
-                  }}
-                  style={{ bottom: '40px' }}
-                >
-                    <img 
-                      src={userCat} 
-                      alt="User 3D Cat"
-                      style={{ 
-                        width: '140px', 
-                        height: 'auto',
-                        filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.3))'
-                      }}
-                    />
-                </motion.div>
-
                 {/* Scrollable Books Container */}
                 <div 
                   ref={shelfRef}
                   className="w-full overflow-x-auto flex items-end justify-start gap-0.5 relative z-10 px-10 py-6 min-h-[450px] scroll-smooth rounded-2xl"
                   style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                   onScroll={(e) => setShelfScrollLeft(e.currentTarget.scrollLeft)}
-                  onMouseMove={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setMouseX(e.clientX - rect.left);
-                    setIsHoveringShelf(true);
-                  }}
-                  onMouseEnter={() => setIsHoveringShelf(true)}
-                  onMouseLeave={() => setIsHoveringShelf(false)}
                 >
 
                   {filteredProjects.length > 0 ? (
@@ -342,7 +296,6 @@ const Projects = () => {
                           rotateZ: { duration: 4 + (idx % 3), repeat: Infinity, ease: "easeInOut" },
                           opacity: { duration: 0.5 }
                         }}
-                        onMouseEnter={() => setActiveCatIdx(idx)}
                         whileHover={{ 
                           y: -40, 
                           rotateZ: 0, 

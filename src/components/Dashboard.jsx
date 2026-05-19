@@ -558,11 +558,11 @@ const Dashboard = () => {
 
                 {/* Time Range Selector (Neumorphic) */}
                 <div className="h-full flex bg-[var(--bg-surface)] rounded-2xl p-1.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2),inset_-1px_-1px_5px_rgba(255,255,255,0.02)] gap-2">
-                  {['DAY', 'WEEK', 'MONTH', 'YEAR'].map((r) => (
+                  {['WEEK', 'MONTH', 'YEAR'].map((r) => (
                     <button
                       key={r}
                       onClick={() => setTimeRange(r)}
-                      className={`h-full px-6 text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-300 ${
+                      className={`h-full w-[80px] flex items-center justify-center text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-300 ${
                         timeRange === r 
                         ? 'bg-[var(--bg-surface)] text-indigo-600 shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,1)] dark:shadow-[2px_2px_5px_rgba(0,0,0,0.3),-1px_-1px_5px_rgba(255,255,255,0.05)] scale-[0.98]' 
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'

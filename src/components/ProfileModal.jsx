@@ -10,7 +10,6 @@ export default function ProfileModal({ isOpen, onClose }) {
   const { theme } = useApp();
   
   const [selectedAvatar, setSelectedAvatar] = useState(0);
-  const [selectedFrame, setSelectedFrame] = useState('none');
   const [formData, setFormData] = useState({
     shortName: '',
     fullName: '',
@@ -47,7 +46,6 @@ export default function ProfileModal({ isOpen, onClose }) {
         email: user.email || ''
       });
       setProfileImage(user.image || null);
-      setSelectedFrame(user.avatarFrame || 'none');
       
       // Try to find if user's current image matches a gradient preset
       if (user.image && !user.image.startsWith('data:image')) {
@@ -120,7 +118,7 @@ export default function ProfileModal({ isOpen, onClose }) {
         location: formData.location,
         position: formData.position,
         image: profileImage || presetAvatars[selectedAvatar],
-        avatarFrame: selectedFrame // Stage and save selected frame!
+        avatarFrame: 'none'
       });
       
       setSaveSuccess(true);
@@ -189,7 +187,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                   user={{ 
                     ...user, 
                     image: profileImage || presetAvatars[selectedAvatar], 
-                    avatarFrame: selectedFrame 
+                    avatarFrame: 'none' 
                   }} 
                   sizeClass="w-32 h-32" 
                   borderClass="border-2 border-white shadow-lg"
@@ -228,8 +226,8 @@ export default function ProfileModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            {/* Avatar customization panels side-by-side */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ marginTop: '24px' }}>
+            {/* Avatar customization panels */}
+            <div style={{ marginTop: '24px' }}>
               {/* Preset Avatars */}
               <div>
                 <p className={isDark ? "text-xs font-black uppercase tracking-widest text-indigo-400" : "text-xs font-black uppercase tracking-widest text-emerald-600"} style={{ marginBottom: '12px' }}>Preset Avatars</p>
@@ -252,42 +250,9 @@ export default function ProfileModal({ isOpen, onClose }) {
                   ))}
                 </div>
               </div>
-
-              {/* PREMIUM AVATAR FRAMES */}
-              <div>
-                <p className={isDark ? "text-xs font-black uppercase tracking-widest text-indigo-400" : "text-xs font-black uppercase tracking-widest text-emerald-600"} style={{ marginBottom: '12px' }}>
-                  <Sparkles size={12} className="inline mr-1 mb-0.5 animate-pulse" />
-                  Avatar Frames
-                </p>
-                <div className="flex flex-wrap gap-2.5">
-                  {[
-                    { id: 'none', label: 'None', style: 'bg-slate-800' },
-                    { id: 'crystal', label: 'Glacier', style: 'bg-gradient-to-br from-cyan-400 to-indigo-500 border-cyan-300' },
-                    { id: 'gold', label: 'Royal', style: 'bg-gradient-to-br from-yellow-400 to-amber-600 border-amber-300' },
-                    { id: 'cyber', label: 'Cyber', style: 'bg-gradient-to-br from-pink-500 to-purple-600 border-pink-400' }
-                  ].map((frm) => (
-                    <button
-                      key={frm.id}
-                      type="button"
-                      onClick={() => setSelectedFrame(frm.id)}
-                      className={`w-12 h-12 rounded-[8px] border active:scale-95 transition-all flex flex-col items-center justify-center relative ${
-                        selectedFrame === frm.id
-                          ? 'ring-4 ring-indigo-500 ring-offset-2 scale-105 border-white'
-                          : 'border-white/5 opacity-70 hover:opacity-100 hover:scale-105'
-                      } ${isDark ? 'bg-slate-950/60' : 'bg-stone-50'}`}
-                      aria-label={`Select frame ${frm.label}`}
-                    >
-                      <div className={`w-5 h-5 rounded ${frm.style} flex items-center justify-center text-[7px] font-black text-white`}>
-                        {frm.label.substring(0, 2).toUpperCase()}
-                      </div>
-                      <span className="text-[8px] font-black uppercase mt-1 text-slate-400 leading-none">{frm.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
             <p className={`text-[10px] font-bold mt-3 ${isDark ? 'text-slate-500' : 'text-stone-400'}`}>
-              Select a gradient background, choose a premium avatar frame, or upload your own custom picture!
+              Select a gradient background or upload your own custom picture!
             </p>
           </div>
 
