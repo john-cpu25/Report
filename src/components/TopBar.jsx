@@ -9,14 +9,16 @@ import { useNotifications } from '../context/NotificationContext'
 import AvatarWithFrame from './AvatarWithFrame'
 
 const TopBar = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const {
     sidebarCollapsed, setSidebarCollapsed,
     mobileSidebarOpen, setMobileSidebarOpen,
     isSidebarOpen, setIsSidebarOpen,
     showProjectGroups, setShowProjectGroups,
     activeTab, setActiveTab, dashboardStats, dashboardProjects, dashboardTasks, dashboardUsers,
-    setShowProfileModal
+    setShowProfileModal,
+    adminViewMode, setAdminViewMode,
+    adminActiveTeam, setAdminActiveTeam
   } = useApp();
 
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
@@ -206,6 +208,60 @@ const TopBar = () => {
           )}
 
           <div className="flex items-center gap-[10px]">
+
+            {activeTab === 'dashboard' && isAdmin && (
+              <div className="flex items-center gap-2 mr-2 shrink-0">
+                {/* ADMIN / TEAM SWITCHER */}
+                <div className="flex items-center bg-[var(--bg-surface)]/60 p-0.5 rounded-xl border border-[var(--border)] shadow-[inset_1px_1px_4px_rgba(0,0,0,0.05)]">
+                  <button
+                    onClick={() => setAdminViewMode('GLOBAL')}
+                    className={`w-14 h-6 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center ${
+                      adminViewMode === 'GLOBAL'
+                        ? 'bg-[var(--bg-surface)] text-indigo-500 shadow-[1px_1px_3px_rgba(0,0,0,0.1)] dark:shadow-[1px_1px_3px_rgba(255,255,255,0.05)] scale-[0.98]'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                    }`}
+                  >
+                    ADMIN
+                  </button>
+                  <button
+                    onClick={() => setAdminViewMode('TEAM')}
+                    className={`w-14 h-6 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center ${
+                      adminViewMode === 'TEAM'
+                        ? 'bg-[var(--bg-surface)] text-indigo-500 shadow-[1px_1px_3px_rgba(0,0,0,0.1)] dark:shadow-[1px_1px_3px_rgba(255,255,255,0.05)] scale-[0.98]'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                    }`}
+                  >
+                    TEAM
+                  </button>
+                </div>
+
+                {/* SM / PR / SE / LE SWITCHER (Shown when TEAM mode is active) */}
+                {adminViewMode === 'TEAM' && (
+                  <div className="flex items-center bg-[var(--bg-surface)]/30 p-0.5 rounded-xl border border-[var(--border)]">
+                    <div className="flex gap-1 p-0.5">
+                      {[
+                        { id: 'MODELLING', display: 'SM' },
+                        { id: 'PT&REO', display: 'PR' },
+                        { id: 'ENGINEER', display: 'SE' },
+                        { id: 'ETABS', display: 'LE' }
+                      ].map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => setAdminActiveTeam(t.id)}
+                          className={`w-8 h-6 text-[9px] font-black uppercase rounded-lg transition-all duration-200 flex items-center justify-center ${
+                            adminActiveTeam === t.id
+                              ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                          }`}
+                        >
+                          {t.display}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Real-time Interactive Bell Dropdown Popover */}
             <div className="relative" ref={bellRef}>

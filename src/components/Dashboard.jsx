@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Zap, Target, Users, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight,
@@ -114,8 +114,8 @@ const polar3DPlugin = {
 const TEAMS = [
   { id: 'MODELLING', display: 'STR MODELING' },
   { id: 'PT&REO', display: 'PT & REO' },
-  { id: 'ENGINEER', display: 'ENGINEER' },
-  { id: 'ETABS', display: 'ETABS' }
+  { id: 'ENGINEER', display: 'SLAB ENGINEER' },
+  { id: 'ETABS', display: 'LATERAL ENGINEER' }
 ];
 
 const TEAM_COLORS = {
@@ -139,6 +139,520 @@ const PALETTE = [
   'rgba(249, 115, 22, 0.8)'    // Orange
 ];
 
+
+// Compact 3D Mini Brain Map Component for Dashboard Integration
+const MiniBrainMap = ({ teamId }) => {
+  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const { dashboardUsers: users, dashboardTasks: tasks, isDashboardLoading: loading } = useApp();
+
+  const angleX = useRef(-0.3);
+  const angleY = useRef(0.5);
+  const [zoom, setZoom] = useState(1.4);
+  const [hoveredNode, setHoveredNode] = useState(null);
+
+  const isDragging = useRef(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const previousMousePosition = useRef({ x: 0, y: 0 });
+  const spinVelocity = useRef({ x: 0.002, y: 0.003 });
+  const animationFrameId = useRef(null);
+
+  const brainData = useMemo(() => {
+    if (!users || users.length === 0) return { nodes: [], synapses: [] };
+
+    // 1. Filter tasks for current week
+    const now = new Date();
+    const limit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const filteredTasks = (tasks || []).filter(t => t && new Date(t.created_at || t.date) >= limit);
+
+    // 2. Filter users by teamId
+    const teamMembers = users.filter(u => u && (u.team || '').toString().toUpperCase().includes((teamId || '').toString().toUpperCase()));
+    const teamMemberIds = new Set(teamMembers.map(u => u.id));
+
+    // Find managers/creators connected to team members
+    const managerIds = new Set();
+    filteredTasks.forEach(t => {
+      const creatorName = (t.create_by || 'Unknown').toString();
+      const assigneeName = (t.user_id || 'Unknown').toString();
+
+      const assigneeStr = assigneeName.toLowerCase();
+      const matchedAssignee = users.find(u => u && (
+        (u.id && u.id.toString().toLowerCase() === assigneeStr) ||
+        (u.name && u.name.toString().toLowerCase() === assigneeStr) ||
+        (u.email && u.email.toString().toLowerCase() === assigneeStr)
+      ));
+
+      if (matchedAssignee && teamMemberIds.has(matchedAssignee.id)) {
+        const creatorStr = creatorName.toLowerCase();
+        const matchedCreator = users.find(u => u && (
+          (u.id && u.id.toString().toLowerCase() === creatorStr) ||
+          (u.name && u.name.toString().toLowerCase() === creatorStr) ||
+          (u.email && u.email.toString().toLowerCase() === creatorStr)
+        ));
+        if (matchedCreator) {
+          managerIds.add(matchedCreator.id);
+        }
+      }
+    });
+
+    const filteredUsers = users.filter(u => u && (teamMemberIds.has(u.id) || managerIds.has(u.id)));
+
+    const userMap = new Map();
+    filteredUsers.forEach(u => {
+      if (u.id) {
+        userMap.set(u.id.toString().toLowerCase(), u);
+      }
+      if (u.name) {
+        userMap.set(u.name.toString().toLowerCase(), u);
+      }
+      if (u.email) {
+        userMap.set(u.email.toString().toLowerCase(), u);
+      }
+    });
+
+    const assignCounts = new Map();
+    const receiveCounts = new Map();
+    const taskRelations = [];
+
+    filteredTasks.forEach(t => {
+      const creatorStr = (t.create_by || 'Unknown').toString().toLowerCase();
+      const assigneeStr = (t.user_id || 'Unknown').toString().toLowerCase();
+
+      let creatorUser = userMap.get(creatorStr);
+      let assigneeUser = userMap.get(assigneeStr);
+
+      if (!creatorUser || !assigneeUser) return;
+
+      const creatorId = creatorUser.id;
+      const assigneeId = assigneeUser.id;
+
+      assignCounts.set(creatorId, (assignCounts.get(creatorId) || 0) + 1);
+      receiveCounts.set(assigneeId, (receiveCounts.get(assigneeId) || 0) + 1);
+
+      taskRelations.push({
+        creatorId,
+        creatorName: creatorUser.name || 'Unknown',
+        assigneeId,
+        assigneeName: assigneeUser.name || 'Unknown',
+        priority: t.priority_level || t.priority || 'T3',
+        status: t.status,
+        taskName: t.name || t.task_name || t.task || 'Task Log'
+      });
+    });
+
+    const activeIds = new Set([
+      ...Array.from(assignCounts.keys()),
+      ...Array.from(receiveCounts.keys())
+    ]);
+
+    const nodes = [];
+    const idToNodeIndex = new Map();
+
+    Array.from(activeIds).forEach((id) => {
+      const idStr = id.toString().toLowerCase();
+      const matchedUser = filteredUsers.find(u => u && (
+        (u.id && u.id.toString().toLowerCase() === idStr) ||
+        (u.name && u.name.toString().toLowerCase() === idStr) ||
+        (u.email && u.email.toString().toLowerCase() === idStr)
+      ));
+      if (!matchedUser) return;
+
+      const name = matchedUser.name || 'Unknown';
+      const team = matchedUser.team || 'MODELLING';
+      const isLeader = (assignCounts.get(id) || 0) > 0;
+
+      // Coordinate mapping within compact space
+      let x3d = 0, y3d = 0, z3d = 0;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(Math.random() * 2 - 1);
+
+      if (isLeader) {
+        const r = 15 + Math.random() * 15;
+        x3d = r * Math.sin(phi) * Math.cos(theta);
+        y3d = r * Math.sin(phi) * Math.sin(theta) - 5;
+        z3d = r * Math.cos(phi) * 0.8;
+      } else {
+        const rx = 55 + Math.random() * 25;
+        const ry = 45 + Math.random() * 20;
+        const rz = 50 + Math.random() * 20;
+        const isLeft = (team.toString().toUpperCase().includes('MODEL') || team.toString().toUpperCase().includes('PT'));
+        x3d = (isLeft ? -1 : 1) * Math.abs(rx * Math.sin(phi) * Math.cos(theta));
+        y3d = ry * Math.sin(phi) * Math.sin(theta);
+        z3d = rz * Math.cos(phi);
+      }
+
+      const node = {
+        id,
+        name,
+        team,
+        isLeader,
+        assignedCount: assignCounts.get(id) || 0,
+        receivedCount: receiveCounts.get(id) || 0,
+        x: x3d,
+        y: y3d,
+        z: z3d,
+        px: 0,
+        py: 0,
+        pz: 0,
+        radius: isLeader ? 7 + Math.min(assignCounts.get(id) * 0.1, 5) : 4 + Math.min(receiveCounts.get(id) * 0.1, 4)
+      };
+
+      nodes.push(node);
+      idToNodeIndex.set(id, nodes.length - 1);
+    });
+
+    const synapseMap = new Map();
+    taskRelations.forEach(rel => {
+      const sourceIdx = idToNodeIndex.get(rel.creatorId);
+      const targetIdx = idToNodeIndex.get(rel.assigneeId);
+
+      if (sourceIdx !== undefined && targetIdx !== undefined && sourceIdx !== targetIdx) {
+        const key = `${rel.creatorId}-${rel.assigneeId}`;
+        if (!synapseMap.has(key)) {
+          synapseMap.set(key, {
+            source: sourceIdx,
+            target: targetIdx,
+            tasks: [],
+            weight: 0
+          });
+        }
+        const syn = synapseMap.get(key);
+        syn.tasks.push(rel);
+        syn.weight += 1;
+      }
+    });
+
+    return {
+      nodes,
+      synapses: Array.from(synapseMap.values())
+    };
+  }, [users, tasks, teamId]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resizeCanvas = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const activeImpulses = [];
+    brainData.synapses.forEach((syn, synIdx) => {
+      const impulseCount = Math.min(Math.ceil(syn.weight * 0.3), 1);
+      for (let i = 0; i < impulseCount; i++) {
+        const hasTasks = syn.tasks && syn.tasks.length > 0;
+        activeImpulses.push({
+          synapseIndex: synIdx,
+          progress: Math.random(),
+          speed: 0.004 + Math.random() * 0.006,
+          priority: hasTasks ? (syn.tasks[i % syn.tasks.length]?.priority || 'T3') : 'T3'
+        });
+      }
+    });
+
+    let currentAngleX = angleX.current;
+    let currentAngleY = angleY.current;
+
+    const tick = () => {
+      if (!isDragging.current) {
+        currentAngleY += spinVelocity.current.y;
+        currentAngleX += spinVelocity.current.x;
+        if (currentAngleX > 1.2) currentAngleX = 1.2;
+        if (currentAngleX < -1.2) currentAngleX = -1.2;
+        
+        angleX.current = currentAngleX;
+        angleY.current = currentAngleY;
+      } else {
+        currentAngleX = angleX.current;
+        currentAngleY = angleY.current;
+      }
+
+      const width = canvas.width / window.devicePixelRatio;
+      const height = canvas.height / window.devicePixelRatio;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const focalLength = 180 * zoom;
+
+      // Dark futuristic bg
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw faint space grid
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.015)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < width; i += 40) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
+      }
+      for (let i = 0; i < height; i += 40) {
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
+      }
+
+      if (brainData.nodes.length === 0) {
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('NO TASK RELATIONSHIPS YET', centerX, centerY);
+        return;
+      }
+
+      const cosX = Math.cos(currentAngleX);
+      const sinX = Math.sin(currentAngleX);
+      const cosY = Math.cos(currentAngleY);
+      const sinY = Math.sin(currentAngleY);
+
+      brainData.nodes.forEach(node => {
+        const x1 = node.x * cosY - node.z * sinY;
+        const z1 = node.x * sinY + node.z * cosY;
+        const y2 = node.y * cosX - z1 * sinX;
+        const z2 = node.y * sinX + z1 * cosX;
+
+        const distance = 250;
+        const scale = focalLength / (z2 + distance);
+        node.px = centerX + x1 * scale;
+        node.py = centerY + y2 * scale;
+        node.pz = z2;
+        node.scale = scale;
+      });
+
+      activeImpulses.forEach(imp => {
+        imp.progress += imp.speed;
+        if (imp.progress >= 1) {
+          imp.progress = 0;
+          const syn = brainData.synapses[imp.synapseIndex];
+          if (syn && syn.tasks && syn.tasks.length > 0) {
+            const randTask = syn.tasks[Math.floor(Math.random() * syn.tasks.length)];
+            imp.priority = randTask ? (randTask.priority || 'T3') : 'T3';
+          }
+        }
+      });
+
+      const drawList = [];
+
+      brainData.synapses.forEach((syn, idx) => {
+        const sNode = brainData.nodes[syn.source];
+        const tNode = brainData.nodes[syn.target];
+        if (!sNode || !tNode) return;
+        drawList.push({
+          type: 'synapse',
+          z: (sNode.pz + tNode.pz) / 2,
+          source: sNode,
+          target: tNode,
+          synapse: syn
+        });
+      });
+
+      activeImpulses.forEach(imp => {
+        const syn = brainData.synapses[imp.synapseIndex];
+        if (!syn) return;
+        const sNode = brainData.nodes[syn.source];
+        const tNode = brainData.nodes[syn.target];
+        if (!sNode || !tNode) return;
+        drawList.push({
+          type: 'impulse',
+          z: sNode.pz + (tNode.pz - sNode.pz) * imp.progress,
+          source: sNode,
+          target: tNode,
+          progress: imp.progress,
+          priority: imp.priority
+        });
+      });
+
+      brainData.nodes.forEach(node => {
+        drawList.push({
+          type: 'node',
+          z: node.pz,
+          node
+        });
+      });
+
+      drawList.sort((a, b) => b.z - a.z);
+
+      drawList.forEach(item => {
+        if (item.type === 'synapse') {
+          const { source, target } = item;
+          const isSourceHovered = hoveredNode !== null && hoveredNode.id === source.id;
+          const isTargetHovered = hoveredNode !== null && hoveredNode.id === target.id;
+          const isLit = isSourceHovered || isTargetHovered;
+
+          ctx.beginPath();
+          ctx.moveTo(source.px, source.py);
+          const midX = (source.px + target.px) / 2;
+          const midY = (source.py + target.py) / 2;
+          const curveOffset = 15 * (source.pz > target.pz ? 1 : -1) * (zoom * 0.8);
+          ctx.quadraticCurveTo(midX, midY - curveOffset, target.px, target.py);
+
+          const alphaFactor = Math.max(0.1, 1 - (source.pz + 100) / 200);
+
+          if (isLit) {
+            ctx.strokeStyle = 'rgba(99, 102, 241, 0.85)';
+            ctx.lineWidth = 1.4;
+          } else if (hoveredNode !== null) {
+            ctx.strokeStyle = `rgba(99, 102, 241, ${0.015 * alphaFactor})`;
+            ctx.lineWidth = 0.4;
+          } else {
+            ctx.strokeStyle = `rgba(99, 102, 241, ${0.1 * alphaFactor})`;
+            ctx.lineWidth = 0.8;
+          }
+          ctx.stroke();
+
+        } else if (item.type === 'impulse') {
+          const { source, target, progress, priority } = item;
+          const isPathLit = hoveredNode === null || hoveredNode.id === source.id || hoveredNode.id === target.id;
+          if (!isPathLit) return;
+
+          const midX = (source.px + target.px) / 2;
+          const midY = (source.py + target.py) / 2;
+          const curveOffset = 15 * (source.pz > target.pz ? 1 : -1) * (zoom * 0.8);
+          const cpX = midX;
+          const cpY = midY - curveOffset;
+
+          const t = progress;
+          const mt = 1 - t;
+          const px = mt * mt * source.px + 2 * mt * t * cpX + t * t * target.px;
+          const py = mt * mt * source.py + 2 * mt * t * cpY + t * t * target.py;
+
+          let color = 'rgba(6, 182, 212, 0.95)'; // Cyan medium
+          if (priority === 'T1' || priority === 'T2') color = 'rgba(244, 63, 94, 0.95)'; // Rose high
+          else if (priority === 'T5') color = 'rgba(245, 158, 11, 0.95)'; // Amber low
+
+          const size = 2.5 * ((source.scale + target.scale) / 2);
+
+          ctx.beginPath();
+          ctx.arc(px, py, Math.max(1.2, size), 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = color;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+        } else if (item.type === 'node') {
+          const { node } = item;
+          const isNodeHovered = hoveredNode !== null && hoveredNode.id === node.id;
+          const isAnyHovered = hoveredNode !== null;
+
+          const size = Math.max(3.2, node.radius * node.scale);
+          const color = node.isLeader ? 'rgba(168, 85, 247, 0.95)' : 'rgba(16, 185, 129, 0.95)';
+          const glowColor = node.isLeader ? 'rgba(168, 85, 247, 0.2)' : 'rgba(16, 185, 129, 0.2)';
+
+          let alphaFactor = Math.max(0.2, 1 - (node.pz + 100) / 200);
+          if (isAnyHovered && !isNodeHovered) alphaFactor *= 0.15;
+
+          if (isNodeHovered) {
+            ctx.beginPath();
+            ctx.arc(node.px, node.py, size * 2.0, 0, Math.PI * 2);
+            ctx.fillStyle = glowColor;
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+
+          ctx.beginPath();
+          ctx.arc(node.px, node.py, size, 0, Math.PI * 2);
+
+          const grad = ctx.createRadialGradient(
+            node.px - size*0.3, node.py - size*0.3, size*0.1,
+            node.px, node.py, size
+          );
+          if (node.isLeader) {
+            grad.addColorStop(0, '#e9d5ff'); grad.addColorStop(1, `rgba(168, 85, 247, ${alphaFactor})`);
+          } else {
+            grad.addColorStop(0, '#d1fae5'); grad.addColorStop(1, `rgba(16, 185, 129, ${alphaFactor})`);
+          }
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          ctx.strokeStyle = `rgba(255, 255, 255, ${0.4 * alphaFactor})`;
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+
+          if (node.scale > 0.65 || isNodeHovered) {
+            ctx.fillStyle = isNodeHovered ? '#fff' : (node.isLeader ? '#d8b4fe' : '#94a3b8');
+            ctx.font = 'semibold 8px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText((node.name || 'Unknown').toString().split(' ')[0], node.px, node.py + size + 4);
+          }
+        }
+      });
+
+      animationFrameId.current = requestAnimationFrame(tick);
+    };
+
+    animationFrameId.current = requestAnimationFrame(tick);
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      cancelAnimationFrame(animationFrameId.current);
+    };
+  }, [brainData, hoveredNode, zoom]);
+
+  const handleMouseDown = (e) => {
+    isDragging.current = true;
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
+    previousMousePosition.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleMouseMove = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    if (isDragging.current) {
+      const deltaX = e.clientX - previousMousePosition.current.x;
+      const deltaY = e.clientY - previousMousePosition.current.y;
+      const speedFactor = 0.006;
+      angleY.current += deltaX * speedFactor;
+      angleX.current = Math.max(-1.2, Math.min(1.2, angleX.current + deltaY * speedFactor));
+      spinVelocity.current = { x: deltaY * speedFactor * 0.2, y: deltaX * speedFactor * 0.2 };
+      previousMousePosition.current = { x: e.clientX, y: e.clientY };
+    } else {
+      let nearest = null;
+      let minDist = 14;
+      brainData.nodes.forEach(node => {
+        const dist = Math.sqrt((mouseX - node.px) ** 2 + (mouseY - node.py) ** 2);
+        if (dist < minDist) { nearest = node; minDist = dist; }
+      });
+      setHoveredNode(nearest);
+    }
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+
+  return (
+    <div ref={containerRef} className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#090d16]">
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#090d16]/80 z-10">
+          <div className="w-5 h-5 border border-t-transparent border-indigo-500 rounded-full animate-spin"></div>
+        </div>
+      )}
+      <canvas
+        ref={canvasRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        className="w-full h-full cursor-grab active:cursor-grabbing block"
+      />
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const {
     dashboardProjects: projects,
@@ -146,7 +660,9 @@ const Dashboard = () => {
     dashboardTasks: tasks,
     dashboardLeave: leaves,
     isDashboardLoading: loading,
-    dashboardStats: headerStats
+    dashboardStats: headerStats,
+    adminViewMode,
+    adminActiveTeam
   } = useApp();
 
   const { user, isAdmin, isLeader, userTeam } = useAuth();
@@ -157,6 +673,150 @@ const Dashboard = () => {
 
   const [showWorkChart, setShowWorkChart] = useState(true);
   const [audRate, setAudRate] = useState({ rate: 18488.34, change: '+0.22%', buy: 18303.45, sell: 19080.36 });
+
+  const isTeamUser = useMemo(() => {
+    if (isAdmin) return false;
+    const teamUpper = (userTeam || '').toUpperCase();
+    return ['MODELLING', 'ENGINEER', 'PT&REO', 'ETABS'].some(t => teamUpper.includes(t));
+  }, [isAdmin, userTeam]);
+
+  const activeTeamId = useMemo(() => {
+    if (isAdmin) {
+      return adminActiveTeam;
+    }
+    const teamUpper = (userTeam || 'MODELLING').toUpperCase();
+    if (teamUpper.includes('MODELLING')) return 'MODELLING';
+    if (teamUpper.includes('ENGINEER')) return 'ENGINEER';
+    if (teamUpper.includes('PT&REO') || teamUpper.includes('PT & REO')) return 'PT&REO';
+    return 'MODELLING';
+  }, [isAdmin, adminActiveTeam, userTeam]);
+
+  const memberStatusList = useMemo(() => {
+    const now = new Date();
+    const teamUsers = users.filter(u => (u.team || '').toUpperCase() === activeTeamId);
+    
+    return teamUsers.map(u => {
+      // Find today's tasks
+      const teamTasks = tasks.filter(task => task.user_id === u.id);
+      const todaysTasks = teamTasks.filter(task => {
+        const d = new Date(task.created_at || task.date_start);
+        return format(d, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
+      });
+      const activeTask = todaysTasks.find(t => t.status === 0);
+      
+      // Leave status
+      let isOnLeave = false;
+      let leaveReturnDate = null;
+      leaves.forEach(l => {
+        if (l.create_by === u.id) {
+          try {
+            const leaveList = JSON.parse(l.leave_list || '[]');
+            leaveList.forEach(range => {
+              const start = new Date(range.LeaveStart);
+              const end = new Date(range.LeaveEnd);
+              if (now >= start && now <= end) {
+                isOnLeave = true;
+                leaveReturnDate = format(end, 'dd/MM/yyyy');
+              }
+            });
+          } catch (e) {}
+        }
+      });
+      
+      let status = 'FREE'; // FREE, BUSY, LEAVE
+      if (isOnLeave) status = 'LEAVE';
+      else if (activeTask) status = 'BUSY';
+      
+      return {
+        id: u.id,
+        name: u.name || 'Unknown',
+        status,
+        projectName: activeTask ? (projects.find(p => p.id === activeTask.project_id)?.name || 'Unknown Project') : null,
+        taskName: activeTask ? (activeTask.name || activeTask.task_name || 'Active Task') : null,
+        leaveReturnDate
+      };
+    });
+  }, [users, tasks, leaves, projects, activeTeamId]);
+
+  const renderActiveMemberGrid = () => {
+    if (memberStatusList.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-35">No members found</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-wrap gap-2.5 items-center justify-start h-full overflow-y-auto custom-scrollbar pr-1">
+        {memberStatusList.map(member => {
+          const nameParts = member.name.trim().split(' ');
+          const initials = nameParts.length >= 2 
+            ? `${nameParts[0].charAt(0)}${nameParts[nameParts.length - 1].charAt(0)}` 
+            : member.name.charAt(0);
+          
+          let ringClass = 'border border-slate-700/60';
+          let badgeClass = 'bg-slate-500';
+          let shadowStyle = {};
+
+          if (member.status === 'BUSY') {
+            ringClass = 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-[#090d16]';
+            badgeClass = 'bg-emerald-500';
+            shadowStyle = { boxShadow: '0 0 10px rgba(16,185,129,0.35)' };
+          } else if (member.status === 'FREE') {
+            ringClass = 'border-2 border-dashed border-slate-500/70';
+            badgeClass = 'bg-slate-400';
+          } else if (member.status === 'LEAVE') {
+            ringClass = 'border border-slate-800 opacity-40';
+            badgeClass = 'bg-amber-500';
+          }
+
+          return (
+            <div key={member.id} className="relative group cursor-pointer shrink-0">
+              <div 
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-black uppercase text-white bg-gradient-to-br from-indigo-500/90 to-purple-600/90 transition-transform duration-300 group-hover:scale-[1.08] ${ringClass}`}
+                style={shadowStyle}
+              >
+                {initials}
+              </div>
+
+              <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-slate-900 ${badgeClass}`}></span>
+
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 hidden group-hover:block bg-slate-950/95 backdrop-blur-md border border-slate-800/90 text-white text-[10px] p-2.5 rounded-xl shadow-2xl z-40 min-w-[170px] pointer-events-none transition-all duration-300">
+                <p className="font-black text-slate-100 uppercase tracking-wide border-b border-white/10 pb-1 mb-1.5">{member.name}</p>
+                <div className="flex flex-col gap-1 text-[9px] font-semibold text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-500">Status:</span>
+                    <span className={`font-black ${
+                      member.status === 'BUSY' ? 'text-emerald-400' : member.status === 'LEAVE' ? 'text-amber-400' : 'text-indigo-400'
+                    }`}>{member.status}</span>
+                  </div>
+                  {member.status === 'BUSY' && (
+                    <>
+                      <div className="mt-1 flex flex-col gap-0.5">
+                        <span className="text-slate-500 uppercase tracking-tighter text-[8px]">Active Project:</span>
+                        <span className="text-emerald-300 font-bold truncate max-w-[150px]">{member.projectName}</span>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-slate-500 uppercase tracking-tighter text-[8px]">Task:</span>
+                        <span className="text-slate-200 truncate max-w-[150px]">{member.taskName}</span>
+                      </div>
+                    </>
+                  )}
+                  {member.status === 'LEAVE' && (
+                    <div className="mt-1 flex flex-col gap-0.5">
+                      <span className="text-amber-300/80 font-bold">ON ANNUAL LEAVE</span>
+                      <span className="text-slate-500">Back on: {member.leaveReturnDate}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   useEffect(() => {
     const fetchAudRate = async () => {
@@ -242,8 +902,8 @@ const Dashboard = () => {
     const teams = [
       { id: 'MODELLING', display: 'STR MODELING' },
       { id: 'PT&REO', display: 'PT & REO' },
-      { id: 'ENGINEER', display: 'ENGINEER' },
-      { id: 'ETABS', display: 'ETABS' }
+      { id: 'ENGINEER', display: 'SLAB ENGINEER' },
+      { id: 'ETABS', display: 'LATERAL ENGINEER' }
     ];
 
     const now = new Date();
@@ -289,6 +949,7 @@ const Dashboard = () => {
       }));
 
       return {
+        id: t.id,
         name: t.display,
         members: teamUsers.length,
         working: workingList,
@@ -317,7 +978,7 @@ const Dashboard = () => {
       intervals = eachMonthOfInterval({ start: subDays(now, 180), end: now });
       formatStr = 'MMM yyyy';
     } else if (timeRange === 'YEAR') {
-      intervals = eachMonthOfInterval({ start: startOfMonth(subDays(now, 365)), end: now });
+      intervals = eachMonthOfInterval({ start: startOfDay(subDays(now, 365)), end: now });
       formatStr = 'MMM yyyy';
     }
 
@@ -397,80 +1058,193 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           {/* LEFT: Teams Section (8/12) */}
           <div className="xl:col-span-8 flex flex-col gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
-              {teamPulse.map((team, i) => (
-                <div key={i} className="flex flex-col h-full">
-                  <div className="flex justify-start mb-1">
-                    <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">{team.name}</h2>
-                  </div>
-
-                  <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex flex-col md:flex-row gap-3 h-full flex-1" style={{ padding: '12px' }}>
-                    {(!team.hasData && loading) ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] animate-pulse">Syncing Data...</p>
-                        </div>
-                      </div>
-                    ) : !team.isVisible ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-main)]/80 backdrop-blur-[4px] z-20 rounded-2xl border border-dashed border-[var(--border)]">
-                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">NO TASKS TODAY</p>
-                      </div>
-                    ) : !team.hasData ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/5 z-20 rounded-2xl">
-                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">No Active Logs</p>
-                      </div>
-                    ) : null}
-
-                    {/* Left Column - Team Info (Compact) */}
-                    <div className="w-[120px] shrink-0 flex flex-col justify-between">
-                      <p className="text-[10px] text-[var(--text-muted)] font-bold">{team.members} MEMBERS</p>
-                      <div className="flex flex-col gap-1.5 text-[10px] font-bold text-[var(--text-main)] my-1">
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
-                          <span className="text-[var(--text-muted)] w-[45px] inline-block">BUSY:</span>
-                          <span className="tabular-nums">{team.working.length.toString().padStart(2, '0')}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                          <span className="text-[var(--text-muted)] w-[45px] inline-block">FREE:</span>
-                          <span className="tabular-nums">{team.available.length.toString().padStart(2, '0')}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
-                          <span className="text-[var(--text-muted)] w-[45px] inline-block">LEAVE:</span>
-                          <span className="tabular-nums">{team.leave.length.toString().padStart(2, '0')}</span>
-                        </div>
-                      </div>
+            
+            {(isTeamUser || (isAdmin && adminViewMode === 'TEAM')) ? (
+              // FIG 1: TEAM VIEW (Side by side structure, max height 258px)
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Left Side: Xanh Dương (Card Nhóm) + Khung Cam (Mở Rộng) */}
+                <div className="flex flex-col gap-4">
+                  
+                  {/* Blue Box (Card Nhóm) */}
+                  <div className="flex flex-col">
+                    <div className="flex justify-start mb-1 shrink-0">
+                      <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">
+                        {teamPulse.find(t => t.id === activeTeamId)?.name || activeTeamId}
+                      </h2>
                     </div>
 
-                    {/* Right Column - Tasks (Closer and Wider) */}
-                    <div className="flex-1 bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden h-[75px]">
-                      <div className="flex flex-col justify-start gap-2 h-full p-2.5 overflow-y-auto custom-scrollbar">
-                        {team.dailyTasks ? team.dailyTasks.map((t, j) => (
-                          <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
-                            <span className={`w-1 h-1 rounded-full shrink-0 ${t.isWorking ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]' : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'}`}></span>
-                            <div className="text-[10px] font-bold truncate">
-                              <span className={`${t.isWorking ? 'text-rose-400' : 'text-[var(--text-muted)]'} uppercase tracking-wide`}>{t.project}</span>
+                    {(() => {
+                      const team = teamPulse.find(t => t.id === activeTeamId) || {
+                        name: activeTeamId, members: 0, working: [], available: [], leave: [], dailyTasks: null, hasData: false, isVisible: true
+                      };
+                      return (
+                        <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex flex-col md:flex-row gap-3 h-[101px]" style={{ padding: '12px' }}>
+                          {(!team.hasData && loading) ? (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
+                              <div className="flex flex-col items-center gap-1.5">
+                                <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                                <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest animate-pulse">Syncing...</p>
+                              </div>
+                            </div>
+                          ) : !team.isVisible ? (
+                            <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-main)]/80 backdrop-blur-[4px] z-20 rounded-2xl border border-dashed border-[var(--border)]">
+                              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">NO TASKS TODAY</p>
+                            </div>
+                          ) : !team.hasData ? (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/5 z-20 rounded-2xl">
+                              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">No Active Logs</p>
+                            </div>
+                          ) : null}
+
+                          {/* Left Column - Team Info */}
+                          <div className="w-[120px] shrink-0 flex flex-col justify-between h-full">
+                            <p className="text-[10px] text-[var(--text-muted)] font-bold">{team.members} MEMBERS</p>
+                            <div className="flex flex-col gap-1 text-[10px] font-bold text-[var(--text-main)] my-0.5">
+                              <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                                <span className="text-[var(--text-muted)] w-[45px] inline-block">BUSY:</span>
+                                <span className="tabular-nums">{team.working.length.toString().padStart(2, '0')}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span className="text-[var(--text-muted)] w-[45px] inline-block">FREE:</span>
+                                <span className="tabular-nums">{team.available.length.toString().padStart(2, '0')}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                                <span className="text-[var(--text-muted)] w-[45px] inline-block">LEAVE:</span>
+                                <span className="tabular-nums">{team.leave.length.toString().padStart(2, '0')}</span>
+                              </div>
                             </div>
                           </div>
-                        )) : (
-                          <div className="flex items-center justify-center h-full">
-                            <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-30">NO TASKS TODAY</span>
+
+                          {/* Right Column - Tasks */}
+                          <div className="flex-1 bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden h-[75px]">
+                            <div className="flex flex-col justify-start gap-1.5 h-full p-2.5 overflow-y-auto custom-scrollbar">
+                              {team.dailyTasks ? team.dailyTasks.map((t, j) => (
+                                <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
+                                  <span className={`w-1 h-1 rounded-full shrink-0 ${t.isWorking ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]' : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'}`}></span>
+                                  <div className="text-[10px] font-bold truncate">
+                                    <span className={`${t.isWorking ? 'text-rose-400' : 'text-[var(--text-muted)]'} uppercase tracking-wide`}>{t.project}</span>
+                                  </div>
+                                </div>
+                              )) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-35">NO TASKS TODAY</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
+                        </motion.div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Orange Box (Active Member Grid) */}
+                  <div className="flex flex-col">
+                    <div className="flex justify-start mb-1 shrink-0">
+                      <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">ACTIVE MEMBERS</h2>
                     </div>
+                    <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl shadow-sm h-[101px]" style={{ padding: '12px' }}>
+                      {renderActiveMemberGrid()}
+                    </motion.div>
+                  </div>
+
+                </div>
+
+                {/* Right Side: Khung Xanh Lá (3D Mini Brain Map) */}
+                <div className="flex flex-col h-full">
+                  <div className="flex justify-start mb-1 shrink-0">
+                    <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">BRAIN MAP</h2>
+                  </div>
+                  <motion.div 
+                    variants={itemVariants} 
+                    className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm h-[238px] overflow-hidden border-indigo-500/20"
+                    style={{ padding: '0px' }}
+                  >
+                    <MiniBrainMap teamId={activeTeamId} />
                   </motion.div>
                 </div>
-              ))}
-            </div>
+
+              </div>
+            ) : (
+              // FIG 2: ORIGINAL 2x2 GRID (Default View for Admin/Non-Team users)
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
+                {teamPulse.map((team, i) => (
+                  <div key={i} className="flex flex-col h-full">
+                    <div className="flex justify-start mb-1">
+                      <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">{team.name}</h2>
+                    </div>
+
+                    <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex flex-col md:flex-row gap-3 h-full flex-1" style={{ padding: '12px' }}>
+                      {(!team.hasData && loading) ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] animate-pulse">Syncing Data...</p>
+                          </div>
+                        </div>
+                      ) : !team.isVisible ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-main)]/80 backdrop-blur-[4px] z-20 rounded-2xl border border-dashed border-[var(--border)]">
+                          <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">NO TASKS TODAY</p>
+                        </div>
+                      ) : !team.hasData ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/5 z-20 rounded-2xl">
+                          <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">No Active Logs</p>
+                        </div>
+                      ) : null}
+
+                      {/* Left Column - Team Info (Compact) */}
+                      <div className="w-[120px] shrink-0 flex flex-col justify-between">
+                        <p className="text-[10px] text-[var(--text-muted)] font-bold">{team.members} MEMBERS</p>
+                        <div className="flex flex-col gap-1.5 text-[10px] font-bold text-[var(--text-main)] my-1">
+                          <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                            <span className="text-[var(--text-muted)] w-[45px] inline-block">BUSY:</span>
+                            <span className="tabular-nums">{team.working.length.toString().padStart(2, '0')}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span className="text-[var(--text-muted)] w-[45px] inline-block">FREE:</span>
+                            <span className="tabular-nums">{team.available.length.toString().padStart(2, '0')}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                            <span className="text-[var(--text-muted)] w-[45px] inline-block">LEAVE:</span>
+                            <span className="tabular-nums">{team.leave.length.toString().padStart(2, '0')}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column - Tasks (Closer and Wider) */}
+                      <div className="flex-1 bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden h-[75px]">
+                        <div className="flex flex-col justify-start gap-2 h-full p-2.5 overflow-y-auto custom-scrollbar">
+                          {team.dailyTasks ? team.dailyTasks.map((t, j) => (
+                            <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
+                              <span className={`w-1 h-1 rounded-full shrink-0 ${t.isWorking ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]' : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'}`}></span>
+                              <div className="text-[10px] font-bold truncate">
+                                <span className={`${t.isWorking ? 'text-rose-400' : 'text-[var(--text-muted)]'} uppercase tracking-wide`}>{t.project}</span>
+                              </div>
+                            </div>
+                          )) : (
+                            <div className="flex items-center justify-center h-full">
+                              <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-30">NO TASKS TODAY</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* RIGHT: Currency & Market Section (4/12) */}
           <div className="xl:col-span-4 flex flex-col">
-             <div className="flex justify-start mb-2 h-[20px] items-center">
-                <h2 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Market Intelligence</h2>
+             <div className="flex justify-start mb-1">
+                <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">MARKET</h2>
              </div>
              <motion.div 
                variants={itemVariants} 

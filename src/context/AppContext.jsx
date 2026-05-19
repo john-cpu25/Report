@@ -188,6 +188,8 @@ export const AppProvider = ({ children }) => {
   const [dashboardLeave, setDashboardLeave] = useState([]);
   const [isDashboardLoading, setIsDashboardLoading] = useState(false);
   const [projectsCache, setProjectsCache] = useState(null);
+  const [adminViewMode, setAdminViewMode] = useState('GLOBAL');
+  const [adminActiveTeam, setAdminActiveTeam] = useState('MODELLING');
 
   // Data Analyst Persistence States
   const [analystTasks, setAnalystTasks] = useState([]);
@@ -516,6 +518,8 @@ export const AppProvider = ({ children }) => {
     lastAnalystFetch, setLastAnalystFetch,
     dashboardProjects, dashboardUsers, dashboardTasks, dashboardLeave, isDashboardLoading, dashboardStats, fetchDashboardData,
     projectsCache, setProjectsCache,
+    adminViewMode, setAdminViewMode,
+    adminActiveTeam, setAdminActiveTeam,
     handleAddTask, deleteRow, moveRow, updateStatus, updateDayTime, updateMarkup, bulkUpdateMarkup,
     seedPlannerData
   };
