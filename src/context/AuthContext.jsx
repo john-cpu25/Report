@@ -206,6 +206,37 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const getGraphToken = async () => {
+        try {
+            const activeAccount = instance.getActiveAccount() || accounts[0];
+            if (!activeAccount) {
+                await instance.loginPopup(loginRequest);
+                const updatedAccounts = instance.getAllAccounts();
+                if (updatedAccounts.length === 0) throw new Error("No active MSAL account found.");
+                instance.setActiveAccount(updatedAccounts[0]);
+            }
+            
+            const tokenRequest = {
+                scopes: ["User.Read", "Files.Read", "Files.ReadWrite"],
+                account: instance.getActiveAccount() || accounts[0]
+            };
+            const response = await instance.acquireTokenSilent(tokenRequest);
+            return response.accessToken;
+        } catch (error) {
+            console.warn("Silent token acquisition failed, acquiring token via popup...", error);
+            try {
+                const response = await instance.acquireTokenPopup({
+                    scopes: ["User.Read", "Files.Read", "Files.ReadWrite"],
+                    account: instance.getActiveAccount() || accounts[0]
+                });
+                return response.accessToken;
+            } catch (popupErr) {
+                console.error("Popup token acquisition failed:", popupErr);
+                throw popupErr;
+            }
+        }
+    };
+
     return (
         <AuthContext.Provider value={{ 
             user, 
@@ -214,6 +245,7 @@ export const AuthProvider = ({ children }) => {
             login, 
             logout,
             updateUserProfile,
+            getGraphToken,
             isAdmin: user?.isAdmin || false,
             isLeader: user?.isLeader || false,
             userTeam: user?.team || null

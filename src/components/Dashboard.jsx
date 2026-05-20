@@ -166,7 +166,8 @@ const MiniBrainMap = ({ teamId }) => {
     const filteredTasks = (tasks || []).filter(t => t && new Date(t.created_at || t.date) >= limit);
 
     // 2. Filter users by teamId
-    const teamMembers = users.filter(u => u && (u.team || '').toString().toUpperCase().includes((teamId || '').toString().toUpperCase()));
+    const cleanTeamId = (teamId || '').toString().toUpperCase().replace(/\s+/g, '');
+    const teamMembers = users.filter(u => u && (u.team || '').toString().toUpperCase().replace(/\s+/g, '').includes(cleanTeamId));
     const teamMemberIds = new Set(teamMembers.map(u => u.id));
 
     // Find managers/creators connected to team members
@@ -383,12 +384,12 @@ const MiniBrainMap = ({ teamId }) => {
       const centerY = height / 2;
       const focalLength = 180 * zoom;
 
-      // Dark futuristic bg
-      ctx.fillStyle = '#090d16';
+      // Light background
+      ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
 
       // Draw faint space grid
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.015)';
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.035)';
       ctx.lineWidth = 1;
       for (let i = 0; i < width; i += 40) {
         ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
@@ -577,7 +578,7 @@ const MiniBrainMap = ({ teamId }) => {
           ctx.stroke();
 
           if (node.scale > 0.65 || isNodeHovered) {
-            ctx.fillStyle = isNodeHovered ? '#fff' : (node.isLeader ? '#d8b4fe' : '#94a3b8');
+            ctx.fillStyle = isNodeHovered ? '#0f172a' : (node.isLeader ? '#7c3aed' : '#475569');
             ctx.font = 'semibold 8px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
@@ -635,9 +636,9 @@ const MiniBrainMap = ({ teamId }) => {
   };
 
   return (
-    <div ref={containerRef} className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#090d16]">
+    <div ref={containerRef} className="absolute inset-0 w-full h-full flex items-center justify-center bg-white">
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#090d16]/80 z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
           <div className="w-5 h-5 border border-t-transparent border-indigo-500 rounded-full animate-spin"></div>
         </div>
       )}
@@ -667,7 +668,31 @@ const Dashboard = () => {
 
   const { user, isAdmin, isLeader, userTeam } = useAuth();
 
-  const [chartTeam, setChartTeam] = useState('ALL');
+  const userTeamKey = useMemo(() => {
+    if (!userTeam) return 'ALL';
+    const teamUpper = userTeam.toUpperCase();
+    if (teamUpper.includes('MODEL')) return 'MODELLING';
+    if (teamUpper.includes('PT') || teamUpper.includes('REO')) return 'PT&REO';
+    if (teamUpper.includes('SLAB') || teamUpper.includes('ENGINEER')) return 'ENGINEER';
+    if (teamUpper.includes('ETABS') || teamUpper.includes('LATERAL')) return 'ETABS';
+    return 'ALL';
+  }, [userTeam]);
+
+  const [chartTeam, setChartTeam] = useState(() => {
+    if (!isAdmin && userTeamKey !== 'ALL') {
+      return userTeamKey;
+    }
+    return 'ALL';
+  });
+
+  useEffect(() => {
+    if (!isAdmin && userTeamKey !== 'ALL') {
+      setChartTeam(userTeamKey);
+    } else if (isAdmin) {
+      setChartTeam('ALL');
+    }
+  }, [isAdmin, userTeamKey]);
+
   const [timeRange, setTimeRange] = useState('WEEK'); // DAY, WEEK, MONTH
   const [chartType, setChartType] = useState('LINE'); // LINE, BAR, POLAR
 
@@ -676,7 +701,7 @@ const Dashboard = () => {
 
   const isTeamUser = useMemo(() => {
     if (isAdmin) return false;
-    const teamUpper = (userTeam || '').toUpperCase();
+    const teamUpper = (userTeam || '').toUpperCase().replace(/\s+/g, '');
     return ['MODELLING', 'ENGINEER', 'PT&REO', 'ETABS'].some(t => teamUpper.includes(t));
   }, [isAdmin, userTeam]);
 
@@ -684,16 +709,16 @@ const Dashboard = () => {
     if (isAdmin) {
       return adminActiveTeam;
     }
-    const teamUpper = (userTeam || 'MODELLING').toUpperCase();
+    const teamUpper = (userTeam || 'MODELLING').toUpperCase().replace(/\s+/g, '');
     if (teamUpper.includes('MODELLING')) return 'MODELLING';
     if (teamUpper.includes('ENGINEER')) return 'ENGINEER';
-    if (teamUpper.includes('PT&REO') || teamUpper.includes('PT & REO')) return 'PT&REO';
+    if (teamUpper.includes('PT&REO')) return 'PT&REO';
     return 'MODELLING';
   }, [isAdmin, adminActiveTeam, userTeam]);
 
   const memberStatusList = useMemo(() => {
     const now = new Date();
-    const teamUsers = users.filter(u => (u.team || '').toUpperCase() === activeTeamId);
+    const teamUsers = users.filter(u => (u.team || '').toUpperCase().replace(/\s+/g, '') === activeTeamId);
     
     return teamUsers.map(u => {
       // Find today's tasks
@@ -760,14 +785,14 @@ const Dashboard = () => {
           let shadowStyle = {};
 
           if (member.status === 'BUSY') {
-            ringClass = 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-[#090d16]';
-            badgeClass = 'bg-emerald-500';
-            shadowStyle = { boxShadow: '0 0 10px rgba(16,185,129,0.35)' };
+            ringClass = 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#090d16]';
+            badgeClass = 'bg-blue-500';
+            shadowStyle = { boxShadow: '0 0 10px rgba(59,130,246,0.35)' };
           } else if (member.status === 'FREE') {
-            ringClass = 'border-2 border-dashed border-slate-500/70';
-            badgeClass = 'bg-slate-400';
+            ringClass = 'border-2 border-dashed border-emerald-500/70';
+            badgeClass = 'bg-emerald-500';
           } else if (member.status === 'LEAVE') {
-            ringClass = 'border border-slate-800 opacity-40';
+            ringClass = 'border border-amber-500/30 opacity-40';
             badgeClass = 'bg-amber-500';
           }
 
@@ -781,36 +806,6 @@ const Dashboard = () => {
               </div>
 
               <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-slate-900 ${badgeClass}`}></span>
-
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 hidden group-hover:block bg-slate-950/95 backdrop-blur-md border border-slate-800/90 text-white text-[10px] p-2.5 rounded-xl shadow-2xl z-40 min-w-[170px] pointer-events-none transition-all duration-300">
-                <p className="font-black text-slate-100 uppercase tracking-wide border-b border-white/10 pb-1 mb-1.5">{member.name}</p>
-                <div className="flex flex-col gap-1 text-[9px] font-semibold text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-slate-500">Status:</span>
-                    <span className={`font-black ${
-                      member.status === 'BUSY' ? 'text-emerald-400' : member.status === 'LEAVE' ? 'text-amber-400' : 'text-indigo-400'
-                    }`}>{member.status}</span>
-                  </div>
-                  {member.status === 'BUSY' && (
-                    <>
-                      <div className="mt-1 flex flex-col gap-0.5">
-                        <span className="text-slate-500 uppercase tracking-tighter text-[8px]">Active Project:</span>
-                        <span className="text-emerald-300 font-bold truncate max-w-[150px]">{member.projectName}</span>
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-slate-500 uppercase tracking-tighter text-[8px]">Task:</span>
-                        <span className="text-slate-200 truncate max-w-[150px]">{member.taskName}</span>
-                      </div>
-                    </>
-                  )}
-                  {member.status === 'LEAVE' && (
-                    <div className="mt-1 flex flex-col gap-0.5">
-                      <span className="text-amber-300/80 font-bold">ON ANNUAL LEAVE</span>
-                      <span className="text-slate-500">Back on: {member.leaveReturnDate}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           );
         })}
@@ -909,7 +904,7 @@ const Dashboard = () => {
     const now = new Date();
 
     return teams.map((t) => {
-      const teamUsers = users.filter(u => (u.team || '').toUpperCase() === t.id);
+      const teamUsers = users.filter(u => (u.team || '').toUpperCase().replace(/\s+/g, '') === t.id);
       const userIds = new Set(teamUsers.map(u => u.id));
 
       const teamTasks = tasks.filter(task => userIds.has(task.user_id));
@@ -958,7 +953,7 @@ const Dashboard = () => {
         dailyTasks: dailyTasks.length > 0 ? dailyTasks : null,
         capacity: teamUsers.length > 0 ? Math.round((workingList.length / teamUsers.length) * 100) : 0,
         hasData: teamUsers.length > 0 || teamTasks.length > 0,
-        isVisible: isAdmin || (t.id === (userTeam || '').toUpperCase())
+        isVisible: isAdmin || (t.id === (userTeam || '').toUpperCase().replace(/\s+/g, ''))
       };
     });
   }, [users, tasks, projects, leaves, isAdmin, userTeam]);
@@ -984,7 +979,13 @@ const Dashboard = () => {
 
     const userTeamMap = new Map(users.map(u => [u.id, (u.team || '').toUpperCase()]));
     const filteredTasks = tasks.filter(t => {
-      if (!isAdmin && !isLeader && t.user_id !== user?.id) return false;
+      if (!isAdmin) {
+        if (userTeamKey === 'ALL') {
+          return isLeader ? true : t.user_id === user?.id;
+        }
+        const taskUserTeam = userTeamMap.get(t.user_id) || '';
+        return taskUserTeam === userTeamKey;
+      }
       if (chartTeam !== 'ALL' && userTeamMap.get(t.user_id) !== chartTeam) return false;
       return true;
     });
@@ -1309,7 +1310,8 @@ const Dashboard = () => {
                   <select 
                     value={chartTeam}
                     onChange={(e) => setChartTeam(e.target.value)}
-                    className="relative w-full h-full bg-transparent text-[var(--text-main)] text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl cursor-pointer focus:outline-none z-10"
+                    disabled={!isAdmin}
+                    className="relative w-full h-full bg-transparent text-[var(--text-main)] text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl cursor-pointer focus:outline-none z-10 disabled:cursor-default"
                     style={{
                       WebkitAppearance: 'none',
                       MozAppearance: 'none',
@@ -1320,14 +1322,24 @@ const Dashboard = () => {
                       paddingRight: '40px',
                     }}
                   >
-                    <option value="ALL">ALL TEAMS</option>
-                    {TEAMS.map(t => (
-                      <option key={t.id} value={t.id}>{t.display}</option>
-                    ))}
+                    {isAdmin ? (
+                      <>
+                        <option value="ALL">ALL TEAMS</option>
+                        {TEAMS.map(t => (
+                          <option key={t.id} value={t.id}>{t.display}</option>
+                        ))}
+                      </>
+                    ) : (
+                      TEAMS.filter(t => t.id === userTeamKey).map(t => (
+                        <option key={t.id} value={t.id}>{t.display}</option>
+                      ))
+                    )}
                   </select>
-                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)] z-20">
-                    <ChevronDown size={14} />
-                  </div>
+                  {isAdmin && (
+                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)] z-20">
+                      <ChevronDown size={14} />
+                    </div>
+                  )}
                 </div>
 
                 {/* Time Range Selector (Neumorphic) */}
