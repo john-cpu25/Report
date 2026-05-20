@@ -242,7 +242,7 @@ export const usePersonalSpaceEngine = (params) => {
     const today = new Date();
     const currentMonday = startOfWeek(today, { weekStartsOn: 1 });
     const targetMonday = addDays(currentMonday, weekOffset * 7);
-    const weekDates = [0, 1, 2, 3, 4, 5, 6].map(i => addDays(targetMonday, i));
+    const weekDates = [0, 1, 2, 3, 4].map(i => addDays(targetMonday, i));
     const weekNum = getISOWeek(targetMonday);
 
     const weekTasks = filteredData.filter(t => {
@@ -254,7 +254,7 @@ export const usePersonalSpaceEngine = (params) => {
       if (selectedTimeMetric === 't5') { rangeStart = t.created_at; rangeEnd = t.date_checked; }
       
       const weekStart = weekDates[0];
-      const weekEnd = addDays(weekDates[6], 1);
+      const weekEnd = addDays(weekDates[4], 1);
 
       if (!rangeStart || !rangeEnd || rangeStart === '-' || rangeEnd === '-') {
         const fallbackDate = t.dateObj || new Date(t.created_at || Date.now());
@@ -290,7 +290,7 @@ export const usePersonalSpaceEngine = (params) => {
       if (!teamMap[team]) teamMap[team] = {};
       if (!teamMap[team][project]) teamMap[team][project] = {};
       if (!teamMap[team][project][user]) {
-        teamMap[team][project][user] = { hours: [0, 0, 0, 0, 0, 0, 0], tasks: [0, 0, 0, 0, 0, 0, 0] };
+        teamMap[team][project][user] = { hours: [0, 0, 0, 0, 0], tasks: [0, 0, 0, 0, 0] };
       }
 
       Object.entries(breakdown).forEach(([dateStr, mins]) => {
@@ -409,12 +409,14 @@ export const usePersonalSpaceEngine = (params) => {
 
   const efficiencyData = useMemo(() => {
     const data = analystTasks || [];
-    const users = filterOptions.users;
+    // Only show users who have tasks in the current filtered dataset
+    const activeUsers = [...new Set(filteredData.map(t => t.userName).filter(Boolean))];
+    const users = activeUsers.length > 0 ? activeUsers : filterOptions.users;
     return users.map(uName => {
       const uTasks = filteredData.filter(t => t.userName === uName);
       const metrics = uTasks.map(t => calculateTaskMetrics(t));
-      const projectTime = metrics.reduce((acc, curr) => acc + (curr.t2 || 0), 0) / 60;
-      const checkTime = uTasks.filter(t => t.taskName?.toLowerCase().includes('check')).reduce((acc, t) => acc + (calculateTaskMetrics(t).t2 || 0), 0) / 60;
+      const projectTime = metrics.reduce((acc, curr) => acc + (curr.t3 || 0), 0) / 60;
+      const checkTime = 0; // Temporarily disabled
       const otTime = manualData[uName]?.ot || 0;
       const totalPlan = metrics.reduce((acc, curr) => acc + curr[selectedTimeMetric], 0) / 60;
       const leaveDays = 0; 

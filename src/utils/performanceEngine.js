@@ -97,10 +97,10 @@ export const calculateTaskMetrics = (task) => {
  * Format minutes to "Xh Ym"
  */
 export const formatMinutes = (minutes) => {
-  if (!minutes || minutes <= 0) return '0h 0m';
+  if (!minutes || minutes <= 0) return '0h00';
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return `${h}h ${m}m`;
+  return `${h}h${String(m).padStart(2, '0')}`;
 };
 
 /**

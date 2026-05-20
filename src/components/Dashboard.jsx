@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Zap, Target, Users, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight,
   Activity, Layers, Award, Clock, FolderKanban, Search, CheckCircle2, AlertCircle,
-  BarChart3, PieChart, Eye, EyeOff, ChevronDown
+  BarChart3, PieChart, Eye, EyeOff, ChevronDown, ZoomIn, ZoomOut, RotateCcw
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import {
@@ -335,6 +335,17 @@ const MiniBrainMap = ({ teamId }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const handleCanvasWheel = (e) => {
+      e.preventDefault();
+      const zoomFactor = 0.08;
+      if (e.deltaY < 0) {
+        setZoom(prev => Math.min(prev + zoomFactor, 4.0));
+      } else {
+        setZoom(prev => Math.max(prev - zoomFactor, 0.3));
+      }
+    };
+    canvas.addEventListener('wheel', handleCanvasWheel, { passive: false });
+
     const resizeCanvas = () => {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
@@ -600,6 +611,7 @@ const MiniBrainMap = ({ teamId }) => {
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      canvas.removeEventListener('wheel', handleCanvasWheel);
       cancelAnimationFrame(animationFrameId.current);
     };
   }, [brainData, hoveredNode, zoom, theme]);
@@ -658,6 +670,43 @@ const MiniBrainMap = ({ teamId }) => {
         onMouseLeave={handleMouseUp}
         className="w-full h-full cursor-grab active:cursor-grabbing block"
       />
+
+      {/* Floating Zoom Controls */}
+      <div className="absolute bottom-4 right-4 flex flex-col gap-1.5 z-30">
+        <button 
+          onClick={() => setZoom(prev => Math.min(prev + 0.15, 4.0))}
+          className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-all duration-200 hover:scale-105 active:scale-95 ${
+            isDark 
+              ? 'bg-zinc-900/80 border-zinc-850 text-zinc-300 hover:bg-zinc-800 hover:text-white' 
+              : 'bg-white/95 border-slate-250 text-slate-600 hover:bg-slate-50 hover:text-slate-900 shadow-sm'
+          }`}
+          title="Zoom In"
+        >
+          <ZoomIn size={14} />
+        </button>
+        <button 
+          onClick={() => setZoom(prev => Math.max(prev - 0.15, 0.3))}
+          className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-all duration-200 hover:scale-105 active:scale-95 ${
+            isDark 
+              ? 'bg-zinc-900/80 border-zinc-850 text-zinc-300 hover:bg-zinc-800 hover:text-white' 
+              : 'bg-white/95 border-slate-250 text-slate-600 hover:bg-slate-50 hover:text-slate-900 shadow-sm'
+          }`}
+          title="Zoom Out"
+        >
+          <ZoomOut size={14} />
+        </button>
+        <button 
+          onClick={() => setZoom(1.4)}
+          className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-all duration-200 hover:scale-105 active:scale-95 ${
+            isDark 
+              ? 'bg-zinc-900/80 border-zinc-850 text-zinc-300 hover:bg-zinc-800 hover:text-white' 
+              : 'bg-white/95 border-slate-250 text-slate-600 hover:bg-slate-50 hover:text-slate-900 shadow-sm'
+          }`}
+          title="Reset Zoom"
+        >
+          <RotateCcw size={14} />
+        </button>
+      </div>
     </div>
   );
 };
@@ -1406,22 +1455,22 @@ const Dashboard = () => {
                           ) : null}
 
                           {/* Left Column - Team Info */}
-                          <div className="w-[120px] shrink-0 flex flex-col justify-between h-full">
+                          <div className="w-[125px] shrink-0 flex flex-col justify-between h-full">
                             <p className="text-[10px] text-[var(--text-muted)] font-bold">{team.members} MEMBERS</p>
-                            <div className="flex flex-col gap-1 text-[10px] font-bold text-[var(--text-main)] my-0.5">
+                            <div className="flex flex-col gap-1 text-[12px] font-bold text-[var(--text-main)] my-0.5">
                               <div className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
-                                <span className="text-[var(--text-muted)] w-[45px] inline-block">BUSY:</span>
+                                <span className="text-[var(--text-muted)] w-[52px] inline-block">BUSY:</span>
                                 <span className="tabular-nums">{team.working.length.toString().padStart(2, '0')}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                                <span className="text-[var(--text-muted)] w-[45px] inline-block">FREE:</span>
+                                <span className="text-[var(--text-muted)] w-[52px] inline-block">FREE:</span>
                                 <span className="tabular-nums">{team.available.length.toString().padStart(2, '0')}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
-                                <span className="text-[var(--text-muted)] w-[45px] inline-block">LEAVE:</span>
+                                <span className="text-[var(--text-muted)] w-[52px] inline-block">LEAVE:</span>
                                 <span className="tabular-nums">{team.leave.length.toString().padStart(2, '0')}</span>
                               </div>
                             </div>
@@ -1504,22 +1553,22 @@ const Dashboard = () => {
                       ) : null}
 
                       {/* Left Column - Team Info (Compact) */}
-                      <div className="w-[120px] shrink-0 flex flex-col justify-between">
+                      <div className="w-[125px] shrink-0 flex flex-col justify-between">
                         <p className="text-[10px] text-[var(--text-muted)] font-bold">{team.members} MEMBERS</p>
-                        <div className="flex flex-col gap-1.5 text-[10px] font-bold text-[var(--text-main)] my-1">
+                        <div className="flex flex-col gap-1.5 text-[12px] font-bold text-[var(--text-main)] my-1">
                           <div className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
-                            <span className="text-[var(--text-muted)] w-[45px] inline-block">BUSY:</span>
+                            <span className="text-[var(--text-muted)] w-[52px] inline-block">BUSY:</span>
                             <span className="tabular-nums">{team.working.length.toString().padStart(2, '0')}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                            <span className="text-[var(--text-muted)] w-[45px] inline-block">FREE:</span>
+                            <span className="text-[var(--text-muted)] w-[52px] inline-block">FREE:</span>
                             <span className="tabular-nums">{team.available.length.toString().padStart(2, '0')}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
-                            <span className="text-[var(--text-muted)] w-[45px] inline-block">LEAVE:</span>
+                            <span className="text-[var(--text-muted)] w-[52px] inline-block">LEAVE:</span>
                             <span className="tabular-nums">{team.leave.length.toString().padStart(2, '0')}</span>
                           </div>
                         </div>
@@ -1673,7 +1722,7 @@ const Dashboard = () => {
                     value={chartTeam}
                     onChange={(e) => setChartTeam(e.target.value)}
                     disabled={!isAdmin}
-                    className="relative w-full h-full bg-transparent text-[var(--text-main)] text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl cursor-pointer focus:outline-none z-10 disabled:cursor-default"
+                    className="relative w-full h-full bg-transparent text-[var(--text-main)] text-[12px] font-black uppercase tracking-tight rounded-2xl cursor-pointer focus:outline-none z-10 disabled:cursor-default"
                     style={{
                       WebkitAppearance: 'none',
                       MozAppearance: 'none',
@@ -1703,14 +1752,14 @@ const Dashboard = () => {
                     </div>
                   )}
                 </div>
-
+ 
                 {/* Time Range Selector (Neumorphic) */}
                 <div className="h-full flex bg-[var(--bg-surface)] rounded-2xl p-1.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2),inset_-1px_-1px_5px_rgba(255,255,255,0.02)] gap-2">
                   {['WEEK', 'MONTH', 'YEAR'].map((r) => (
                     <button
                       key={r}
                       onClick={() => setTimeRange(r)}
-                      className={`h-full w-[80px] flex items-center justify-center text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-300 ${
+                      className={`h-full w-[80px] flex items-center justify-center text-[12px] font-black uppercase tracking-tight rounded-xl transition-all duration-300 ${
                         timeRange === r 
                         ? 'bg-[var(--bg-surface)] text-indigo-600 shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,1)] dark:shadow-[2px_2px_5px_rgba(0,0,0,0.3),-1px_-1px_5px_rgba(255,255,255,0.05)] scale-[0.98]' 
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'

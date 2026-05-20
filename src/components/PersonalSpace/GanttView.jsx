@@ -19,18 +19,20 @@ const GanttView = ({
         <div className="w-full min-w-[900px]">
           {/* Gantt Header: Dates */}
           <div className="flex border-b border-[var(--border)] bg-white/5 sticky z-[45] backdrop-blur-md" style={{ top: '0px' }}>
-            <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] p-[15px] text-[10px] font-black uppercase text-indigo-400 shrink-0 bg-[var(--bg-card)] sticky left-0 z-30">Task Intelligence</div>
+            <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] py-[14px] px-[12px] text-[14px] font-black uppercase text-[var(--text-muted)] tracking-wide shrink-0 bg-[var(--bg-card)] sticky left-0 z-30">Project</div>
             <div className="flex-1 flex min-w-0">
               {ganttTimeline.map((date, i) => {
                 const isToday = isSameDay(date, new Date());
+                const dateColor = isToday ? 'text-emerald-500' : 'text-[var(--text-contrast)]';
+                const labelColor = isToday ? 'text-emerald-400' : 'text-[var(--text-muted)]';
                 return (
-                  <div key={i} className={`flex-1 min-w-[28px] border-r border-[var(--border)] py-[10px] px-0 text-center flex flex-col items-center justify-center ${isToday ? 'bg-indigo-500/20' : 'bg-[var(--bg-card)]'}`}>
-                    <div className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-tighter">
+                  <div key={i} className={`flex-1 min-w-[50px] border-r border-[var(--border)] py-[12px] px-0 text-center flex flex-col items-center justify-center ${isToday ? 'bg-indigo-500/10' : 'bg-[var(--bg-card)]'}`}>
+                    <div className={`text-[12px] font-black uppercase tracking-wider ${labelColor}`}>
                       {timeRange === 'day' ? format(date, 'HH:mm') : 
                        timeRange === 'year' ? format(date, 'yyyy') : 
-                       format(date, 'EEE')}
+                       format(date, 'EEE').toUpperCase()}
                     </div>
-                    <div className={`text-[10px] md:text-[11px] font-black tracking-tighter ${isToday ? 'text-indigo-400' : 'text-[var(--text-main)]'}`}>
+                    <div className={`text-[12px] font-medium ${dateColor}`}>
                       {timeRange === 'day' ? format(date, 'dd/MM') :
                        timeRange === 'year' ? format(date, 'MMM') :
                        timeRange === 'month' ? format(date, 'dd') :
@@ -43,7 +45,7 @@ const GanttView = ({
           </div>
 
           {/* Gantt Rows */}
-          <div className="max-h-[calc(100vh-320px)] min-h-[400px] overflow-y-auto">
+          <div className="max-h-[calc(100vh-530px)] min-h-[100px] overflow-y-auto">
             <AnimatePresence initial={false}>
               {projectGroups.map(group => {
                 const chartStart = ganttTimeline[0];
@@ -117,9 +119,9 @@ const GanttView = ({
                             size={14} 
                             className={`text-indigo-400 transition-transform duration-200 ${expandedProjects.includes(group.name) ? 'rotate-90' : ''}`} 
                           />
-                          <span className="text-[10px] font-black uppercase truncate transition-colors" style={{ color: getProjectColor(group.name) }}>{group.name}</span>
+                          <span className="text-[14px] font-black uppercase truncate transition-colors" style={{ color: getProjectColor(group.name) }}>{group.name}</span>
                         </div>
-                        <span className="text-[9px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md whitespace-nowrap">{visibleTasks.length} tasks</span>
+                        <span className="text-[14px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md whitespace-nowrap">{visibleTasks.length} tasks</span>
                       </div>
                       <div className="flex-1 relative flex items-center px-0 h-full">
                         {/* Weekend Shading Overlay */}
@@ -161,7 +163,7 @@ const GanttView = ({
                         {visibleTasks.map((task, idx) => (
                           <div key={idx} className="flex h-[32px] border-b border-[var(--border)]/50 hover:bg-white/[0.01] transition-colors">
                             <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] pl-[35px] pr-[10px] flex items-center shrink-0 bg-[var(--bg-card)] sticky left-0 z-20">
-                              <span className="text-[9px] font-medium text-[var(--text-muted)] truncate uppercase tracking-tight">
+                              <span className="text-[14px] font-medium text-[var(--text-muted)] truncate uppercase tracking-tight">
                                 {task.taskName || task.title || 'Untitled Task'}
                               </span>
                             </div>
@@ -204,7 +206,7 @@ const GanttView = ({
             <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] p-[15px] flex flex-col justify-center shrink-0 bg-[var(--bg-card)] sticky left-0 z-20">
               <div className="flex items-center gap-[10px]">
                 <TrendingUp size={16} className="text-emerald-400 shrink-0" />
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest leading-tight">Workload<br/>(Tasks / Day)</span>
+                <span className="text-[14px] font-black text-emerald-400 uppercase tracking-widest leading-tight">Workload<br/>(Tasks / Day)</span>
               </div>
             </div>
             <div className="flex-1 flex min-w-0 items-end">
@@ -215,10 +217,10 @@ const GanttView = ({
                 const isToday = isSameDay(date, new Date());
                 
                 return (
-                  <div key={i} className={`flex-1 min-w-[28px] border-r border-[var(--border)] h-full flex flex-col justify-end px-[4px] pb-[1px] group relative ${isToday ? 'bg-indigo-500/10' : ''}`}>
+                  <div key={i} className={`flex-1 min-w-[50px] border-r border-[var(--border)] h-full flex flex-col justify-end px-[4px] pb-[1px] group relative ${isToday ? 'bg-indigo-500/10' : ''}`}>
                     {count > 0 && (
                       <div className="w-full relative flex flex-col items-center justify-end h-full">
-                        <span className="text-[9px] font-black text-emerald-500 mb-1 opacity-50 group-hover:opacity-100 transition-opacity">{count}</span>
+                        <span className="text-[14px] font-black text-emerald-500 mb-1 opacity-50 group-hover:opacity-100 transition-opacity">{count}</span>
                         <motion.div 
                           initial={{ height: 0 }}
                           animate={{ height: `${heightPct * 0.8}%` }}

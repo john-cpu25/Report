@@ -48,11 +48,11 @@ export function calculateWorkingDuration(start, end) {
  * Format milliseconds sang chuỗi "Xh Ym"
  */
 export function formatDuration(ms) {
-  if (!ms || ms <= 0) return '-';
+  if (!ms || ms <= 0) return '0h00';
   const totalMinutes = Math.floor(ms / 60000);
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
-  return `${h}h ${m}m`;
+  return `${h}h${String(m).padStart(2, '0')}`;
 }
 
 /**

@@ -342,6 +342,15 @@ body.theme-news ::-webkit-calendar-picker-indicator {
   background: rgba(129, 140, 248, 0.6);
 }
 
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Global Select & Option Styling for Dark Mode Compatibility */
 select {
   color-scheme: dark;

@@ -182,9 +182,12 @@ const PersonalSpace = () => {
     const data = analystTasks || [];
     const projects = [...new Set(data.map(t => t.project))].sort();
     const users = [...new Set(data.map(t => t.userName))].sort();
-    const teams = [...new Set(data.map(t => t.team))].sort().filter(Boolean);
+    // Include teams from both tasks AND the full user/team map so teams always appear
+    const taskTeams = data.map(t => t.team);
+    const mapTeams = Object.values(localMaps.teamMap || {});
+    const teams = [...new Set([...taskTeams, ...mapTeams])].sort().filter(Boolean);
     return { projects, users, teams };
-  }, [analystTasks]);
+  }, [analystTasks, localMaps.teamMap]);
 
   const filteredData = useMemo(() => {
     const tasks = analystTasks || [];
@@ -297,7 +300,7 @@ const PersonalSpace = () => {
   }
 
   return (
-    <div className="w-full space-y-[10px] animate-in fade-in duration-700 pb-20">
+    <div className="w-full space-y-[10px] animate-in fade-in duration-700 pb-[10px]">
       {/* Sticky Header + Filter Wrapper */}
       <div className="sticky top-[64px] z-[40] w-full space-y-[10px] pb-[10px] pt-[10px] mt-[-10px]" style={{ background: 'var(--bg-main, #0f172a)' }}>
       {/* Header */}
@@ -427,7 +430,7 @@ const PersonalSpace = () => {
           <div className="flex-1" /> {/* Spacer */}
 
             {/* Time Segmented Control (New Design) */}
-            {['list', 'daily', 'project', 'gantt'].includes(viewMode) && (
+            {['list', 'daily', 'project', 'gantt', 'performance'].includes(viewMode) && (
               <div className={`flex items-center gap-1 p-[3px] backdrop-blur-md rounded-xl shadow-inner relative shrink-0 ${
                 isDark 
                   ? 'bg-slate-950/80 border border-slate-800' 
@@ -726,7 +729,7 @@ const PersonalSpace = () => {
 
       {viewMode === 'list' && (
         <div className="ocd-card p-0 overflow-hidden shadow-2xl shadow-black/20">
-          <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar sticky-header-container">
+          <div className="max-h-[calc(100vh-335px)] overflow-auto custom-scrollbar sticky-header-container">
             <UnifiedTable 
               data={filteredData}
               columnFilters={columnFilters}
@@ -761,34 +764,36 @@ const PersonalSpace = () => {
 
 
       {viewMode === 'daily' && (
-        <TimesheetView timesheetData={timesheetData} />
+        <TimesheetView timesheetData={timesheetData} getProjectColor={getProjectColor} />
       )}
 
       {viewMode === 'deep-analysis' && (
-        <DeepAnalysisView deepAnalysisData={deepAnalysisData} selectedTimeMetric={selectedTimeMetric} />
+        <div className="max-h-[calc(100vh-335px)] overflow-y-auto custom-scrollbar pr-1">
+          <DeepAnalysisView deepAnalysisData={deepAnalysisData} selectedTimeMetric={selectedTimeMetric} />
+        </div>
       )}
 
       {viewMode === 'performance' && (
         <div className="ocd-card p-0 shadow-2xl shadow-black/20 border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden">
-          <div className="overflow-x-auto custom-scrollbar">
+          <div className="max-h-[calc(100vh-335px)] overflow-y-auto overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse min-w-[1000px]">
               <thead>
-                <tr className="text-[10px] font-black uppercase tracking-widest border-b border-[var(--border)] bg-indigo-500/5 h-[40px]">
-                  <th className="pr-6 py-0 vertical-align-middle" style={{ paddingLeft: '12px' }}>Full Name</th>
-                  <th className="px-4 py-0 text-center vertical-align-middle">Project Time</th>
-                  <th className="px-4 py-0 text-center vertical-align-middle">Check Time</th>
-                  <th className="px-4 py-0 text-center bg-indigo-500/5 vertical-align-middle">OT Time</th>
-                  <th className="px-4 py-0 text-center bg-orange-500/5 vertical-align-middle">Leave (D)</th>
-                  <th className="px-4 py-0 text-center vertical-align-middle">Free Time</th>
-                  <th className="px-4 py-0 text-center text-emerald-500 vertical-align-middle">Efficiency</th>
-                  <th className="px-4 py-0 text-right vertical-align-middle pr-4">Performance (%)</th>
+                <tr className="text-[14px] uppercase tracking-wide border-b border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-muted)]">
+                  <th className="pr-6 py-[14px] font-black vertical-align-middle" style={{ paddingLeft: '12px' }}>Full Name</th>
+                  <th className="px-4 py-[14px] font-black text-center vertical-align-middle">Project Time</th>
+                  <th className="px-4 py-[14px] font-black text-center vertical-align-middle">Check Time</th>
+                  <th className="px-4 py-[14px] font-black text-center bg-indigo-500/5 vertical-align-middle">OT Time</th>
+                  <th className="px-4 py-[14px] font-black text-center bg-orange-500/5 vertical-align-middle">Leave (D)</th>
+                  <th className="px-4 py-[14px] font-black text-center vertical-align-middle">Free Time</th>
+                  <th className="px-4 py-[14px] font-black text-center text-emerald-500 vertical-align-middle">Efficiency</th>
+                  <th className="px-4 py-[14px] font-black text-center vertical-align-middle pr-4 text-right">Performance (%)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]">
                 {efficiencyData?.map((s, i) => (
-                  <tr key={i} className="text-[11px] group hover:bg-[var(--bg-header)] transition-colors">
+                  <tr key={i} className="text-[14px] group hover:bg-[var(--bg-header)] transition-colors">
                     <td className="pr-6 py-4" style={{ paddingLeft: '12px' }}>
-                      <div className="font-black text-[var(--text-contrast)] uppercase tracking-tight">{s.name}</div>
+                      <div className="text-[var(--text-contrast)] uppercase tracking-tight">{s.name}</div>
                     </td>
                     <td className="px-4 py-4 text-center font-mono font-bold text-sky-400">{s.projectTime.toFixed(1)}h</td>
                     <td className="px-4 py-4 text-center font-mono font-bold text-amber-500">{s.checkTime.toFixed(1)}h</td>
@@ -797,7 +802,7 @@ const PersonalSpace = () => {
                         type="number" 
                         value={s.otTime || ''}
                         onChange={(e) => setManualData(prev => ({ ...prev, [s.name]: { ...prev[s.name], ot: parseFloat(e.target.value) || 0 } }))}
-                        className="w-12 bg-transparent border-none text-center font-bold text-indigo-400 outline-none p-0 h-auto"
+                        className="w-12 bg-transparent border-none text-center font-bold text-indigo-400 outline-none p-0 h-auto text-[14px]"
                         placeholder="0"
                       />
                     </td>

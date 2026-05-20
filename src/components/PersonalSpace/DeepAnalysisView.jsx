@@ -13,22 +13,22 @@ const DeepAnalysisView = ({ deepAnalysisData, selectedTimeMetric }) => {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Operational Pulse</span>
+                <span className="text-[14px] font-black text-[var(--text-muted)] uppercase">Operational Pulse</span>
               </div>
-              <h3 className="text-[14px] font-black text-[var(--text-contrast)] uppercase tracking-[0.1em]">Performance Trend <span className="text-[var(--text-muted)] font-medium ml-2">(Inc. 3-Period Moving Average)</span></h3>
+              <h3 className="text-[14px] font-black text-[var(--text-contrast)] uppercase">Performance Trend</h3>
             </div>
             <div className="flex items-center gap-6 bg-[var(--bg-surface)] p-3 rounded-xl border border-[var(--border)] shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="w-6 h-1.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.3)]" />
-                <span className="text-[9px] font-black text-indigo-500 uppercase tracking-tighter">T1 Duration</span>
+                <span className="text-[14px] font-black text-indigo-500 uppercase">T1 Duration</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-6 h-0.5 border-t-2 border-amber-500 border-dashed" />
-                <span className="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Moving Avg (3P)</span>
+                <span className="text-[14px] font-black text-amber-500 uppercase">Moving Avg (3P)</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-6 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]" />
-                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">T2 Completion</span>
+                <span className="text-[14px] font-black text-emerald-500 uppercase">T2 Completion</span>
               </div>
             </div>
           </div>
@@ -83,8 +83,8 @@ const DeepAnalysisView = ({ deepAnalysisData, selectedTimeMetric }) => {
                     backgroundColor: 'var(--bg-card)',
                     titleColor: 'var(--text-contrast)',
                     bodyColor: 'var(--text-main)',
-                    titleFont: { size: 12, weight: 'bold' },
-                    bodyFont: { size: 11 },
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 12 },
                     padding: 15,
                     cornerRadius: 12,
                     borderColor: 'var(--border)',
@@ -92,10 +92,10 @@ const DeepAnalysisView = ({ deepAnalysisData, selectedTimeMetric }) => {
                   }
                 },
                 scales: {
-                  x: { grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 9, weight: 'medium' }, opacity: 0.5 } },
+                  x: { grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 12, weight: 'medium' }, opacity: 0.5 } },
                   y: { 
                     grid: { color: 'rgba(148, 163, 184, 0.05)', drawBorder: false }, 
-                    ticks: { color: 'var(--text-muted)', font: { size: 9 }, callback: v => v.toFixed(2) + 'h', opacity: 0.5 } 
+                    ticks: { color: 'var(--text-muted)', font: { size: 12 }, callback: v => v.toFixed(2) + 'h', opacity: 0.5 } 
                   }
                 }
               }}
@@ -109,8 +109,7 @@ const DeepAnalysisView = ({ deepAnalysisData, selectedTimeMetric }) => {
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-8 shadow-sm h-[480px] flex flex-col">
           <div className="flex items-center justify-between mb-10">
             <div>
-              <h3 className="text-[12px] font-black text-[var(--text-contrast)] uppercase tracking-widest">Project Distribution</h3>
-              <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] mt-1">Resource Allocation Analysis</p>
+              <h3 className="text-[14px] font-black text-[var(--text-contrast)] uppercase">Project Distribution</h3>
             </div>
             <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
               <PieChart size={18} className="text-indigo-500" />
@@ -172,11 +171,11 @@ const DeepAnalysisView = ({ deepAnalysisData, selectedTimeMetric }) => {
                   <div className="absolute top-[15%] left-[15%] w-8 h-6 bg-white/40 blur-[4px] rounded-full rotate-[45deg]" />
                   
                   <div className="relative z-10 flex flex-col items-center">
-                    <span className="text-[11px] font-black text-white/70 uppercase tracking-widest leading-none">Global</span>
+                    <span className="text-[14px] font-black text-white/70 uppercase tracking-widest leading-none">Global</span>
                     <span className="text-[36px] font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] leading-none my-1">
                       {deepAnalysisData?.projectLabels.length || 0}
                     </span>
-                    <span className="text-[10px] font-bold text-indigo-100 uppercase tracking-tighter opacity-80">Projects</span>
+                    <span className="text-[14px] font-bold text-indigo-100 uppercase tracking-tighter opacity-80">Projects</span>
                   </div>
                 </div>
               </div>
@@ -186,7 +185,7 @@ const DeepAnalysisView = ({ deepAnalysisData, selectedTimeMetric }) => {
             {deepAnalysisData?.projectLabels.map((label, i) => (
               <div key={label} className="group flex items-center gap-2 bg-indigo-500/5 border border-white/5 px-4 py-2 rounded-xl transition-all hover:bg-indigo-500/20 hover:scale-110 cursor-pointer">
                 <div className="w-2.5 h-2.5 rounded-full shadow-lg" style={{ backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#f43f5e', '#8b5cf6', '#06b6d4', '#f97316'][i] }} />
-                <span className="text-[11px] font-black text-[var(--text-muted)] group-hover:text-indigo-400 transition-colors">{label}</span>
+                <span className="text-[14px] font-black text-[var(--text-muted)] group-hover:text-indigo-400 transition-colors">{label}</span>
               </div>
             ))}
           </div>
@@ -195,8 +194,7 @@ const DeepAnalysisView = ({ deepAnalysisData, selectedTimeMetric }) => {
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-8 shadow-sm h-[480px] flex flex-col">
           <div className="flex items-center justify-between mb-10">
             <div>
-              <h3 className="text-[12px] font-black text-[var(--text-contrast)] uppercase tracking-widest">Workload Analysis</h3>
-              <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] mt-1">Individual Contributor Pulse</p>
+              <h3 className="text-[14px] font-black text-[var(--text-contrast)] uppercase">Workload Analysis</h3>
             </div>
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
               <BarChart2 size={18} className="text-emerald-400" />
@@ -222,8 +220,8 @@ const DeepAnalysisView = ({ deepAnalysisData, selectedTimeMetric }) => {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                  x: { grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 9, weight: 'medium' }, opacity: 0.5 } },
-                  y: { grid: { color: 'rgba(148, 163, 184, 0.05)', drawBorder: false }, ticks: { color: 'var(--text-muted)', font: { size: 9 }, opacity: 0.5 } }
+                  x: { grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 12, weight: 'medium' }, opacity: 0.5 } },
+                  y: { grid: { color: 'rgba(148, 163, 184, 0.05)', drawBorder: false }, ticks: { color: 'var(--text-muted)', font: { size: 12 }, opacity: 0.5 } }
                 }
               }}
             />

@@ -87,7 +87,7 @@ const TopBar = () => {
   };
 
   return (
-    <header className="h-[80px] bg-[var(--bg-main)]/80 backdrop-blur-md border-b border-[var(--border)] sticky top-0 z-30 px-[10px]">
+    <header className="h-[80px] bg-[var(--bg-main)]/80 backdrop-blur-md border-b border-[var(--border)] sticky top-0 z-[99] px-[10px]">
       <div className="h-full max-w-full mx-auto flex items-center justify-between gap-[10px]">
         <div className="flex items-center gap-[10px]">
           <button onClick={handleMenuClick} className="p-[10px] rounded-[8px] hover:bg-white/5 text-[var(--text-muted)] lg:hidden">
@@ -101,7 +101,8 @@ const TopBar = () => {
                </h1>
              </div>
 
-             {/* Dynamic Stats Header with Dropdowns */}
+             {/* Dynamic Stats Header with Dropdowns - Only on Dashboard */}
+             {activeTab === 'dashboard' && (
              <div className="hidden xl:flex items-center gap-12 ml-10 relative" ref={dropdownRef}>
                {/* Total Projects */}
                <div 
@@ -109,11 +110,11 @@ const TopBar = () => {
                  onClick={() => setDropdownOpen(dropdownOpen === 'TOTAL' ? null : 'TOTAL')}
                >
                  <div className="flex items-center gap-2 mb-2.5">
-                   <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] leading-none group-hover/stat:text-indigo-400 transition-colors">Total Projects</p>
+                   <p className="text-[12px] font-black text-[var(--text-muted)] uppercase leading-none group-hover/stat:text-indigo-400 transition-colors">Total Projects</p>
                    <ChevronDown size={10} className={`text-[var(--text-muted)] transition-transform duration-300 ${dropdownOpen === 'TOTAL' ? 'rotate-180 text-indigo-400' : ''}`} />
                  </div>
                  <div className="flex items-center gap-3">
-                   <span className="text-xl font-black text-[var(--text-main)] leading-none tracking-tighter group-hover/stat:text-indigo-300 transition-colors">{dashboardStats.totalProjects}</span>
+                   <span className="text-2xl font-black text-[var(--text-main)] leading-none tracking-tighter group-hover/stat:text-indigo-300 transition-colors">{dashboardStats.totalProjects}</span>
                  </div>
                </div>
 
@@ -123,11 +124,11 @@ const TopBar = () => {
                  onClick={() => setDropdownOpen(dropdownOpen === 'ACTIVE' ? null : 'ACTIVE')}
                >
                  <div className="flex items-center gap-2 mb-2.5">
-                   <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] leading-none group-hover/stat:text-emerald-400 transition-colors">Active Projects</p>
+                   <p className="text-[12px] font-black text-[var(--text-muted)] uppercase leading-none group-hover/stat:text-emerald-400 transition-colors">Active Projects</p>
                    <ChevronDown size={10} className={`text-[var(--text-muted)] transition-transform duration-300 ${dropdownOpen === 'ACTIVE' ? 'rotate-180 text-emerald-400' : ''}`} />
                  </div>
                  <div className="flex items-center gap-3">
-                   <span className="text-xl font-black text-emerald-500 leading-none tracking-tighter group-hover/stat:text-emerald-400 transition-colors">{dashboardStats.activeProjects}</span>
+                   <span className="text-2xl font-black text-emerald-500 leading-none tracking-tighter group-hover/stat:text-emerald-400 transition-colors">{dashboardStats.activeProjects}</span>
                  </div>
                </div>
 
@@ -150,17 +151,19 @@ const TopBar = () => {
                           </span>
                         </div>
                      </div>
-                     <div className="max-h-[380px] overflow-y-auto custom-scrollbar p-1.5">
+                     <div className="max-h-[380px] overflow-y-auto custom-scrollbar" style={{ padding: '10px' }}>
                         {(dropdownOpen === 'TOTAL' ? dashboardProjects : activeProjectsList).map((p, idx) => (
                           <div 
                             key={p.id || idx} 
-                            className="flex items-center justify-between p-2.5 rounded-lg hover:bg-white/5 transition-all group/item cursor-default mb-0.5"
+                            className="relative flex items-center justify-between rounded-lg hover:bg-white/5 transition-all group/item cursor-default mb-0.5 overflow-hidden"
+                            style={{ padding: '8px 10px 8px 10px' }}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-7 h-7 rounded flex items-center justify-center ${dropdownOpen === 'TOTAL' ? 'bg-indigo-500/5 text-indigo-400' : 'bg-emerald-500/5 text-emerald-400'} border border-white/5`}>
-                                <FolderKanban size={13} />
-                              </div>
-                              <div className="flex flex-col">
+                            <div className="flex items-center">
+                              {/* Dot slides in from left on hover */}
+                              <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300 ease-out opacity-0 -translate-x-4 group-hover/item:translate-x-2.5 group-hover/item:opacity-100 ${dropdownOpen === 'TOTAL' ? 'bg-indigo-400' : 'bg-emerald-400'}`}></span>
+                              
+                              {/* Text slides slightly right to accommodate the dot */}
+                              <div className="flex flex-col transition-all duration-300 ease-out translate-x-0 group-hover/item:translate-x-3.5">
                                 <span className="text-[11px] font-bold text-[var(--text-main)] group-hover/item:text-indigo-300 transition-colors uppercase tracking-tight leading-tight">{p.name}</span>
                                 <span className="text-[8px] font-medium text-[var(--text-muted)] uppercase tracking-widest mt-0.5">{p.key || 'RIN-PROJ'}</span>
                               </div>
@@ -178,6 +181,7 @@ const TopBar = () => {
                  )}
                </AnimatePresence>
              </div>
+             )}
           </div>
         </div>
 
@@ -212,10 +216,10 @@ const TopBar = () => {
             {activeTab === 'dashboard' && isAdmin && (
               <div className="flex items-center gap-2 mr-2 shrink-0">
                 {/* ADMIN / TEAM SWITCHER */}
-                <div className="flex items-center bg-[var(--bg-surface)]/60 p-0.5 rounded-xl border border-[var(--border)] shadow-[inset_1px_1px_4px_rgba(0,0,0,0.05)]">
+                <div className="flex items-center bg-[var(--bg-surface)]/60 p-1 rounded-2xl border border-[var(--border)] shadow-[inset_1px_1px_4px_rgba(0,0,0,0.05)]">
                   <button
                     onClick={() => setAdminViewMode('GLOBAL')}
-                    className={`w-14 h-6 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center ${
+                    className={`w-16 h-8 text-[12px] font-black uppercase rounded-xl transition-all duration-300 flex items-center justify-center ${
                       adminViewMode === 'GLOBAL'
                         ? 'bg-[var(--bg-surface)] text-indigo-500 shadow-[1px_1px_3px_rgba(0,0,0,0.1)] dark:shadow-[1px_1px_3px_rgba(255,255,255,0.05)] scale-[0.98]'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
@@ -225,7 +229,7 @@ const TopBar = () => {
                   </button>
                   <button
                     onClick={() => setAdminViewMode('TEAM')}
-                    className={`w-14 h-6 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all duration-300 flex items-center justify-center ${
+                    className={`w-16 h-8 text-[12px] font-black uppercase rounded-xl transition-all duration-300 flex items-center justify-center ${
                       adminViewMode === 'TEAM'
                         ? 'bg-[var(--bg-surface)] text-indigo-500 shadow-[1px_1px_3px_rgba(0,0,0,0.1)] dark:shadow-[1px_1px_3px_rgba(255,255,255,0.05)] scale-[0.98]'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
@@ -237,8 +241,8 @@ const TopBar = () => {
 
                 {/* SM / PR / SE / LE SWITCHER (Shown when TEAM mode is active) */}
                 {adminViewMode === 'TEAM' && (
-                  <div className="flex items-center bg-[var(--bg-surface)]/30 p-0.5 rounded-xl border border-[var(--border)]">
-                    <div className="flex gap-1 p-0.5">
+                  <div className="flex items-center bg-[var(--bg-surface)]/30 p-1 rounded-2xl border border-[var(--border)]">
+                    <div className="flex gap-1">
                       {[
                         { id: 'MODELLING', display: 'SM' },
                         { id: 'PT&REO', display: 'PR' },
@@ -248,7 +252,7 @@ const TopBar = () => {
                         <button
                           key={t.id}
                           onClick={() => setAdminActiveTeam(t.id)}
-                          className={`w-8 h-6 text-[9px] font-black uppercase rounded-lg transition-all duration-200 flex items-center justify-center ${
+                          className={`w-10 h-8 text-[12px] font-black uppercase rounded-xl transition-all duration-200 flex items-center justify-center ${
                             adminActiveTeam === t.id
                               ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20'
                               : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
