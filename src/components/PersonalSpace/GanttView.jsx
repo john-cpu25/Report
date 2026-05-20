@@ -169,7 +169,8 @@ const GanttView = ({
                               {/* Weekend Shading Overlay for sub-tasks */}
                               <div className="absolute inset-0 flex pointer-events-none z-10">
                                 {ganttTimeline.map((_, sIdx) => {
-                                  const isWeekend = ganttTimeline[sIdx].getDay() === 0 || ganttTimeline[sIdx].getDay() === 6;
+                                  const day = ganttTimeline[sIdx].getDay();
+                                  const isWeekend = (timeRange === 'week' || timeRange === 'month') && (day === 0 || day === 6);
                                   return (
                                     <div key={sIdx} className={`flex-1 border-r border-[var(--border)]/10 ${isWeekend ? 'bg-[var(--bg-main)]/60' : ''}`} />
                                   );

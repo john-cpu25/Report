@@ -339,7 +339,7 @@ const PersonalSpace = () => {
                 <button
                   key={v.id}
                   onClick={() => setViewMode(v.id)}
-                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
+                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
                     viewMode === v.id 
                       ? (isDark ? 'text-white' : v.color) 
                       : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
@@ -369,7 +369,7 @@ const PersonalSpace = () => {
                 <button
                   key={v.id}
                   onClick={() => setViewMode(v.id)}
-                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
+                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
                     viewMode === v.id 
                       ? (isDark ? 'text-white' : v.color) 
                       : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
@@ -401,7 +401,7 @@ const PersonalSpace = () => {
                 <button
                   key={v.id}
                   onClick={() => setViewMode(v.id)}
-                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
+                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
                     viewMode === v.id 
                       ? (isDark ? 'text-white' : v.color) 
                       : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
@@ -427,7 +427,7 @@ const PersonalSpace = () => {
           <div className="flex-1" /> {/* Spacer */}
 
             {/* Time Segmented Control (New Design) */}
-            {['list', 'daily', 'project'].includes(viewMode) && (
+            {['list', 'daily', 'project', 'gantt'].includes(viewMode) && (
               <div className={`flex items-center gap-1 p-[3px] backdrop-blur-md rounded-xl shadow-inner relative shrink-0 ${
                 isDark 
                   ? 'bg-slate-950/80 border border-slate-800' 
@@ -439,7 +439,7 @@ const PersonalSpace = () => {
                     <button
                       key={id}
                       onClick={() => setTimeRange(id)}
-                      className={`relative px-6 h-[28px] text-[10px] font-black uppercase tracking-widest transition-all duration-300 z-10 ${
+                      className={`relative px-6 h-[28px] text-[14px] font-black uppercase tracking-widest transition-all duration-300 z-10 ${
                         isActive 
                           ? (isDark ? 'text-white' : 'text-indigo-600') 
                           : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
@@ -471,7 +471,7 @@ const PersonalSpace = () => {
           }`}>
             <button
               onClick={() => loadData(true)}
-              className={`flex items-center gap-3 h-[28px] px-5 text-[10px] font-black uppercase tracking-widest transition-colors ${
+              className={`flex items-center gap-3 h-[28px] px-5 text-[14px] font-black uppercase tracking-widest transition-colors ${
                 isDark ? 'text-violet-400 hover:text-violet-300' : 'text-violet-500 hover:text-violet-700'
               }`}
               title="Force Sync with Supabase"
@@ -487,20 +487,20 @@ const PersonalSpace = () => {
       <div className="flex items-center gap-[10px] bg-[var(--bg-card)] px-[16px] py-[10px] rounded-[10px] border border-[var(--border)] shadow-sm">
         <div className="flex items-center gap-2 text-[var(--text-muted)] shrink-0">
           <Filter size={16} />
-          <span className="text-[11px] font-semibold uppercase tracking-wider">Filters</span>
+          <span className="text-[14px] font-semibold uppercase tracking-wider">Filters</span>
         </div>
 
         <input 
           type="text"
           placeholder="Search projects or tasks..."
-          className="flex-1 min-w-[180px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[13px] font-medium text-[var(--text-main)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-300/30 transition-all"
+          className="flex-1 min-w-[180px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-300/30 transition-all"
           value={localFilters.search}
           onChange={e => setLocalFilters(prev => ({ ...prev, search: e.target.value }))}
         />
 
         {user?.isAdmin && (
           <select 
-            className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[13px] font-medium text-[var(--text-main)] outline-none focus:border-blue-500 transition-all"
+            className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none focus:border-blue-500 transition-all"
             value={localFilters.team}
             onChange={e => setLocalFilters(prev => ({ ...prev, team: e.target.value }))}
           >
@@ -510,7 +510,7 @@ const PersonalSpace = () => {
         )}
 
         <select 
-          className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[13px] font-medium text-[var(--text-main)] outline-none focus:border-emerald-500 transition-all"
+          className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none focus:border-emerald-500 transition-all"
           value={localFilters.project}
           onChange={e => setLocalFilters(prev => ({ ...prev, project: e.target.value }))}
         >
@@ -519,7 +519,7 @@ const PersonalSpace = () => {
         </select>
 
         <select 
-          className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[13px] font-medium text-[var(--text-main)] outline-none focus:border-indigo-500 transition-all"
+          className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none focus:border-indigo-500 transition-all"
           value={localFilters.user}
           onChange={e => setLocalFilters(prev => ({ ...prev, user: e.target.value }))}
         >
@@ -529,7 +529,7 @@ const PersonalSpace = () => {
 
         <button 
           onClick={() => setLocalFilters({ team: '', user: '', project: '', search: '' })}
-          className="h-[36px] px-4 text-[12px] font-semibold text-rose-500 hover:bg-rose-500/10 rounded-md transition-all shrink-0"
+          className="h-[36px] px-4 text-[14px] font-semibold text-rose-500 hover:bg-rose-500/10 rounded-md transition-all shrink-0"
         >
           Clear
         </button>
@@ -538,7 +538,7 @@ const PersonalSpace = () => {
         <div className="flex items-center gap-2 shrink-0 border-l border-[var(--border)] pl-3">
           <ArrowUpDown size={14} className="text-[var(--text-muted)]" />
           <select
-            className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[13px] font-medium text-[var(--text-main)] outline-none focus:border-blue-500 transition-all"
+            className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none focus:border-blue-500 transition-all"
             value={localSort}
             onChange={e => setLocalSort(e.target.value)}
           >
@@ -558,18 +558,18 @@ const PersonalSpace = () => {
       {/* Timesheet Summary & Navigation Header (Visible for Daily, Project, and Gantt) */}
       <div className="px-[20px] space-y-[10px]">
       {/* --- CONTENT AREA: STATS & TIME NAVIGATION --- */}
-      <div className="ocd-card p-0 overflow-hidden mb-[10px] shadow-xl border border-indigo-500/20 bg-[var(--bg-card)]">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between px-[12px] py-[12px] bg-indigo-500/5 border-b border-[var(--border)] gap-4">
+      <div className="ocd-card p-0 mb-[10px] shadow-xl border border-indigo-500/20 bg-[var(--bg-card)]">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between px-[12px] py-[12px] bg-indigo-500/5 border-b border-[var(--border)] gap-4 rounded-t-[7px]">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
-              <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Total Hours:</span>
-              <span className="text-[15px] font-black text-indigo-400">
+              <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Total Hours:</span>
+              <span className="text-[14px] font-black text-indigo-400">
                 {((viewMode === 'daily' || viewMode === 'list') ? timesheetData?.grandTotalHours : projectTimesheetData?.grandTotalHours || 0).toFixed(2)}
               </span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
-              <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Tasks:</span>
-              <span className="text-[15px] font-black text-emerald-400">
+              <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Tasks:</span>
+              <span className="text-[14px] font-black text-emerald-400">
                 {(viewMode === 'daily' || viewMode === 'list') ? timesheetData?.grandTotalTasks : projectTimesheetData?.grandTotalTasks || 0}
               </span>
             </div>
@@ -577,14 +577,14 @@ const PersonalSpace = () => {
             <div className="w-[1px] h-8 bg-[var(--border)] mx-2 hidden xl:block" />
 
             {/* Time Metric Selector */}
-            {['list', 'daily', 'project'].includes(viewMode) && (
+            {['daily', 'project'].includes(viewMode) && (
               <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-inner">
                 {[
-                  { id: 't1', label: 'T1', color: 'emerald', tooltip: 'DATE_START → DATE_END' },
-                  { id: 't2', label: 'T2', color: 'sky', tooltip: 'DATE_START → DATE_COMPLETE' },
-                  { id: 't3', label: 'T3', color: 'indigo', tooltip: 'DATE_START → DATE_CHECKED' },
-                  { id: 't4', label: 'T4', color: 'orange', tooltip: 'DATE_STARTED → DATE_CHECKED' },
-                  { id: 't5', label: 'T5', color: 'rose', tooltip: 'CREATED_AT → DATE_CHECKED' }
+                  { id: 't1', label: 'T1', color: 'emerald', tooltip: 'T1: DATE_START → DATE_END (Planned)' },
+                  { id: 't2', label: 'T2', color: 'sky', tooltip: 'T2: DATE_START → DATE_COMPLETE (Actual Complete)' },
+                  { id: 't3', label: 'T3', color: 'indigo', tooltip: 'T3: DATE_START → DATE_CHECKED (Up to Checked)' },
+                  { id: 't4', label: 'T4', color: 'orange', tooltip: 'T4: DATE_STARTED → DATE_CHECKED (Processing Time)' },
+                  { id: 't5', label: 'T5', color: 'rose', tooltip: 'T5: CREATED_AT → DATE_CHECKED (Complete Lifecycle)' }
                 ].map((m) => {
                   const isActive = selectedTimeMetric === m.id;
                   const colorClass = 
@@ -596,14 +596,14 @@ const PersonalSpace = () => {
 
                   return (
                     <div key={m.id} className="relative group/time">
-                      <div className="absolute -top-[34px] left-1/2 -translate-x-1/2 px-2.5 py-1.5 bg-[#0f172a] border border-white/10 rounded-md shadow-2xl opacity-0 group-hover/time:opacity-100 transition-all pointer-events-none whitespace-nowrap z-[60]">
-                        <span className="text-[9px] font-black text-white tracking-tighter uppercase">{m.tooltip}</span>
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0f172a] border-r border-b border-white/10 rotate-45" />
+                      <div className="absolute -top-[38px] left-1/2 -translate-x-1/2 px-3 py-1.5 bg-slate-900 border border-slate-700/80 rounded-lg shadow-2xl opacity-0 group-hover/time:opacity-100 transition-all pointer-events-none whitespace-nowrap z-[60] duration-200 transform translate-y-1 group-hover/time:translate-y-0">
+                        <span className="text-[10px] font-bold text-slate-100 tracking-wide">{m.tooltip}</span>
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 border-r border-b border-slate-700/80 rotate-45" />
                       </div>
 
                       <button
                         onClick={() => setSelectedTimeMetric(m.id)}
-                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${colorClass} ${isActive ? 'shadow-md' : ''}`}
+                        className={`px-3 py-1.5 text-[14px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${colorClass} ${isActive ? 'shadow-md' : ''}`}
                       >
                         {m.label}
                       </button>
@@ -618,7 +618,7 @@ const PersonalSpace = () => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 bg-indigo-500/10 p-1.5 rounded-xl border border-indigo-500/30 shadow-sm">
               <select 
-                className="bg-[var(--bg-surface)] border border-indigo-500/20 rounded-lg h-[32px] px-2 text-[12px] font-black text-indigo-400 outline-none cursor-pointer hover:border-indigo-500 transition-all"
+                className="bg-[var(--bg-surface)] border border-indigo-500/20 rounded-lg h-[32px] px-2 text-[14px] font-black text-indigo-400 outline-none cursor-pointer hover:border-indigo-500 transition-all"
                 value={currentDate.getFullYear()}
                 onChange={(e) => {
                   const targetYear = parseInt(e.target.value);
@@ -635,12 +635,12 @@ const PersonalSpace = () => {
                   <div className="w-[1px] h-4 bg-indigo-500/20" />
                   
                   <div className="flex items-center gap-1.5 px-1">
-                    <span className="text-[10px] font-black text-indigo-500/60">
+                    <span className="text-[14px] font-black text-indigo-500/60">
                       {timeRange === 'week' ? 'W' : 'M'}
                     </span>
                     {timeRange === 'week' ? (
                       <select 
-                        className="bg-[var(--bg-surface)] border border-emerald-500/20 rounded-lg h-[32px] px-2 text-[12px] font-black text-emerald-500 outline-none cursor-pointer hover:border-emerald-500 transition-all"
+                        className="bg-[var(--bg-surface)] border border-emerald-500/20 rounded-lg h-[32px] px-2 text-[14px] font-black text-emerald-500 outline-none cursor-pointer hover:border-emerald-500 transition-all"
                         value={getISOWeek(currentDate)}
                         onChange={(e) => {
                           const targetWeek = parseInt(e.target.value);
@@ -652,7 +652,7 @@ const PersonalSpace = () => {
                       </select>
                     ) : (
                       <select 
-                        className="bg-[var(--bg-surface)] border border-emerald-500/20 rounded-lg h-[32px] px-2 text-[12px] font-black text-emerald-500 outline-none cursor-pointer hover:border-emerald-500 transition-all"
+                        className="bg-[var(--bg-surface)] border border-emerald-500/20 rounded-lg h-[32px] px-2 text-[14px] font-black text-emerald-500 outline-none cursor-pointer hover:border-emerald-500 transition-all"
                         value={currentDate.getMonth() + 1}
                         onChange={(e) => {
                           const targetMonth = parseInt(e.target.value) - 1;

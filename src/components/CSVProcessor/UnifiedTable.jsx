@@ -129,7 +129,7 @@ const UnifiedTable = (props) => {
       <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full text-left border-separate border-spacing-0" style={{ minWidth: '1800px' }}>
           <thead>
-            <tr className="text-[10px] font-black uppercase tracking-widest bg-[var(--bg-card)]" style={{ height: '40px' }}>
+            <tr className="text-[14px] font-black uppercase tracking-widest bg-[var(--bg-card)]" style={{ height: '40px' }}>
               <th rowSpan={2} className="px-[10px] py-[2px] text-[var(--text-contrast)] text-center border-r-2 border-b border-[var(--border)] sticky left-0 z-30 min-w-[140px] backdrop-blur-md bg-[var(--bg-card)]" style={{ top: stickyOffset }}>
                 <div className="flex items-center justify-center h-full cursor-pointer hover:text-indigo-500 transition-colors" onClick={() => handleSort('project')}>
                   <span>PROJECT {renderSortIcon('project')}</span>
@@ -151,7 +151,7 @@ const UnifiedTable = (props) => {
               <HeaderWithTooltip id="T4" color="text-[var(--text-contrast)]" stickyOffset={stickyOffset} rowSpan={2} />
               <HeaderWithTooltip id="T5" color="text-[var(--text-contrast)]" stickyOffset={stickyOffset} rowSpan={2} />
             </tr>
-            <tr className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] bg-[var(--bg-card)]" style={{ height: '32px' }}>
+            <tr className="text-[14px] font-black uppercase tracking-widest text-[var(--text-muted)] bg-[var(--bg-card)]" style={{ height: '32px' }}>
               <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[110px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('createdBy')}>create_by</th>
               <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[105px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('createdAt')}>created_at</th>
               <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[105px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStart')}>date_start</th>
@@ -171,9 +171,9 @@ const UnifiedTable = (props) => {
               const stickyBg = i % 2 === 0 ? 'bg-[var(--bg-card)]' : 'bg-[#f8fafc]'; // slate-50 equivalent for sticky
               
               return (
-                <tr key={r.id || i} className={`group hover:bg-indigo-50/30 transition-all text-[11px] ${rowBg}`}>
+                <tr key={r.id || i} className={`group hover:bg-indigo-50/30 transition-all text-[14px] ${rowBg}`}>
                   <td className={`px-[10px] py-[10px] sticky left-0 z-10 border-r-2 border-b border-[var(--border)] backdrop-blur-sm ${stickyBg}`}>
-                    <span className="font-black text-[10px] tracking-tight uppercase line-clamp-1" style={{ color: getProjectColor(r.project) }}>{r.project}</span>
+                    <span className="font-black text-[14px] tracking-tight uppercase line-clamp-1" style={{ color: getProjectColor(r.project) }}>{r.project}</span>
                   </td>
                   <td className={`px-[10px] py-[10px] sticky left-[140px] z-10 border-r-2 border-b border-[var(--border)] backdrop-blur-sm ${stickyBg}`}>
                     <span className="font-bold text-[var(--text-contrast)] group-hover:text-emerald-500 transition-colors line-clamp-1">{r.taskName}</span>

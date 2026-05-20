@@ -1478,7 +1478,7 @@ const Dashboard = () => {
               </div>
             ) : (
               // FIG 2: ORIGINAL 2x2 GRID (Default View for Admin/Non-Team users)
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr flex-1">
                 {teamPulse.map((team, i) => (
                   <div key={i} className="flex flex-col h-full">
                     <div className="flex justify-start mb-1">
@@ -1526,7 +1526,7 @@ const Dashboard = () => {
                       </div>
 
                       {/* Right Column - Tasks (Closer and Wider) */}
-                      <div className="flex-1 bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden h-[75px]">
+                      <div className="flex-1 bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden">
                         <div className="flex flex-col justify-start gap-2 h-full p-2.5 overflow-y-auto custom-scrollbar">
                           {team.dailyTasks ? team.dailyTasks.map((t, j) => (
                             <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
