@@ -58,8 +58,11 @@ const PersonalSpace = () => {
     columnFilters, 
     sortConfig, 
     handleSort,
-    dashboardProjects 
+    dashboardProjects,
+    theme
   } = useApp();
+
+  const isDark = theme === 'DARK' || theme === 'GALAXY';
 
   const projectColorMap = useMemo(() => {
     const map = {};
@@ -272,9 +275,11 @@ const PersonalSpace = () => {
         <div className="bg-[var(--bg-card)] p-[20px] rounded-[12px] border border-[var(--border)] shadow-xl">
           <h2 className="text-[28px] font-black text-[var(--text-contrast)] uppercase tracking-tighter flex items-center gap-[10px]">
             <span 
-              className="text-slate-900 dark:text-white"
+              className={isDark ? "text-white" : "text-slate-900"}
               style={{ 
-                textShadow: '0.5px 0.5px 1px rgba(255,255,255,0.2), -0.5px -0.5px 1px rgba(0,0,0,0.5)',
+                textShadow: isDark 
+                  ? '0 0 10px rgba(255,255,255,0.15), 0.5px 0.5px 1px rgba(255,255,255,0.2)' 
+                  : '0.5px 0.5px 1px rgba(255,255,255,0.2), -0.5px -0.5px 1px rgba(0,0,0,0.5)',
                 opacity: 0.95,
                 letterSpacing: '-0.05em'
               }}
@@ -301,9 +306,11 @@ const PersonalSpace = () => {
           <div>
             <h2 className="text-[28px] font-black text-[var(--text-contrast)] uppercase tracking-tighter flex items-center gap-[10px]">
               <span 
-                className="text-slate-900 dark:text-white"
+                className={isDark ? "text-white" : "text-slate-900"}
                 style={{ 
-                  textShadow: '0.5px 0.5px 1px rgba(255,255,255,0.2), -0.5px -0.5px 1px rgba(0,0,0,0.5)',
+                  textShadow: isDark 
+                    ? '0 0 10px rgba(255,255,255,0.15), 0.5px 0.5px 1px rgba(255,255,255,0.2)' 
+                    : '0.5px 0.5px 1px rgba(255,255,255,0.2), -0.5px -0.5px 1px rgba(0,0,0,0.5)',
                   opacity: 0.95,
                   letterSpacing: '-0.05em'
                 }}
@@ -318,7 +325,11 @@ const PersonalSpace = () => {
         <div className="mt-[12px] flex items-center gap-[12px] overflow-x-auto custom-scrollbar py-[4px]">
           
           {/* Unified Navigation: Basic, Project, Analysis Groups */}
-          <div className="flex items-center gap-[12px] p-[3px] bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md rounded-xl border border-white/20 shadow-inner shrink-0">
+          <div className={`flex items-center gap-[12px] p-[3px] backdrop-blur-md rounded-xl shadow-inner shrink-0 ${
+            isDark 
+              ? 'bg-slate-950/80 border border-slate-800' 
+              : 'bg-slate-200/50 border border-white/20'
+          }`}>
             {/* Group 1: Basic Modes */}
             <div className="flex items-center border-r border-slate-300/30 pr-2 mr-2">
               {[
@@ -329,14 +340,20 @@ const PersonalSpace = () => {
                   key={v.id}
                   onClick={() => setViewMode(v.id)}
                   className={`relative flex items-center gap-3 h-[32px] px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
-                    viewMode === v.id ? v.color : 'text-slate-500 hover:text-slate-700'
+                    viewMode === v.id 
+                      ? (isDark ? 'text-white' : v.color) 
+                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                   }`}
                 >
                   {v.icon} <span className="ml-1">{v.label}</span>
                   {viewMode === v.id && (
                     <motion.div
                       layoutId="activeViewMode"
-                      className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)] z-[-1]"
+                      className={`absolute inset-0 rounded-lg z-[-1] ${
+                        isDark 
+                          ? 'bg-black border border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]' 
+                          : 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
+                      }`}
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
@@ -353,14 +370,20 @@ const PersonalSpace = () => {
                   key={v.id}
                   onClick={() => setViewMode(v.id)}
                   className={`relative flex items-center gap-3 h-[32px] px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
-                    viewMode === v.id ? v.color : 'text-slate-500 hover:text-slate-700'
+                    viewMode === v.id 
+                      ? (isDark ? 'text-white' : v.color) 
+                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                   }`}
                 >
                   {v.icon} <span className="ml-1">{v.label}</span>
                   {viewMode === v.id && (
                     <motion.div
                       layoutId="activeViewMode"
-                      className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)] z-[-1]"
+                      className={`absolute inset-0 rounded-lg z-[-1] ${
+                        isDark 
+                          ? 'bg-black border border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]' 
+                          : 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
+                      }`}
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
@@ -379,14 +402,20 @@ const PersonalSpace = () => {
                   key={v.id}
                   onClick={() => setViewMode(v.id)}
                   className={`relative flex items-center gap-3 h-[32px] px-5 text-[11px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
-                    viewMode === v.id ? v.color : 'text-slate-500 hover:text-slate-700'
+                    viewMode === v.id 
+                      ? (isDark ? 'text-white' : v.color) 
+                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                   }`}
                 >
                   {v.icon} <span className="ml-1">{v.label}</span>
                   {viewMode === v.id && (
                     <motion.div
                       layoutId="activeViewMode"
-                      className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)] z-[-1]"
+                      className={`absolute inset-0 rounded-lg z-[-1] ${
+                        isDark 
+                          ? 'bg-black border border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]' 
+                          : 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
+                      }`}
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
@@ -399,7 +428,11 @@ const PersonalSpace = () => {
 
             {/* Time Segmented Control (New Design) */}
             {['list', 'daily', 'project'].includes(viewMode) && (
-              <div className="flex items-center gap-1 p-[3px] bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md rounded-xl border border-white/20 shadow-inner relative shrink-0">
+              <div className={`flex items-center gap-1 p-[3px] backdrop-blur-md rounded-xl shadow-inner relative shrink-0 ${
+                isDark 
+                  ? 'bg-slate-950/80 border border-slate-800' 
+                  : 'bg-slate-200/50 border border-white/20'
+              }`}>
                 {['week', 'month', 'year'].map((id) => {
                   const isActive = timeRange === id;
                   return (
@@ -407,14 +440,20 @@ const PersonalSpace = () => {
                       key={id}
                       onClick={() => setTimeRange(id)}
                       className={`relative px-6 h-[28px] text-[10px] font-black uppercase tracking-widest transition-all duration-300 z-10 ${
-                        isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                        isActive 
+                          ? (isDark ? 'text-white' : 'text-indigo-600') 
+                          : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
                       }`}
                     >
                       {id}
                       {isActive && (
                         <motion.div
                           layoutId="activeRange"
-                          className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)] z-[-1]"
+                          className={`absolute inset-0 rounded-lg z-[-1] ${
+                            isDark 
+                              ? 'bg-black border border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]' 
+                              : 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
+                          }`}
                           transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
                         />
                       )}
@@ -425,10 +464,16 @@ const PersonalSpace = () => {
             )}
 
           {/* Action Group: Sync */}
-          <div className="flex items-center p-[3px] bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md rounded-xl border border-white/20 shadow-inner shrink-0 ml-auto">
+          <div className={`flex items-center p-[3px] backdrop-blur-md rounded-xl shadow-inner shrink-0 ml-auto ${
+            isDark 
+              ? 'bg-slate-950/80 border border-slate-800' 
+              : 'bg-slate-200/50 border border-white/20'
+          }`}>
             <button
               onClick={() => loadData(true)}
-              className="flex items-center gap-3 h-[28px] px-5 text-[10px] font-black uppercase tracking-widest text-violet-500 hover:text-violet-700 transition-colors"
+              className={`flex items-center gap-3 h-[28px] px-5 text-[10px] font-black uppercase tracking-widest transition-colors ${
+                isDark ? 'text-violet-400 hover:text-violet-300' : 'text-violet-500 hover:text-violet-700'
+              }`}
               title="Force Sync with Supabase"
             >
               <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />

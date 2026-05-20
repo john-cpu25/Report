@@ -3,7 +3,7 @@ import { Plus, Trash2, ArrowUp, ArrowDown, FileSpreadsheet, Layout, X, Filter, A
 import { motion, AnimatePresence } from 'framer-motion'
 import WorkflowAnimation from './WorkflowAnimation'
 
-import KamehamehaAnimation from './KamehamehaAnimation'
+
 import { generateTasks, validateTaskInput } from './utils/taskEngine'
 import MarkupCell from './components/MarkupCell'
 import MarkupDateInput from './components/MarkupDateInput'
@@ -1004,7 +1004,7 @@ const WeeklyReport = ({ exportExcel }) => {
       {/* Bottom Dashboard / Project Distribution */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] pb-[10px]">
         <div className="bg-[var(--bg-card)] p-[10px] border border-[var(--border)] rounded-[8px] shadow-2xl lg:col-span-9 relative overflow-hidden m-[10px]">
-          <KamehamehaAnimation />
+
           <div className="relative z-10 p-[10px]">
             <div className="flex items-center justify-between mb-[10px]">
               <div className="flex items-center gap-[10px]">

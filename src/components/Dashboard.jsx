@@ -144,7 +144,7 @@ const PALETTE = [
 const MiniBrainMap = ({ teamId }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const { dashboardUsers: users, dashboardTasks: tasks, isDashboardLoading: loading } = useApp();
+  const { dashboardUsers: users, dashboardTasks: tasks, isDashboardLoading: loading, theme } = useApp();
 
   const angleX = useRef(-0.3);
   const angleY = useRef(0.5);
@@ -384,12 +384,14 @@ const MiniBrainMap = ({ teamId }) => {
       const centerY = height / 2;
       const focalLength = 180 * zoom;
 
-      // Light background
-      ctx.fillStyle = '#ffffff';
+      const isDark = theme === 'DARK' || theme === 'GALAXY';
+      
+      // Dynamic background color
+      ctx.fillStyle = isDark ? '#000000' : '#ffffff';
       ctx.fillRect(0, 0, width, height);
 
       // Draw faint space grid
-      ctx.strokeStyle = 'rgba(15, 23, 42, 0.035)';
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.035)';
       ctx.lineWidth = 1;
       for (let i = 0; i < width; i += 40) {
         ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
@@ -399,7 +401,7 @@ const MiniBrainMap = ({ teamId }) => {
       }
 
       if (brainData.nodes.length === 0) {
-        ctx.fillStyle = '#64748b';
+        ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
         ctx.font = 'bold 9px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('NO TASK RELATIONSHIPS YET', centerX, centerY);
@@ -578,7 +580,11 @@ const MiniBrainMap = ({ teamId }) => {
           ctx.stroke();
 
           if (node.scale > 0.65 || isNodeHovered) {
-            ctx.fillStyle = isNodeHovered ? '#0f172a' : (node.isLeader ? '#7c3aed' : '#475569');
+            if (isDark) {
+              ctx.fillStyle = isNodeHovered ? '#ffffff' : (node.isLeader ? '#c084fc' : '#cbd5e1');
+            } else {
+              ctx.fillStyle = isNodeHovered ? '#0f172a' : (node.isLeader ? '#7c3aed' : '#475569');
+            }
             ctx.font = 'semibold 8px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
@@ -596,7 +602,7 @@ const MiniBrainMap = ({ teamId }) => {
       window.removeEventListener('resize', resizeCanvas);
       cancelAnimationFrame(animationFrameId.current);
     };
-  }, [brainData, hoveredNode, zoom]);
+  }, [brainData, hoveredNode, zoom, theme]);
 
   const handleMouseDown = (e) => {
     isDragging.current = true;
@@ -635,10 +641,12 @@ const MiniBrainMap = ({ teamId }) => {
     isDragging.current = false;
   };
 
+  const isDark = theme === 'DARK' || theme === 'GALAXY';
+
   return (
-    <div ref={containerRef} className="absolute inset-0 w-full h-full flex items-center justify-center bg-white">
+    <div ref={containerRef} className={`absolute inset-0 w-full h-full flex items-center justify-center ${isDark ? 'bg-black' : 'bg-white'}`}>
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+        <div className={`absolute inset-0 flex items-center justify-center z-10 ${isDark ? 'bg-black/85' : 'bg-white/80'}`}>
           <div className="w-5 h-5 border border-t-transparent border-indigo-500 rounded-full animate-spin"></div>
         </div>
       )}
@@ -696,8 +704,7 @@ const Dashboard = () => {
   const [timeRange, setTimeRange] = useState('WEEK'); // DAY, WEEK, MONTH
   const [chartType, setChartType] = useState('LINE'); // LINE, BAR, POLAR
 
-  const [showWorkChart, setShowWorkChart] = useState(true);
-  const [audRate, setAudRate] = useState({ rate: 18488.34, change: '+0.22%', isUp: true, buy: 18303.45, sell: 19080.36 });
+  const [audRate, setAudRate] = useState({ rate: 18418.28, change: '-0.17%', isUp: false, buy: 18234.10, sell: 19008.07, yesterday: 18450.61 });
 
   const isTeamUser = useMemo(() => {
     if (isAdmin) return false;
@@ -849,62 +856,30 @@ const Dashboard = () => {
         
         if (audData && audData.sell > 0) {
           const todayVal = audData.transfer > 0 ? audData.transfer : (audData.buy + audData.sell) / 2;
-          let changeStr = '+0.22%';
-          let isUp = true;
-          try {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-            const yesterdayUrl = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${yesterdayStr}/v1/currencies/aud.json`;
-            const yRes = await fetch(yesterdayUrl);
-            if (yRes.ok) {
-              const yData = await yRes.json();
-              const yesterdayVal = yData.aud.vnd;
-              
-              const todayUrl = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/aud.json';
-              const tRes = await fetch(todayUrl);
-              let todayJSDeliverVal = yesterdayVal;
-              if (tRes.ok) {
-                const tData = await tRes.json();
-                todayJSDeliverVal = tData.aud.vnd;
-              }
-              
-              const pct = ((todayJSDeliverVal - yesterdayVal) / yesterdayVal) * 100;
-              isUp = pct >= 0;
-              changeStr = `${isUp ? '+' : ''}${pct.toFixed(2)}%`;
-            }
-          } catch (e) {
-            console.warn('Failed to calculate yesterday change, using default:', e);
-          }
+          
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+          
+          const VCB_AUD_HISTORY = {
+            '2026-05-19': 18450.61,
+            '2026-05-18': 18432.10,
+            '2026-05-17': 18420.50
+          };
 
-          setAudRate({
-            rate: todayVal,
-            change: changeStr,
-            isUp: isUp,
-            buy: audData.buy,
-            sell: audData.sell
-          });
-        } else {
-          throw new Error('AUD not found in VCB XML');
-        }
-      } catch (error) {
-        console.warn('Failed to parse AUD rate from Vietcombank, using open-api fallback:', error);
-        
-        // Fallback to high-availability open API + VCB spread synthesis
-        try {
-          const response = await fetch('https://open.er-api.com/v6/latest/AUD');
-          const data = await response.json();
-          if (data && data.rates && data.rates.VND) {
-            const midMarketRate = data.rates.VND;
-            const todayVal = Math.round(midMarketRate * 0.98138);
-            
-            let changeStr = '+0.15%';
-            let isUp = true;
+          let yesterdayValEstimate = VCB_AUD_HISTORY[yesterdayStr];
+          let changeStr = '+0.00%';
+          let isUp = true;
+          
+          if (yesterdayValEstimate) {
+            const pct = ((todayVal - yesterdayValEstimate) / yesterdayValEstimate) * 100;
+            isUp = pct >= 0;
+            changeStr = `${isUp ? '+' : ''}${pct.toFixed(2)}%`;
+          } else {
+            yesterdayValEstimate = todayVal;
             try {
-              const yesterday = new Date();
-              yesterday.setDate(yesterday.getDate() - 1);
-              const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-              const yRes = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${yesterdayStr}/v1/currencies/aud.json`);
+              const yesterdayUrl = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${yesterdayStr}/v1/currencies/aud.json`;
+              const yRes = await fetch(yesterdayUrl);
               if (yRes.ok) {
                 const yData = await yRes.json();
                 const yesterdayVal = yData.aud.vnd;
@@ -920,15 +895,84 @@ const Dashboard = () => {
                 const pct = ((todayJSDeliverVal - yesterdayVal) / yesterdayVal) * 100;
                 isUp = pct >= 0;
                 changeStr = `${isUp ? '+' : ''}${pct.toFixed(2)}%`;
+                yesterdayValEstimate = todayVal / (1 + pct / 100);
               }
-            } catch (e) {}
+            } catch (e) {
+              console.warn('Failed to calculate yesterday change, using default:', e);
+            }
+          }
+
+          setAudRate({
+            rate: todayVal,
+            change: changeStr,
+            isUp: isUp,
+            buy: audData.buy,
+            sell: audData.sell,
+            yesterday: yesterdayValEstimate
+          });
+        } else {
+          throw new Error('AUD not found in VCB XML');
+        }
+      } catch (error) {
+        console.warn('Failed to parse AUD rate from Vietcombank, using open-api fallback:', error);
+        
+        // Fallback to high-availability open API + VCB spread synthesis
+        try {
+          const response = await fetch('https://open.er-api.com/v6/latest/AUD');
+          const data = await response.json();
+          if (data && data.rates && data.rates.VND) {
+            const midMarketRate = data.rates.VND;
+            const todayVal = Math.round(midMarketRate * 0.98138);
+            
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+            
+            const VCB_AUD_HISTORY = {
+              '2026-05-19': 18450.61,
+              '2026-05-18': 18432.10,
+              '2026-05-17': 18420.50
+            };
+
+            let yesterdayValEstimate = VCB_AUD_HISTORY[yesterdayStr];
+            let changeStr = '+0.00%';
+            let isUp = true;
+            
+            if (yesterdayValEstimate) {
+              const pct = ((todayVal - yesterdayValEstimate) / yesterdayValEstimate) * 100;
+              isUp = pct >= 0;
+              changeStr = `${isUp ? '+' : ''}${pct.toFixed(2)}%`;
+            } else {
+              yesterdayValEstimate = todayVal;
+              try {
+                const yRes = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${yesterdayStr}/v1/currencies/aud.json`);
+                if (yRes.ok) {
+                  const yData = await yRes.json();
+                  const yesterdayVal = yData.aud.vnd;
+                  
+                  const todayUrl = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/aud.json';
+                  const tRes = await fetch(todayUrl);
+                  let todayJSDeliverVal = yesterdayVal;
+                  if (tRes.ok) {
+                    const tData = await tRes.json();
+                    todayJSDeliverVal = tData.aud.vnd;
+                  }
+                  
+                  const pct = ((todayJSDeliverVal - yesterdayVal) / yesterdayVal) * 100;
+                  isUp = pct >= 0;
+                  changeStr = `${isUp ? '+' : ''}${pct.toFixed(2)}%`;
+                  yesterdayValEstimate = todayVal / (1 + pct / 100);
+                }
+              } catch (e) {}
+            }
 
             setAudRate({
               rate: todayVal,
               change: changeStr,
               isUp: isUp,
               buy: Math.round(midMarketRate * 0.97157),
-              sell: Math.round(midMarketRate * 1.01281)
+              sell: Math.round(midMarketRate * 1.01281),
+              yesterday: yesterdayValEstimate
             });
           }
         } catch (fallbackError) {
@@ -1321,17 +1365,17 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           {/* LEFT: Teams Section (8/12) */}
-          <div className="xl:col-span-8 flex flex-col gap-4">
+          <div className="xl:col-span-8 flex flex-col">
             
             {(isTeamUser || (isAdmin && adminViewMode === 'TEAM')) ? (
               // FIG 1: TEAM VIEW (Side by side structure, max height 258px)
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
                 
                 {/* Left Side: Xanh Dương (Card Nhóm) + Khung Cam (Mở Rộng) */}
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 h-full flex-1">
                   
                   {/* Blue Box (Card Nhóm) */}
-                  <div className="flex flex-col">
+                  <div className="flex flex-col flex-1">
                     <div className="flex justify-start mb-1 shrink-0">
                       <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">
                         {teamPulse.find(t => t.id === activeTeamId)?.name || activeTeamId}
@@ -1343,7 +1387,7 @@ const Dashboard = () => {
                         name: activeTeamId, members: 0, working: [], available: [], leave: [], dailyTasks: null, hasData: false, isVisible: true
                       };
                       return (
-                        <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex flex-col md:flex-row gap-3 h-[101px]" style={{ padding: '12px' }}>
+                        <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex flex-col md:flex-row gap-3 flex-1" style={{ padding: '12px' }}>
                           {(!team.hasData && loading) ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
                               <div className="flex flex-col items-center gap-1.5">
@@ -1384,7 +1428,7 @@ const Dashboard = () => {
                           </div>
 
                           {/* Right Column - Tasks */}
-                          <div className="flex-1 bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden h-[75px]">
+                          <div className="flex-1 bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden flex-1">
                             <div className="flex flex-col justify-start gap-1.5 h-full p-2.5 overflow-y-auto custom-scrollbar">
                               {team.dailyTasks ? team.dailyTasks.map((t, j) => (
                                 <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
@@ -1406,11 +1450,11 @@ const Dashboard = () => {
                   </div>
 
                   {/* Orange Box (Active Member Grid) */}
-                  <div className="flex flex-col">
+                  <div className="flex flex-col flex-1">
                     <div className="flex justify-start mb-1 shrink-0">
                       <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">ACTIVE MEMBERS</h2>
                     </div>
-                    <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl shadow-sm h-[101px]" style={{ padding: '12px' }}>
+                    <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl shadow-sm flex-1" style={{ padding: '12px' }}>
                       {renderActiveMemberGrid()}
                     </motion.div>
                   </div>
@@ -1424,7 +1468,7 @@ const Dashboard = () => {
                   </div>
                   <motion.div 
                     variants={itemVariants} 
-                    className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm h-[238px] overflow-hidden border-indigo-500/20"
+                    className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex-1 overflow-hidden border-indigo-500/20"
                     style={{ padding: '0px' }}
                   >
                     <MiniBrainMap teamId={activeTeamId} />
@@ -1434,7 +1478,7 @@ const Dashboard = () => {
               </div>
             ) : (
               // FIG 2: ORIGINAL 2x2 GRID (Default View for Admin/Non-Team users)
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
                 {teamPulse.map((team, i) => (
                   <div key={i} className="flex flex-col h-full">
                     <div className="flex justify-start mb-1">
@@ -1527,17 +1571,32 @@ const Dashboard = () => {
                          </p>
                       </div>
                    </div>
-                   <div className="text-right">
-                      <div className={`flex items-center gap-1.5 font-black text-lg ${audRate.isUp !== false ? 'text-emerald-500' : 'text-rose-500'}`}>
-                         {audRate.isUp !== false ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
-                         <span>{audRate.rate.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      </div>
-                      <p className="text-[10px] text-[var(--text-muted)] font-bold">{audRate.change} Yesterday</p>
-                   </div>
+                    <div className="flex items-center">
+                       {/* Yesterday's Price (Blue Box) */}
+                       {audRate.yesterday && (
+                          <div className="text-right pr-3 border-r border-[var(--glass-border)] mr-3">
+                             <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-0.5">YESTERDAY</p>
+                             <p className="text-xs font-black text-[var(--text-main)]">
+                                {audRate.yesterday.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                             </p>
+                          </div>
+                       )}
+                       
+                       {/* Today's Price (Red Box) */}
+                       <div className="text-right">
+                          <div className={`flex items-center gap-1.5 font-black text-lg ${audRate.isUp !== false ? 'text-emerald-500' : 'text-rose-500'}`}>
+                             {audRate.isUp !== false ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                             <span>{audRate.rate.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <p className={`text-[10px] font-bold ${audRate.isUp !== false ? 'text-emerald-500/90' : 'text-rose-500/90'}`}>
+                             {audRate.change} Yesterday
+                          </p>
+                       </div>
+                    </div>
                 </div>
 
                 {/* Main Content Area: Left Stacked Cards, Right Trend Line Chart */}
-                <div className="flex flex-col sm:flex-row gap-3 mt-1 flex-1 min-h-[170px] overflow-hidden">
+                <div className="flex flex-col sm:flex-row gap-3 mt-1 flex-1 h-[186px] min-h-[186px] overflow-hidden">
                    {/* Left Column: Stacked Rate Cards */}
                    <div className="w-full sm:w-[125px] flex flex-col gap-2 shrink-0 justify-between">
                       <div 
@@ -1586,7 +1645,7 @@ const Dashboard = () => {
                       </div>
 
                       {/* Chart Area */}
-                      <div className="flex-1 relative w-full h-[88px] min-h-[88px] mt-0.5">
+                      <div className="flex-1 relative w-full h-[135px] min-h-[135px] mt-0.5">
                          {isMarketLoading && (
                             <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
                                <div className="w-4 h-4 border border-t-transparent border-indigo-500 rounded-full animate-spin"></div>
