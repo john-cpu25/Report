@@ -56,7 +56,7 @@ const Sidebar = () => {
       items: [
         { id: 'planning', label: 'Planning', icon: ListTodo },
         { id: 'issues', label: 'Issues', icon: AlertCircle },
-        { id: 'workflows', label: 'Process', icon: WorkflowIcon },
+        { id: 'workflows', label: 'Library', icon: WorkflowIcon },
       ]
     }
   ]
