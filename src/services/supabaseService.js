@@ -433,6 +433,19 @@ export const updateLibraryRoom = async (roomId, updates) => {
   return data;
 };
 
+
+/**
+ * Fetch all temporary tasks for Weekly Planner
+ */
+export const fetchTemporaryTasks = async () => {
+  const { data, error } = await supabase
+    .from('NMK_Task_Temporary')
+    .select('*')
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data || [];
+};
+
 /**
  * Realtime Subscription Handler
  */

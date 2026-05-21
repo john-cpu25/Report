@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { format, startOfWeek, addDays, parseISO } from 'date-fns';
-import { fetchProjects } from '../services/supabaseService';
+import { fetchProjects, fetchTemporaryTasks } from '../services/supabaseService';
 import projectsData from '../data/projects.json';
 import { useNotifications } from './NotificationContext';
 import { supabase } from '../supabaseClient';
@@ -138,6 +138,59 @@ const DEFAULT_WEEKLY_PLANNER_TASKS = [
   }
 ];
 
+const mapDbTasksToPlanner = (dbTasks, dbProjects, dbUsers) => {
+  const projectMap = {};
+  dbProjects.forEach(p => {
+    projectMap[p.id] = (p.key || p.name || 'UNKNOWN').toUpperCase();
+  });
+
+  const userMap = {};
+  dbUsers.forEach(u => {
+    if (u.email) {
+      userMap[u.email.toLowerCase()] = u;
+    }
+  });
+
+  return dbTasks.map(t => {
+    const projectKey = projectMap[t.project_id] || 'UNKNOWN';
+    let team = 'CIVIL';
+    if (t.create_by) {
+      const creatorEmail = t.create_by.toLowerCase();
+      if (userMap[creatorEmail] && userMap[creatorEmail].team) {
+        team = userMap[creatorEmail].team.toUpperCase();
+      }
+    }
+
+    const days = { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' };
+    if (t.time && !t.time.startsWith('0001-01-01')) {
+      const date = new Date(t.time);
+      if (!isNaN(date.getTime())) {
+        // Shift to GMT+7 (Vietnam time) and use UTC getters to ensure browser timezone independence
+        const vnDate = new Date(date.getTime() + 7 * 3600000);
+        const hours = String(vnDate.getUTCHours()).padStart(2, '0');
+        const minutes = String(vnDate.getUTCMinutes()).padStart(2, '0');
+        const timeFormatted = `${hours}:${minutes}`;
+        const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = daysOfWeek[vnDate.getUTCDay()];
+        if (days.hasOwnProperty(dayName)) {
+          days[dayName] = timeFormatted;
+        }
+      }
+    }
+
+    return {
+      id: t.id,
+      project: projectKey,
+      team,
+      task: t.name || '(no detail)',
+      status: t.status || 'WIP',
+      markupDate: null,
+      markupTime: null,
+      days
+    };
+  });
+};
+
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
@@ -226,22 +279,56 @@ export const AppProvider = ({ children }) => {
     const savedLogs = localStorage.getItem('weeklyReportData');
     const savedProjects = localStorage.getItem('customProjects');
     
-    if (savedLogs && JSON.parse(savedLogs).length > 0) {
-      const logs = JSON.parse(savedLogs);
-      const migratedLogs = logs.map(log =>
-        log.status === 'PLANING' ? { ...log, status: 'PLANNING' } : log
-      );
-      setReportData(migratedLogs);
-    } else {
-      // Auto-seed on first load or when empty
-      setReportData(DEFAULT_WEEKLY_PLANNER_TASKS);
-      localStorage.setItem('weeklyReportData', JSON.stringify(DEFAULT_WEEKLY_PLANNER_TASKS));
-      
-      const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
-      const updatedCustom = Array.from(new Set([...(savedProjects ? JSON.parse(savedProjects) : []), ...requiredProjects]));
-      setCustomProjects(updatedCustom);
-      localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
-    }
+    const initData = async () => {
+      if (savedLogs && JSON.parse(savedLogs).length > 0) {
+        const logs = JSON.parse(savedLogs);
+        const migratedLogs = logs.map(log =>
+          log.status === 'PLANING' ? { ...log, status: 'PLANNING' } : log
+        );
+        setReportData(migratedLogs);
+      } else {
+        try {
+          const [dbTasks, dbProjectsRes, dbUsersRes] = await Promise.all([
+            fetchTemporaryTasks(),
+            supabase.from('NMK_Project').select('id, name, key'),
+            supabase.from('NMK_User').select('id, email, name, team')
+          ]);
+
+          const dbProjects = dbProjectsRes.data || [];
+          const dbUsers = dbUsersRes.data || [];
+          const mappedTasks = mapDbTasksToPlanner(dbTasks, dbProjects, dbUsers);
+
+          if (mappedTasks.length > 0) {
+            setReportData(mappedTasks);
+            localStorage.setItem('weeklyReportData', JSON.stringify(mappedTasks));
+            
+            const mappedProjectKeys = Array.from(new Set(mappedTasks.map(t => t.project).filter(Boolean)));
+            const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
+            const updatedCustom = Array.from(new Set([...(savedProjects ? JSON.parse(savedProjects) : []), ...requiredProjects, ...mappedProjectKeys]));
+            setCustomProjects(updatedCustom);
+            localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
+          } else {
+            setReportData(DEFAULT_WEEKLY_PLANNER_TASKS);
+            localStorage.setItem('weeklyReportData', JSON.stringify(DEFAULT_WEEKLY_PLANNER_TASKS));
+            
+            const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
+            const updatedCustom = Array.from(new Set([...(savedProjects ? JSON.parse(savedProjects) : []), ...requiredProjects]));
+            setCustomProjects(updatedCustom);
+            localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
+          }
+        } catch (err) {
+          console.error('Failed to auto-seed from Supabase on load, using defaults:', err);
+          setReportData(DEFAULT_WEEKLY_PLANNER_TASKS);
+          localStorage.setItem('weeklyReportData', JSON.stringify(DEFAULT_WEEKLY_PLANNER_TASKS));
+          
+          const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
+          const updatedCustom = Array.from(new Set([...(savedProjects ? JSON.parse(savedProjects) : []), ...requiredProjects]));
+          setCustomProjects(updatedCustom);
+          localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
+        }
+      }
+    };
+    initData();
 
     const fetchSupabaseProjects = async () => {
       try {
@@ -293,24 +380,49 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const seedPlannerData = () => {
-    setReportData(DEFAULT_WEEKLY_PLANNER_TASKS);
-    localStorage.setItem('weeklyReportData', JSON.stringify(DEFAULT_WEEKLY_PLANNER_TASKS));
-    
-    const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
-    const updatedCustom = Array.from(new Set([...customProjects, ...requiredProjects]));
-    setCustomProjects(updatedCustom);
-    localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
+  const seedPlannerData = async () => {
+    try {
+      const [dbTasks, dbProjectsRes, dbUsersRes] = await Promise.all([
+        fetchTemporaryTasks(),
+        supabase.from('NMK_Project').select('id, name, key'),
+        supabase.from('NMK_User').select('id, email, name, team')
+      ]);
 
-    sendNotification({
-      recipient: 'admin@bypass.local',
-      sender: 'system',
-      senderName: 'Hệ thống',
-      type: 'SYSTEM',
-      title: 'Đồng bộ Weekly Planner thành công 📋',
-      content: 'Đã tạo và thiết lập lịch làm việc tuần này của bạn theo đúng yêu cầu thiết kế.',
-      link: '?tab=weekly'
-    });
+      const dbProjects = dbProjectsRes.data || [];
+      const dbUsers = dbUsersRes.data || [];
+
+      const mappedTasks = mapDbTasksToPlanner(dbTasks, dbProjects, dbUsers);
+
+      setReportData(mappedTasks);
+      localStorage.setItem('weeklyReportData', JSON.stringify(mappedTasks));
+
+      const mappedProjectKeys = Array.from(new Set(mappedTasks.map(t => t.project).filter(Boolean)));
+      const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
+      const updatedCustom = Array.from(new Set([...customProjects, ...requiredProjects, ...mappedProjectKeys]));
+      setCustomProjects(updatedCustom);
+      localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
+
+      sendNotification({
+        recipient: 'admin@bypass.local',
+        sender: 'system',
+        senderName: 'Hệ thống',
+        type: 'SYSTEM',
+        title: 'Đồng bộ Weekly Planner thành công 📋',
+        content: `Đã đồng bộ thành công ${mappedTasks.length} nhiệm vụ từ cơ sở dữ liệu Supabase.`,
+        link: '?tab=weekly'
+      });
+    } catch (err) {
+      console.error('Failed to seed Weekly Planner from Supabase:', err);
+      sendNotification({
+        recipient: 'admin@bypass.local',
+        sender: 'system',
+        senderName: 'Hệ thống',
+        type: 'SYSTEM',
+        title: 'Đồng bộ Weekly Planner thất bại ❌',
+        content: `Lỗi: ${err.message || 'Không xác định'}.`,
+        link: '?tab=weekly'
+      });
+    }
   };
 
   // Save data on change
