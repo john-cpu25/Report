@@ -406,6 +406,45 @@ body.theme-news select option {
   height: 600px; /* Double page height */
   margin: 0 auto;
   overflow: visible !important; /* ALLOW 3D CANVAS PAGES TO BREATHE */
+  z-index: 5;
+}
+
+.book-page-edges-left {
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.08) 0px,
+      rgba(0, 0, 0, 0.08) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    linear-gradient(to left, #ebdcb9 0%, #faf8f3 100%);
+  border-radius: 3px 0 0 3px;
+  box-shadow: -2px 4px 8px rgba(0,0,0,0.35);
+  z-index: 15;
+  border-left: 1px solid rgba(0,0,0,0.15);
+}
+
+.book-page-edges-right {
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.08) 0px,
+      rgba(0, 0, 0, 0.08) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    linear-gradient(to right, #ebdcb9 0%, #faf8f3 100%);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 2px 4px 8px rgba(0,0,0,0.35);
+  z-index: 15;
+  border-right: 1px solid rgba(0,0,0,0.15);
 }
 
 .page-item {
@@ -454,14 +493,14 @@ body.theme-news select option {
 
 @media (min-width: 768px) {
   .book-page-left {
-    padding-top: 44px !important;
-    padding-bottom: 44px !important;
+    padding-top: 28px !important;
+    padding-bottom: 28px !important;
     padding-left: 56px !important;
     padding-right: 68px !important;
   }
   .book-page-right {
-    padding-top: 44px !important;
-    padding-bottom: 44px !important;
+    padding-top: 28px !important;
+    padding-bottom: 28px !important;
     padding-left: 68px !important;
     padding-right: 56px !important;
   }
@@ -505,4 +544,13 @@ body.theme-news select option {
   background: linear-gradient(to right, rgba(0, 0, 0, 0.15) 0%, transparent 8%, transparent 92%, rgba(0, 0, 0, 0.08) 100%);
   z-index: 40;
   border-radius: inherit;
+}
+
+/* Enable editing pointer events inside page-flip wrapper */
+[contenteditable],
+[contenteditable] * {
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text !important;
 }

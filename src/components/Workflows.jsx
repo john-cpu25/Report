@@ -22,12 +22,101 @@ import {
   Compass,
   Home,
   BookOpen,
-  ArrowLeft
+  ArrowLeft,
+  Loader2,
+  RefreshCw,
+  Upload,
+  Pencil,
+  Save,
+  Plus,
+  Trash2,
+  X
 } from 'lucide-react';
 import libraryBg from '../assets/library.png';
+import { 
+  fetchFullLibrary, 
+  seedLibraryToSupabase, 
+  updateLibrarySpread, 
+  createLibrarySpread, 
+  deleteAndReorderSpreads 
+} from '../services/supabaseService';
+import defaultRooms from '../data/defaultLibraryRooms';
+import { useAuth } from '../context/AuthContext';
+
+// Icon map: resolve string names from Supabase JSONB → Lucide React components
+const iconMap = {
+  FileText, Search, MousePointer2, CheckCircle2, Clock,
+  Layers, Zap, Compass, Home, ShieldCheck, HelpCircle,
+  Crown, Sparkles, BookOpen, Users, AlertCircle, ArrowRight
+};
+const resolveIcon = (iconName) => iconMap[iconName] || HelpCircle;
+
+// Admin inline editable text field
+const EditableField = ({ value, onSave, className, tag = 'span', multiline = false, style }) => {
+  const ref = React.useRef(null);
+  const [editing, setEditing] = React.useState(false);
+  
+  const handleBlur = () => {
+    setEditing(false);
+    const newVal = ref.current?.innerText?.trim();
+    if (newVal && newVal !== value) {
+      onSave(newVal);
+    }
+  };
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const stopProp = (e) => {
+      e.stopPropagation();
+    };
+
+    // Register native listeners directly on the element to stop propagation
+    // before the page-flip library's listeners on the parent container run.
+    el.addEventListener('mousedown', stopProp);
+    el.addEventListener('mouseup', stopProp);
+    el.addEventListener('click', stopProp);
+    el.addEventListener('touchstart', stopProp);
+    el.addEventListener('touchend', stopProp);
+    el.addEventListener('pointerdown', stopProp);
+    el.addEventListener('pointerup', stopProp);
+
+    return () => {
+      el.removeEventListener('mousedown', stopProp);
+      el.removeEventListener('mouseup', stopProp);
+      el.removeEventListener('click', stopProp);
+      el.removeEventListener('touchstart', stopProp);
+      el.removeEventListener('touchend', stopProp);
+      el.removeEventListener('pointerdown', stopProp);
+      el.removeEventListener('pointerup', stopProp);
+    };
+  }, []);
+
+  const Tag = tag;
+  return (
+    <Tag
+      ref={ref}
+      className={`${className} ${editing ? 'outline outline-2 outline-indigo-400 bg-indigo-50/80 rounded px-1' : 'cursor-pointer hover:bg-yellow-100/50 rounded px-0.5 transition-colors'}`}
+      style={style}
+      contentEditable
+      suppressContentEditableWarning
+      onFocus={() => setEditing(true)}
+      onBlur={handleBlur}
+      onKeyDown={(e) => { if (e.key === 'Enter' && !multiline) { e.preventDefault(); ref.current?.blur(); } }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+    >
+      {value}
+    </Tag>
+  );
+};
 
 const Workflows = () => {
-  const [selectedRoom, setSelectedRoom] = useState(null); // 'str', 'pt_reo', 'mto', 'arch'
+  const { isAdmin } = useAuth();
+  const [selectedRoom, setSelectedRoom] = useState(null);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState(null);
   const [currentSpread, setCurrentSpread] = useState(0);
   const [pageDirection, setPageDirection] = useState(1);
@@ -35,10 +124,187 @@ const Workflows = () => {
   const [isFlipping, setIsFlipping] = useState(false);
   const [prevSpread, setPrevSpread] = useState(0);
   const [flipHalf, setFlipHalf] = useState('front');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Supabase data state
+  const [libraryData, setLibraryData] = useState(() => {
+    // Init from cache for instant display
+    try {
+      const cached = localStorage.getItem('nmk_library_cache');
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(() => {
+    return localStorage.getItem('nmk_library_sync_time') || null;
+  });
 
   const shelfRef = useRef(null);
   const bookRef = useRef(null);
   const pageFlipRef = useRef(null);
+
+  // Derived state from libraryData (declared at the top to avoid TDZ reference errors in hooks/handlers)
+  const rooms = {};
+  libraryData.forEach(room => {
+    const roomKey = room.division.toLowerCase();
+    const wfObj = {};
+    (room.workflows || []).forEach(wf => {
+      wfObj[wf.id] = {
+        ...wf,
+        icon: resolveIcon(wf.icon || room.icon),
+        spreads: wf.spreads || []
+      };
+    });
+    rooms[roomKey] = {
+      id: roomKey,
+      title: room.title,
+      subtitle: room.subtitle || (room.division + ' Division'),
+      icon: resolveIcon(room.icon),
+      color: room.color || '#10b981',
+      desc: room.desc || '',
+      workflows: wfObj
+    };
+  });
+
+  const currentRoomData = rooms[selectedRoom];
+  const activeWorkflowsList = currentRoomData ? Object.values(currentRoomData.workflows) : [];
+  const selectedWorkflow = currentRoomData?.workflows[selectedWorkflowId];
+  const maxSpreads = selectedWorkflow?.spreads?.length || 0;
+
+  // Fetch from Supabase and update cache
+  const fetchAndCache = async () => {
+    const data = await fetchFullLibrary();
+    if (data && data.length > 0) {
+      localStorage.setItem('nmk_library_cache', JSON.stringify(data));
+      localStorage.setItem('nmk_library_sync_time', new Date().toISOString());
+      setLastSyncTime(new Date().toISOString());
+    }
+    return data;
+  };
+
+  // Sync local data → Supabase
+  const handleSync = async () => {
+    try {
+      setIsSyncing(true);
+      await seedLibraryToSupabase(defaultRooms, iconMap);
+      const data = await fetchAndCache();
+      setLibraryData(data);
+    } catch (err) {
+      console.error('[Sync] Failed:', err);
+      alert('Đồng bộ thất bại: ' + err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Refresh: re-fetch from Supabase without seeding
+  const handleRefresh = async () => {
+    try {
+      setIsLoading(true);
+      const data = await fetchAndCache();
+      setLibraryData(data);
+    } catch (err) {
+      console.error('[Refresh] Failed:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Admin: save edited spread page content to Supabase
+  const handleSaveSpread = async (spreadId, field, pageData) => {
+    if (!isAdmin || !spreadId) return;
+    try {
+      setIsSaving(true);
+      await updateLibrarySpread(spreadId, { [field]: pageData });
+      // Refresh data from Supabase
+      const data = await fetchAndCache();
+      setLibraryData(data);
+    } catch (err) {
+      console.error('[Admin Save] Failed:', err);
+      alert('Lưu thất bại: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Admin: add a new spread (left steps page, right steps page)
+  const handleAddSpread = async () => {
+    if (!isAdmin || !selectedWorkflowId) return;
+    try {
+      setIsSaving(true);
+      
+      const newLeftPage = {
+        type: "steps",
+        title: "NEW PROCESS STEPS",
+        steps: [
+          {
+            step: "STEP 1",
+            icon: "FileText",
+            descEn: "Enter English description here",
+            descVn: "Nhập mô tả tiếng Việt ở đây",
+            titleEn: "New Step Title"
+          }
+        ]
+      };
+      
+      const newRightPage = {
+        type: "steps",
+        title: "VERIFICATION PROCEDURES",
+        steps: [
+          {
+            step: "STEP 2",
+            icon: "CheckCircle2",
+            descEn: "Enter English verification here",
+            descVn: "Nhập mô tả xác thực ở đây",
+            titleEn: "Verification Step"
+          }
+        ]
+      };
+      
+      const newIndex = maxSpreads;
+      await createLibrarySpread(selectedWorkflowId, newIndex, newLeftPage, newRightPage);
+      
+      // Refresh data
+      const data = await fetchAndCache();
+      setLibraryData(data);
+      
+      // Go to the newly created spread
+      setCurrentSpread(newIndex);
+    } catch (err) {
+      console.error('[Add Spread] Failed:', err);
+      alert('Thêm trang đôi thất bại: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Admin: delete current spread and reorder
+  const handleDeleteSpread = async (spreadId) => {
+    if (!isAdmin || !spreadId || !selectedWorkflowId) return;
+    if (!window.confirm('Bạn có chắc chắn muốn xóa trang đôi này không?')) return;
+    
+    try {
+      setIsSaving(true);
+      await deleteAndReorderSpreads(spreadId, selectedWorkflowId);
+      
+      // Refresh data
+      const data = await fetchAndCache();
+      setLibraryData(data);
+      
+      // Adjust current spread index
+      if (currentSpread >= maxSpreads - 1) {
+        setCurrentSpread(Math.max(0, maxSpreads - 2));
+      }
+    } catch (err) {
+      console.error('[Delete Spread] Failed:', err);
+      alert('Xóa trang đôi thất bại: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     let flipTimer = null;
@@ -68,11 +334,22 @@ const Workflows = () => {
           usePortrait: false, // Forces dual-page spread
           flippingTime: 1200, // Butter-smooth slower organic timing (makes paper feel soft & heavy)
           swipeDistance: 30, // Responsive corner dragging
+          clickEventForward: true, // Forward click events to DOM elements inside the pages
+          disableFlipByClick: true, // Prevent page flipping when clicking the body of the page (so editing works)
         });
 
         try {
           pageFlip.loadFromHTML(bookRef.current.querySelectorAll('.page-item'));
           pageFlipRef.current = pageFlip;
+
+          // Restore current page spread upon initialization
+          if (currentSpread > 0 && currentSpread < maxSpreads) {
+            if (typeof pageFlip.turnToPage === 'function') {
+              pageFlip.turnToPage(currentSpread * 2);
+            } else if (typeof pageFlip.flip === 'function') {
+              pageFlip.flip(currentSpread * 2);
+            }
+          }
 
           pageFlip.on('flip', (e) => {
             const spreadIdx = Math.floor(e.data / 2);
@@ -95,478 +372,34 @@ const Workflows = () => {
         pageFlipRef.current = null;
       }
     };
-  }, [selectedWorkflowId]);
+  }, [selectedWorkflowId, maxSpreads]);
 
-  const rooms = {
-    str: {
-      id: 'str',
-      title: 'STR MODELING',
-      subtitle: 'Structural Modeling Division',
-      icon: Layers,
-      color: '#10b981', // Emerald
-      desc: 'Quy chuẩn kiểm soát chất lượng mô hình 3D kết cấu, QA/QC bản vẽ dầm cột sàn và thiết lập hệ tọa độ chia sẻ.',
-      workflows: {
-        str_qa: {
-          id: 'str_qa',
-          title: 'QA Check Process',
-          subtitle: 'Quality Assurance Protocol (Quy trình QA)',
-          icon: ShieldCheck,
-          color: '#10b981',
-          spreads: [
-            {
-              left: {
-                type: 'cover',
-                title: 'QA Check Process',
-                subtitle: 'Quality Assurance Protocol (Quy trình QA)',
-                volume: 'Vol. STR-I',
-                classification: 'QUALITY AUDIT',
-                stampColor: '#10b981'
-              },
-              right: {
-                type: 'intro',
-                desc: 'Quy trình 5 bước kiểm soát chất lượng tuyệt đối nhằm giảm thiểu tối đa sai sót trước khi xuất hồ sơ kỹ thuật kết cấu bê tông cốt thép tại Rincovitch.',
-                meta: [
-                  { label: 'Bộ phận', val: 'STR Modeling Team' },
-                  { label: 'Quy chuẩn', val: 'QA-STR-2026' },
-                  { label: 'Bảo mật', val: 'HIGH CONFIDENTIAL' }
-                ]
-              }
-            },
-            {
-              left: {
-                type: 'steps',
-                title: 'Steps 01 & 02',
-                steps: [
-                  {
-                    step: 'STEP 1',
-                    titleEn: 'RECEIVE MARKUP & FILE SETUP',
-                    titleVn: 'NHẬN MARKUP & TẠO FILE',
-                    descEn: 'When you receive the markup from the Manager/Leader, create a new file with your name added. EX: MARKUP-LOADING PLAN -> MARKUP-LOADING PLAN_NHAN',
-                    descVn: 'Khi nhận được bản markup từ cấp trên, sao chép và tạo file làm việc mới có hậu tố tên mình. EX: MARKUP-LOADING PLAN => MARKUP-LOADING PLAN_NHÂN',
-                    highlight: 'NHAN',
-                    icon: FileText
-                  },
-                  {
-                    step: 'STEP 2',
-                    titleEn: 'HIGHLIGHT COMPLETED AREAS',
-                    titleVn: 'TÔ MÀU VỊ TRÍ HOÀN THÀNH',
-                    descEn: 'HIGHLIGHT the areas on the markup drawing that you have completed to keep precise track.',
-                    descVn: 'Sử dụng bút màu TÔ MÀU trực tiếp lên các vị trí đã xử lý xong trên bản vẽ markup để kiểm soát.',
-                    highlight: 'HIGHLIGHT',
-                    icon: Search
-                  }
-                ]
-              },
-              right: {
-                type: 'steps',
-                title: 'Steps 03 & 04',
-                steps: [
-                  {
-                    step: 'STEP 3',
-                    titleEn: 'PRINT & SECOND HIGHLIGHT',
-                    titleVn: 'IN RA VÀ TÔ MÀU LẦN 2',
-                    descEn: 'After finishing, print out the drawing and HIGHLIGHT again on the physical drawing for absolute verification.',
-                    descVn: 'Sau khi hoàn thành, in bản vẽ ra giấy và TÔ MÀU kiểm tra lần 2 lên bản cứng để soát lỗi.',
-                    highlight: 'HIGHLIGHT AGAIN',
-                    icon: MousePointer2
-                  },
-                  {
-                    step: 'STEP 4',
-                    titleEn: 'CROSS-CHECK & STAMPING',
-                    titleVn: 'CHECK CHÉO & ĐÓNG DẤU',
-                    descEn: 'Cross-check with other member. Checker must add a STAMP and save with name. EX: MARKUP-LOADING PLAN_Checked By NN',
-                    descVn: 'Bàn giao cho đồng nghiệp check chéo. Người check thực hiện ĐÓNG DẤU (STAMP) xác nhận và lưu file kèm tên mình. EX: MARKUP-LOADING PLAN_Checked By NN',
-                    highlight: 'STAMP',
-                    icon: CheckCircle2
-                  }
-                ]
-              }
-            },
-            {
-              left: {
-                type: 'steps',
-                title: 'Step 05',
-                steps: [
-                  {
-                    step: 'STEP 5',
-                    titleEn: 'FINAL MANAGER REVIEW',
-                    titleVn: 'LEADER CHECK LẦN CUỐI',
-                    descEn: 'Manager/Leader performs the absolute final review before formal issuance.',
-                    descVn: 'Manager/Leader duyệt kỹ thuật tổng thể lần cuối trước khi chính thức phát hành bản vẽ.',
-                    highlight: 'FINAL CHECK',
-                    icon: Clock
-                  }
-                ]
-              },
-              right: {
-                type: 'signoff',
-                title: 'Quality Verification',
-                checklist: [
-                  'Tên file tuân thủ quy định đặt tên',
-                  'Bản vẽ in giấy được tô màu đầy đủ',
-                  'Có chữ ký check chéo và đóng dấu',
-                  'Leader phê duyệt cuối cùng'
-                ],
-                notes: 'Tuyệt đối không bỏ qua các bước tô màu kiểm tra. Đây là quy tắc vàng để bảo đảm bản vẽ không sót lỗi kỹ thuật.'
-              }
-            }
-          ]
-        },
-        str_standards: {
-          id: 'str_standards',
-          title: 'STR Modeling Standards',
-          subtitle: 'Modeling Rules & Shared Coordinates (Quy chuẩn dựng hình)',
-          icon: Layers,
-          color: '#047857',
-          spreads: [
-            {
-              left: {
-                type: 'cover',
-                title: 'Modeling Standards',
-                subtitle: 'Level & Coordinates Rules (Tiêu chuẩn Kết cấu)',
-                volume: 'Vol. STR-II',
-                classification: 'ENGINEERING GUIDELINE',
-                stampColor: '#047857'
-              },
-              right: {
-                type: 'intro',
-                desc: 'Quy chuẩn thiết lập ban đầu cho dự án, kiểm soát cốt cao độ dầm sàn kết cấu và hệ thống lưới tọa độ chia sẻ đồng nhất.',
-                meta: [
-                  { label: 'Lĩnh vực', val: 'Revit STR Modeling' },
-                  { label: 'Quy chuẩn', val: 'RINCO-STR-COOR' },
-                  { label: 'Tọa độ', val: 'Shared Coordinates' }
-                ]
-              }
-            },
-            {
-              left: {
-                type: 'steps',
-                title: 'Standards 01 & 02',
-                steps: [
-                  {
-                    step: 'STD 01',
-                    titleEn: 'SHARED COORDINATES SETUP',
-                    titleVn: 'THIẾT LẬP TỌA ĐỘ CHIA SẺ',
-                    descEn: 'Acquire coordinates from the master site layout. Never manually move the project base point.',
-                    descVn: 'Nhận tọa độ trực tiếp từ bản vẽ quy hoạch tổng mặt bằng. Tuyệt đối không di dời Project Base Point thủ công.',
-                    highlight: 'SHARED COORDINATES',
-                    icon: Compass
-                  },
-                  {
-                    step: 'STD 02',
-                    titleEn: 'LEVELS & GRIDS ALIGNMENT',
-                    titleVn: 'ĐỒNG BỘ LƯỚI VÀ CAO ĐỘ',
-                    descEn: 'Align all level planes with structural slab levels, not finished architectural floors.',
-                    descVn: 'Định vị cốt cao độ chuẩn xác theo cao độ kết cấu bê tông, không nhầm lẫn với cốt hoàn thiện kiến trúc.',
-                    highlight: 'LEVEL PLANS',
-                    icon: Layers
-                  }
-                ]
-              },
-              right: {
-                type: 'signoff',
-                title: 'Verification Roster',
-                checklist: [
-                  'Tọa độ trùng khớp Master Site',
-                  'Lưới trục định vị được khóa PIN',
-                  'Cao độ kết cấu bê tông chuẩn xác',
-                  'Đã dọn dẹp các đường CAD rác'
-                ],
-                notes: 'Việc sai lệch tọa độ dầm cột ban đầu sẽ kéo theo sai lệch toàn bộ bản vẽ cốt thép và khối lượng bê tông.'
-              }
-            }
-          ]
-        }
+  // Fetch library data from Supabase on mount (cache-first)
+  useEffect(() => {
+    let cancelled = false;
+    const loadLibrary = async () => {
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        const data = await fetchAndCache();
+        if (!cancelled) setLibraryData(data);
+      } catch (err) {
+        console.error('Failed to load library:', err);
+        if (!cancelled) setLoadError(err.message);
+        // Keep cached data if available
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-    },
-    pt_reo: {
-      id: 'pt_reo',
-      title: 'PT & REO',
-      subtitle: 'Post-Tension & Reinforcement Division',
-      icon: Zap,
-      color: '#f59e0b', // Amber
-      desc: 'Quản lý đường cáp dự ứng lực, cốt thép xoắn kháng nứt anchorage và bố trí cốt thép đai chịu lực cắt lớn beam-column joints.',
-      workflows: {
-        pt_complexity: {
-          id: 'pt_complexity',
-          title: 'PT & REO Complexity',
-          subtitle: 'Heavy Shear Detailing (Cáp DƯL & Thép Đai)',
-          icon: Zap,
-          color: '#f59e0b',
-          spreads: [
-            {
-              left: {
-                type: 'cover',
-                title: 'PT & REO Complexity',
-                subtitle: 'Tendon Profiles & Reinforcement (Thép & Cáp)',
-                volume: 'Vol. PT-I',
-                classification: 'TECHNICAL VAULT',
-                stampColor: '#f59e0b'
-              },
-              right: {
-                type: 'intro',
-                desc: 'Tổng hợp quy chuẩn kỹ thuật đặc thù bậc cao cho phần dựng hình cáp dự ứng lực (PT), thép kháng nứt đầu neo (bursting) và các vùng chịu cắt lớn.',
-                meta: [
-                  { label: 'Bộ phận', val: 'PT Detailing Team' },
-                  { label: 'Quy chuẩn', val: 'RINCO-PT-03' },
-                  { label: 'Cốt thép', val: 'PT & Heavy Rebar' }
-                ]
-              }
-            },
-            {
-              left: {
-                type: 'steps',
-                title: 'Steps 01 & 02',
-                steps: [
-                  {
-                    step: 'TECH 01',
-                    titleEn: 'TENDON PROFILE SETUP',
-                    titleVn: 'THIẾT LẬP ĐƯỜNG CÁP DƯL',
-                    descEn: 'Correctly map tendon high points over columns and low points at midspan based on calculations.',
-                    descVn: 'Định vị chính xác điểm uốn cáp cao nhất trên đầu cột và điểm võng thấp nhất tại giữa nhịp dầm sàn.',
-                    highlight: 'TENDON PROFILE',
-                    icon: Zap
-                  },
-                  {
-                    step: 'TECH 02',
-                    titleEn: 'BURSTING REBAR ALIGNMENT',
-                    titleVn: 'CỐT THÉP KHÁNG NỨT ĐẦU NEO',
-                    descEn: 'Position heavy spiral and orthogonal rebars directly around the anchorage zone to resist bursting forces.',
-                    descVn: 'Bố trí thép xoắn đai dày kháng lực kéo nở hông trực tiếp tại vùng nén ép cục bộ đầu neo cáp.',
-                    highlight: 'BURSTING FORCE',
-                    icon: Compass
-                  }
-                ]
-              },
-              right: {
-                type: 'steps',
-                title: 'Step 03',
-                steps: [
-                  {
-                    step: 'TECH 03',
-                    titleEn: 'CONGESTED ZONE INSPECTION',
-                    titleVn: 'KIỂM SOÁT VÙNG XUNG ĐỘT THÉP',
-                    descEn: 'Inspect congested beam-column joints in 3D to ensure rebars do not clash and concrete can be poured.',
-                    descVn: 'Kiểm tra mô hình 3D nút khung dầm cột để bảo đảm cốt thép không xung đột chật ních, tạo không gian đổ bê tông.',
-                    highlight: 'CONGESTED ZONE',
-                    icon: Search
-                  }
-                ]
-              }
-            },
-            {
-              left: {
-                type: 'signoff',
-                title: 'PT Verification Roster',
-                checklist: [
-                  'Cao độ đầu neo cáp chuẩn xác',
-                  'Đủ thép spiral kháng nứt đầu neo',
-                  'Khoảng cách cốt thép đai dầm đạt chuẩn',
-                  'Đã kiểm tra va chạm 3D rebar'
-                ],
-                notes: 'Các nút khung dầm cột bị xung đột cốt thép dày đặc là lỗi thường gặp trên công trường, cần được giải quyết trên mô hình BIM.'
-              },
-              right: {
-                type: 'cover',
-                title: 'Security Clearance',
-                subtitle: 'Standardized by PT Committee',
-                volume: 'SECURE',
-                classification: 'CONFIDENTIAL DOCUMENT',
-                stampColor: '#d97706'
-              }
-            }
-          ]
-        }
-      }
-    },
-    mto: {
-      id: 'mto',
-      title: 'MTO',
-      subtitle: 'Maker to order',
-      icon: FileText,
-      color: '#8b5cf6', // Violet
-      desc: 'Thiết lập bảng thống kê khối lượng bê tông, diện tích ván khuôn dầm cột sàn và khối lượng cốt thép tự động từ mô hình Revit.',
-      workflows: {
-        mto_flow: {
-          id: 'mto_flow',
-          title: 'Maker to order Flow',
-          subtitle: 'Concrete & Formwork Schedules (Bảng Thống Kê)',
-          icon: FileText,
-          color: '#8b5cf6',
-          spreads: [
-            {
-              left: {
-                type: 'cover',
-                title: 'Maker to order Flow',
-                subtitle: 'Automatic Schedules & Export (Quy trình Đo Bóc)',
-                volume: 'Vol. MTO-I',
-                classification: 'VALUATION PROTOCOL',
-                stampColor: '#8b5cf6'
-              },
-              right: {
-                type: 'intro',
-                desc: 'Quy trình tạo bảng thống kê khối lượng tự động từ mô hình 3D Revit, áp dụng tham số NMK chuẩn hóa dữ liệu đầu ra xuất sang Excel.',
-                meta: [
-                  { label: 'Lớp đối tượng', val: 'Concrete / Formwork' },
-                  { label: 'Plugin', val: 'Rinco NMK Export' },
-                  { label: 'Độ chính xác', val: 'Tỷ lệ sai lệch < 2%' }
-                ]
-              }
-            },
-            {
-              left: {
-                type: 'steps',
-                title: 'Steps 01 & 02',
-                steps: [
-                  {
-                    step: 'MTO 01',
-                    titleEn: 'REVIT SCHEDULE CREATION',
-                    titleVn: 'TẠO BẢNG THỐNG KÊ TRÊN REVIT',
-                    descEn: 'Create specific schedules grouped by elements and levels. Apply correct formulas for concrete volume.',
-                    descVn: 'Thiết lập bảng khối lượng chi tiết phân theo cấu kiện và tầng. Áp dụng đúng công thức tính toán thể tích.',
-                    highlight: 'REVIT SCHEDULE',
-                    icon: FileText
-                  },
-                  {
-                    step: 'MTO 02',
-                    titleEn: 'PARAMETER MAPPING',
-                    titleVn: 'GÁN THAM SỐ KHỐI LƯỢNG',
-                    descEn: 'Assign custom Rincovitch parameters to group concrete grades and pouring phases.',
-                    descVn: 'Gán các tham số quản lý đặc thù của Rincovitch để phân loại mác bê tông và phân đợt đổ bê tông.',
-                    highlight: 'PARAMETER',
-                    icon: Compass
-                  }
-                ]
-              },
-              right: {
-                type: 'steps',
-                title: 'Step 03',
-                steps: [
-                  {
-                    step: 'MTO 03',
-                    titleEn: 'EXCEL EXPORT & AUDIT',
-                    titleVn: 'XUẤT FILE EXCEL & ĐỐI CHIẾU',
-                    descEn: 'Export schedules to standard Excel templates. Audit quantities with historical project databases.',
-                    descVn: 'Xuất bảng thống kê ra tệp Excel mẫu tiêu chuẩn. Tiến hành đối chiếu với cơ sở dữ liệu dự án mẫu.',
-                    highlight: 'EXCEL EXPORT',
-                    icon: ShieldCheck
-                  }
-                ]
-              }
-            },
-            {
-              left: {
-                type: 'signoff',
-                title: 'Quantity Validation Roster',
-                checklist: [
-                  'Đúng mác bê tông theo thiết kế',
-                  'Khối lượng tính đúng trừ hao thể tích giao',
-                  'Diện tích ván khuôn dầm sàn chuẩn xác',
-                  'Đã đối chiếu chéo số liệu 2D'
-                ],
-                notes: 'Bảng thống kê khối lượng chính xác là cơ sở pháp lý cực kỳ quan trọng để bảo đảm dự toán thầu và thanh quyết toán dự án.'
-              },
-              right: {
-                type: 'cover',
-                title: 'SECURE ARCHIVE',
-                subtitle: 'Verified by Quantity Committee',
-                volume: 'APPROVED',
-                classification: 'ESTIMATE STANDARDS',
-                stampColor: '#7c3aed'
-              }
-            }
-          ]
-        }
-      }
-    },
-    arch: {
-      id: 'arch',
-      title: 'ARCH',
-      subtitle: 'Architectural Coordination Division',
-      icon: Home,
-      color: '#3b82f6', // Blue
-      desc: 'Phối hợp xử lý lỗ mở hộp kỹ thuật (MEP), kiểm soát vị trí mép dầm vách kết cấu trùng khớp với vách ngăn kiến trúc.',
-      workflows: {
-        arch_coor: {
-          id: 'arch_coor',
-          title: 'ARCH-STR Coordination',
-          subtitle: 'Slab Openings & Alignment (Phối Hợp Kiến Trúc)',
-          icon: Compass,
-          color: '#3b82f6',
-          spreads: [
-            {
-              left: {
-                type: 'cover',
-                title: 'ARCH-STR Coordination',
-                subtitle: 'Interface & Level Alignment (Phối hợp)',
-                volume: 'Vol. ARC-I',
-                classification: 'COORDINATION GUIDE',
-                stampColor: '#3b82f6'
-              },
-              right: {
-                type: 'intro',
-                desc: 'Hướng dẫn kiểm soát giao diện thiết kế giữa mô hình kết cấu bê tông và mô hình kiến trúc hoàn thiện, xử lý lỗ mở hộp gen kỹ thuật.',
-                meta: [
-                  { label: 'Mô hình liên kết', val: 'STR Linked into ARCH' },
-                  { label: 'Xung đột', val: 'Lỗ mở & Cao độ sàn' },
-                  { label: 'Phần mềm', val: 'Revit 2024 / Navisworks' }
-                ]
-              }
-            },
-            {
-              left: {
-                type: 'steps',
-                title: 'Steps 01 & 02',
-                steps: [
-                  {
-                    step: 'COOR 01',
-                    titleEn: 'LINK MODEL ALIGNMENT',
-                    titleVn: 'ĐỒNG BỘ BẢN VẼ LIÊN KẾT',
-                    descEn: 'Link structural model into architectural master file. Always check internal grid offsets first.',
-                    descVn: 'Tham chiếu mô hình kết cấu vào tệp kiến trúc chính. Kiểm soát triệt để độ lệch lưới trục định vị.',
-                    highlight: 'LINK MODEL',
-                    icon: Compass
-                  },
-                  {
-                    step: 'COOR 02',
-                    titleEn: 'STRUCTURAL SLAB OPENINGS',
-                    titleVn: 'LỖ MỞ HỘP KỸ THUẬT SÀN VÁCH',
-                    descEn: 'Check structural slab openings against architectural shaft lines and MEP risers.',
-                    descVn: 'Soát lỗ mở trên sàn bê tông cốt thép khớp với trục hộp gen kiến trúc và đường ống kỹ thuật MEP.',
-                    highlight: 'SLAB OPENINGS',
-                    icon: Layers
-                  }
-                ]
-              },
-              right: {
-                type: 'signoff',
-                title: 'Coordination Verification',
-                checklist: [
-                  'Lưới trục định vị khớp 100%',
-                  'Đã mở đủ lỗ kỹ thuật hộp gen',
-                  'Độ lệch cao độ sàn hoàn thiện đạt chuẩn',
-                  'Mép vách kết cấu trùng mép kiến trúc'
-                ],
-                notes: 'Các xung đột mép dầm bê tông thò ra khỏi tường hoàn thiện kiến trúc cần được phát hiện sớm trên mô hình 3D.'
-              }
-            }
-          ]
-        }
-      }
-    }
-  };
+    };
+    loadLibrary();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleBookClick = (id) => {
     setPageDirection(1);
     setSelectedWorkflowId(id);
     setCurrentSpread(0);
   };
-
-  const currentRoomData = rooms[selectedRoom];
-  const activeWorkflowsList = currentRoomData ? Object.values(currentRoomData.workflows) : [];
-
-  const selectedWorkflow = currentRoomData?.workflows[selectedWorkflowId];
-  const maxSpreads = selectedWorkflow?.spreads?.length || 0;
   const leftThickness = maxSpreads > 1 ? (currentSpread / (maxSpreads - 1)) * 10 + 2 : 2;
   const rightThickness = maxSpreads > 1 ? ((maxSpreads - 1 - currentSpread) / (maxSpreads - 1)) * 10 + 2 : 2;
 
@@ -574,6 +407,14 @@ const Workflows = () => {
     if (isFlipping) return;
     const next = currentSpread + direction;
     if (next < 0 || next >= maxSpreads) return;
+
+    if (pageFlipRef.current) {
+      if (direction === 1) {
+        pageFlipRef.current.flipNext();
+      } else {
+        pageFlipRef.current.flipPrev();
+      }
+    }
 
     setPrevSpread(currentSpread);
     setPageDirection(direction);
@@ -602,7 +443,7 @@ const Workflows = () => {
         </div>
 
         {/* Left page content switcher */}
-        <div className="flex-grow flex flex-col justify-center my-6">
+        <div className={`flex-grow flex flex-col ${leftData.type === 'cover' ? 'justify-center' : 'justify-start'} my-3`}>
           {leftData.type === 'cover' && (
             <div className="flex-grow flex flex-col justify-center items-center text-center">
               <div 
@@ -620,42 +461,200 @@ const Workflows = () => {
                 <div className="absolute inset-[3px] rounded-full border border-dashed opacity-40" style={{ borderColor: leftData.stampColor }} />
               </div>
 
-              <h3 className="text-[10px] font-black text-stone-400 tracking-[0.3em] uppercase mb-1">{leftData.classification}</h3>
-              <h2 className="text-[28px] font-black text-stone-800 leading-tight uppercase tracking-wide mb-3 font-serif" style={{ fontFamily: 'Georgia, serif' }}>
-                {leftData.title}
-              </h2>
+              {isEditMode && isAdmin ? (
+                <EditableField
+                  value={leftData.classification}
+                  tag="h3"
+                  className="text-[10px] font-black text-stone-400 tracking-[0.3em] uppercase mb-1"
+                  onSave={(val) => {
+                    const spread = selectedWorkflow.spreads[spreadIndex];
+                    const page = { ...spread.left };
+                    page.classification = val;
+                    handleSaveSpread(spread.spreadId, 'left_page', page);
+                  }}
+                />
+              ) : (
+                <h3 className="text-[10px] font-black text-stone-400 tracking-[0.3em] uppercase mb-1">{leftData.classification}</h3>
+              )}
+
+              {isEditMode && isAdmin ? (
+                <EditableField
+                  value={leftData.title}
+                  tag="h2"
+                  className="text-[28px] font-black text-stone-800 leading-tight uppercase tracking-wide mb-3 font-serif"
+                  style={{ fontFamily: 'Georgia, serif' }}
+                  onSave={(val) => {
+                    const spread = selectedWorkflow.spreads[spreadIndex];
+                    const page = { ...spread.left };
+                    page.title = val;
+                    handleSaveSpread(spread.spreadId, 'left_page', page);
+                  }}
+                />
+              ) : (
+                <h2 className="text-[28px] font-black text-stone-800 leading-tight uppercase tracking-wide mb-3 font-serif" style={{ fontFamily: 'Georgia, serif' }}>
+                  {leftData.title}
+                </h2>
+              )}
+
               <div className="w-12 h-[1.5px] bg-stone-300 my-2" />
-              <p className="text-[13px] text-stone-500 font-bold max-w-[260px] leading-relaxed italic">
-                {leftData.subtitle}
-              </p>
-              <span className="mt-8 px-3 py-1 bg-stone-200/50 text-stone-600 text-[9px] font-black uppercase rounded tracking-wider border border-stone-300/40">{leftData.volume}</span>
+
+              {isEditMode && isAdmin ? (
+                <EditableField
+                  value={leftData.subtitle}
+                  tag="p"
+                  multiline
+                  className="text-[13px] text-stone-500 font-bold max-w-[260px] leading-relaxed italic block"
+                  onSave={(val) => {
+                    const spread = selectedWorkflow.spreads[spreadIndex];
+                    const page = { ...spread.left };
+                    page.subtitle = val;
+                    handleSaveSpread(spread.spreadId, 'left_page', page);
+                  }}
+                />
+              ) : (
+                <p className="text-[13px] text-stone-500 font-bold max-w-[260px] leading-relaxed italic">
+                  {leftData.subtitle}
+                </p>
+              )}
+
+              {isEditMode && isAdmin ? (
+                <EditableField
+                  value={leftData.volume}
+                  tag="span"
+                  className="mt-8 px-3 py-1 bg-stone-200/50 text-stone-600 text-[9px] font-black uppercase rounded tracking-wider border border-stone-300/40 inline-block"
+                  onSave={(val) => {
+                    const spread = selectedWorkflow.spreads[spreadIndex];
+                    const page = { ...spread.left };
+                    page.volume = val;
+                    handleSaveSpread(spread.spreadId, 'left_page', page);
+                  }}
+                />
+              ) : (
+                <span className="mt-8 px-3 py-1 bg-stone-200/50 text-stone-600 text-[9px] font-black uppercase rounded tracking-wider border border-stone-300/40">{leftData.volume}</span>
+              )}
             </div>
           )}
 
           {leftData.type === 'steps' && (
             <div className="space-y-6">
               <h3 className="text-[10px] font-black text-stone-400 tracking-[0.25em] uppercase border-b border-stone-200 pb-2">{leftData.title}</h3>
-              <div className="space-y-6 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
-                {leftData.steps.map((step, sIdx) => (
+              <div className="space-y-6 max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
+                {leftData.steps.map((step, sIdx) => {
+                  const StepIcon = typeof step.icon === 'string' ? resolveIcon(step.icon) : (step.icon || HelpCircle);
+                  return (
                   <div key={sIdx} className="space-y-3">
                     <div className="flex items-center gap-3">
                       <div 
                         className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-md shrink-0"
                         style={{ backgroundColor: selectedWorkflow.color }}
                       >
-                        {React.createElement(step.icon, { size: 16 })}
+                        <StepIcon size={16} />
                       </div>
                       <div>
                         <span className="text-[9px] font-black tracking-widest uppercase" style={{ color: selectedWorkflow.color }}>{step.step}</span>
-                        <h4 className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
+                        {isEditMode && isAdmin ? (
+                          <div className="flex items-center gap-2">
+                            <EditableField
+                              value={step.titleEn}
+                              tag="h4"
+                              className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5"
+                              onSave={(val) => {
+                                const spread = selectedWorkflow.spreads[spreadIndex];
+                                const page = { ...spread.left };
+                                page.steps = [...page.steps];
+                                page.steps[sIdx] = { ...page.steps[sIdx], titleEn: val };
+                                handleSaveSpread(spread.spreadId, 'left_page', page);
+                              }}
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const spread = selectedWorkflow.spreads[spreadIndex];
+                                const page = { ...spread.left };
+                                const updatedSteps = page.steps
+                                  .filter((_, idx) => idx !== sIdx)
+                                  .map((s, idx) => ({
+                                    ...s,
+                                    step: `STEP ${idx + 1}`
+                                  }));
+                                page.steps = updatedSteps;
+                                handleSaveSpread(spread.spreadId, 'left_page', page);
+                              }}
+                              className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors cursor-pointer shrink-0"
+                              title="Xóa bước này"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <h4 className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
+                        )}
                       </div>
                     </div>
                     <div className="pl-12 space-y-1.5 border-l-2 border-stone-200 ml-4.5">
-                      <p className="text-[11px] text-stone-600 font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
-                      <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2">{step.descVn}</p>
+                      {isEditMode && isAdmin ? (
+                        <>
+                          <EditableField
+                            value={step.descEn}
+                            tag="p"
+                            multiline
+                            className="text-[11px] text-stone-600 font-bold leading-relaxed"
+                            onSave={(val) => {
+                              const spread = selectedWorkflow.spreads[spreadIndex];
+                              const page = { ...spread.left };
+                              page.steps = [...page.steps];
+                              page.steps[sIdx] = { ...page.steps[sIdx], descEn: val };
+                              handleSaveSpread(spread.spreadId, 'left_page', page);
+                            }}
+                          />
+                          <EditableField
+                            value={step.descVn}
+                            tag="p"
+                            multiline
+                            className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2"
+                            onSave={(val) => {
+                              const spread = selectedWorkflow.spreads[spreadIndex];
+                              const page = { ...spread.left };
+                              page.steps = [...page.steps];
+                              page.steps[sIdx] = { ...page.steps[sIdx], descVn: val };
+                              handleSaveSpread(spread.spreadId, 'left_page', page);
+                            }}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-[11px] text-stone-600 font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
+                          <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2">{step.descVn}</p>
+                        </>
+                      )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
+                {isEditMode && isAdmin && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const spread = selectedWorkflow.spreads[spreadIndex];
+                      const page = { ...spread.left };
+                      const newStepNum = (page.steps?.length || 0) + 1;
+                      page.steps = [
+                        ...(page.steps || []),
+                        {
+                          step: `STEP ${newStepNum}`,
+                          titleEn: "New Step Title",
+                          descEn: "English description",
+                          descVn: "Mô tả tiếng Việt",
+                          icon: "FileText"
+                        }
+                      ];
+                      handleSaveSpread(spread.spreadId, 'left_page', page);
+                    }}
+                    className="mt-4 w-full py-2.5 border-2 border-dashed border-stone-300 hover:border-indigo-400 hover:bg-indigo-50/20 text-stone-500 hover:text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Plus size={14} /> Thêm Bước (Step)
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -682,27 +681,104 @@ const Workflows = () => {
         </div>
 
         {/* Right page content switcher */}
-        <div className="flex-grow flex flex-col justify-center my-6">
+        <div className="flex-grow flex flex-col justify-start my-3">
           {rightData.type === 'intro' && (
             <div className="space-y-6">
               <div className="space-y-2">
                 <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase flex items-center gap-2">
                   <Sparkles size={12} className="text-yellow-600" /> Executive Overview
                 </h4>
-                <p className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif">
-                  {rightData.desc}
-                </p>
+                {isEditMode && isAdmin ? (
+                  <EditableField
+                    value={rightData.desc}
+                    tag="p"
+                    multiline
+                    className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif block"
+                    onSave={(val) => {
+                      const spread = selectedWorkflow.spreads[spreadIndex];
+                      const page = { ...spread.right };
+                      page.desc = val;
+                      handleSaveSpread(spread.spreadId, 'right_page', page);
+                    }}
+                  />
+                ) : (
+                  <p className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif">
+                    {rightData.desc}
+                  </p>
+                )}
               </div>
 
               <div className="pt-6 border-t border-stone-200 space-y-4">
                 <h5 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">Volume Index</h5>
                 <div className="space-y-2">
-                  {rightData.meta.map((m, mIdx) => (
-                    <div key={mIdx} className="flex justify-between text-[11px] text-stone-600 border-b border-stone-100 pb-1.5 last:border-0">
-                      <span className="font-bold text-stone-400 uppercase tracking-widest text-[8px]">{m.label}</span>
-                      <span className="font-black text-stone-800">{m.val}</span>
+                  {(rightData.meta || []).map((m, mIdx) => (
+                    <div key={mIdx} className="flex justify-between text-[11px] text-stone-600 border-b border-stone-100 pb-1.5 last:border-0 items-center">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {isEditMode && isAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const spread = selectedWorkflow.spreads[spreadIndex];
+                              const page = { ...spread.right };
+                              page.meta = page.meta.filter((_, idx) => idx !== mIdx);
+                              handleSaveSpread(spread.spreadId, 'right_page', page);
+                            }}
+                            className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors cursor-pointer shrink-0"
+                            title="Xóa dòng"
+                          >
+                            <X size={10} />
+                          </button>
+                        )}
+                        {isEditMode && isAdmin ? (
+                          <EditableField
+                            value={m.label}
+                            tag="span"
+                            className="font-bold text-stone-400 uppercase tracking-widest text-[8px]"
+                            onSave={(val) => {
+                              const spread = selectedWorkflow.spreads[spreadIndex];
+                              const page = { ...spread.right };
+                              page.meta = [...page.meta];
+                              page.meta[mIdx] = { ...page.meta[mIdx], label: val };
+                              handleSaveSpread(spread.spreadId, 'right_page', page);
+                            }}
+                          />
+                        ) : (
+                          <span className="font-bold text-stone-400 uppercase tracking-widest text-[8px]">{m.label}</span>
+                        )}
+                      </div>
+                      
+                      {isEditMode && isAdmin ? (
+                        <EditableField
+                          value={m.val}
+                          tag="span"
+                          className="font-black text-stone-800"
+                          onSave={(val) => {
+                            const spread = selectedWorkflow.spreads[spreadIndex];
+                            const page = { ...spread.right };
+                            page.meta = [...page.meta];
+                            page.meta[mIdx] = { ...page.meta[mIdx], val: val };
+                            handleSaveSpread(spread.spreadId, 'right_page', page);
+                          }}
+                        />
+                      ) : (
+                        <span className="font-black text-stone-800">{m.val}</span>
+                      )}
                     </div>
                   ))}
+                  {isEditMode && isAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const spread = selectedWorkflow.spreads[spreadIndex];
+                        const page = { ...spread.right };
+                        page.meta = [...(page.meta || []), { label: "NEW KEY", val: "New Value" }];
+                        handleSaveSpread(spread.spreadId, 'right_page', page);
+                      }}
+                      className="mt-2 text-[9px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus size={10} /> Thêm dòng index
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -711,27 +787,123 @@ const Workflows = () => {
           {rightData.type === 'steps' && (
             <div className="space-y-6">
               <h3 className="text-[10px] font-black text-stone-400 tracking-[0.25em] uppercase border-b border-stone-200 pb-2">{rightData.title}</h3>
-              <div className="space-y-6 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
-                {rightData.steps.map((step, sIdx) => (
+              <div className="space-y-6 max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
+                {rightData.steps.map((step, sIdx) => {
+                  const StepIcon = typeof step.icon === 'string' ? resolveIcon(step.icon) : (step.icon || HelpCircle);
+                  return (
                   <div key={sIdx} className="space-y-3">
                     <div className="flex items-center gap-3">
                       <div 
                         className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-md shrink-0"
                         style={{ backgroundColor: selectedWorkflow.color }}
                       >
-                        {React.createElement(step.icon, { size: 16 })}
+                        <StepIcon size={16} />
                       </div>
                       <div>
                         <span className="text-[9px] font-black tracking-widest uppercase" style={{ color: selectedWorkflow.color }}>{step.step}</span>
-                        <h4 className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
+                        {isEditMode && isAdmin ? (
+                          <div className="flex items-center gap-2">
+                            <EditableField
+                              value={step.titleEn}
+                              tag="h4"
+                              className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5"
+                              onSave={(val) => {
+                                const spread = selectedWorkflow.spreads[spreadIndex];
+                                const page = { ...spread.right };
+                                page.steps = [...page.steps];
+                                page.steps[sIdx] = { ...page.steps[sIdx], titleEn: val };
+                                handleSaveSpread(spread.spreadId, 'right_page', page);
+                              }}
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const spread = selectedWorkflow.spreads[spreadIndex];
+                                const page = { ...spread.right };
+                                const updatedSteps = page.steps
+                                  .filter((_, idx) => idx !== sIdx)
+                                  .map((s, idx) => ({
+                                    ...s,
+                                    step: `STEP ${idx + 1}`
+                                  }));
+                                page.steps = updatedSteps;
+                                handleSaveSpread(spread.spreadId, 'right_page', page);
+                              }}
+                              className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors cursor-pointer shrink-0"
+                              title="Xóa bước này"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <h4 className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
+                        )}
                       </div>
                     </div>
                     <div className="pl-12 space-y-1.5 border-l-2 border-stone-200 ml-4.5">
-                      <p className="text-[11px] text-stone-600 font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
-                      <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2">{step.descVn}</p>
+                      {isEditMode && isAdmin ? (
+                        <>
+                          <EditableField
+                            value={step.descEn}
+                            tag="p"
+                            multiline
+                            className="text-[11px] text-stone-600 font-bold leading-relaxed"
+                            onSave={(val) => {
+                              const spread = selectedWorkflow.spreads[spreadIndex];
+                              const page = { ...spread.right };
+                              page.steps = [...page.steps];
+                              page.steps[sIdx] = { ...page.steps[sIdx], descEn: val };
+                              handleSaveSpread(spread.spreadId, 'right_page', page);
+                            }}
+                          />
+                          <EditableField
+                            value={step.descVn}
+                            tag="p"
+                            multiline
+                            className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2"
+                            onSave={(val) => {
+                              const spread = selectedWorkflow.spreads[spreadIndex];
+                              const page = { ...spread.right };
+                              page.steps = [...page.steps];
+                              page.steps[sIdx] = { ...page.steps[sIdx], descVn: val };
+                              handleSaveSpread(spread.spreadId, 'right_page', page);
+                            }}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-[11px] text-stone-600 font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
+                          <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2">{step.descVn}</p>
+                        </>
+                      )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
+                {isEditMode && isAdmin && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const spread = selectedWorkflow.spreads[spreadIndex];
+                      const page = { ...spread.right };
+                      const newStepNum = (page.steps?.length || 0) + 1;
+                      page.steps = [
+                        ...(page.steps || []),
+                        {
+                          step: `STEP ${newStepNum}`,
+                          titleEn: "New Step Title",
+                          descEn: "English description",
+                          descVn: "Mô tả tiếng Việt",
+                          icon: "FileText"
+                        }
+                      ];
+                      handleSaveSpread(spread.spreadId, 'right_page', page);
+                    }}
+                    className="mt-4 w-full py-2.5 border-2 border-dashed border-stone-300 hover:border-indigo-400 hover:bg-indigo-50/20 text-stone-500 hover:text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Plus size={14} /> Thêm Bước (Step)
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -739,20 +911,95 @@ const Workflows = () => {
           {rightData.type === 'signoff' && (
             <div className="space-y-6">
               <div className="space-y-3">
-                <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">{rightData.title}</h4>
+                {isEditMode && isAdmin ? (
+                  <EditableField
+                    value={rightData.title}
+                    tag="h4"
+                    className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase block"
+                    onSave={(val) => {
+                      const spread = selectedWorkflow.spreads[spreadIndex];
+                      const page = { ...spread.right };
+                      page.title = val;
+                      handleSaveSpread(spread.spreadId, 'right_page', page);
+                    }}
+                  />
+                ) : (
+                  <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">{rightData.title}</h4>
+                )}
                 <div className="grid grid-cols-1 gap-2">
                   {rightData.checklist.map((c, cIdx) => (
-                    <div key={cIdx} className="flex items-center gap-2.5 p-2 bg-stone-100/50 rounded border border-stone-200/40">
-                      <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
-                      <span className="text-[10px] font-bold text-stone-700 leading-tight">{c}</span>
+                    <div key={cIdx} className="flex items-center justify-between gap-2.5 p-2 bg-stone-100/50 rounded border border-stone-200/40">
+                      <div className="flex items-center gap-2.5 flex-grow min-w-0">
+                        <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+                        {isEditMode && isAdmin ? (
+                          <EditableField
+                            value={c}
+                            tag="span"
+                            className="text-[10px] font-bold text-stone-700 leading-tight block w-full"
+                            onSave={(val) => {
+                              const spread = selectedWorkflow.spreads[spreadIndex];
+                              const page = { ...spread.right };
+                              page.checklist = [...page.checklist];
+                              page.checklist[cIdx] = val;
+                              handleSaveSpread(spread.spreadId, 'right_page', page);
+                            }}
+                          />
+                        ) : (
+                          <span className="text-[10px] font-bold text-stone-700 leading-tight">{c}</span>
+                        )}
+                      </div>
+                      {isEditMode && isAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const spread = selectedWorkflow.spreads[spreadIndex];
+                            const page = { ...spread.right };
+                            page.checklist = page.checklist.filter((_, idx) => idx !== cIdx);
+                            handleSaveSpread(spread.spreadId, 'right_page', page);
+                          }}
+                          className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors cursor-pointer shrink-0"
+                          title="Xóa mục"
+                        >
+                          <X size={10} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
+                {isEditMode && isAdmin && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const spread = selectedWorkflow.spreads[spreadIndex];
+                      const page = { ...spread.right };
+                      page.checklist = [...(page.checklist || []), "New verification task"];
+                      handleSaveSpread(spread.spreadId, 'right_page', page);
+                    }}
+                    className="mt-2 text-[9px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={10} /> Thêm checklist item
+                  </button>
+                )}
               </div>
 
               <div className="pt-4 border-t border-stone-200">
                 <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest leading-none mb-1 block">Authoritative Note</span>
-                <p className="text-[11px] font-medium text-stone-600 italic leading-relaxed bg-amber-500/5 p-3 border-l-2 border-amber-500/50 rounded-r">{rightData.notes}</p>
+                {isEditMode && isAdmin ? (
+                  <EditableField
+                    value={rightData.notes}
+                    tag="p"
+                    multiline
+                    className="text-[11px] font-medium text-stone-600 italic leading-relaxed bg-amber-500/5 p-3 border-l-2 border-amber-500/50 rounded-r block"
+                    onSave={(val) => {
+                      const spread = selectedWorkflow.spreads[spreadIndex];
+                      const page = { ...spread.right };
+                      page.notes = val;
+                      handleSaveSpread(spread.spreadId, 'right_page', page);
+                    }}
+                  />
+                ) : (
+                  <p className="text-[11px] font-medium text-stone-600 italic leading-relaxed bg-amber-500/5 p-3 border-l-2 border-amber-500/50 rounded-r">{rightData.notes}</p>
+                )}
               </div>
 
               <div className="pt-3 border-t border-dashed border-stone-300 flex justify-between items-end">
@@ -779,7 +1026,7 @@ const Workflows = () => {
               <div className="flex items-center gap-2">
                 <button
                   disabled={currentSpread === 0 || isFlipping}
-                  onClick={() => handlePageTurn(-1)}
+                  onClick={(e) => { e.stopPropagation(); handlePageTurn(-1); }}
                   className={`p-2.5 rounded-full bg-gradient-to-b from-[#f3dfa2] via-[#cfa043] to-[#8d6a1f] text-[#2c1e03] hover:from-[#fbecc0] hover:to-[#ae8129] transition-all border border-[#ffe9b3]/30 shadow-[0_4px_10px_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.4)] ${currentSpread === 0 ? 'opacity-35 cursor-not-allowed' : 'active:scale-90 active:shadow-inner cursor-pointer'}`}
                   title="Turn Back"
                 >
@@ -788,17 +1035,17 @@ const Workflows = () => {
                 
                 <button
                   disabled={currentSpread === maxSpreads - 1 || isFlipping}
-                  onClick={() => handlePageTurn(1)}
+                  onClick={(e) => { e.stopPropagation(); handlePageTurn(1); }}
                   className={`p-2.5 rounded-full bg-gradient-to-b from-[#f3dfa2] via-[#cfa043] to-[#8d6a1f] text-[#2c1e03] hover:from-[#fbecc0] hover:to-[#ae8129] transition-all border border-[#ffe9b3]/30 shadow-[0_4px_10px_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.4)] ${currentSpread === maxSpreads - 1 || isFlipping ? 'opacity-35 cursor-not-allowed' : 'active:scale-90 active:shadow-inner cursor-pointer'}`}
                   title="Turn Page"
                 >
                   <ChevronRight size={15} className="stroke-[2.5]" />
                 </button>
-
+ 
                 <div className="h-6 w-px bg-stone-300 mx-2" />
-
+ 
                 <button 
-                  onClick={() => setSelectedWorkflowId(null)}
+                  onClick={(e) => { e.stopPropagation(); setSelectedWorkflowId(null); }}
                   className="px-5 py-2.5 bg-stone-800 text-stone-200 hover:bg-rose-600 hover:text-white rounded-md text-[12px] font-black uppercase tracking-widest transition-all shadow active:translate-y-0.5 cursor-pointer"
                 >
                   Close Volume
@@ -848,15 +1095,82 @@ const Workflows = () => {
       <div className="p-0 max-w-full mx-auto relative min-h-screen">
         <AnimatePresence mode="wait">
           {!selectedRoom ? (
-            /* ROOM SELECTION SCREEN (Clean Vertical Icons Sidebar on Right Edge) */
-            <motion.div
-              key="room-selection"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute right-0 top-0 bottom-0 w-28 flex flex-col items-center justify-center gap-10 z-20 py-8"
-              style={{ height: '100vh' }}
-            >
+            /* ROOM SELECTION SCREEN */
+            <>
+              {/* Admin-only: Sync & Refresh controls (fixed positioning to escape overflow-hidden) */}
+              {isAdmin && (
+              <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-2">
+                {lastSyncTime && (
+                  <span className="text-[9px] font-bold text-slate-500/70 tracking-wider">
+                    Synced: {new Date(lastSyncTime).toLocaleString('vi-VN')}
+                  </span>
+                )}
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleRefresh}
+                    disabled={isLoading}
+                    className="w-10 h-10 rounded-full bg-slate-900/80 backdrop-blur-xl border border-white/10 flex items-center justify-center text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30 transition-all cursor-pointer disabled:opacity-50"
+                    title="Refresh từ Supabase"
+                  >
+                    <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleSync}
+                    disabled={isSyncing}
+                    className="h-10 px-4 rounded-full bg-indigo-600/80 backdrop-blur-xl border border-indigo-400/20 flex items-center gap-2 text-white text-[11px] font-black uppercase tracking-wider hover:bg-indigo-500 transition-all cursor-pointer disabled:opacity-50"
+                    title="Đồng bộ data local lên Supabase"
+                  >
+                    {isSyncing ? (
+                      <><Loader2 size={14} className="animate-spin" /> Đang đồng bộ...</>
+                    ) : (
+                      <><Upload size={14} /> Đồng bộ</>
+                    )}
+                  </motion.button>
+                </div>
+              </div>
+              )}
+
+              {/* Room icons sidebar — or empty state */}
+              {Object.keys(rooms).length === 0 ? (
+                /* EMPTY STATE */
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 flex flex-col items-center justify-center z-20"
+                >
+                  <BookOpen size={48} className="text-slate-500/50 mb-4" />
+                  <p className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Library trống</p>
+                  <p className="text-[11px] text-slate-500 mb-6">Chưa có data trên Supabase. Bấm đồng bộ để đẩy data lên.</p>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleSync}
+                    disabled={isSyncing}
+                    className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-[13px] font-black uppercase tracking-wider hover:bg-indigo-500 transition-all cursor-pointer disabled:opacity-50 flex items-center gap-3"
+                  >
+                    {isSyncing ? (
+                      <><Loader2 size={18} className="animate-spin" /> Đang đồng bộ...</>
+                    ) : (
+                      <><Upload size={18} /> Đồng bộ lên Supabase</>
+                    )}
+                  </motion.button>
+                </motion.div>
+              ) : (
+              <motion.div
+                key="room-selection"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute right-0 top-0 bottom-0 w-28 flex flex-col items-center justify-center gap-10 z-20 py-8"
+                style={{ height: '100vh' }}
+              >
               {Object.values(rooms).map((r) => {
                 const IconComponent = r.icon;
                 const isHovered = hoveredRoom === r.id;
@@ -914,6 +1228,8 @@ const Workflows = () => {
                 );
               })}
             </motion.div>
+              )}
+            </>
           ) : (
             /* ACTIVE DIVISION SHELF SCREEN */
             <motion.div
@@ -1055,7 +1371,7 @@ const Workflows = () => {
 
                         <div className="absolute inset-0 flex flex-col items-center py-12 px-1 z-20">
                           <div className="text-[8px] font-black text-white/50 tracking-widest uppercase mb-8 leading-none select-none">
-                            {wf.id.substring(0, 4).toUpperCase()}
+                            {(wf.title || '').substring(0, 4).toUpperCase()}
                           </div>
 
                           <div className="flex-1 flex items-center justify-center overflow-hidden w-full px-0.5">
@@ -1114,14 +1430,14 @@ const Workflows = () => {
 
       {/* 3D Multi-Page Flip Book Modal */}
       <AnimatePresence>
-        {selectedWorkflowId && selectedWorkflow && (
+         {selectedWorkflowId && selectedWorkflow && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6 md:p-12 overflow-y-auto" style={{ perspective: 1500 }}>
             {/* Dark background overlay */}
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedWorkflowId(null)}
+              onClick={() => { setSelectedWorkflowId(null); setIsEditMode(false); }}
               className="absolute inset-0 bg-[#070b13]/90 backdrop-blur-2xl z-10"
             />
             
@@ -1151,6 +1467,77 @@ const Workflows = () => {
                 `
               }}
             >
+              {/* Floating Buttons above the Book cover (escapes TopBar overlay) */}
+              <div className="absolute -top-16 right-0 z-50 flex items-center gap-3">
+                {isAdmin && isEditMode && (
+                  <>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleAddSpread}
+                      className="h-11 px-4 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white border-2 border-emerald-400/30 flex items-center gap-2 text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xl"
+                      title="Thêm trang đôi mới"
+                    >
+                      <Plus size={16} /> Thêm Trang
+                    </motion.button>
+
+                    {maxSpreads > 1 && currentSpread > 0 && (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          const currentSpreadObj = selectedWorkflow?.spreads[currentSpread];
+                          if (currentSpreadObj) {
+                            handleDeleteSpread(currentSpreadObj.spreadId);
+                          }
+                        }}
+                        className="h-11 px-4 rounded-full bg-rose-600 hover:bg-rose-500 text-white border-2 border-rose-400/30 flex items-center gap-2 text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xl"
+                        title="Xóa trang đôi hiện tại"
+                      >
+                        <Trash2 size={16} /> Xóa Trang
+                      </motion.button>
+                    )}
+                  </>
+                )}
+                {isAdmin && (
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    className={`w-11 h-11 rounded-full backdrop-blur-xl border-2 flex items-center justify-center transition-all cursor-pointer shadow-xl ${
+                      isEditMode 
+                        ? 'bg-indigo-500 border-indigo-300 text-white shadow-indigo-500/40' 
+                        : 'bg-slate-800 border-white/20 text-white hover:text-indigo-400 hover:border-indigo-400/50'
+                    }`}
+                    title={isEditMode ? 'Tắt chỉnh sửa' : 'Bật chỉnh sửa (Admin)'}
+                  >
+                    <Pencil size={18} />
+                  </motion.button>
+                )}
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => { setSelectedWorkflowId(null); setIsEditMode(false); }}
+                  className="w-11 h-11 rounded-full bg-slate-800 backdrop-blur-xl border-2 border-white/20 flex items-center justify-center text-white hover:text-red-400 hover:border-red-400/50 transition-all cursor-pointer shadow-xl"
+                  title="Đóng sách"
+                >
+                  <ArrowLeft size={18} />
+                </motion.button>
+              </div>
+
+              {/* Edit mode indicator floating above book cover */}
+              {isEditMode && isAdmin && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-indigo-600 backdrop-blur-xl rounded-full flex items-center gap-2 shadow-2xl border border-indigo-400/30"
+                >
+                  <Pencil size={14} className="text-indigo-200" />
+                  <span className="text-[11px] font-black text-white uppercase tracking-wider">Edit Mode</span>
+                  {isSaving && <Loader2 size={14} className="text-white animate-spin" />}
+                </motion.div>
+              )}
+
               {/* Inner hardcover soft shadow */}
               <div className="absolute inset-[10px] rounded-[6px] bg-slate-900/10 pointer-events-none z-10" />
               
@@ -1181,16 +1568,16 @@ const Workflows = () => {
               <div className="relative bg-[#faf8f5] rounded-[6px] min-h-[580px] md:h-[600px] shadow-[inset_0_0_40px_rgba(0,0,0,0.08)] border border-stone-300/50 z-20 flex justify-center items-center">
                 
                 {/* Vintage Left/Right paper page creases & gradients (overlay decoration) */}
-                <div className="absolute inset-y-0 left-0 w-[15px] bg-gradient-to-r from-black/[0.08] to-transparent pointer-events-none z-30" />
-                <div className="absolute inset-y-0 right-1/2 w-[40px] bg-gradient-to-r from-transparent via-black/[0.015] to-black/[0.15] pointer-events-none z-30 hidden md:block" />
+                <div className="absolute inset-y-0 left-0 w-[15px] bg-gradient-to-r from-black/[0.03] to-transparent pointer-events-none z-[1]" />
+                <div className="absolute inset-y-0 right-1/2 w-[40px] bg-gradient-to-r from-transparent via-black/[0.005] to-black/[0.06] pointer-events-none z-[1] hidden md:block" />
                 
-                <div className="absolute inset-y-0 left-1/2 w-[40px] bg-gradient-to-l from-transparent via-black/[0.015] to-black/[0.15] pointer-events-none z-30 hidden md:block" />
-                <div className="absolute inset-y-0 right-0 w-[15px] bg-gradient-to-l from-black/[0.08] to-transparent pointer-events-none z-30" />
+                <div className="absolute inset-y-0 left-1/2 w-[40px] bg-gradient-to-l from-transparent via-black/[0.005] to-black/[0.06] pointer-events-none z-[1] hidden md:block" />
+                <div className="absolute inset-y-0 right-0 w-[15px] bg-gradient-to-l from-black/[0.03] to-transparent pointer-events-none z-[1]" />
 
                 {/* Book Spine Crease Line & Deep Cleft Shadow */}
-                <div className="absolute top-0 bottom-0 left-1/2 w-[1px] -translate-x-1/2 bg-black/25 z-35 pointer-events-none hidden md:block" />
-                <div className="absolute top-0 bottom-0 left-1/2 w-[12px] -translate-x-1/2 bg-gradient-to-r from-black/15 via-transparent to-black/15 z-30 pointer-events-none hidden md:block" />
-                <div className="absolute top-0 bottom-0 left-1/2 w-[28px] -translate-x-1/2 bg-gradient-to-r from-black/10 via-transparent to-black/10 z-25 pointer-events-none hidden md:block" />
+                <div className="absolute top-0 bottom-0 left-1/2 w-[1px] -translate-x-1/2 bg-black/10 z-[1] pointer-events-none hidden md:block" />
+                <div className="absolute top-0 bottom-0 left-1/2 w-[12px] -translate-x-1/2 bg-gradient-to-r from-black/[0.06] via-transparent to-black/[0.06] z-[1] pointer-events-none hidden md:block" />
+                <div className="absolute top-0 bottom-0 left-1/2 w-[28px] -translate-x-1/2 bg-gradient-to-r from-black/[0.04] via-transparent to-black/[0.04] z-[1] pointer-events-none hidden md:block" />
 
                 {/* ST PAGE FLIP CONTAINER - REBUILD FROM SCRATCH FOR ULTIMATE REALISM */}
                 <div ref={bookRef} className="page-flip-book">
