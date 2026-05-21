@@ -325,7 +325,7 @@ const WeeklyReport = ({ exportExcel }) => {
                 </div>
                 <form onSubmit={(e) => { handleAddTask(e); }} className="flex flex-col gap-[10px] p-[10px]">
                   <div className="flex flex-col gap-[5px]">
-                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Project Portfolio</label>
+                    <label className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Project Portfolio</label>
                       <select 
                         className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-[var(--text-main)] outline-none"
                         style={{ colorScheme: 'dark' }}
@@ -340,7 +340,7 @@ const WeeklyReport = ({ exportExcel }) => {
 
                   <div className="flex flex-col gap-[5px]">
                     <div className="flex items-center justify-between px-1">
-                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Level / Zone</label>
+                      <label className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Level / Zone</label>
                       <label className="flex items-center gap-[10px] cursor-pointer">
                         <input 
                           type="checkbox" 
@@ -348,7 +348,7 @@ const WeeklyReport = ({ exportExcel }) => {
                           checked={formData.showLevel}
                           onChange={e => setFormData({...formData, showLevel: e.target.checked, level: e.target.checked ? formData.level : ''})}
                         />
-                        <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Visible</span>
+                        <span className="text-[14px] font-bold text-[var(--text-muted)] uppercase">Visible</span>
                       </label>
                     </div>
                     {formData.showLevel && (
@@ -364,7 +364,7 @@ const WeeklyReport = ({ exportExcel }) => {
                   </div>
 
                   <div className="flex flex-col gap-[5px]">
-                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Task Analysis / Details</label>
+                    <label className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Task Analysis / Details</label>
                     <textarea 
                       className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-[var(--text-main)] outline-none min-h-[100px] custom-scrollbar" 
                       placeholder="ENTER TASK DETAILS..."
@@ -375,7 +375,7 @@ const WeeklyReport = ({ exportExcel }) => {
                   </div>
 
                   <div className="flex flex-col gap-[5px]">
-                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Additional Note</label>
+                    <label className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Additional Note</label>
                     <input 
                       type="text" 
                       className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[14px] font-bold text-[var(--text-main)] outline-none" 
@@ -387,7 +387,7 @@ const WeeklyReport = ({ exportExcel }) => {
                   
                   <div className="grid grid-cols-2 gap-[10px]">
                     <div className="flex flex-col gap-[5px]">
-                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Report Date</label>
+                      <label className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Report Date</label>
                       <input 
                         type="date" 
                         className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[12px] font-bold text-[var(--text-main)] outline-none"
@@ -396,7 +396,7 @@ const WeeklyReport = ({ exportExcel }) => {
                       />
                     </div>
                     <div className="flex flex-col gap-[5px]">
-                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Status</label>
+                      <label className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Status</label>
                       <select 
                         className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[10px] text-[12px] font-bold text-[var(--text-main)] outline-none"
                         style={{ colorScheme: 'dark' }}
@@ -409,14 +409,14 @@ const WeeklyReport = ({ exportExcel }) => {
                   </div>
 
                   <div className="flex flex-col gap-[5px]">
-                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">ETA Protocol</label>
+                    <label className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">ETA Protocol</label>
                     <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
                       {['MO', 'AF', 'CUSTOM'].map(opt => (
                         <button
                           key={opt}
                           type="button"
                           onClick={() => handleEtaMode(opt)}
-                          className={`neu-button flex-1 py-3 text-[10px] ${formData.etaMode === opt ? 'active text-indigo-500' : ''}`}
+                          className={`neu-button flex-1 py-3 text-[14px] ${formData.etaMode === opt ? 'active text-indigo-500' : ''}`}
                         >
                           {opt}
                         </button>
@@ -437,10 +437,10 @@ const WeeklyReport = ({ exportExcel }) => {
                        SUBMIT TO LOG
                     </button>
                     <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
-                      <button type="button" onClick={exportExcel} className="neu-button flex-1 py-3 text-[10px] gap-2">
+                      <button type="button" onClick={exportExcel} className="neu-button flex-1 py-3 text-[14px] gap-2">
                         <FileSpreadsheet size={14} /> EXPORT
                       </button>
-                      <button type="button" onClick={() => setShowBatchModal(true)} className="neu-button flex-1 py-3 text-[10px] gap-2">
+                      <button type="button" onClick={() => setShowBatchModal(true)} className="neu-button flex-1 py-3 text-[14px] gap-2">
                         <Layout size={14} /> BATCH ADD
                       </button>
                     </div>
@@ -463,21 +463,21 @@ const WeeklyReport = ({ exportExcel }) => {
               <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
                 <button 
                   onClick={seedPlannerData}
-                  className="neu-button px-6 py-2 text-[10px] text-indigo-400 border border-indigo-500/20"
+                  className="neu-button px-6 py-2 text-[14px] text-indigo-400 border border-indigo-500/20"
                   title="Tải lại toàn bộ lịch làm việc tuần này"
                 >
                   SEED PLANNER
                 </button>
                 <button 
                   onClick={exportWeeklyData}
-                  className="neu-button px-6 py-2 text-[10px] text-emerald-400 border border-emerald-500/20"
+                  className="neu-button px-6 py-2 text-[14px] text-emerald-400 border border-emerald-500/20"
                   title="Xuất dữ liệu lịch làm việc hiện tại ra file JSON"
                 >
                   EXPORT JSON
                 </button>
                 <button 
                   onClick={() => document.getElementById('import-weekly-json-input').click()}
-                  className="neu-button px-6 py-2 text-[10px] text-amber-400 border border-amber-500/20"
+                  className="neu-button px-6 py-2 text-[14px] text-amber-400 border border-amber-500/20"
                   title="Nhập dữ liệu từ file JSON vào lịch làm việc"
                 >
                   IMPORT JSON
@@ -491,20 +491,20 @@ const WeeklyReport = ({ exportExcel }) => {
                 />
                 <button 
                   onClick={expandAll}
-                  className="neu-button px-6 py-2 text-[10px]"
+                  className="neu-button px-6 py-2 text-[14px]"
                 >
                   EXPAND ALL
                 </button>
                 <button 
                   onClick={collapseAll}
-                  className="neu-button px-6 py-2 text-[10px]"
+                  className="neu-button px-6 py-2 text-[14px]"
                 >
                   COLLAPSE ALL
                 </button>
                 {focusedProject && (
                   <button 
                     onClick={() => setFocusedProject(null)}
-                    className="neu-button px-6 py-2 text-[10px] text-rose-500 gap-2"
+                    className="neu-button px-6 py-2 text-[14px] text-rose-500 gap-2"
                   >
                     <X size={14} />
                     RESET FOCUS
@@ -518,7 +518,7 @@ const WeeklyReport = ({ exportExcel }) => {
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-[var(--bg-header)] text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] border-b border-[var(--border)]">
+                  <tr className="bg-[var(--bg-header)] text-[14px] font-bold uppercase text-[var(--text-muted)] border-b border-[var(--border)]">
                     <th className="p-[10px] w-12 text-center">
                       <input 
                         type="checkbox" 
@@ -576,14 +576,20 @@ const WeeklyReport = ({ exportExcel }) => {
                         </button>
                       </div>
                     </th>
-                    {DAYS_OF_WEEK.map((d, i) => (
-                      <th key={d} className="p-[10px] text-center border-l border-[var(--border)]">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase tracking-wider">{d.substring(0, 2)}</span>
-                          <span className="text-[9px] font-bold text-slate-500 opacity-50">{weekDates[i]}</span>
-                        </div>
-                      </th>
-                    ))}
+                    {DAYS_OF_WEEK.map((d, i) => {
+                      const todayDate = new Date();
+                      const todayString = `${String(todayDate.getDate()).padStart(2, '0')}/${String(todayDate.getMonth() + 1).padStart(2, '0')}`;
+                      const dateStr = weekDates[i] ? weekDates[i].substring(0, 5) : '';
+                      const isToday = dateStr === todayString;
+                      return (
+                        <th key={d} className={`p-[10px] text-center border-l border-[var(--border)] ${isToday ? 'bg-indigo-50/50 dark:bg-indigo-500/10' : ''}`}>
+                          <div className="flex flex-col items-center">
+                            <span className={`text-[14px] font-bold uppercase ${isToday ? 'text-emerald-500' : ''}`}>{d.substring(0, 3)}</span>
+                            <span className={`text-[12px] font-bold ${isToday ? 'text-emerald-500' : 'text-slate-500 opacity-50'}`}>{dateStr}</span>
+                          </div>
+                        </th>
+                      );
+                    })}
                     <th className="p-[10px] text-center">CMD</th>
                   </tr>
                 </thead>
@@ -613,7 +619,7 @@ const WeeklyReport = ({ exportExcel }) => {
                                             backgroundColor: `${projectColorMap[(projectName || '').toUpperCase()] || '#6366f1'}15`,
                                             color: projectColorMap[(projectName || '').toUpperCase()] || '#818cf8',
                                             borderColor: `${projectColorMap[(projectName || '').toUpperCase()] || '#6366f1'}30`
-                                          }} className="px-[10px] py-[2px] text-[10px] font-black rounded-[4px] uppercase border">
+                                          }} className="px-[10px] py-[2px] text-[14px] font-black rounded-[4px] uppercase border">
                                             {tasks.length} UNIT{tasks.length > 1 ? 'S' : ''}
                                           </span>
                                         </div>
@@ -622,7 +628,7 @@ const WeeklyReport = ({ exportExcel }) => {
                                     <div className="flex items-center gap-[10px]">
                                       <button 
                                         onClick={(e) => { e.stopPropagation(); setFocusedProject(focusedProject === projectName ? null : projectName); }}
-                                        className={`px-[15px] py-[10px] rounded-[8px] text-[10px] font-black uppercase tracking-widest border transition-all ${focusedProject === projectName ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-white/5 text-slate-500 border-white/5 hover:border-indigo-500/30 hover:text-indigo-400'}`}
+                                        className={`px-[15px] py-[10px] rounded-[8px] text-[14px] font-black uppercase tracking-widest border transition-all ${focusedProject === projectName ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-white/5 text-slate-500 border-white/5 hover:border-indigo-500/30 hover:text-indigo-400'}`}
                                       >
                                         {focusedProject === projectName ? 'EXIT FOCUS' : 'FOCUS'}
                                       </button>
@@ -656,10 +662,10 @@ const WeeklyReport = ({ exportExcel }) => {
                                   />
                                 </td>
                                 <td className="p-[10px]">
-                                  <span style={{ color: projectColorMap[(row.project || '').toUpperCase()] || '#818cf8' }} className="text-[10px] font-black uppercase tracking-tighter">{row.project}</span>
+                                  <span style={{ color: projectColorMap[(row.project || '').toUpperCase()] || '#818cf8' }} className="text-[14px] font-black uppercase tracking-tighter">{row.project}</span>
                                 </td>
                                 <td className="p-[10px]">
-                                  <div className="text-[10px] font-bold text-white tracking-tight uppercase leading-relaxed">{row.task}</div>
+                                  <div className="text-[14px] font-bold text-white tracking-tight uppercase leading-relaxed">{row.task}</div>
                                 </td>
                                 <td className="p-[10px]">
                                   <MarkupCell 
@@ -677,7 +683,7 @@ const WeeklyReport = ({ exportExcel }) => {
                                 </td>
                                 <td className="p-[10px]">
                                   <select 
-                                    className={`text-[10px] font-black py-[5px] px-[10px] rounded-[8px] border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${getStatusColor(row.status).bg} ${getStatusColor(row.status).text}`}
+                                    className={`text-[14px] font-black py-[5px] px-[10px] rounded-[8px] border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${getStatusColor(row.status).bg} ${getStatusColor(row.status).text}`}
                                     style={{ colorScheme: 'dark' }}
                                     value={row.status}
                                     onChange={(e) => updateStatus(row.id, e.target.value)}
@@ -692,7 +698,7 @@ const WeeklyReport = ({ exportExcel }) => {
                                       {isEditing ? (
                                         <input
                                           type="time"
-                                          className="bg-[var(--bg-surface)] border border-[var(--border)] text-white text-[10px] font-bold p-[5px] w-20 mx-auto text-center rounded-[8px] outline-none"
+                                          className="bg-[var(--bg-surface)] border border-[var(--border)] text-white text-[14px] font-bold p-[5px] w-20 mx-auto text-center rounded-[8px] outline-none"
                                           defaultValue={row.days[d] || ''}
                                           autoFocus
                                           onBlur={(e) => { updateDayTime(row.id, d, e.target.value); setEditingCell(null); }}
@@ -703,7 +709,7 @@ const WeeklyReport = ({ exportExcel }) => {
                                         />
                                       ) : (
                                         <span 
-                                          className={`text-[10px] font-black tracking-tighter cursor-pointer px-[10px] py-[5px] rounded-[8px] transition-all hover:bg-white/10 ${row.days[d] ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20' : 'text-slate-600'}`}
+                                          className={`text-[14px] font-black tracking-tighter cursor-pointer px-[10px] py-[5px] rounded-[8px] transition-all hover:bg-white/10 ${row.days[d] ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20' : 'text-slate-600'}`}
                                           onClick={() => setEditingCell({ id: row.id, day: d })}
                                         >
                                           {row.days[d] || '—'}
@@ -748,10 +754,10 @@ const WeeklyReport = ({ exportExcel }) => {
                             />
                           </td>
                           <td className="px-3 py-3">
-                            <span style={{ color: projectColorMap[(row.project || '').toUpperCase()] || '#818cf8' }} className="text-[10px] font-black tracking-tight transition-colors uppercase">{row.project}</span>
+                            <span style={{ color: projectColorMap[(row.project || '').toUpperCase()] || '#818cf8' }} className="text-[14px] font-black tracking-tight transition-colors uppercase">{row.project}</span>
                           </td>
                           <td className="px-3 py-3">
-                            <div className="text-[10px] font-bold text-[var(--text-main)] tracking-tight leading-relaxed">{row.task}</div>
+                            <div className="text-[14px] font-bold text-[var(--text-main)] tracking-tight leading-relaxed">{row.task}</div>
                           </td>
                           <td className="px-3 py-3">
                             <MarkupCell 
@@ -769,7 +775,7 @@ const WeeklyReport = ({ exportExcel }) => {
                           </td>
                           <td className="px-3 py-3">
                             <select 
-                              className={`text-[10px] font-black py-1.5 px-3 rounded-lg border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${
+                              className={`text-[14px] font-black py-1.5 px-3 rounded-lg border-none focus:ring-0 cursor-pointer transition-all shadow-lg ${
                                 row.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5' :
                                 row.status === 'PENDING' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-slate-500/5' :
                                 row.status === 'TMR' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20 shadow-orange-500/5' :
@@ -792,7 +798,7 @@ const WeeklyReport = ({ exportExcel }) => {
                                 {isEditing ? (
                                   <input
                                     type="time"
-                                    className="bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-main)] text-[10px] font-bold p-1 w-20 mx-auto text-center rounded-lg"
+                                    className="bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-main)] text-[14px] font-bold p-1 w-20 mx-auto text-center rounded-lg"
                                     defaultValue={row.days[d] || ''}
                                     autoFocus
                                     onBlur={(e) => {
@@ -809,7 +815,7 @@ const WeeklyReport = ({ exportExcel }) => {
                                   />
                                 ) : (
                                   <span 
-                                    className={`text-[10px] font-black tracking-tight cursor-pointer px-2 py-0.5 rounded-md transition-all hover:bg-indigo-500/5 ${
+                                    className={`text-[14px] font-black tracking-tight cursor-pointer px-2 py-0.5 rounded-md transition-all hover:bg-indigo-500/5 ${
                                       row.days[d] 
                                         ? 'text-indigo-500 bg-indigo-500/10 border border-indigo-500/20' 
                                         : 'text-[var(--text-muted)]'
@@ -864,7 +870,7 @@ const WeeklyReport = ({ exportExcel }) => {
                 <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
                 <div>
                   <h2 className="text-sm font-black text-white tracking-tight uppercase">Data Intelligence</h2>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Real-time Analytics</p>
+                  <p className="text-[14px] text-slate-500 font-bold uppercase tracking-widest">Real-time Analytics</p>
                 </div>
               </div>
             
@@ -909,7 +915,7 @@ const WeeklyReport = ({ exportExcel }) => {
                   }}
                 />
                 <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tasks</span>
+                  <span className="text-[14px] font-black text-slate-500 uppercase tracking-widest">Tasks</span>
                   <span className="text-3xl font-black text-white">{stats.totalTasks}</span>
                 </div>
               </div>
@@ -928,7 +934,7 @@ const WeeklyReport = ({ exportExcel }) => {
 
               {/* Project Bar Chart */}
               <div className="space-y-3">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Project Load</p>
+                <p className="text-[14px] font-black text-slate-500 uppercase tracking-widest">Project Load</p>
                 <div className="h-[150px]">
                   <Bar 
                     data={{
@@ -966,12 +972,12 @@ const WeeklyReport = ({ exportExcel }) => {
               <div className="space-y-4 pt-4 border-t border-white/5">
                 <div className="flex items-center gap-2 mb-2">
                   <Activity size={14} className="text-indigo-400" />
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Intensity</h3>
+                  <h3 className="text-[14px] font-black text-slate-400 uppercase tracking-widest">Daily Intensity</h3>
                 </div>
                 <div className="space-y-2">
                   {DAYS_OF_WEEK.map(day => (
                     <div key={day} className="group flex flex-col gap-1">
-                      <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter">
+                      <div className="flex justify-between items-center text-[12px] font-black uppercase tracking-tighter">
                         <span className={stats.dayCounts[day] > 0 ? 'text-indigo-300' : 'text-slate-600'}>{day}</span>
                         <span className={stats.dayCounts[day] > 0 ? 'text-white' : 'text-slate-700'}>{stats.dayCounts[day]}</span>
                       </div>
@@ -991,7 +997,7 @@ const WeeklyReport = ({ exportExcel }) => {
               <div className="pt-[10px] border-t border-white/5 m-[10px]">
                 <div className="flex items-center gap-[10px] mb-[10px]">
                   <Zap size={14} className="text-yellow-400" />
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Workflow</h3>
+                  <h3 className="text-[14px] font-black text-slate-400 uppercase tracking-widest">System Workflow</h3>
                 </div>
                 <div className="bg-slate-950/40 rounded-[8px] p-[10px] border border-white/5">
                   <WorkflowAnimation />
@@ -1011,7 +1017,7 @@ const WeeklyReport = ({ exportExcel }) => {
                 <div className="w-1.5 h-6 bg-orange-500 rounded-full"></div>
                 <h2 className="text-[24px] font-black text-white tracking-tight uppercase italic">Workforce Distribution</h2>
               </div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Weekly Analysis</span>
+              <span className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">Weekly Analysis</span>
             </div>
             
             <div className="flex flex-wrap gap-[10px]">
@@ -1019,8 +1025,8 @@ const WeeklyReport = ({ exportExcel }) => {
                 const count = filteredReportData.filter(r => r.project === proj).length
                 return (
                   <div key={proj} className="px-[15px] py-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)] flex flex-col gap-[5px] hover:border-indigo-500/30 transition-all group">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{proj}</span>
-                    <span className="text-[24px] font-black text-white group-hover:text-indigo-400 transition-colors leading-none">{count} <span className="text-[10px] text-slate-600 not-italic uppercase">tasks</span></span>
+                    <span className="text-[14px] font-black text-slate-500 uppercase tracking-widest">{proj}</span>
+                    <span className="text-[24px] font-black text-white group-hover:text-indigo-400 transition-colors leading-none">{count} <span className="text-[14px] text-slate-600 not-italic uppercase">tasks</span></span>
                   </div>
                 )
               })}
@@ -1032,13 +1038,13 @@ const WeeklyReport = ({ exportExcel }) => {
         <div className="bg-indigo-500/5 p-[10px] border border-indigo-500/20 rounded-[8px] shadow-2xl overflow-hidden relative group lg:col-span-3 m-[10px]">
           <div className="relative z-10 p-[10px]">
             <h3 className="text-[14px] font-black text-white uppercase mb-[10px] italic">System Update</h3>
-            <p className="text-[10px] text-slate-400 leading-relaxed mb-[15px] font-bold uppercase">
+            <p className="text-[14px] text-slate-400 leading-relaxed mb-[15px] font-bold uppercase">
               The reporting system is now synced with the local database. Your progress is automatically saved to local storage.
             </p><div className="flex items-center gap-3 pt-4 border-t border-white/5"><div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400"><FileSpreadsheet size={16} /></div>
               </div>
               <div>
                 <p className="text-[12px] font-black text-white">v2.1 Stable</p>
-                <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Ready for export</p>
+                <p className="text-[14px] text-indigo-400 font-bold uppercase tracking-widest">Ready for export</p>
               </div>
             </div>
           </div>
@@ -1061,7 +1067,7 @@ const WeeklyReport = ({ exportExcel }) => {
                     </div>
                     <div>
                       <h2 className="text-[30px] font-black text-white tracking-tight uppercase italic leading-none">Batch Engine</h2>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-1">Mass Operational Deployment</p>
+                      <p className="text-[14px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-1">Mass Operational Deployment</p>
                     </div>
                   </div>
                   <button onClick={() => setShowBatchModal(false)} className="p-[10px] text-slate-500 hover:text-white transition-all text-[24px]">✕</button>
@@ -1071,17 +1077,17 @@ const WeeklyReport = ({ exportExcel }) => {
                   {/* Row 1: Projects */}
                   <div className="space-y-[10px] p-[10px] bg-white/[0.03] rounded-[8px] border border-white/5">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Target Portfolio</p>
+                      <p className="text-[14px] font-black text-slate-500 uppercase tracking-widest">Target Portfolio</p>
                       <div className="flex items-center gap-[10px]">
-                        <button type="button" onClick={() => setBatchProjects([...allProjects])} className="px-[10px] py-[5px] bg-indigo-500 text-white text-[10px] font-black uppercase rounded-[4px]">ALL</button>
-                        <button type="button" onClick={() => setBatchProjects([])} className="px-[10px] py-[5px] bg-white/5 text-slate-500 text-[10px] font-black uppercase rounded-[4px]">CLEAR</button>
+                        <button type="button" onClick={() => setBatchProjects([...allProjects])} className="px-[10px] py-[5px] bg-indigo-500 text-white text-[14px] font-black uppercase rounded-[4px]">ALL</button>
+                        <button type="button" onClick={() => setBatchProjects([])} className="px-[10px] py-[5px] bg-white/5 text-slate-500 text-[14px] font-black uppercase rounded-[4px]">CLEAR</button>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-[5px] max-h-32 overflow-y-auto custom-scrollbar">
                       {allProjects.map(p => {
                         const isSelected = batchProjects.includes(p)
                         return (
-                          <button key={p} type="button" onClick={() => setBatchProjects(prev => isSelected ? prev.filter(x => x !== p) : [...prev, p])} className={`px-[10px] py-[5px] rounded-[4px] text-[10px] font-black uppercase border transition-all ${isSelected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 text-slate-500 border-white/5'}`}>{p}</button>
+                          <button key={p} type="button" onClick={() => setBatchProjects(prev => isSelected ? prev.filter(x => x !== p) : [...prev, p])} className={`px-[10px] py-[5px] rounded-[4px] text-[14px] font-black uppercase border transition-all ${isSelected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 text-slate-500 border-white/5'}`}>{p}</button>
                         )
                       })}
                     </div>
@@ -1090,10 +1096,10 @@ const WeeklyReport = ({ exportExcel }) => {
                   {/* Row 2: Levels */}
                   <div className="space-y-[10px] p-[10px] bg-white/[0.03] rounded-[8px] border border-white/5">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Level Mapping</p>
+                      <p className="text-[14px] font-black text-slate-500 uppercase tracking-widest">Level Mapping</p>
                       <label className="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" className="w-4 h-4 rounded-[4px] bg-slate-900 border-white/10" checked={batchLevelEnabled} onChange={e => { setBatchLevelEnabled(e.target.checked); if (!e.target.checked) setBatchLevelsText('') }} />
-                        <span className="text-[10px] font-black text-slate-500 uppercase">Multi-Level Mode</span>
+                        <span className="text-[14px] font-black text-slate-500 uppercase">Multi-Level Mode</span>
                       </label>
                     </div>
                     {batchLevelEnabled && (
@@ -1104,17 +1110,17 @@ const WeeklyReport = ({ exportExcel }) => {
                   {/* Workflow Selection */}
                   <div className="space-y-[10px] p-[10px] bg-white/[0.03] rounded-[8px] border border-white/5">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Work Process Matrix</p>
+                      <p className="text-[14px] font-black text-slate-500 uppercase tracking-widest">Work Process Matrix</p>
                       <div className="flex items-center gap-[10px]">
-                        <button type="button" onClick={() => setBatchWorkflows([...currentWorkflow.col1, ...currentWorkflow.col2, ...currentWorkflow.col3])} className="px-[10px] py-[5px] bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase rounded-[4px]">ALL</button>
-                        <button type="button" onClick={() => setBatchWorkflows([])} className="px-[10px] py-[5px] bg-white/5 text-slate-500 text-[10px] font-black uppercase rounded-[4px]">CLEAR</button>
+                        <button type="button" onClick={() => setBatchWorkflows([...currentWorkflow.col1, ...currentWorkflow.col2, ...currentWorkflow.col3])} className="px-[10px] py-[5px] bg-indigo-500/20 text-indigo-400 text-[14px] font-black uppercase rounded-[4px]">ALL</button>
+                        <button type="button" onClick={() => setBatchWorkflows([])} className="px-[10px] py-[5px] bg-white/5 text-slate-500 text-[14px] font-black uppercase rounded-[4px]">CLEAR</button>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-[5px]">
                       {[...currentWorkflow.col1, ...currentWorkflow.col2, ...currentWorkflow.col3].map(wf => {
                         const isSelected = batchWorkflows.includes(wf)
                         return (
-                          <button key={wf} type="button" onClick={() => setBatchWorkflows(prev => isSelected ? prev.filter(x => x !== wf) : [...prev, wf])} className={`px-[10px] py-[5px] rounded-[4px] text-[10px] font-black uppercase border transition-all ${isSelected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 text-slate-500 border-white/5'}`}>{wf}</button>
+                          <button key={wf} type="button" onClick={() => setBatchWorkflows(prev => isSelected ? prev.filter(x => x !== wf) : [...prev, wf])} className={`px-[10px] py-[5px] rounded-[4px] text-[14px] font-black uppercase border transition-all ${isSelected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 text-slate-500 border-white/5'}`}>{wf}</button>
                         )
                       })}
                     </div>
@@ -1123,8 +1129,8 @@ const WeeklyReport = ({ exportExcel }) => {
                   {/* Task Input */}
                   <div className="space-y-[10px]">
                     <div className="flex items-center justify-between px-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Deployment Matrix (One per line)</label>
-                      <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-[10px] py-[2px] rounded-[4px] border border-orange-500/20">{batchValidation.totalTasks} UNITS</span>
+                      <label className="text-[14px] font-black text-slate-500 uppercase tracking-widest">Deployment Matrix (One per line)</label>
+                      <span className="text-[14px] font-black text-orange-400 bg-orange-500/10 px-[10px] py-[2px] rounded-[4px] border border-orange-500/20">{batchValidation.totalTasks} UNITS</span>
                     </div>
                     <textarea 
                       className="w-full h-40 bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] p-[15px] text-[14px] font-bold text-white outline-none focus:ring-2 focus:ring-orange-500/20 custom-scrollbar"
@@ -1167,7 +1173,7 @@ const WeeklyReport = ({ exportExcel }) => {
                 <div className="bg-white text-indigo-600 p-[10px] rounded-[8px] shadow-lg"><Layout size={20} /></div>
                 <div>
                   <p className="text-[14px] font-black text-white uppercase tracking-tight leading-none">{selectedRows.size} ROWS SELECTED</p>
-                  <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-widest mt-1">Bulk Command Active</p>
+                  <p className="text-[14px] text-indigo-200 font-bold uppercase tracking-widest mt-1">Bulk Command Active</p>
                 </div>
               </div>
               <div className="flex items-center gap-[10px] flex-grow max-w-sm">
