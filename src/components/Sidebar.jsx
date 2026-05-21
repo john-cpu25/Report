@@ -43,23 +43,18 @@ const Sidebar = () => {
       title: 'MAIN',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'personal', label: 'Personal', icon: UserIcon }, // Changed from My Space
-        { id: 'neural-brain', label: 'Neural Brain', icon: Brain },
         { id: 'projects', label: 'Projects', icon: FolderKanban },
-        { id: 'organization', label: 'Organization', icon: Network },
         { id: 'report', label: 'Weekly Planner', icon: CalendarClock },
-        { id: 'leave', label: 'Annual Leave', icon: Battery },
-      ]
-    },
-    {
-      title: 'WORKFLOW',
-      items: [
         { id: 'planning', label: 'Planning', icon: ListTodo },
+        { id: 'organization', label: 'Organization', icon: Network },
+        { id: 'personal', label: 'Personal', icon: UserIcon },
+        { id: 'neural-brain', label: 'Neural Brain', icon: Brain },
+        { id: 'leave', label: 'Annual Leave', icon: Battery },
         { id: 'issues', label: 'Issues', icon: AlertCircle },
         { id: 'workflows', label: 'Library', icon: WorkflowIcon },
       ]
     }
-  ]
+  ];
 
   const systemSection = {
     title: 'SYSTEM',
@@ -93,7 +88,7 @@ const Sidebar = () => {
       <div className="flex-grow overflow-y-auto custom-scrollbar space-y-[10px]">
         {mainSections.map((section, idx) => (
           <div key={section.title} className="space-y-[10px]">
-            {!collapsed && (
+            {!collapsed && section.title && (
               <h3 className="px-[10px] text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-[10px]">
                 {section.title}
               </h3>

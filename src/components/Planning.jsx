@@ -34,6 +34,32 @@ import {
   isSameMonth
 } from 'date-fns';
 
+const projectColorMap = {
+  '373 CROWN': '#f43f5e',
+  'CW2': '#0ea5e9',
+  'CW3': '#0284c7',
+  'DLD': '#334155',
+  'FGWB': '#3b82f6',
+  'LEEDS': '#10b981',
+  'MAC': '#b45309',
+  'MEL02': '#1e3a8a',
+  'MEL03': '#e11d48',
+  'MORAY': '#2563eb',
+  'RIVER TERRACE': '#8b5cf6',
+  'SURF PARADE': '#0d9488',
+  'SYD01': '#16a34a',
+  'WICKHAM': '#84cc16',
+};
+
+const getProjectColor = (projectName) => {
+  const name = (projectName || '').toUpperCase();
+  if (projectColorMap[name]) return projectColorMap[name];
+  const colors = ['#6366f1', '#10b981', '#f43f5e', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+};
+
 const Planning = ({ reportData = [], weekDates = [] }) => {
   const [viewMode, setViewMode] = useState('WEEK'); // WEEK, MONTH, YEAR
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -117,32 +143,13 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
             <ListTodo size={20} />
           </div>
           <div>
-            <h1 className="text-[30px] font-black text-white uppercase tracking-tight">
-              Strategic <span className="text-indigo-400">Planning</span>
+            <h1 className="text-[30px] font-black text-[var(--text-main)] uppercase tracking-tight">
+              Planning
             </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Temporal Alignment Active</p>
-            </div>
           </div>
         </div>
 
-        {/* View Mode Switcher */}
-        <div className="flex bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--glass-border)] shadow-inner">
-          {['WEEK', 'MONTH', 'YEAR'].map(mode => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-[8px] transition-all ${
-                viewMode === mode 
-                  ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-              }`}
-            >
-              {mode}
-            </button>
-          ))}
-        </div>
+
 
         {/* Date Navigation */}
         <div className="flex items-center gap-[10px]">
@@ -182,23 +189,25 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
             <div className="grid grid-cols-[280px_1fr] border-b border-[var(--glass-border)] bg-[var(--bg-surface)]">
               <div className="p-[10px] flex items-center gap-[10px] border-r border-[var(--glass-border)]">
                 <Layers size={14} className="text-slate-500" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Project / Workflows</span>
+                <span className="text-[14px] font-black text-slate-400 uppercase tracking-widest">Project / Workflows</span>
               </div>
               <div className="flex">
-                {columns.map((col, i) => (
+                {columns.map((col, i) => {
+                  const isToday = col.date ? isSameDay(col.date, new Date()) : false;
+                  return (
                   <div 
                     key={i} 
-                    className={`flex-1 min-w-[80px] p-[10px] flex flex-col items-center justify-center border-r border-[var(--glass-border)] last:border-0 ${col.isWeekend ? 'bg-[var(--bg-surface)]' : ''}`}
+                    className={`flex-1 min-w-[80px] p-[10px] flex flex-col items-center justify-center border-r border-[var(--glass-border)] last:border-0 ${isToday ? 'bg-indigo-500/10' : (col.isWeekend ? 'bg-[var(--bg-surface)]' : '')}`}
                   >
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{col.label}</span>
-                    <span className={`text-[11px] font-black mt-0.5 ${viewMode === 'WEEK' ? 'text-indigo-400' : 'text-white'}`}>{col.subLabel}</span>
+                    <span className={`text-[14px] font-black uppercase tracking-tighter ${isToday ? 'text-emerald-500' : 'text-[var(--text-contrast)]'}`}>{col.label}</span>
+                    <span className={`text-[12px] font-black mt-0.5 ${isToday ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>{col.subLabel}</span>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
 
             {/* Grid Body */}
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-[var(--glass-border)]">
               {projectGroups.length === 0 ? (
                 <div className="p-20 text-center space-y-4">
                   <div className="w-16 h-16 rounded-full bg-[var(--bg-surface)] mx-auto flex items-center justify-center border border-[var(--glass-border)]">
@@ -211,14 +220,13 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                   <div key={groupIdx} className="group/row">
                     <div className="grid grid-cols-[280px_1fr]">
                       {/* Left: Project Info */}
-                      <div className="p-[10px] bg-[var(--bg-surface)] border-r border-[var(--glass-border)] relative">
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover/row:opacity-100 transition-opacity" />
-                        <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight truncate">{group.name}</h3>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">{group.tasks.length} Active Workflows</p>
+                      <div className="p-[10px] flex items-center bg-[var(--bg-surface)] border-r border-[var(--glass-border)] relative">
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full opacity-0 group-hover/row:opacity-100 transition-opacity" style={{ backgroundColor: getProjectColor(group.name) }} />
+                        <h3 className="text-[14px] font-black uppercase tracking-tight truncate" style={{ color: getProjectColor(group.name) }}>{group.name}</h3>
                       </div>
 
                       {/* Right: Gantt Bars Container */}
-                      <div className="relative h-20 flex items-center">
+                      <div className="relative h-[46px] flex items-center">
                         {/* Background Grid Lines */}
                         <div className="absolute inset-0 flex">
                           {columns.map((_, i) => (
@@ -227,7 +235,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                         </div>
 
                         {/* Bars for this project */}
-                        <div className="relative w-full h-12">
+                        <div className="relative w-full h-full">
                           {group.tasks.map((task, taskIdx) => {
                             // Calculate bar position
                             // For WEEK view, we map Monday-Friday to col indices 0-4
@@ -262,7 +270,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                                 >
                                   {/* Bar Content */}
                                   <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent pointer-events-none" />
-                                  <span className="text-[8px] font-black text-white uppercase truncate relative z-10">
+                                  <span className="text-[12px] font-black text-white uppercase truncate relative z-10">
                                     {task.task}
                                   </span>
 
@@ -290,22 +298,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
         </div>
       </div>
 
-        {/* Footer Intelligence */}
-        <div className="mt-[10px] grid grid-cols-1 md:grid-cols-3 gap-[10px]">
-          {[
-            { label: 'Temporal Density', value: '85%', icon: Zap, color: 'text-yellow-400' },
-            { label: 'Critical Path', value: '4 Assets', icon: Activity, color: 'text-rose-400' },
-            { label: 'Sync Status', value: 'Real-time', icon: Settings2, color: 'text-emerald-400' }
-          ].map((stat, i) => (
-            <div key={i} className="ocd-card flex items-center justify-between group hover:border-indigo-500/20 transition-all">
-              <div>
-                <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">{stat.label}</p>
-                <p className={`text-xl font-black mt-1 ${stat.color}`}>{stat.value}</p>
-              </div>
-              <stat.icon size={20} className="text-[var(--text-muted)] group-hover:text-indigo-500 transition-colors" />
-            </div>
-          ))}
-        </div>
+
     </div>
   );
 };

@@ -187,28 +187,12 @@ const TopBar = () => {
 
         <div className="flex items-center gap-[10px]">
           {activeTab === 'report' && (
-            <>
-              <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
-                <input type="text" placeholder="GLOBAL SEARCH..." className="ocd-input pl-10 w-64 m-0" />
-              </div>
-
-              <div className="flex items-center gap-[10px]">
-                <button 
-                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className={`neu-button neu-pill px-6 py-2.5 text-[11px] ${isSidebarOpen ? 'active text-indigo-500' : ''}`}
-                >
-                  CREATE TASK
-                </button>
-
-                <button 
-                  onClick={() => setShowProjectGroups(!showProjectGroups)}
-                  className={`neu-button neu-pill px-6 py-2.5 text-[11px] ${showProjectGroups ? 'active text-emerald-500' : ''}`}
-                >
-                  PROJECT GROUP
-                </button>
-              </div>
-            </>
+            <button 
+              onClick={() => setShowProjectGroups(!showProjectGroups)}
+              className={`neu-button neu-pill px-6 py-2.5 text-[11px] ${showProjectGroups ? 'active text-emerald-500' : ''}`}
+            >
+              PROJECT GROUP
+            </button>
           )}
 
           <div className="flex items-center gap-[10px]">

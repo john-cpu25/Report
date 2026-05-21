@@ -15,17 +15,12 @@ When developing HTML tables (`<table>`) styled with Tailwind CSS, two main issue
 
 To guarantee consistent spacing, perfect vertical alignment, and completely avoid the "dính khung" issue, follow these three rules:
 
-### Rule 1: Use `border-separate` and `border-spacing-0`
+### Rule 1: Use `border-separate` and `border-spacing-0` ONLY on specific tables
 Instead of `border-collapse` (which merges borders), configure the table to use separate borders with zero spacing:
-* **Tailwind classes:** `border-separate border-spacing-0`
-* **Raw CSS equivalent:** 
-  ```css
-  table {
-    border-collapse: separate;
-    border-spacing: 0;
-  }
-  ```
-* **Why:** This isolates background colors to the inner boundary of the cell and ensures that padding is strictly respected by the browser's layout engine.
+* **Tailwind classes:** `<table className="border-separate border-spacing-0">`
+* **Inline Style:** `<table style={{ borderCollapse: 'separate', borderSpacing: 0 }}>`
+* **CRITICAL WARNING:** **DO NOT** use global raw CSS like `table { border-collapse: separate; }` in `index.css`. Doing so will break all other tables in the application that rely on Tailwind's default `border-collapse: collapse` (which will cause them to lose their horizontal `<tr className="border-b">` lines). Always apply it per-component.
+* **Why:** This isolates background colors to the inner boundary of the cell and ensures that padding is strictly respected by the browser's layout engine without breaking other components.
 
 ### Rule 2: Bypass Tailwind compiler caches with Inline Styles
 For critical horizontal padding where alignment between `<th>` and `<td>` must be 100% exact (such as table indents), use React's inline styles:
@@ -84,4 +79,5 @@ For sticky columns (e.g., PROJECT, TASK NAME), use `sticky left-X z-Z` combined 
 | DAILY | `TimesheetView.jsx` | Team, Member, Project |
 | PROJECT | `ProjectView.jsx` | Team, Project, Member |
 | LIST | `UnifiedTable.jsx` | PROJECT, TASK NAME, USER_ID |
+| WEEKLY PLANNER | `WeeklyReport.jsx` | PROJECT, TASK ANALYSIS |
 
