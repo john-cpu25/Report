@@ -870,33 +870,29 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    const readLS = (key) => {
+      try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
+    };
+
     const fetchAudRate = async () => {
       try {
-        // ── 1. READ YESTERDAY FROM LOCALSTORAGE (carry-forward) ──────────────
         const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-        // Seed historical rates for first-run (only if localStorage is empty)
-        const SEED_HISTORY = {
-          '2026-05-20': { transfer: 18453.83, buy: 18269.29, sell: 19044.74 },
-        };
-        const existingStored = (() => {
-          try { return JSON.parse(localStorage.getItem('vcb_aud_rate') || 'null'); } catch { return null; }
-        })();
-        if (!existingStored) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yStr = format(yesterday, 'yyyy-MM-dd');
-          const seed = SEED_HISTORY[yStr];
-          if (seed) {
-            localStorage.setItem('vcb_aud_rate', JSON.stringify({ date: yStr, ...seed }));
-          }
+        // ── 1. YESTERDAY: read from dedicated key ────────────────────────────
+        // Seed first-run with known VCB closing rate
+        if (!readLS('vcb_aud_yesterday')) {
+          localStorage.setItem('vcb_aud_yesterday', JSON.stringify({
+            date: '2026-05-20', transfer: 18453.83, buy: 18269.29, sell: 19044.74,
+          }));
         }
 
-        const stored = (() => {
-          try { return JSON.parse(localStorage.getItem('vcb_aud_rate') || 'null'); } catch { return null; }
-        })();
-        const yesterdayFromStorage =
-          stored && stored.date && stored.date !== todayStr ? stored : null;
+        // If a new day started, promote today → yesterday
+        const prevToday = readLS('vcb_aud_rate');
+        if (prevToday && prevToday.date && prevToday.date !== todayStr) {
+          localStorage.setItem('vcb_aud_yesterday', JSON.stringify(prevToday));
+        }
+
+        const yesterdayData = readLS('vcb_aud_yesterday');
 
         // ── 2. FETCH LIVE VCB XML via proxy chain ────────────────────────────
         const VCB_TARGET = 'https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx';
@@ -927,8 +923,7 @@ const Dashboard = () => {
         let audData = null;
 
         for (let i = 0; i < exrates.length; i++) {
-          const code = exrates[i].getAttribute('CurrencyCode');
-          if (code === 'AUD') {
+          if (exrates[i].getAttribute('CurrencyCode') === 'AUD') {
             const strip = (v) => parseFloat((v || '0').replace(/,/g, ''));
             audData = {
               buy:      strip(exrates[i].getAttribute('Buy')),
@@ -944,16 +939,13 @@ const Dashboard = () => {
         // ── 3. COMPUTE TODAY VALUE ───────────────────────────────────────────
         const todayVal = audData.transfer > 0 ? audData.transfer : (audData.buy + audData.sell) / 2;
 
-        // ── 4. SAVE TODAY TO LOCALSTORAGE (becomes yesterday tomorrow) ───────
+        // ── 4. SAVE TODAY TO LOCALSTORAGE ────────────────────────────────────
         localStorage.setItem('vcb_aud_rate', JSON.stringify({
-          date:     todayStr,
-          transfer: todayVal,
-          buy:      audData.buy,
-          sell:     audData.sell,
+          date: todayStr, transfer: todayVal, buy: audData.buy, sell: audData.sell,
         }));
 
         // ── 5. COMPUTE CHANGE vs YESTERDAY ───────────────────────────────────
-        const yesterdayVal = yesterdayFromStorage ? yesterdayFromStorage.transfer : null;
+        const yesterdayVal = yesterdayData ? yesterdayData.transfer : null;
         let changeStr = '+0.00%';
         let isUp = true;
 
@@ -964,31 +956,22 @@ const Dashboard = () => {
         }
 
         setAudRate({
-          rate:      todayVal,
-          change:    changeStr,
-          isUp:      isUp,
-          buy:       audData.buy,
-          sell:      audData.sell,
+          rate: todayVal, change: changeStr, isUp,
+          buy: audData.buy, sell: audData.sell,
           yesterday: yesterdayVal || todayVal,
         });
 
       } catch (error) {
         console.warn('VCB fetch failed, trying open.er-api fallback:', error);
 
-        // ── FALLBACK: open.er-api (mid-market) ───────────────────────────────
         try {
           const res  = await fetch('https://open.er-api.com/v6/latest/AUD');
           const data = await res.json();
           if (data?.rates?.VND) {
             const mid      = data.rates.VND;
             const todayVal = Math.round(mid * 0.98138);
-
-            const todayStr = format(new Date(), 'yyyy-MM-dd');
-            const stored   = (() => {
-              try { return JSON.parse(localStorage.getItem('vcb_aud_rate') || 'null'); } catch { return null; }
-            })();
-            const yfs = stored && stored.date && stored.date !== todayStr ? stored : null;
-            const yesterdayVal = yfs ? yfs.transfer : null;
+            const yesterdayData = readLS('vcb_aud_yesterday');
+            const yesterdayVal  = yesterdayData ? yesterdayData.transfer : null;
 
             let changeStr = '+0.00%';
             let isUp = true;
@@ -999,11 +982,8 @@ const Dashboard = () => {
             }
 
             setAudRate({
-              rate:      todayVal,
-              change:    changeStr,
-              isUp:      isUp,
-              buy:       Math.round(mid * 0.97157),
-              sell:      Math.round(mid * 1.01281),
+              rate: todayVal, change: changeStr, isUp,
+              buy: Math.round(mid * 0.97157), sell: Math.round(mid * 1.01281),
               yesterday: yesterdayVal || todayVal,
             });
           }
