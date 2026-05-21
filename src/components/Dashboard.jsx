@@ -753,7 +753,7 @@ const Dashboard = () => {
   const [timeRange, setTimeRange] = useState('WEEK'); // DAY, WEEK, MONTH
   const [chartType, setChartType] = useState('LINE'); // LINE, BAR, POLAR
 
-  const [audRate, setAudRate] = useState({ rate: 18418.28, change: '-0.17%', isUp: false, buy: 18234.10, sell: 19008.07, yesterday: 18450.61 });
+  const [audRate, setAudRate] = useState({ rate: 18461.61, change: '+0.04%', isUp: true, buy: 18277.00, sell: 19052.78, yesterday: 18453.83 });
 
   const isTeamUser = useMemo(() => {
     if (isAdmin) return false;
@@ -872,164 +872,147 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchAudRate = async () => {
       try {
-        // Fetch official Vietcombank rate using highly reliable, free codetabs CORS proxy
-        const targetUrl = 'https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx';
-        const proxyUrl = `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(targetUrl)}`;
-        
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Vietcombank XML network request failed');
-        
-        const xmlText = await response.text();
+        // ── 1. READ YESTERDAY FROM LOCALSTORAGE (carry-forward) ──────────────
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+        // Seed historical rates for first-run (only if localStorage is empty)
+        const SEED_HISTORY = {
+          '2026-05-20': { transfer: 18453.83, buy: 18269.29, sell: 19044.74 },
+        };
+        const existingStored = (() => {
+          try { return JSON.parse(localStorage.getItem('vcb_aud_rate') || 'null'); } catch { return null; }
+        })();
+        if (!existingStored) {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yStr = format(yesterday, 'yyyy-MM-dd');
+          const seed = SEED_HISTORY[yStr];
+          if (seed) {
+            localStorage.setItem('vcb_aud_rate', JSON.stringify({ date: yStr, ...seed }));
+          }
+        }
+
+        const stored = (() => {
+          try { return JSON.parse(localStorage.getItem('vcb_aud_rate') || 'null'); } catch { return null; }
+        })();
+        const yesterdayFromStorage =
+          stored && stored.date && stored.date !== todayStr ? stored : null;
+
+        // ── 2. FETCH LIVE VCB XML via proxy chain ────────────────────────────
+        const VCB_TARGET = 'https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx';
+        const PROXIES = [
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(VCB_TARGET)}`,
+          `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(VCB_TARGET)}`,
+        ];
+
+        let xmlText = null;
+        for (const proxyUrl of PROXIES) {
+          try {
+            const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+            if (res.ok) {
+              const text = await res.text();
+              if (text.includes('ExrateList') || text.includes('Exrate')) {
+                xmlText = text;
+                break;
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (!xmlText) throw new Error('All VCB proxies failed');
+
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-        
         const exrates = xmlDoc.getElementsByTagName('Exrate');
         let audData = null;
-        
+
         for (let i = 0; i < exrates.length; i++) {
           const code = exrates[i].getAttribute('CurrencyCode');
           if (code === 'AUD') {
-            const rawBuy = exrates[i].getAttribute('Buy') || '0';
-            const rawTransfer = exrates[i].getAttribute('Transfer') || '0';
-            const rawSell = exrates[i].getAttribute('Sell') || '0';
-            
-            // Vietcombank XML uses commas for thousands (e.g. 18,303.45). Strip commas before parsing!
+            const strip = (v) => parseFloat((v || '0').replace(/,/g, ''));
             audData = {
-              buy: parseFloat(rawBuy.replace(/,/g, '')),
-              transfer: parseFloat(rawTransfer.replace(/,/g, '')),
-              sell: parseFloat(rawSell.replace(/,/g, ''))
+              buy:      strip(exrates[i].getAttribute('Buy')),
+              transfer: strip(exrates[i].getAttribute('Transfer')),
+              sell:     strip(exrates[i].getAttribute('Sell')),
             };
             break;
           }
         }
-        
-        if (audData && audData.sell > 0) {
-          const todayVal = audData.transfer > 0 ? audData.transfer : (audData.buy + audData.sell) / 2;
-          
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-          
-          const VCB_AUD_HISTORY = {
-            '2026-05-19': 18450.61,
-            '2026-05-18': 18432.10,
-            '2026-05-17': 18420.50
-          };
 
-          let yesterdayValEstimate = VCB_AUD_HISTORY[yesterdayStr];
-          let changeStr = '+0.00%';
-          let isUp = true;
-          
-          if (yesterdayValEstimate) {
-            const pct = ((todayVal - yesterdayValEstimate) / yesterdayValEstimate) * 100;
-            isUp = pct >= 0;
-            changeStr = `${isUp ? '+' : ''}${pct.toFixed(2)}%`;
-          } else {
-            yesterdayValEstimate = todayVal;
-            try {
-              const yesterdayUrl = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${yesterdayStr}/v1/currencies/aud.json`;
-              const yRes = await fetch(yesterdayUrl);
-              if (yRes.ok) {
-                const yData = await yRes.json();
-                const yesterdayVal = yData.aud.vnd;
-                
-                const todayUrl = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/aud.json';
-                const tRes = await fetch(todayUrl);
-                let todayJSDeliverVal = yesterdayVal;
-                if (tRes.ok) {
-                  const tData = await tRes.json();
-                  todayJSDeliverVal = tData.aud.vnd;
-                }
-                
-                const pct = ((todayJSDeliverVal - yesterdayVal) / yesterdayVal) * 100;
-                isUp = pct >= 0;
-                changeStr = `${isUp ? '+' : ''}${pct.toFixed(2)}%`;
-                yesterdayValEstimate = todayVal / (1 + pct / 100);
-              }
-            } catch (e) {
-              console.warn('Failed to calculate yesterday change, using default:', e);
-            }
-          }
+        if (!audData || audData.sell <= 0) throw new Error('AUD not found in VCB XML');
 
-          setAudRate({
-            rate: todayVal,
-            change: changeStr,
-            isUp: isUp,
-            buy: audData.buy,
-            sell: audData.sell,
-            yesterday: yesterdayValEstimate
-          });
-        } else {
-          throw new Error('AUD not found in VCB XML');
+        // ── 3. COMPUTE TODAY VALUE ───────────────────────────────────────────
+        const todayVal = audData.transfer > 0 ? audData.transfer : (audData.buy + audData.sell) / 2;
+
+        // ── 4. SAVE TODAY TO LOCALSTORAGE (becomes yesterday tomorrow) ───────
+        localStorage.setItem('vcb_aud_rate', JSON.stringify({
+          date:     todayStr,
+          transfer: todayVal,
+          buy:      audData.buy,
+          sell:     audData.sell,
+        }));
+
+        // ── 5. COMPUTE CHANGE vs YESTERDAY ───────────────────────────────────
+        const yesterdayVal = yesterdayFromStorage ? yesterdayFromStorage.transfer : null;
+        let changeStr = '+0.00%';
+        let isUp = true;
+
+        if (yesterdayVal && yesterdayVal > 0) {
+          const pct = ((todayVal - yesterdayVal) / yesterdayVal) * 100;
+          isUp      = pct >= 0;
+          changeStr = `${isUp ? '+' : ''}${pct.toFixed(2)}%`;
         }
-      } catch (error) {
-        console.warn('Failed to parse AUD rate from Vietcombank, using open-api fallback:', error);
-        
-        // Fallback to high-availability open API + VCB spread synthesis
-        try {
-          const response = await fetch('https://open.er-api.com/v6/latest/AUD');
-          const data = await response.json();
-          if (data && data.rates && data.rates.VND) {
-            const midMarketRate = data.rates.VND;
-            const todayVal = Math.round(midMarketRate * 0.98138);
-            
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-            
-            const VCB_AUD_HISTORY = {
-              '2026-05-19': 18450.61,
-              '2026-05-18': 18432.10,
-              '2026-05-17': 18420.50
-            };
 
-            let yesterdayValEstimate = VCB_AUD_HISTORY[yesterdayStr];
+        setAudRate({
+          rate:      todayVal,
+          change:    changeStr,
+          isUp:      isUp,
+          buy:       audData.buy,
+          sell:      audData.sell,
+          yesterday: yesterdayVal || todayVal,
+        });
+
+      } catch (error) {
+        console.warn('VCB fetch failed, trying open.er-api fallback:', error);
+
+        // ── FALLBACK: open.er-api (mid-market) ───────────────────────────────
+        try {
+          const res  = await fetch('https://open.er-api.com/v6/latest/AUD');
+          const data = await res.json();
+          if (data?.rates?.VND) {
+            const mid      = data.rates.VND;
+            const todayVal = Math.round(mid * 0.98138);
+
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
+            const stored   = (() => {
+              try { return JSON.parse(localStorage.getItem('vcb_aud_rate') || 'null'); } catch { return null; }
+            })();
+            const yfs = stored && stored.date && stored.date !== todayStr ? stored : null;
+            const yesterdayVal = yfs ? yfs.transfer : null;
+
             let changeStr = '+0.00%';
             let isUp = true;
-            
-            if (yesterdayValEstimate) {
-              const pct = ((todayVal - yesterdayValEstimate) / yesterdayValEstimate) * 100;
-              isUp = pct >= 0;
+            if (yesterdayVal && yesterdayVal > 0) {
+              const pct = ((todayVal - yesterdayVal) / yesterdayVal) * 100;
+              isUp      = pct >= 0;
               changeStr = `${isUp ? '+' : ''}${pct.toFixed(2)}%`;
-            } else {
-              yesterdayValEstimate = todayVal;
-              try {
-                const yRes = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${yesterdayStr}/v1/currencies/aud.json`);
-                if (yRes.ok) {
-                  const yData = await yRes.json();
-                  const yesterdayVal = yData.aud.vnd;
-                  
-                  const todayUrl = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/aud.json';
-                  const tRes = await fetch(todayUrl);
-                  let todayJSDeliverVal = yesterdayVal;
-                  if (tRes.ok) {
-                    const tData = await tRes.json();
-                    todayJSDeliverVal = tData.aud.vnd;
-                  }
-                  
-                  const pct = ((todayJSDeliverVal - yesterdayVal) / yesterdayVal) * 100;
-                  isUp = pct >= 0;
-                  changeStr = `${isUp ? '+' : ''}${pct.toFixed(2)}%`;
-                  yesterdayValEstimate = todayVal / (1 + pct / 100);
-                }
-              } catch (e) {}
             }
 
             setAudRate({
-              rate: todayVal,
-              change: changeStr,
-              isUp: isUp,
-              buy: Math.round(midMarketRate * 0.97157),
-              sell: Math.round(midMarketRate * 1.01281),
-              yesterday: yesterdayValEstimate
+              rate:      todayVal,
+              change:    changeStr,
+              isUp:      isUp,
+              buy:       Math.round(mid * 0.97157),
+              sell:      Math.round(mid * 1.01281),
+              yesterday: yesterdayVal || todayVal,
             });
           }
         } catch (fallbackError) {
-          console.error('Fallback exchange API also failed:', fallbackError);
+          console.error('All exchange rate sources failed:', fallbackError);
         }
       }
     };
-    
+
     fetchAudRate();
     const interval = setInterval(fetchAudRate, 600000); // Sync every 10 mins
     return () => clearInterval(interval);
