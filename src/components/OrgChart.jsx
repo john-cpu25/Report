@@ -1122,16 +1122,16 @@ const OrgChart = () => {
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '88vh', background: isDark ? '#0F172A' : '#F8FAFC', borderRadius: 12, overflow: 'hidden', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
+    <div className="tab-org">
       {/* Header */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: isDark ? 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 100%)' : 'linear-gradient(180deg, rgba(248,250,252,0.95) 0%, rgba(248,250,252,0.7) 100%)', backdropFilter: 'blur(12px)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #F59E0B, #D97706)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="org-header" style={{ background: isDark ? 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 100%)' : 'linear-gradient(180deg, rgba(248,250,252,0.95) 0%, rgba(248,250,252,0.7) 100%)' }}>
+        <div className="org-header-branding">
+          <div className="org-icon-wrapper">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: isDark ? '#fff' : '#0F172A', letterSpacing: '-0.03em', margin: 0, lineHeight: 1 }}>Organization Chart</h1>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.2em', margin: '3px 0 0' }}>Rincovitch Engineering</p>
+            <h1 className="org-title">Organization Chart</h1>
+            <p className="org-subtitle">Rincovitch Engineering</p>
           </div>
         </div>
 
@@ -1160,23 +1160,16 @@ const OrgChart = () => {
           {/* Snap grid / Auto-align switch */}
           <button 
             onClick={() => setSnapToGrid(s => !s)} 
-            style={{
-              ...toolBtnStyle(isDark),
-              background: snapToGrid ? 'rgba(245, 158, 11, 0.15)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
-              border: `1px solid ${snapToGrid ? '#F59E0B' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)')}`,
-              color: snapToGrid ? '#F59E0B' : (isDark ? '#94A3B8' : '#475569'),
-              transition: 'all 0.2s',
-              marginRight: 6
-            }} 
+            className={`org-tool-btn ${snapToGrid ? 'active-snap' : ''}`}
             title={snapToGrid ? "Đang BẬT tự dóng hàng / Hít lưới (20px)" : "Đang TẮT tự dóng hàng / Hít lưới"}
           >
             <LayoutGrid size={16} />
           </button>
 
           {/* Zoom controls */}
-          <button onClick={() => setZoom(z => Math.min(2, z * 1.2))} style={toolBtnStyle(isDark)} title="Phóng to"><ZoomIn size={16} /></button>
-          <button onClick={() => setZoom(z => Math.max(0.2, z * 0.8))} style={toolBtnStyle(isDark)} title="Thu nhỏ"><ZoomOut size={16} /></button>
-          <button onClick={fitToScreen} style={toolBtnStyle(isDark)} title="Vừa khít màn hình"><Maximize2 size={16} /></button>
+          <button onClick={() => setZoom(z => Math.min(2, z * 1.2))} className="org-tool-btn" title="Phóng to"><ZoomIn size={16} /></button>
+          <button onClick={() => setZoom(z => Math.max(0.2, z * 0.8))} className="org-tool-btn" title="Thu nhỏ"><ZoomOut size={16} /></button>
+          <button onClick={fitToScreen} className="org-tool-btn" title="Vừa khít màn hình"><Maximize2 size={16} /></button>
           <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, minWidth: 45, textAlign: 'center', marginRight: 10 }}>{Math.round(zoom * 100)}%</div>
 
           {/* Sync controls */}
@@ -1186,20 +1179,7 @@ const OrgChart = () => {
                 <button
                   onClick={handleDiscardChanges}
                   disabled={isSaving}
-                  style={{
-                    padding: '8px 14px',
-                    background: isDark ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)',
-                    color: '#EF4444',
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
-                    borderRadius: 10,
-                    fontSize: 11,
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
+                  className="org-btn-cancel"
                   title="Hủy toàn bộ thay đổi chưa đồng bộ"
                 >
                   <RotateCcw size={14} /> HỦY
@@ -1208,24 +1188,7 @@ const OrgChart = () => {
               <button
                 onClick={handleSaveChanges}
                 disabled={!hasPendingChanges || isSaving}
-                style={{
-                  padding: '8px 16px',
-                  background: hasPendingChanges 
-                    ? 'linear-gradient(135deg, #10B981, #059669)' 
-                    : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
-                  color: hasPendingChanges ? '#fff' : (isDark ? '#475569' : '#94A3B8'),
-                  border: 'none',
-                  borderRadius: 10,
-                  fontSize: 11,
-                  fontWeight: 900,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  cursor: (hasPendingChanges && !isSaving) ? 'pointer' : 'not-allowed',
-                  boxShadow: hasPendingChanges ? '0 4px 14px rgba(16, 185, 129, 0.2)' : 'none',
-                  opacity: isSaving ? 0.7 : 1,
-                  transition: 'all 0.2s',
-                }}
+                className={`org-btn-sync ${hasPendingChanges && !isSaving ? 'ready' : (isSaving ? 'saving ready' : 'disabled')}`}
                 title="Đồng bộ sơ đồ hiện tại lên Supabase"
               >
                 {isSaving ? (
@@ -1330,23 +1293,11 @@ const OrgChart = () => {
 
       {/* Detail Panel - centered modal */}
       {selectedNode && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(4px)' }} onClick={() => setSelectedNode(null)} />
-          <div style={{
-            position: 'relative', width: 340, maxWidth: '90%', zIndex: 501,
-            background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(0,0,0,0.08)', borderRadius: 16,
-            boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
-            animation: 'fadeInUp 0.3s ease-out',
-            display: 'flex', flexDirection: 'column', overflow: 'hidden',
-          }}>
+        <div className="org-modal-wrapper">
+          <div className="org-modal-backdrop" onClick={() => setSelectedNode(null)} />
+          <div className="org-modal-content">
           {/* Close button */}
-          <button onClick={() => setSelectedNode(null)} style={{
-            position: 'absolute', top: 12, right: 12, zIndex: 10,
-            width: 30, height: 30, borderRadius: 8,
-            background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
-            color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-          }}>✕</button>
+          <button onClick={() => setSelectedNode(null)} className="org-modal-close">✕</button>
 
           {/* Header with accent color band */}
           <div style={{
@@ -1369,7 +1320,7 @@ const OrgChart = () => {
           </div>
 
           {/* Info table */}
-          <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
+          <div className="org-modal-body">
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
               <tbody>
                 {[
@@ -1380,8 +1331,8 @@ const OrgChart = () => {
                   { label: 'ID', value: selectedNode.id },
                 ].map((row, i) => (
                   <tr key={i}>
-                    <td style={{ padding: '10px 12px', fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.12em', width: 90, verticalAlign: 'top' }}>{row.label}</td>
-                    <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 600, color: isDark ? '#E2E8F0' : '#0F172A', background: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC', borderRadius: 8 }}>{row.value || '—'}</td>
+                    <td className="org-modal-label">{row.label}</td>
+                    <td className="org-modal-value">{row.value || '—'}</td>
                   </tr>
                 ))}
               </tbody>

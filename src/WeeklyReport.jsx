@@ -162,20 +162,20 @@ const WeeklyReport = ({ exportExcel }) => {
 
   const getStatusBadge = (status) => {
     switch(status) {
-      case 'DONE': return { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }
-      case 'PENDING': return { text: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' }
-      case 'TMR': return { text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' }
-      case 'URGENT': return { text: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' }
-      case 'PLANNING': return { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' }
-      case 'HIGH PRIORITY': return { text: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' }
-      case 'ISSUE': return { text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }
-      default: return { text: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' } // WIP
+      case 'DONE': return 'status-done'
+      case 'PENDING': return 'status-pending'
+      case 'TMR': return 'status-tmr'
+      case 'URGENT': return 'status-urgent'
+      case 'PLANNING': return 'status-planning'
+      case 'HIGH PRIORITY': return 'status-high-priority'
+      case 'ISSUE': return 'status-issue'
+      default: return 'status-wip'
     }
   }
 
 
   return (
-    <div className="relative min-h-screen pt-[10px] pr-[10px] pb-[10px] pl-[20px]">
+    <div className="tab-weekly relative min-h-screen pt-[10px] pr-[10px] pb-[10px] pl-[20px]">
       <div className="w-full mx-auto pb-[10px]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start">
 
@@ -225,10 +225,10 @@ const WeeklyReport = ({ exportExcel }) => {
                             {ALL_STATUSES.map(s=>(
                               <label key={s} className="flex items-center gap-2 px-2 py-1.5 hover:bg-white/5 rounded cursor-pointer">
                                 <input type="checkbox" className="w-3.5 h-3.5 rounded" checked={visibleStatuses.includes(s)} onChange={()=>setVisibleStatuses(prev=>prev.includes(s)?prev.filter(x=>x!==s):[...prev,s])}/>
-                                <span className={`text-[11px] font-black uppercase tracking-wider ${getStatusBadge(s).text}`}>{s}</span>
+                                <span className={`badge-status ${getStatusBadge(s)}`}>{s}</span>
                               </label>
                             ))}
-                            <button className="mt-1 w-full text-[10px] font-black uppercase tracking-widest text-indigo-400 py-1" onClick={()=>setVisibleStatuses(ALL_STATUSES)}>RESET</button>
+                            <button className="mt-1 w-full text-[10px] font-black uppercase tracking-widest text-[var(--c-indigo)] py-1" onClick={()=>setVisibleStatuses(ALL_STATUSES)}>RESET</button>
                           </div>
                         )}
                       </th>
@@ -238,9 +238,9 @@ const WeeklyReport = ({ exportExcel }) => {
                         const dateStr=weekDates[i]?weekDates[i].substring(0,5):'';
                         const isToday=dateStr===todayStr;
                         return(
-                          <th key={d} className={`text-center px-[10px] py-[12px] border-r border-b border-[var(--border)] ${isToday ? 'bg-indigo-500/10' : 'bg-[var(--bg-card)]'}`} style={{ width: '10%', minWidth: '100px' }}>
-                            <div className={`text-[12px] font-black uppercase tracking-wider ${isToday ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>{d.substring(0,3)}</div>
-                            <div className={`text-[12px] font-medium ${isToday ? 'text-emerald-500' : 'text-[var(--text-contrast)]'}`}>{dateStr}</div>
+                          <th key={d} className={`text-center px-[10px] py-[12px] border-r border-b border-[var(--border)] day-header ${isToday ? 'is-today' : ''}`} style={{ width: '10%', minWidth: '100px' }}>
+                            <div className="text-[12px] font-black uppercase tracking-wider day-name">{d.substring(0,3)}</div>
+                            <div className="text-[12px] font-medium day-date">{dateStr}</div>
                           </th>
                         );
                       })}
@@ -275,9 +275,9 @@ const WeeklyReport = ({ exportExcel }) => {
                                 <motion.tr key={row.id} initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}} className="hover:bg-[var(--bg-header)] transition-all border-b border-[var(--border)]" style={{backgroundColor:index%2===0?'var(--row-odd)':'var(--row-even)'}}>
                                   <td className="py-[10px] border-r border-b border-[var(--border)]" style={{ paddingLeft: '32px', paddingRight: '32px' }}><span style={{color:projectColorMap[(row.project||'').toUpperCase()]||'#818cf8'}} className="text-[14px] font-medium uppercase tracking-tighter">{row.project}</span></td>
                                   <td className="py-[10px] border-r border-b border-[var(--border)]" style={{ paddingLeft: '32px', paddingRight: '32px' }}><div className="text-[14px] font-normal text-[var(--text-main)] tracking-tight uppercase leading-relaxed">{row.task}</div></td>
-                                  <td className="p-[10px] text-center border-r border-b border-[var(--border)]">{(row.markupDate||row.markupTime)?(<div className="flex flex-col"><span className="text-[12px] font-normal text-[var(--text-muted)]">{row.markupDate||''}</span><span className="text-[12px] font-normal text-slate-400">{row.markupTime||''}</span></div>):(<span className="text-[12px] font-normal text-slate-600">—</span>)}</td>
-                                  <td className="p-[10px] text-center border-r border-b border-[var(--border)]"><span className={`text-[12px] font-medium py-[4px] px-[10px] rounded-[6px] border ${getStatusBadge(row.status).bg} ${getStatusBadge(row.status).text} ${getStatusBadge(row.status).border}`}>{row.status}</span></td>
-                                  {DAYS_OF_WEEK.map(d=>(<td key={d} className="p-[5px] text-center border-r border-b border-[var(--border)]"><span className={`text-[13px] font-normal tracking-tighter px-[8px] py-[4px] rounded-[6px] ${row.days[d]?'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20':'text-slate-600'}`}>{row.days[d]||'—'}</span></td>))}
+                                  <td className="p-[10px] text-center border-r border-b border-[var(--border)]">{(row.markupDate||row.markupTime)?(<div className="flex flex-col"><span className="text-[12px] font-normal text-[var(--text-muted)]">{row.markupDate||''}</span><span className="text-[12px] font-normal text-[var(--text-muted)] opacity-70">{row.markupTime||''}</span></div>):(<span className="text-[12px] font-normal text-[var(--text-muted)] opacity-50">—</span>)}</td>
+                                  <td className="p-[10px] text-center border-r border-b border-[var(--border)]"><span className={`badge-status ${getStatusBadge(row.status)}`}>{row.status}</span></td>
+                                  {DAYS_OF_WEEK.map(d=>(<td key={d} className="p-[5px] text-center border-r border-b border-[var(--border)]"><span className={`day-value-badge ${row.days[d] ? 'has-value' : ''}`}>{row.days[d]||'—'}</span></td>))}
                                 </motion.tr>
                               ))}
                             </React.Fragment>
@@ -288,9 +288,9 @@ const WeeklyReport = ({ exportExcel }) => {
                           <motion.tr key={row.id} initial={{opacity:0,x:10}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-10}} className="hover:bg-[var(--bg-header)] transition-all border-b border-[var(--border)]" style={{backgroundColor:i%2===0?'var(--row-odd)':'var(--row-even)'}}>
                             <td className="py-3 border-r border-b border-[var(--border)]" style={{ paddingLeft: '32px', paddingRight: '32px' }}><span style={{color:projectColorMap[(row.project||'').toUpperCase()]||'#818cf8'}} className="text-[14px] font-medium tracking-tight uppercase">{row.project}</span></td>
                             <td className="py-3 border-r border-b border-[var(--border)]" style={{ paddingLeft: '32px', paddingRight: '32px' }}><div className="text-[14px] font-normal text-[var(--text-main)] tracking-tight leading-relaxed">{row.task}</div></td>
-                            <td className="px-3 py-3 text-center border-r border-b border-[var(--border)]">{(row.markupDate||row.markupTime)?(<div className="flex flex-col"><span className="text-[12px] font-normal text-[var(--text-muted)]">{row.markupDate||''}</span><span className="text-[12px] font-normal text-slate-400">{row.markupTime||''}</span></div>):(<span className="text-[12px] font-normal text-slate-600">—</span>)}</td>
-                            <td className="px-3 py-3 text-center border-r border-b border-[var(--border)]"><span className={`text-[12px] font-medium py-[4px] px-[10px] rounded-[6px] border ${getStatusBadge(row.status).bg} ${getStatusBadge(row.status).text} ${getStatusBadge(row.status).border}`}>{row.status}</span></td>
-                            {DAYS_OF_WEEK.map(d=>(<td key={d} className="px-2 py-2 text-center border-r border-b border-[var(--border)]"><span className={`text-[13px] font-normal tracking-tight px-2 py-0.5 rounded-md ${row.days[d]?'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20':'text-[var(--text-muted)]'}`}>{row.days[d]||'—'}</span></td>))}
+                            <td className="px-3 py-3 text-center border-r border-b border-[var(--border)]">{(row.markupDate||row.markupTime)?(<div className="flex flex-col"><span className="text-[12px] font-normal text-[var(--text-muted)]">{row.markupDate||''}</span><span className="text-[12px] font-normal text-[var(--text-muted)] opacity-70">{row.markupTime||''}</span></div>):(<span className="text-[12px] font-normal text-[var(--text-muted)] opacity-50">—</span>)}</td>
+                            <td className="px-3 py-3 text-center border-r border-b border-[var(--border)]"><span className={`badge-status ${getStatusBadge(row.status)}`}>{row.status}</span></td>
+                            {DAYS_OF_WEEK.map(d=>(<td key={d} className="px-2 py-2 text-center border-r border-b border-[var(--border)]"><span className={`day-value-badge ${row.days[d] ? 'has-value' : ''}`}>{row.days[d]||'—'}</span></td>))}
                           </motion.tr>
                         ))
                       )}
@@ -311,12 +311,12 @@ const WeeklyReport = ({ exportExcel }) => {
 
           {/* RIGHT SIDEBAR */}
           <aside className="lg:col-span-3 space-y-4 sticky top-24">
-            <div className="glass-panel p-4 border-white/5 shadow-2xl">
+            <div className="analytics-panel">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+                <div className="w-1.5 h-6 rounded-full" style={{ background: 'var(--c-indigo)' }}></div>
                 <div>
-                  <h2 className="text-sm font-black text-white tracking-tight uppercase">Data Intelligence</h2>
-                  <p className="text-[14px] text-slate-500 font-bold uppercase tracking-widest">Real-time Analytics</p>
+                  <h2 className="text-sm font-black text-[var(--text-main)] tracking-tight uppercase">Data Intelligence</h2>
+                  <p className="text-[14px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Real-time Analytics</p>
                 </div>
               </div>
               <div className="space-y-8">
@@ -336,13 +336,13 @@ const WeeklyReport = ({ exportExcel }) => {
                     }}
                   />
                   <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-[14px] font-black text-slate-500 uppercase tracking-widest">Tasks</span>
-                    <span className="text-3xl font-black text-white">{stats.totalTasks}</span>
+                    <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Tasks</span>
+                    <span className="text-3xl font-black text-[var(--text-main)]">{stats.totalTasks}</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/[0.03] p-4 rounded-xl border border-white/5"><p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Projects</p><p className="text-xl font-black text-indigo-400">{stats.uniqueProjects}</p></div>
-                  <div className="bg-white/[0.03] p-4 rounded-xl border border-white/5"><p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Done</p><p className="text-xl font-black text-emerald-400">{stats.doneTasks}</p></div>
+                  <div className="stat-card"><p className="stat-label">Projects</p><p className="text-xl font-black" style={{ color: 'var(--c-indigo)' }}>{stats.uniqueProjects}</p></div>
+                  <div className="stat-card"><p className="stat-label">Done</p><p className="text-xl font-black" style={{ color: 'var(--c-done)' }}>{stats.doneTasks}</p></div>
                 </div>
                 <div className="space-y-3">
                   <p className="text-[14px] font-black text-slate-500 uppercase tracking-widest">Project Load</p>
@@ -355,21 +355,21 @@ const WeeklyReport = ({ exportExcel }) => {
                 </div>
               </div>
             </div>
-            <div className="glass-panel p-4 border-white/5 shadow-2xl">
-              <div className="space-y-4 pt-4 border-t border-white/5">
+            <div className="analytics-panel">
+              <div className="space-y-4 pt-4 border-t border-[var(--border)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <Activity size={14} className="text-indigo-400"/>
-                  <h3 className="text-[14px] font-black text-slate-400 uppercase tracking-widest">Daily Intensity</h3>
+                  <Activity size={14} style={{ color: 'var(--c-indigo)' }}/>
+                  <h3 className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Daily Intensity</h3>
                 </div>
                 <div className="space-y-2">
                   {DAYS_OF_WEEK.map(day=>(
                     <div key={day} className="group flex flex-col gap-1">
                       <div className="flex justify-between items-center text-[12px] font-black uppercase tracking-tighter">
-                        <span className={stats.dayCounts[day]>0?'text-indigo-300':'text-slate-600'}>{day}</span>
-                        <span className={stats.dayCounts[day]>0?'text-white':'text-slate-700'}>{stats.dayCounts[day]}</span>
+                        <span className={stats.dayCounts[day]>0?'opacity-100':'opacity-50'} style={{ color: stats.dayCounts[day]>0 ? 'var(--c-indigo)' : 'var(--text-muted)' }}>{day}</span>
+                        <span className={stats.dayCounts[day]>0?'opacity-100':'opacity-50'} style={{ color: stats.dayCounts[day]>0 ? 'var(--text-main)' : 'var(--text-muted)' }}>{stats.dayCounts[day]}</span>
                       </div>
-                      <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                        <motion.div initial={{width:0}} animate={{width:`${(stats.dayCounts[day]/(stats.totalTasks||1))*100}%`}} className="h-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]"/>
+                      <div className="intensity-bar-bg">
+                        <motion.div initial={{width:0}} animate={{width:`${(stats.dayCounts[day]/(stats.totalTasks||1))*100}%`}} className="intensity-bar-fill"/>
                       </div>
                     </div>
                   ))}

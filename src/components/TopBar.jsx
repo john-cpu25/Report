@@ -87,10 +87,10 @@ const TopBar = () => {
   };
 
   return (
-    <header className="h-[80px] bg-[var(--bg-main)]/80 backdrop-blur-md border-b border-[var(--border)] sticky top-0 z-[99] px-[10px]">
-      <div className="h-full max-w-full mx-auto flex items-center justify-between gap-[10px]">
-        <div className="flex items-center gap-[10px]">
-          <button onClick={handleMenuClick} className="p-[10px] rounded-[8px] hover:bg-white/5 text-[var(--text-muted)] lg:hidden">
+    <header className="h-[80px] bg-[var(--bg-main)]/80 backdrop-blur-md border-b border-[var(--border)] sticky top-0 z-[99] sys-px">
+      <div className="h-full max-w-full mx-auto flex items-center justify-between sys-gap">
+        <div className="flex items-center sys-gap">
+          <button onClick={handleMenuClick} className="sys-p rounded-[8px] hover:bg-white/5 text-[var(--text-muted)] lg:hidden">
             <Menu size={24} />
           </button>
           <div className="flex items-center gap-6">
@@ -151,7 +151,7 @@ const TopBar = () => {
                           </span>
                         </div>
                      </div>
-                     <div className="max-h-[380px] overflow-y-auto custom-scrollbar" style={{ padding: '10px' }}>
+                     <div className="max-h-[380px] overflow-y-auto custom-scrollbar sys-p">
                         {(dropdownOpen === 'TOTAL' ? dashboardProjects : activeProjectsList).map((p, idx) => (
                           <div 
                             key={p.id || idx} 
@@ -185,7 +185,7 @@ const TopBar = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-[10px]">
+        <div className="flex items-center sys-gap">
           {activeTab === 'report' && (
             <button 
               onClick={() => setShowProjectGroups(!showProjectGroups)}
@@ -195,7 +195,7 @@ const TopBar = () => {
             </button>
           )}
 
-          <div className="flex items-center gap-[10px]">
+          <div className="flex items-center sys-gap">
 
             {activeTab === 'dashboard' && isAdmin && (
               <div className="flex items-center gap-2 mr-2 shrink-0">
@@ -255,7 +255,7 @@ const TopBar = () => {
             <div className="relative" ref={bellRef}>
               <button 
                 onClick={() => setBellOpen(!bellOpen)}
-                className={`p-[10px] rounded-[8px] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all relative ${bellOpen ? 'bg-white/10 text-[var(--text-main)]' : ''}`}
+                className={`sys-p rounded-[8px] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all relative ${bellOpen ? 'bg-white/10 text-[var(--text-main)]' : ''}`}
               >
                 <Bell size={20} />
                 {unreadCount > 0 && (
@@ -371,7 +371,7 @@ const TopBar = () => {
 
             <button 
               onClick={() => setShowProfileModal(true)}
-              className="flex items-center gap-[10px] p-[10px] rounded-[8px] hover:bg-white/5 transition-all group border border-transparent hover:border-[var(--border)]"
+              className="flex items-center sys-gap sys-p rounded-[8px] hover:bg-white/5 transition-all group border border-transparent hover:border-[var(--border)]"
             >
               <AvatarWithFrame 
                 user={user} 

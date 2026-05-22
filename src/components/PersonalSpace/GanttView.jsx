@@ -113,7 +113,7 @@ const GanttView = ({
                       }}
                       className="flex h-[48px] hover:bg-white/[0.02] group transition-colors cursor-pointer"
                     >
-                      <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] p-[10px] flex items-center justify-between shrink-0 bg-[var(--bg-card)] sticky left-0 z-20">
+                      <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] sys-p flex items-center justify-between shrink-0 bg-[var(--bg-card)] sticky left-0 z-20">
                         <div className="flex items-center gap-2 truncate">
                           <ChevronRight 
                             size={14} 
@@ -204,7 +204,7 @@ const GanttView = ({
           {/* Workload Intelligence HTML Chart */}
           <div className="flex border-t border-[var(--border)] bg-[var(--bg-card)] h-[150px] sticky bottom-0 z-10">
             <div className="w-[200px] md:w-[250px] border-r border-[var(--border)] p-[15px] flex flex-col justify-center shrink-0 bg-[var(--bg-card)] sticky left-0 z-20">
-              <div className="flex items-center gap-[10px]">
+              <div className="flex items-center sys-gap">
                 <TrendingUp size={16} className="text-emerald-400 shrink-0" />
                 <span className="text-[14px] font-black text-emerald-400 uppercase tracking-widest leading-tight">Workload<br/>(Tasks / Day)</span>
               </div>

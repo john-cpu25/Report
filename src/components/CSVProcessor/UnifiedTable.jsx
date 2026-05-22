@@ -19,7 +19,7 @@ const HeaderWithTooltip = ({ id, color, stickyOffset, row2Offset, isRow2, rowSpa
       rowSpan={rowSpan}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`px-[10px] py-[${isRow2 ? '5' : '10'}px] ${color} text-center border-r border-b border-[var(--border)] sticky ${isHovered ? 'z-40' : 'z-20'} bg-[var(--bg-card)] group cursor-help min-w-[65px]`}
+      className={`sys-px py-[${isRow2 ? '5' : '10'}px] ${color} text-center border-r border-b border-[var(--border)] sticky ${isHovered ? 'z-40' : 'z-20'} bg-[var(--bg-card)] group cursor-help min-w-[65px]`}
       style={{ top: isRow2 ? row2Offset : stickyOffset }}
     >
       <div className="relative inline-block">
@@ -164,34 +164,34 @@ const UnifiedTable = (props) => {
           </thead>
           <tbody className="divide-y divide-[var(--border)]">
             {tableRows.length === 0 ? (
-              <tr><td colSpan={16} className="px-[10px] py-[10px] text-center text-[var(--text-muted)] font-black uppercase text-sm border-b border-[var(--border)]">No tasks found</td></tr>
+              <tr><td colSpan={16} className="sys-px sys-py text-center text-[var(--text-muted)] font-black uppercase text-sm border-b border-[var(--border)]">No tasks found</td></tr>
             ) : tableRows.map((r, i) => {
               const rowBg = i % 2 === 0 ? 'bg-[var(--bg-card)]' : 'bg-slate-50/40';
               const stickyBg = i % 2 === 0 ? 'bg-[var(--bg-card)]' : 'bg-[#f8fafc]'; // slate-50 equivalent for sticky
               
               return (
                 <tr key={r.id || i} className={`transition-all text-[14px] align-middle ${rowBg}`}>
-                  <td className={`py-[10px] text-left sticky left-0 z-10 border-r-2 border-b border-[var(--border)] backdrop-blur-sm ${stickyBg}`} style={{ paddingLeft: '12px', paddingRight: '12px', verticalAlign: 'middle' }}>
+                  <td className={`sys-py text-left sticky left-0 z-10 border-r-2 border-b border-[var(--border)] backdrop-blur-sm ${stickyBg}`} style={{ paddingLeft: '12px', paddingRight: '12px', verticalAlign: 'middle' }}>
                     <span className="text-[14px] tracking-tight uppercase line-clamp-1" style={{ color: getProjectColor(r.project) }}>{r.project}</span>
                   </td>
-                  <td className={`py-[10px] text-left sticky left-[140px] z-10 border-r-2 border-b border-[var(--border)] backdrop-blur-sm ${stickyBg}`} style={{ paddingLeft: '12px', paddingRight: '12px', verticalAlign: 'middle' }}>
+                  <td className={`sys-py text-left sticky left-[140px] z-10 border-r-2 border-b border-[var(--border)] backdrop-blur-sm ${stickyBg}`} style={{ paddingLeft: '12px', paddingRight: '12px', verticalAlign: 'middle' }}>
                     <span className="text-[var(--text-contrast)] line-clamp-1">{r.taskName}</span>
                   </td>
-                  <td className="py-[10px] align-middle text-left text-indigo-500/80 border-r border-b border-[var(--border)]" style={{ paddingLeft: '12px', paddingRight: '12px' }}>{r.createdBy || '-'}</td>
-                  <td className="px-[8px] py-[10px] align-middle text-center text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.createdAtStr || '-'}</td>
-                  <td className="px-[8px] py-[10px] align-middle text-center text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateStartStr || '-'}</td>
-                  <td className="px-[8px] py-[10px] align-middle text-center text-[var(--text-muted)] font-mono border-r-2 border-b border-[var(--border)]">{r.dateEndStr || '-'}</td>
-                  <td className="py-[10px] text-left text-sky-500 border-r border-b border-[var(--border)]" style={{ paddingLeft: '12px', paddingRight: '12px', verticalAlign: 'middle' }}>{r.userName || '-'}</td>
-                  <td className="px-[8px] py-[10px] align-middle text-center text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateAcceptedStr || '-'}</td>
-                  <td className="px-[8px] py-[10px] align-middle text-center text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateStartedStr || '-'}</td>
-                  <td className="px-[8px] py-[10px] align-middle text-center text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateCompleteStr || '-'}</td>
-                  <td className="px-[8px] py-[10px] align-middle text-center text-[var(--text-muted)] font-mono border-r-2 border-b border-[var(--border)]">{r.dateCheckedStr || '-'}</td>
-                  <td className="px-[8px] py-[10px] align-middle text-center border-r-2 border-b border-[var(--border)] text-[var(--text-muted)]">{r.area || '-'}</td>
-                  <td className="px-[10px] py-[10px] align-middle text-center border-r-2 border-b border-[var(--border)] text-emerald-500">{r.time1Str || '-'}</td>
-                  <td className="px-[10px] py-[10px] align-middle text-center border-r-2 border-b border-[var(--border)] text-indigo-500">{r.time2Str || '-'}</td>
-                  <td className="px-[10px] py-[10px] align-middle text-center border-r-2 border-b border-[var(--border)] text-violet-500">{r.time3Str || '-'}</td>
-                  <td className="px-[10px] py-[10px] align-middle text-center border-r-2 border-b border-[var(--border)] text-amber-500">{r.time4Str || '-'}</td>
-                  <td className="px-[10px] py-[10px] align-middle text-center border-b border-[var(--border)] text-rose-500">{r.time5Str || '-'}</td>
+                  <td className="sys-py align-middle text-left text-indigo-500/80 border-r border-b border-[var(--border)]" style={{ paddingLeft: '12px', paddingRight: '12px' }}>{r.createdBy || '-'}</td>
+                  <td className="px-[8px] sys-py align-middle text-center text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.createdAtStr || '-'}</td>
+                  <td className="px-[8px] sys-py align-middle text-center text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateStartStr || '-'}</td>
+                  <td className="px-[8px] sys-py align-middle text-center text-[var(--text-muted)] font-mono border-r-2 border-b border-[var(--border)]">{r.dateEndStr || '-'}</td>
+                  <td className="sys-py text-left text-sky-500 border-r border-b border-[var(--border)]" style={{ paddingLeft: '12px', paddingRight: '12px', verticalAlign: 'middle' }}>{r.userName || '-'}</td>
+                  <td className="px-[8px] sys-py align-middle text-center text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateAcceptedStr || '-'}</td>
+                  <td className="px-[8px] sys-py align-middle text-center text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateStartedStr || '-'}</td>
+                  <td className="px-[8px] sys-py align-middle text-center text-[var(--text-muted)] font-mono border-r border-b border-[var(--border)]">{r.dateCompleteStr || '-'}</td>
+                  <td className="px-[8px] sys-py align-middle text-center text-[var(--text-muted)] font-mono border-r-2 border-b border-[var(--border)]">{r.dateCheckedStr || '-'}</td>
+                  <td className="px-[8px] sys-py align-middle text-center border-r-2 border-b border-[var(--border)] text-[var(--text-muted)]">{r.area || '-'}</td>
+                  <td className="sys-px sys-py align-middle text-center border-r-2 border-b border-[var(--border)] text-emerald-500">{r.time1Str || '-'}</td>
+                  <td className="sys-px sys-py align-middle text-center border-r-2 border-b border-[var(--border)] text-indigo-500">{r.time2Str || '-'}</td>
+                  <td className="sys-px sys-py align-middle text-center border-r-2 border-b border-[var(--border)] text-violet-500">{r.time3Str || '-'}</td>
+                  <td className="sys-px sys-py align-middle text-center border-r-2 border-b border-[var(--border)] text-amber-500">{r.time4Str || '-'}</td>
+                  <td className="sys-px sys-py align-middle text-center border-b border-[var(--border)] text-rose-500">{r.time5Str || '-'}</td>
                 </tr>
               );
             })}

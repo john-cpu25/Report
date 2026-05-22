@@ -95,8 +95,8 @@ const DataUploader = ({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row justify-between items-center gap-[10px] ocd-card">
-      <div className="flex flex-wrap items-center gap-[10px]">
+    <div className="flex flex-col lg:flex-row justify-between items-center sys-gap ocd-card">
+      <div className="flex flex-wrap items-center sys-gap">
         <label className="relative group cursor-pointer">
           <input type="file" className="hidden" accept=".csv,.xlsx,.xls" onChange={handleFileUpload} />
           <div className="flex items-center gap-3 px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-[8px] shadow-lg shadow-indigo-500/20 transition-all active:scale-95">
@@ -126,7 +126,7 @@ const DataUploader = ({
         )}
       </div>
 
-      <div className="flex items-center gap-[10px] text-[var(--text-muted)]">
+      <div className="flex items-center sys-gap text-[var(--text-muted)]">
         {lastFetched && (
           <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60">
             Last Sync: {lastFetched.toLocaleTimeString()}

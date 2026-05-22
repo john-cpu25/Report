@@ -29,13 +29,13 @@ const ProjectView = ({ projectTimesheetData, getProjectColor }) => {
                   const dateColor = isToday ? 'text-emerald-500' : 'text-[var(--text-contrast)]';
                   const labelColor = isToday ? 'text-emerald-400' : 'text-[var(--text-muted)]';
                   return (
-                    <th key={i} className={`sticky z-[35] text-center px-[10px] py-[12px] border-b border-r border-[var(--border)] ${isToday ? 'bg-indigo-500/10' : 'bg-[var(--bg-card)]'}`} style={{ top: '0px' }}>
+                    <th key={i} className={`sticky z-[35] text-center sys-px py-[12px] border-b border-r border-[var(--border)] ${isToday ? 'bg-indigo-500/10' : 'bg-[var(--bg-card)]'}`} style={{ top: '0px' }}>
                       <div className={`text-[12px] font-black uppercase tracking-wider ${labelColor}`}>{dayLabels[i].toUpperCase()}</div>
                       <div className={`text-[12px] font-medium ${dateColor}`}>{format(date, 'dd/MM')}</div>
                     </th>
                   );
                 })}
-                <th className="sticky z-[35] text-center px-[10px] py-[14px] border-b border-[var(--border)] text-[14px] font-black text-[var(--text-muted)] uppercase tracking-wide bg-[var(--bg-card)]" style={{ top: '0px' }}>Total</th>
+                <th className="sticky z-[35] text-center sys-px py-[14px] border-b border-[var(--border)] text-[14px] font-black text-[var(--text-muted)] uppercase tracking-wide bg-[var(--bg-card)]" style={{ top: '0px' }}>Total</th>
               </tr>
             </thead>
             <tbody>

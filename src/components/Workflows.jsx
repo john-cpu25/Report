@@ -1027,7 +1027,7 @@ const Workflows = () => {
                 <button
                   disabled={currentSpread === 0 || isFlipping}
                   onClick={(e) => { e.stopPropagation(); handlePageTurn(-1); }}
-                  className={`p-2.5 rounded-full bg-gradient-to-b from-[#f3dfa2] via-[#cfa043] to-[#8d6a1f] text-[#2c1e03] hover:from-[#fbecc0] hover:to-[#ae8129] transition-all border border-[#ffe9b3]/30 shadow-[0_4px_10px_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.4)] ${currentSpread === 0 ? 'opacity-35 cursor-not-allowed' : 'active:scale-90 active:shadow-inner cursor-pointer'}`}
+                  className={`p-2.5 rounded-full transition-all border shadow-[0_4px_10px_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.4)] lib-book-nav-btn ${currentSpread === 0 ? 'opacity-35 cursor-not-allowed' : 'active:scale-90 active:shadow-inner cursor-pointer'}`}
                   title="Turn Back"
                 >
                   <ChevronLeft size={15} className="stroke-[2.5]" />
@@ -1036,7 +1036,7 @@ const Workflows = () => {
                 <button
                   disabled={currentSpread === maxSpreads - 1 || isFlipping}
                   onClick={(e) => { e.stopPropagation(); handlePageTurn(1); }}
-                  className={`p-2.5 rounded-full bg-gradient-to-b from-[#f3dfa2] via-[#cfa043] to-[#8d6a1f] text-[#2c1e03] hover:from-[#fbecc0] hover:to-[#ae8129] transition-all border border-[#ffe9b3]/30 shadow-[0_4px_10px_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.4)] ${currentSpread === maxSpreads - 1 || isFlipping ? 'opacity-35 cursor-not-allowed' : 'active:scale-90 active:shadow-inner cursor-pointer'}`}
+                  className={`p-2.5 rounded-full transition-all border shadow-[0_4px_10px_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.4)] lib-book-nav-btn ${currentSpread === maxSpreads - 1 || isFlipping ? 'opacity-35 cursor-not-allowed' : 'active:scale-90 active:shadow-inner cursor-pointer'}`}
                   title="Turn Page"
                 >
                   <ChevronRight size={15} className="stroke-[2.5]" />
@@ -1046,7 +1046,7 @@ const Workflows = () => {
  
                 <button 
                   onClick={(e) => { e.stopPropagation(); setSelectedWorkflowId(null); }}
-                  className="px-5 py-2.5 bg-stone-800 text-stone-200 hover:bg-rose-600 hover:text-white rounded-md text-[12px] font-black uppercase tracking-widest transition-all shadow active:translate-y-0.5 cursor-pointer"
+                  className="px-5 py-2.5 rounded-md text-[12px] font-black uppercase tracking-widest transition-all shadow active:translate-y-0.5 cursor-pointer lib-book-close-btn"
                 >
                   Close Volume
                 </button>
@@ -1084,7 +1084,7 @@ const Workflows = () => {
 
   return (
     <div 
-      className="w-full mx-auto pb-12 relative min-h-screen rounded-2xl overflow-hidden"
+      className="tab-library w-full mx-auto pb-12 relative min-h-screen rounded-2xl overflow-hidden"
       style={{
         backgroundImage: `url(${libraryBg})`,
         backgroundSize: 'cover',
@@ -1241,7 +1241,7 @@ const Workflows = () => {
               className="space-y-6 p-6 md:p-10 max-w-7xl mx-auto"
             >
               {/* Division Title Banner */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 bg-slate-900/60 backdrop-blur-md rounded-2xl border border-white/5 shadow-md">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 backdrop-blur-md rounded-2xl border shadow-md lib-division-banner">
                 <div className="flex items-center gap-4">
                   <div 
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-white"
@@ -1250,18 +1250,18 @@ const Workflows = () => {
                     {React.createElement(currentRoomData.icon, { size: 22 })}
                   </div>
                   <div>
-                    <h2 className="text-[24px] font-black text-white uppercase tracking-tight leading-none">{currentRoomData.title}</h2>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{currentRoomData.subtitle}</p>
+                    <h2 className="text-[24px] font-black uppercase tracking-tight leading-none lib-division-banner-title">{currentRoomData.title}</h2>
+                    <p className="text-[9px] font-bold uppercase tracking-widest mt-1 lib-division-banner-subtitle">{currentRoomData.subtitle}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 mt-3 md:mt-0">
-                  <div className="px-5 py-3 rounded-lg border border-white/5 text-[11px] font-black text-slate-500 tracking-wider uppercase flex items-center justify-center">
+                  <div className="px-5 py-3 rounded-lg border text-[11px] font-black tracking-wider uppercase flex items-center justify-center lib-division-btn" style={{ pointerEvents: 'none' }}>
                     Division Active
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     onClick={() => { setSelectedRoom(null); setSelectedWorkflowId(null); }}
-                    className="flex items-center gap-2.5 px-6 py-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[13px] font-black uppercase tracking-widest rounded-lg border border-white/10 transition-colors shadow-md cursor-pointer"
+                    className="flex items-center gap-2.5 px-6 py-3 text-[13px] font-black uppercase tracking-widest rounded-lg border transition-colors shadow-md cursor-pointer lib-division-btn"
                   >
                     <ArrowLeft size={16} /> Back to Divisions
                   </motion.button>
@@ -1269,7 +1269,7 @@ const Workflows = () => {
               </div>
 
               {/* Bookshelf block */}
-              <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-10 min-h-[520px] flex flex-col justify-end shadow-2xl relative group/shelf">
+              <div className="rounded-2xl p-10 min-h-[520px] flex flex-col justify-end shadow-2xl relative group/shelf lib-shelf-container border">
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent pointer-events-none rounded-2xl" />
 
                 {/* Left/Right scroll controls */}
@@ -1277,7 +1277,7 @@ const Workflows = () => {
                   <>
                     <button
                       onClick={() => scrollShelf('left')}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-gradient-to-b from-[#78350f] to-[#451a03] hover:from-[#92400e] hover:to-[#78350f] text-amber-400 border border-[#b45309]/50 shadow-lg flex items-center justify-center z-30 transition-all active:scale-95 group/btn"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border shadow-lg flex items-center justify-center z-30 transition-all active:scale-95 group/btn lib-scroll-btn"
                       title="Scroll Left"
                     >
                       <ArrowRight size={18} className="rotate-180 group-hover/btn:-translate-x-0.5 transition-transform" />
@@ -1285,7 +1285,7 @@ const Workflows = () => {
 
                     <button
                       onClick={() => scrollShelf('right')}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-gradient-to-b from-[#78350f] to-[#451a03] hover:from-[#92400e] hover:to-[#78350f] text-amber-400 border border-[#b45309]/50 shadow-lg flex items-center justify-center z-30 transition-all active:scale-95 group/btn"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border shadow-lg flex items-center justify-center z-30 transition-all active:scale-95 group/btn lib-scroll-btn"
                       title="Scroll Right"
                     >
                       <ArrowRight size={18} className="group-hover/btn:translate-x-0.5 transition-transform" />
@@ -1438,7 +1438,7 @@ const Workflows = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => { setSelectedWorkflowId(null); setIsEditMode(false); }}
-              className="absolute inset-0 bg-[#070b13]/90 backdrop-blur-2xl z-10"
+              className="absolute inset-0 backdrop-blur-2xl z-10 lib-book-overlay"
             />
             
             {/* Hardcover Outer wrap */}
@@ -1447,7 +1447,7 @@ const Workflows = () => {
               animate={{ rotateY: 0, scale: 1, opacity: 1 }}
               exit={{ rotateY: -20, scale: 0.85, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 180, damping: 22 }}
-              className="relative w-full max-w-5xl rounded-[12px] p-[10px] flex flex-col z-20 transition-all"
+              className="relative w-full max-w-5xl rounded-[12px] sys-p flex flex-col z-20 transition-all"
               style={{
                 backgroundColor: selectedWorkflow.color,
                 backgroundImage: `
@@ -1475,7 +1475,7 @@ const Workflows = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleAddSpread}
-                      className="h-11 px-4 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white border-2 border-emerald-400/30 flex items-center gap-2 text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xl"
+                      className="h-11 px-4 rounded-full border-2 flex items-center gap-2 text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xl lib-book-btn-primary"
                       title="Thêm trang đôi mới"
                     >
                       <Plus size={16} /> Thêm Trang
@@ -1491,7 +1491,7 @@ const Workflows = () => {
                             handleDeleteSpread(currentSpreadObj.spreadId);
                           }
                         }}
-                        className="h-11 px-4 rounded-full bg-rose-600 hover:bg-rose-500 text-white border-2 border-rose-400/30 flex items-center gap-2 text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xl"
+                        className="h-11 px-4 rounded-full border-2 flex items-center gap-2 text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer shadow-xl lib-book-btn-danger"
                         title="Xóa trang đôi hiện tại"
                       >
                         <Trash2 size={16} /> Xóa Trang
@@ -1504,10 +1504,8 @@ const Workflows = () => {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setIsEditMode(!isEditMode)}
-                    className={`w-11 h-11 rounded-full backdrop-blur-xl border-2 flex items-center justify-center transition-all cursor-pointer shadow-xl ${
-                      isEditMode 
-                        ? 'bg-indigo-500 border-indigo-300 text-white shadow-indigo-500/40' 
-                        : 'bg-slate-800 border-white/20 text-white hover:text-indigo-400 hover:border-indigo-400/50'
+                    className={`w-11 h-11 rounded-full backdrop-blur-xl border-2 flex items-center justify-center transition-all cursor-pointer shadow-xl lib-book-btn-edit ${
+                      isEditMode ? 'active' : ''
                     }`}
                     title={isEditMode ? 'Tắt chỉnh sửa' : 'Bật chỉnh sửa (Admin)'}
                   >
@@ -1518,7 +1516,7 @@ const Workflows = () => {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => { setSelectedWorkflowId(null); setIsEditMode(false); }}
-                  className="w-11 h-11 rounded-full bg-slate-800 backdrop-blur-xl border-2 border-white/20 flex items-center justify-center text-white hover:text-red-400 hover:border-red-400/50 transition-all cursor-pointer shadow-xl"
+                  className="w-11 h-11 rounded-full backdrop-blur-xl border-2 flex items-center justify-center transition-all cursor-pointer shadow-xl lib-book-btn-close"
                   title="Đóng sách"
                 >
                   <ArrowLeft size={18} />
@@ -1565,7 +1563,7 @@ const Workflows = () => {
               />
 
               {/* Realistic Paper spreads wrapper */}
-              <div className="relative bg-[#faf8f5] rounded-[6px] min-h-[580px] md:h-[600px] shadow-[inset_0_0_40px_rgba(0,0,0,0.08)] border border-stone-300/50 z-20 flex justify-center items-center">
+              <div className="relative rounded-[6px] min-h-[580px] md:h-[600px] shadow-[inset_0_0_40px_rgba(0,0,0,0.08)] border z-20 flex justify-center items-center lib-paper">
                 
                 {/* Vintage Left/Right paper page creases & gradients (overlay decoration) */}
                 <div className="absolute inset-y-0 left-0 w-[15px] bg-gradient-to-r from-black/[0.03] to-transparent pointer-events-none z-[1]" />

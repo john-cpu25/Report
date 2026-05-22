@@ -318,41 +318,37 @@ export default function DrawingsManager() {
   return (
     <div 
       style={{ margin: '24px', width: 'calc(100% - 48px)', height: 'calc(100vh - 140px)' }}
-      className={`rounded-2xl overflow-hidden relative flex flex-col shadow-sm ${isDark ? 'bg-[#0F172A] border-slate-800' : 'bg-[#F8FAFC] border-slate-200'} border`}
+      className={`tab-issues rounded-2xl overflow-hidden relative flex flex-col shadow-sm`}
     >
       
       {/* Header */}
-      <div className={`px-6 py-4 flex items-center justify-between z-10 ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-200'} border-b backdrop-blur-md`}>
+      <div className={`px-6 py-4 flex items-center justify-between z-10 issue-header backdrop-blur-md`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+          <div className="w-10 h-10 rounded-xl issue-icon-box flex items-center justify-center">
             <PenTool size={20} />
           </div>
           <div>
-            <h1 className={`text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Drawing Issues</h1>
-            <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <h1 className={`text-xl font-black tracking-tight issue-title`}>Drawing Issues</h1>
+            <p className={`text-[10px] font-bold uppercase tracking-[0.2em] issue-subtitle`}>
               {viewMode === 'register' ? 'Drawing Register Sheet View' : 'Visual Blueprint Engine'}
             </p>
           </div>
         </div>
         
         <div className="flex items-center gap-4">
-          <div className={`flex items-center rounded-xl p-1 border ${isDark ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-100/60 border-slate-200'}`}>
+          <div className={`flex items-center rounded-xl p-1 border issue-toggle-wrapper`}>
             <button 
               onClick={() => setViewMode('canvas')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                viewMode === 'canvas' 
-                ? 'bg-indigo-500 text-white shadow-md' 
-                : `${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-950'}`
+              className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all issue-toggle-btn ${
+                viewMode === 'canvas' ? 'active' : ''
               }`}
             >
               🎨 Canvas
             </button>
             <button 
               onClick={() => setViewMode('register')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                viewMode === 'register' 
-                ? 'bg-indigo-500 text-white shadow-md' 
-                : `${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-950'}`
+              className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all issue-toggle-btn ${
+                viewMode === 'register' ? 'active' : ''
               }`}
             >
               📊 Register
@@ -362,7 +358,7 @@ export default function DrawingsManager() {
           {viewMode === 'canvas' && (
             <button 
               onClick={() => setShowAddDrawingModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-600 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 issue-btn-primary rounded-lg text-sm font-bold transition-colors"
             >
               <Plus size={16} /> New Drawing
             </button>
@@ -427,18 +423,18 @@ export default function DrawingsManager() {
           
           {/* COLUMN 1: PROJECTS */}
           <div className="flex flex-col gap-4 w-64 shrink-0 h-full">
-            <h3 className={`text-xs font-black uppercase tracking-widest pl-2 mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>1. Projects</h3>
+            <h3 className={`text-xs font-black uppercase tracking-widest pl-2 mb-2 issue-subtitle`}>1. Projects</h3>
             
             {/* Search Bar */}
             <div className="px-2 mb-2">
-              <div className={`relative flex items-center rounded-xl border-2 transition-all ${isDark ? 'bg-slate-900 border-slate-800 focus-within:border-indigo-500' : 'bg-white border-slate-200 focus-within:border-indigo-500'}`}>
-                <Search size={14} className="absolute left-3 text-slate-500" />
+              <div className={`relative flex items-center rounded-xl border-2 transition-all issue-search-wrapper`}>
+                <Search size={14} className="absolute left-3 issue-subtitle" />
                 <input 
                   type="text"
                   placeholder="Search projects..."
                   value={projectSearch}
                   onChange={(e) => setProjectSearch(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2 bg-transparent outline-none text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}
+                  className={`w-full pl-10 pr-4 py-2 bg-transparent outline-none text-xs font-bold issue-search-input`}
                 />
               </div>
             </div>
@@ -452,22 +448,18 @@ export default function DrawingsManager() {
                     <div 
                       ref={el => projRefs.current[proj.id] = el}
                       onClick={() => handleSelectProj(proj.id)}
-                      className={`py-4 pr-4 rounded-2xl border-2 transition-all cursor-pointer min-h-[72px] flex flex-col justify-center ${
-                        active 
-                        ? `border-[${proj.color}] bg-[${proj.color}]/10 shadow-lg` 
-                        : `${isDark ? 'border-slate-800 bg-slate-800/50 hover:border-slate-700' : 'border-slate-200 bg-white hover:border-slate-300'}`
-                      }`}
+                      className={`py-4 pr-4 rounded-2xl border-2 transition-all cursor-pointer min-h-[72px] flex flex-col justify-center issue-proj-card ${active ? 'active' : ''}`}
                       style={{
                         paddingLeft: '64px',
                         ...(active ? { borderColor: proj.color, background: `${proj.color}15`, boxShadow: `0 10px 30px -10px ${proj.color}50` } : {})
                       }}
                     >
                       <div className="flex items-center">
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${isDark ? 'bg-slate-900/50 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded issue-proj-code`}>
                           {proj.code}
                         </span>
                       </div>
-                      <h4 className={`text-sm font-bold mt-1.5 leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{proj.name}</h4>
+                      <h4 className={`text-sm font-bold mt-1.5 leading-tight issue-proj-name`}>{proj.name}</h4>
                     </div>
 
                     {/* Floating Icon (Overlapping) */}
@@ -498,10 +490,10 @@ export default function DrawingsManager() {
                 <AnimatePresence mode="wait">
                   <motion.div key={selectedProj} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex flex-col gap-4">
                     <div className="flex items-center justify-between pl-2 mb-2 pr-4">
-                      <h3 className={`text-xs font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>2. Blueprints</h3>
+                      <h3 className={`text-xs font-black uppercase tracking-widest issue-subtitle`}>2. Blueprints</h3>
                       <button 
                         onClick={() => setShowAddDrawingModal(true)}
-                        className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${isDark ? 'bg-slate-800 text-indigo-400 hover:bg-slate-700' : 'bg-slate-200 text-indigo-600 hover:bg-slate-300'}`}
+                        className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors issue-action-btn`}
                       >
                         <Plus size={14} />
                       </button>
@@ -513,41 +505,37 @@ export default function DrawingsManager() {
                           key={draw.id} 
                           ref={el => drawRefs.current[draw.id] = el}
                           onClick={() => setSelectedDraw(draw.id)}
-                          className={`rounded-2xl border-2 transition-all cursor-pointer relative group overflow-hidden ${
-                            active 
-                            ? (isDark ? 'border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/20' : 'border-indigo-500 bg-indigo-50 shadow-lg shadow-indigo-500/20')
-                            : (isDark ? 'border-slate-800 bg-slate-800/50 hover:border-slate-700' : 'border-slate-200 bg-white hover:border-slate-300')
-                          }`}
+                          className={`rounded-2xl border-2 transition-all cursor-pointer relative group overflow-hidden issue-draw-card ${active ? 'active' : ''}`}
                           style={{ padding: '24px 20px 24px 24px' }}
                         >
                           {/* Action Buttons (Hover) */}
                           <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                             <button 
                               onClick={(e) => { e.stopPropagation(); handleEditDrawing(draw); }}
-                              className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-indigo-400' : 'bg-slate-200 hover:bg-slate-300 text-indigo-600'}`}
+                              className={`p-1.5 rounded-lg issue-action-btn`}
                             >
                               <Edit2 size={14} />
                             </button>
                             <button 
                               onClick={(e) => { e.stopPropagation(); handleDeleteDrawing(draw.id); }}
-                              className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-700 hover:bg-red-900/50 text-red-400' : 'bg-red-100 hover:bg-red-200 text-red-600'}`}
+                              className={`p-1.5 rounded-lg issue-action-btn-danger`}
                             >
                               <Trash2 size={14} />
                             </button>
                           </div>
 
                           <div className="flex flex-col gap-2">
-                            <h4 className={`text-base font-black leading-tight pr-12 ${active ? 'text-indigo-500' : (isDark ? 'text-white' : 'text-slate-900')}`}>{draw.title}</h4>
+                            <h4 className={`text-base font-black leading-tight pr-12 issue-draw-title`}>{draw.title}</h4>
                             <div className="flex items-center gap-3">
-                              <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-600'}`}>REV {draw.rev}</span>
-                              <span className={`text-[11px] font-bold tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{draw.date}</span>
+                              <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md issue-draw-rev`}>REV {draw.rev}</span>
+                              <span className={`text-[11px] font-bold tracking-wider issue-draw-date`}>{draw.date}</span>
                             </div>
                           </div>
                         </div>
                       );
                     })}
                     {currentDrawings.length === 0 && (
-                      <div className={`p-6 rounded-2xl border-2 border-dashed text-center ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-300 text-slate-400'}`}>
+                      <div className={`p-6 rounded-2xl border-2 border-dashed text-center issue-empty`}>
                         No drawings uploaded yet.
                       </div>
                     )}
@@ -559,7 +547,7 @@ export default function DrawingsManager() {
               <div className="flex flex-col gap-4 w-80 shrink-0 pr-4 h-full overflow-auto scrollbar-hide" style={{ maxHeight: 'calc(100vh - 220px)' }}>
                 <AnimatePresence mode="wait">
                   <motion.div key={selectedDraw} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex flex-col gap-4">
-                    <h3 className={`text-xs font-black uppercase tracking-widest pl-2 mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>3. Active Markups</h3>
+                    <h3 className={`text-xs font-black uppercase tracking-widest pl-2 mb-2 issue-subtitle`}>3. Active Markups</h3>
                     {currentMarkups.map(mark => {
                       const isDone = mark.status === 'Done';
                       const color = isDone ? '#10B981' : '#F59E0B';
@@ -567,7 +555,7 @@ export default function DrawingsManager() {
                         <div 
                           key={mark.id} 
                           ref={el => markRefs.current[mark.id] = el}
-                          className={`rounded-2xl border transition-all overflow-hidden ${isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-white border-slate-200'} shadow-sm`}
+                          className={`rounded-2xl border transition-all overflow-hidden issue-markup-card shadow-sm`}
                           style={{ padding: '24px 20px 20px 24px' }}
                         >
                           <div className="flex items-center justify-between mb-4">
@@ -575,32 +563,32 @@ export default function DrawingsManager() {
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0 shadow-sm`} style={{ background: color }}>
                                 {mark.author.charAt(0)}
                               </div>
-                              <span className={`text-sm font-black ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{mark.author}</span>
+                              <span className={`text-sm font-black issue-markup-author`}>{mark.author}</span>
                             </div>
                             <span className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full`} style={{ background: `${color}15`, color }}>
                               {isDone ? <CheckCircle2 size={12} /> : <Clock size={12} />}
                               {mark.status}
                             </span>
                           </div>
-                          <div className={`p-4 rounded-xl text-sm font-semibold leading-relaxed border-l-4`} 
-                               style={{ borderColor: color, backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : '#f8fafc', marginLeft: '4px' }}>
+                          <div className={`p-4 rounded-xl text-sm font-semibold leading-relaxed border-l-4 issue-markup-text`} 
+                               style={{ borderColor: color, marginLeft: '4px' }}>
                             "{mark.text}"
                           </div>
-                          <div className={`text-[10px] font-black mt-4 text-right uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                          <div className={`text-[10px] font-black mt-4 text-right uppercase tracking-widest issue-markup-date`}>
                             {mark.date}
                           </div>
                         </div>
                       );
                     })}
                     {currentMarkups.length === 0 && (
-                      <div className={`p-6 rounded-2xl border-2 border-dashed text-center ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-300 text-slate-400'}`}>
+                      <div className={`p-6 rounded-2xl border-2 border-dashed text-center issue-empty`}>
                         No markups on this drawing.
                       </div>
                     )}
                     
                     {/* Add Markup Button */}
                     {selectedDraw && (
-                      <button className={`w-full p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2 text-sm font-bold transition-colors ${isDark ? 'border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10' : 'border-indigo-200 text-indigo-500 hover:bg-indigo-50'}`}>
+                      <button className={`w-full p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2 text-sm font-bold transition-colors issue-empty hover:bg-indigo-500/10 hover:text-indigo-500 hover:border-indigo-500`}>
                         <MessageSquare size={16} /> Log New Markup
                       </button>
                     )}
@@ -620,59 +608,59 @@ export default function DrawingsManager() {
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => { setShowAddDrawingModal(false); setEditingDrawing(null); }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 tab-issues-modal-overlay"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`relative w-full max-w-md rounded-3xl shadow-2xl overflow-hidden ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-white border border-slate-100'}`}
+              className={`relative w-full max-w-md rounded-3xl shadow-2xl overflow-hidden tab-issues-modal`}
               style={{ padding: '32px' }}
             >
-              <h2 className={`text-2xl font-black mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <h2 className={`text-2xl font-black mb-6 modal-title`}>
                 {editingDrawing ? 'Edit Drawing' : 'Add New Drawing'}
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Drawing Title</label>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 modal-label`}>Drawing Title</label>
                   <input 
                     type="text" 
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                     placeholder="e.g. Ground Floor Plan" 
-                    className={`w-full rounded-xl border-2 outline-none transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`} 
+                    className={`w-full rounded-xl border-2 outline-none transition-all modal-input`} 
                     style={{ padding: '12px 20px' }}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Sheet No.</label>
+                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 modal-label`}>Sheet No.</label>
                     <input 
                       type="text" 
                       value={formData.number}
                       onChange={(e) => setFormData({...formData, number: e.target.value})}
                       placeholder="S-01" 
-                      className={`w-full rounded-xl border-2 outline-none transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`} 
+                      className={`w-full rounded-xl border-2 outline-none transition-all modal-input`} 
                       style={{ padding: '12px 20px' }}
                     />
                   </div>
                   <div>
-                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Revision</label>
+                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 modal-label`}>Revision</label>
                     <input 
                       type="text" 
                       value={formData.rev}
                       onChange={(e) => setFormData({...formData, rev: e.target.value})}
                       placeholder="P1" 
-                      className={`w-full rounded-xl border-2 outline-none transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`} 
+                      className={`w-full rounded-xl border-2 outline-none transition-all modal-input`} 
                       style={{ padding: '12px 20px' }}
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Status</label>
+                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 modal-label`}>Status</label>
                     <select 
                       value={formData.status}
                       onChange={(e) => setFormData({...formData, status: e.target.value})}
-                      className={`w-full rounded-xl border-2 outline-none transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`}
+                      className={`w-full rounded-xl border-2 outline-none transition-all modal-input`}
                       style={{ padding: '12px 20px' }}
                     >
                       <option>Draft</option>
@@ -681,12 +669,12 @@ export default function DrawingsManager() {
                     </select>
                   </div>
                   <div>
-                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Date</label>
+                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 modal-label`}>Date</label>
                     <input 
                       type="date" 
                       value={formData.date}
                       onChange={(e) => setFormData({...formData, date: e.target.value})}
-                      className={`w-full rounded-xl border-2 outline-none transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`} 
+                      className={`w-full rounded-xl border-2 outline-none transition-all modal-input`} 
                       style={{ padding: '12px 20px' }}
                     />
                   </div>
@@ -695,13 +683,13 @@ export default function DrawingsManager() {
               <div className="mt-8 flex gap-3">
                 <button 
                   onClick={() => { setShowAddDrawingModal(false); setEditingDrawing(null); }} 
-                  className={`flex-1 py-3 rounded-xl font-bold transition-all ${isDark ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                  className={`flex-1 py-3 rounded-xl font-bold transition-all issue-btn-ghost`}
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={editingDrawing ? handleUpdateDrawing : handleAddDrawing} 
-                  className="flex-1 py-3 rounded-xl bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-500/30 hover:bg-indigo-600 transition-all"
+                  className="flex-1 py-3 rounded-xl font-bold transition-all issue-btn-primary"
                 >
                   {editingDrawing ? 'Save Changes' : 'Add Drawing'}
                 </button>

@@ -16,8 +16,8 @@ const NavItem = ({
       className={`
         relative transition-all duration-300 group flex items-center justify-center
         ${collapsed 
-          ? 'w-[60px] h-[60px] p-[10px] mx-auto' 
-          : 'w-full h-[40px] flex-row gap-[10px] px-[10px] py-[10px]'
+          ? 'w-[60px] h-[60px] sys-p mx-auto' 
+          : 'w-full h-[40px] flex-row sys-gap sys-px sys-py'
         }
         rounded-[8px] mb-[10px]
         ${active 

@@ -112,12 +112,12 @@ const Projects = () => {
   );
 
   return (
-    <div className="w-full mx-auto pb-[10px] relative">
+    <div className="tab-projects w-full mx-auto pb-[10px] relative">
       {/* Header Intelligence - Sticky */}
       <div className="sticky top-[80px] z-50 bg-[var(--bg-main)] pt-[10px] pb-[5px]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px] bg-[var(--bg-card)] p-[10px] rounded-[8px] border border-[var(--border)] shadow-md mx-[10px]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between sys-gap bg-[var(--bg-card)] sys-p rounded-[8px] border border-[var(--border)] shadow-md mx-[10px]">
           <div className="flex flex-col gap-[5px]">
-            <div className="flex items-center gap-[10px]">
+            <div className="flex items-center sys-gap">
               <div className="w-1.5 h-8 bg-indigo-500 rounded-full" />
               <h1 className="text-[30px] font-black text-[var(--text-main)] uppercase tracking-tight">
                 PROJECT
@@ -130,23 +130,23 @@ const Projects = () => {
             <div className="flex items-center gap-1 p-1 bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg shadow-inner">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-indigo-500 text-white shadow-md' : 'text-[var(--text-muted)] hover:text-indigo-400'}`}
+                className={`p-2 rounded-md transition-all view-btn ${viewMode === 'grid' ? 'active' : ''}`}
                 title="Grid View"
               >
                 <Layers size={18} />
               </button>
               <button
                 onClick={() => setViewMode('bookshelf')}
-                className={`p-2 rounded-md transition-all ${viewMode === 'bookshelf' ? 'bg-indigo-500 text-white shadow-md' : 'text-[var(--text-muted)] hover:text-indigo-400'}`}
+                className={`p-2 rounded-md transition-all view-btn ${viewMode === 'bookshelf' ? 'active' : ''}`}
                 title="Bookshelf View"
               >
                 <Layers size={18} className="rotate-90" />
               </button>
             </div>
 
-            <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] overflow-hidden focus-within:border-indigo-500/50 focus-within:ring-4 focus-within:ring-indigo-500/5 transition-all group max-w-md w-full">
-              <div className="w-12 h-10 flex items-center justify-center border-r border-[var(--border)] bg-indigo-500/5 shrink-0">
-                <Search className="text-[var(--text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
+            <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border)] rounded-[8px] overflow-hidden transition-all group max-w-md w-full search-group">
+              <div className="w-12 h-10 flex items-center justify-center border-r shrink-0 search-icon-box">
+                <Search className="transition-colors" size={18} />
               </div>
               <input 
                 type="text" 
@@ -162,11 +162,11 @@ const Projects = () => {
 
       {loading ? (
         <div className="h-[50vh] flex flex-col items-center justify-center space-y-4">
-          <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Syncing Supabase Database...</p>
+          <div className="w-12 h-12 border-4 rounded-full animate-spin loading-spinner" />
+          <p className="text-[10px] font-black uppercase tracking-widest animate-pulse loading-text">Syncing Supabase Database...</p>
         </div>
       ) : (
-        <div className="p-[10px]">
+        <div className="sys-p">
           {/* Main Project Portfolio - Full Width */}
           <div className="w-full">
             {viewMode === 'grid' ? (
@@ -199,11 +199,11 @@ const Projects = () => {
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                           />
                         ) : (
-                          <div className="relative w-32 h-32 rotate-45 flex flex-wrap border-2 border-slate-100 shadow-2xl">
-                            <div className="w-1/2 h-1/2 bg-red-600" />
-                            <div className="w-1/2 h-1/2 bg-slate-300" />
-                            <div className="w-1/2 h-1/2 bg-slate-800" />
-                            <div className="w-1/2 h-1/2 bg-slate-400" />
+                          <div className="relative w-32 h-32 rotate-45 flex flex-wrap border-2 shadow-2xl grid-placeholder-box">
+                            <div className="w-1/2 h-1/2 grid-placeholder-tl" />
+                            <div className="w-1/2 h-1/2 grid-placeholder-tr" />
+                            <div className="w-1/2 h-1/2 grid-placeholder-bl" />
+                            <div className="w-1/2 h-1/2 grid-placeholder-br" />
                             <div className="absolute inset-0 m-auto w-6 h-6 bg-white shadow-inner" />
                           </div>
                         )}
@@ -214,7 +214,7 @@ const Projects = () => {
                         className="h-1/3 text-white overflow-hidden relative"
                         style={{ backgroundColor: project.color || '#1e293b' }}
                       >
-                        <div className="flex flex-col gap-[10px]" style={{ margin: '20px 0 0 20px' }}>
+                        <div className="flex flex-col sys-gap" style={{ margin: '20px 0 0 20px' }}>
                           <div className="flex gap-[50px] items-start leading-none">
                             <span className="w-24 text-[11px] font-black uppercase shrink-0">NAME :</span>
                             <span className="text-[11px] font-bold truncate">{project.name || 'N/A'}</span>
@@ -255,19 +255,18 @@ const Projects = () => {
                 {/* Scroll Navigation Buttons - Brass Arrows */}
                 {filteredProjects.length > 5 && (
                   <>
-                    <button
-                      onClick={() => scrollShelf('left')}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-gradient-to-b from-[#78350f] to-[#451a03] hover:from-[#92400e] hover:to-[#78350f] text-amber-400 border border-[#b45309]/50 shadow-lg flex items-center justify-center z-30 transition-all active:scale-95 group/btn"
-                      title="Scroll Left"
-                    >
+                      <button
+                        onClick={() => scrollShelf('left')}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border shadow-lg flex items-center justify-center z-30 transition-all active:scale-95 group/btn shelf-nav-btn"
+                        title="Scroll Left"
+                      >
                       <ArrowRight size={18} className="rotate-180 group-hover/btn:-translate-x-0.5 transition-transform" />
                     </button>
-                    
-                    <button
-                      onClick={() => scrollShelf('right')}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-gradient-to-b from-[#78350f] to-[#451a03] hover:from-[#92400e] hover:to-[#78350f] text-amber-400 border border-[#b45309]/50 shadow-lg flex items-center justify-center z-30 transition-all active:scale-95 group/btn"
-                      title="Scroll Right"
-                    >
+                                        <button
+                        onClick={() => scrollShelf('right')}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border shadow-lg flex items-center justify-center z-30 transition-all active:scale-95 group/btn shelf-nav-btn"
+                        title="Scroll Right"
+                      >
                       <ArrowRight size={18} className="group-hover/btn:translate-x-0.5 transition-transform" />
                     </button>
                   </>
@@ -371,8 +370,8 @@ const Projects = () => {
 
                           <div className="mt-auto flex flex-col items-center gap-3">
                             {/* Task Count Badge styled like an library catalog circle tag */}
-                            <div className="w-8 h-8 rounded-full bg-slate-900/60 flex items-center justify-center border border-white/20 shadow-inner group-hover/book:border-indigo-400/50 transition-colors">
-                              <span className="text-[9px] font-black text-indigo-300 tracking-tighter pr-0.5">{project.taskCount || 0}</span>
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center border shadow-inner transition-colors book-task-badge">
+                              <span className="text-[9px] font-black tracking-tighter pr-0.5 book-task-text">{project.taskCount || 0}</span>
                             </div>
                             <div className="w-10 h-1 bg-white/10 rounded-full" />
                           </div>
@@ -397,14 +396,14 @@ const Projects = () => {
                       title="Archival Bookend"
                     >
                       <div className="absolute inset-0 flex items-center justify-center rotate-90 pointer-events-none">
-                        <span className="text-[9px] font-black text-amber-500/50 uppercase tracking-[0.4em] whitespace-nowrap">RINCO</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.4em] whitespace-nowrap bookend-text">RINCO</span>
                       </div>
                     </div>
                   )}
                 </div>
                 <div className="w-full h-8 bg-gradient-to-b from-[#451a03] to-[#1c1917] rounded-md shadow-2xl mt-[-4px] relative z-[5] border-t-2 border-[#78350f] border-b border-black/40" />
-                <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-10 py-2 bg-indigo-500/10 backdrop-blur-md rounded-full border border-indigo-500/20 opacity-0 group-hover/shelf:opacity-100 transition-all duration-700">
-                  <span className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.6em]">Corporate Project Intelligence Vault</span>
+                <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-10 py-2 backdrop-blur-md rounded-full border opacity-0 group-hover/shelf:opacity-100 transition-all duration-700 vault-banner">
+                  <span className="text-[11px] font-black uppercase tracking-[0.6em] vault-banner-text">Corporate Project Intelligence Vault</span>
                 </div>
               </div>
             )}
@@ -422,7 +421,7 @@ const Projects = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedId(null)}
-              className="absolute inset-0 bg-[#0B0F1A]/85 backdrop-blur-xl z-10"
+              className="absolute inset-0 backdrop-blur-xl z-10 modal-backdrop"
             />
             
             <motion.div
@@ -431,7 +430,7 @@ const Projects = () => {
               animate={{ rotateY: 0, scale: 1, opacity: 1 }}
               exit={{ rotateY: -15, scale: 0.85, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 180, damping: 20 }}
-              className="relative w-full max-w-4xl rounded-[12px] p-[10px] flex flex-col z-20 transition-all select-none"
+              className="relative w-full max-w-4xl rounded-[12px] sys-p flex flex-col z-20 transition-all select-none"
               style={{
                 backgroundColor: selectedProject.color || '#3b82f6',
                 backgroundImage: `
@@ -453,7 +452,7 @@ const Projects = () => {
               {/* Protruding Hardcover Spines shadow/overlay */}
               <div className="absolute inset-[10px] rounded-[6px] bg-slate-900/10 pointer-events-none z-10" />
 
-              <div className="relative grid grid-cols-1 md:grid-cols-2 bg-[#faf8f5] rounded-[6px] overflow-hidden min-h-[530px] shadow-[inset_0_0_30px_rgba(0,0,0,0.06)] border border-stone-300/40">
+              <div className="relative grid grid-cols-1 md:grid-cols-2 rounded-[6px] overflow-hidden min-h-[530px] shadow-[inset_0_0_30px_rgba(0,0,0,0.06)] border book-open-bg">
                 {/* Left Page overlay shadows for crease/highlights */}
                 <div className="absolute inset-y-0 left-0 w-[12px] bg-gradient-to-r from-black/[0.06] to-transparent pointer-events-none z-30" />
                 <div className="absolute inset-y-0 right-1/2 w-[35px] bg-gradient-to-r from-transparent via-black/[0.015] to-black/[0.12] pointer-events-none z-30 hidden md:block" />
@@ -467,9 +466,9 @@ const Projects = () => {
                 <div className="absolute top-0 bottom-0 left-1/2 w-[18px] -translate-x-1/2 bg-gradient-to-r from-black/8 via-transparent to-black/8 z-20 pointer-events-none hidden md:block" />
 
                 {/* LEFT PAGE - COVER & STAMP */}
-                <div className="flex flex-col justify-between book-page-left relative select-text z-20 border-b md:border-b-0 md:border-r border-stone-200/60">
+                <div className="flex flex-col justify-between book-page-left relative select-text z-20 border-b md:border-b-0 md:border-r page-divider">
                   {/* Left Page Header */}
-                  <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[8px] font-black text-stone-400 tracking-[0.25em] uppercase">
+                  <div className="border-b pb-2 flex justify-between items-center text-[8px] font-black tracking-[0.25em] uppercase page-header">
                     <span>Rincovitch BIM Registry</span>
                     <span>Vol. 2026</span>
                   </div>
@@ -495,35 +494,35 @@ const Projects = () => {
                       />
                     </div>
 
-                    <h3 className="text-[9px] font-black text-stone-400 tracking-[0.3em] uppercase mb-1">Archival Record</h3>
+                    <h3 className="text-[9px] font-black tracking-[0.3em] uppercase mb-1 page-sub-title">Archival Record</h3>
                     <h2 
-                      className="text-[26px] font-black text-stone-800 leading-tight uppercase tracking-wide mb-3"
+                      className="text-[26px] font-black leading-tight uppercase tracking-wide mb-3 page-main-title"
                       style={{ fontFamily: 'Georgia, serif' }}
                     >
                       {selectedProject.key}
                     </h2>
                     
-                    <div className="w-12 h-[1px] bg-stone-300 my-3" />
+                    <div className="w-12 h-[1px] my-3 page-divider" />
                     
-                    <p className="text-[12px] text-stone-600 font-bold max-w-[260px] leading-relaxed italic">
+                    <p className="text-[12px] font-bold max-w-[260px] leading-relaxed italic page-desc-text">
                       {selectedProject.name}
                     </p>
 
-                    <div className="mt-8 space-y-2 text-left w-full max-w-[240px] bg-stone-100/50 p-4 rounded border border-stone-200/50 shadow-inner">
-                      <div className="flex justify-between text-[11px] text-stone-600 leading-none">
-                        <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Registry ID</span>
+                    <div className="mt-8 space-y-2 text-left w-full max-w-[240px] p-4 rounded border shadow-inner registry-box">
+                      <div className="flex justify-between text-[11px] leading-none registry-value">
+                        <span className="font-bold uppercase tracking-wider text-[8px] registry-label">Registry ID</span>
                         <span className="font-mono text-[9px] max-w-[120px] truncate">{selectedProject.id}</span>
                       </div>
-                      <div className="flex justify-between text-[11px] text-stone-600 leading-none">
-                        <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Registered</span>
+                      <div className="flex justify-between text-[11px] leading-none registry-value">
+                        <span className="font-bold uppercase tracking-wider text-[8px] registry-label">Registered</span>
                         <span>{selectedProject.created_at ? new Date(selectedProject.created_at).toLocaleDateString('en-US') : 'Jan 24, 2026'}</span>
                       </div>
-                      <div className="flex justify-between text-[11px] text-stone-600 leading-none">
-                        <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Environment</span>
-                        <span className="font-black text-indigo-600">Revit {selectedProject.revit_version || '2024'}</span>
+                      <div className="flex justify-between text-[11px] leading-none registry-value">
+                        <span className="font-bold uppercase tracking-wider text-[8px] registry-label">Environment</span>
+                        <span className="font-black registry-value-highlight">Revit {selectedProject.revit_version || '2024'}</span>
                       </div>
-                      <div className="flex justify-between text-[11px] text-stone-600 leading-none border-t border-stone-200/60 pt-2.5 mt-1">
-                        <span className="font-bold uppercase tracking-wider text-[8px] text-stone-400">Active Tasks</span>
+                      <div className="flex justify-between text-[11px] leading-none border-t pt-2.5 mt-1 page-divider">
+                        <span className="font-bold uppercase tracking-wider text-[8px] registry-label">Active Tasks</span>
                         <span 
                           className="font-black text-[12px] tabular-nums"
                           style={{ color: selectedProject.color || '#3b82f6' }}
@@ -535,7 +534,7 @@ const Projects = () => {
                   </div>
 
                   {/* Left Page Footer */}
-                  <div className="flex justify-between text-[9px] text-stone-400 font-bold tracking-widest uppercase">
+                  <div className="flex justify-between text-[9px] font-bold tracking-widest uppercase page-sub-title">
                     <span>ARCHIVE NO. {selectedProject.id}</span>
                     <span>PAGE 12</span>
                   </div>
@@ -544,7 +543,7 @@ const Projects = () => {
                 {/* RIGHT PAGE - SYNOPSIS & METRICS */}
                 <div className="flex flex-col justify-between book-page-right relative select-text z-20">
                   {/* Right Page Header */}
-                  <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[8px] font-black text-stone-400 tracking-[0.25em] uppercase">
+                  <div className="border-b pb-2 flex justify-between items-center text-[8px] font-black tracking-[0.25em] uppercase page-header">
                     <span>Synchronized System Log</span>
                     <span>Classified</span>
                   </div>
@@ -553,29 +552,29 @@ const Projects = () => {
                   <div className="flex-grow flex flex-col justify-center my-6">
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase flex items-center gap-2">
+                        <h4 className="text-[9px] font-black tracking-[0.2em] uppercase flex items-center gap-2 page-sub-title">
                           <Sparkles size={12} className="text-yellow-600 animate-pulse" /> Description & Scope
                         </h4>
                         
                         {/* Elegant vintage drop cap description */}
-                        <p className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif">
+                        <p className="text-[13px] leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif story-text">
                           {selectedProject.description || "Core Rincovitch BIM coordination protocol and database synchronization configurations. This volume holds encrypted transactional schedules for ongoing real-time structural engineering modeling."}
                         </p>
                       </div>
 
                       {/* Vintage Index list representing project stats */}
-                      <div className="pt-6 border-t border-stone-200/80 space-y-3">
-                        <h5 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">Archival Metrics</h5>
+                      <div className="pt-6 border-t space-y-3 page-divider">
+                        <h5 className="text-[9px] font-black tracking-[0.2em] uppercase page-sub-title">Archival Metrics</h5>
                         
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="p-3 bg-stone-100/50 rounded border border-stone-200/50 flex flex-col shadow-inner">
-                            <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest">Tasks Indexed</span>
-                            <span className="text-[20px] font-black text-stone-800 tabular-nums">{selectedProject.taskCount || 0}</span>
+                          <div className="p-3 rounded border flex flex-col shadow-inner metrics-box">
+                            <span className="text-[8px] font-bold uppercase tracking-widest page-sub-title">Tasks Indexed</span>
+                            <span className="text-[20px] font-black tabular-nums metrics-val">{selectedProject.taskCount || 0}</span>
                           </div>
-                          <div className="p-3 bg-stone-100/50 rounded border border-stone-200/50 flex flex-col shadow-inner">
-                            <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest">Security Status</span>
-                            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mt-1.5 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" /> SECURE
+                          <div className="p-3 rounded border flex flex-col shadow-inner metrics-box">
+                            <span className="text-[8px] font-bold uppercase tracking-widest page-sub-title">Security Status</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1 status-secure">
+                              <span className="w-1.5 h-1.5 rounded-full animate-ping status-secure-dot" style={{ backgroundColor: '#047857' }} /> SECURE
                             </span>
                           </div>
                         </div>
@@ -583,24 +582,24 @@ const Projects = () => {
                     </div>
 
                     {/* Signature Block */}
-                    <div className="mt-8 pt-4 border-t border-dashed border-stone-300 flex justify-between items-end">
+                    <div className="mt-8 pt-4 border-t border-dashed flex justify-between items-end page-divider">
                       <div>
-                        <p className="text-[8px] text-stone-400 font-bold uppercase tracking-wider leading-none mb-1">Approved by</p>
-                        <p className="text-[13px] text-stone-700 italic leading-none" style={{ fontFamily: 'Georgia, serif' }}>Rinco Intelligence</p>
+                        <p className="text-[8px] font-bold uppercase tracking-wider leading-none mb-1 page-sub-title">Approved by</p>
+                        <p className="text-[13px] italic leading-none story-text" style={{ fontFamily: 'Georgia, serif' }}>Rinco Intelligence</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[8px] text-stone-400 font-bold uppercase tracking-wider leading-none mb-1">Classification</p>
-                        <p className="text-[8px] font-black text-rose-600 tracking-widest uppercase bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 leading-none">CONFIDENTIAL</p>
+                        <p className="text-[8px] font-bold uppercase tracking-wider leading-none mb-1 page-sub-title">Classification</p>
+                        <p className="text-[8px] font-black tracking-widest uppercase px-2 py-0.5 rounded border leading-none class-confidential">CONFIDENTIAL</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Right Page Footer containing the Close Volume Button */}
-                  <div className="flex justify-between items-center text-[9px] text-stone-400 font-bold tracking-widest uppercase">
+                  <div className="flex justify-between items-center text-[9px] font-bold tracking-widest uppercase page-sub-title">
                     <span>PAGE 13</span>
                     <button 
                       onClick={() => setSelectedId(null)}
-                      className="px-5 py-2.5 bg-stone-800 text-stone-200 hover:bg-rose-600 hover:text-white rounded-md text-[12px] font-black uppercase tracking-widest transition-all shadow-md active:translate-y-0.5 z-50 cursor-pointer"
+                      className="px-5 py-2.5 rounded-md text-[12px] font-black uppercase tracking-widest transition-all shadow-md active:translate-y-0.5 z-50 cursor-pointer btn-close-vol"
                     >
                       Close Volume
                     </button>

@@ -265,7 +265,7 @@ const AnnualLeave = () => {
   }, [summaryData]);
 
   return (
-    <div className="w-full space-y-[10px] pb-12">
+    <div className="tab-leave w-full space-y-[10px] pb-12">
       {/* Control Header (Neumorphic Action Bar) */}
       <div className="neu-raised p-6 flex flex-wrap items-center justify-between gap-8 m-[10px] rounded-3xl">
         <div className="flex items-center gap-8">
@@ -302,27 +302,27 @@ const AnnualLeave = () => {
             <div className="flex items-center gap-3 pl-4 border-r border-[var(--border)] pr-4">
               <Calendar size={14} className="text-indigo-400" />
               <select 
-                className="bg-transparent text-[11px] font-black text-indigo-500 outline-none cursor-pointer uppercase"
+                className="leave-select"
                 style={{ colorScheme: 'dark' }}
                 value={selectedYear}
                 onChange={e => setSelectedYear(e.target.value)}
               >
-                <option value="2024" className="bg-[#161B26] text-white">YEAR 2024</option>
-                <option value="2025" className="bg-[#161B26] text-white">YEAR 2025</option>
-                <option value="2026" className="bg-[#161B26] text-white">YEAR 2026</option>
-                <option value="ALL" className="bg-[#161B26] text-white">ALL DATA</option>
+                <option value="2024" className="leave-select-option">YEAR 2024</option>
+                <option value="2025" className="leave-select-option">YEAR 2025</option>
+                <option value="2026" className="leave-select-option">YEAR 2026</option>
+                <option value="ALL" className="leave-select-option">ALL DATA</option>
               </select>
             </div>
 
             <div className="flex items-center gap-3 pr-4">
               <Users size={14} className="text-indigo-400" />
               <select 
-                className="bg-transparent text-[11px] font-black text-indigo-500 outline-none cursor-pointer uppercase"
+                className="leave-select"
                 style={{ colorScheme: 'dark' }}
                 value={selectedTeam}
                 onChange={e => setSelectedTeam(e.target.value)}
               >
-                {teamOptions.map(t => <option key={t} value={t} className="bg-[#161B26] text-white">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
+                {teamOptions.map(t => <option key={t} value={t} className="leave-select-option">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
               </select>
             </div>
 
@@ -330,14 +330,14 @@ const AnnualLeave = () => {
               <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2 rounded-xl border border-[var(--border)] shadow-inner">
                 <User size={14} className="text-[var(--text-muted)]" />
                 <select 
-                  className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer min-w-[120px]"
+                  className="leave-select leave-select-user min-w-[120px]"
                   style={{ colorScheme: 'dark' }}
                   value={selectedUser}
                   onChange={e => setSelectedUser(e.target.value)}
                 >
-                  <option value="ADMIN" className="bg-[#161B26] text-white">SYSTEM ADMIN</option>
+                  <option value="ADMIN" className="leave-select-option">SYSTEM ADMIN</option>
                   {filteredUsersByTeam.map(u => (
-                    <option key={u.id} value={u.name || u.email} className="bg-[#161B26] text-white">{u.name || u.email}</option>
+                    <option key={u.id} value={u.name || u.email} className="leave-select-option">{u.name || u.email}</option>
                   ))}
                 </select>
               </div>
@@ -349,14 +349,14 @@ const AnnualLeave = () => {
       {viewMode === 'personal' ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-[10px] m-[10px]">
           {/* Orange Zone: Individual + Analytics */}
-          <div className="neu-raised p-[20px] rounded-3xl relative overflow-hidden bg-[var(--bg-card)] border border-orange-500/20">
-            <div className="absolute top-0 left-0 w-2.5 h-full bg-orange-500/40" />
+          <div className="zone-card zone-orange">
+            <div className="zone-accent" />
             
             <div className="flex flex-col gap-[15px]">
-              <div className="flex items-center gap-[10px] mb-[10px]">
-                <div className="w-2 h-8 bg-indigo-500 rounded-[8px]" />
+              <div className="flex items-center sys-gap mb-[10px]">
+                <div className="heading-indicator" />
                 <h1 className="text-[28px] font-black text-[var(--text-main)] uppercase tracking-tight italic">
-                  {selectedUser.split(' ')[0]}'s <span className="text-indigo-400">Leave</span>
+                  {selectedUser.split(' ')[0]}'s <span className="text-accent">Leave</span>
                 </h1>
                 <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em] mt-auto pb-1 ml-2">Energy & Wellness Intelligence</p>
               </div>
@@ -369,7 +369,7 @@ const AnnualLeave = () => {
 
                 {/* Right: Analytics Chart */}
                 <div className="flex-grow bg-[var(--bg-card)]/50 border border-[var(--border)] rounded-[8px] p-[20px] shadow-inner">
-                  <div className="flex items-center gap-[10px] mb-[15px]">
+                  <div className="flex items-center sys-gap mb-[15px]">
                     <TrendingUp size={16} className="text-indigo-400" />
                     <h3 className="text-[14px] font-black text-[var(--text-main)] uppercase tracking-widest">Team Leave Distribution (Days)</h3>
                   </div>
@@ -415,12 +415,12 @@ const AnnualLeave = () => {
           </div>
 
           {/* Green Zone: Reserves + History */}
-          <div className="neu-raised p-[20px] rounded-3xl relative overflow-hidden bg-[var(--bg-card)] border border-emerald-500/20">
-            <div className="absolute top-0 left-0 w-2.5 h-full bg-emerald-500/40" />
+          <div className="zone-card zone-green mt-[10px]">
+            <div className="zone-accent" />
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-[15px]">
               {/* Stats Column */}
-              <div className="lg:col-span-4 flex flex-col gap-[10px]">
+              <div className="lg:col-span-4 flex flex-col sys-gap">
                 <div className="flex-grow neu-raised p-[20px] rounded-2xl flex flex-col items-center justify-center text-center bg-[var(--bg-card)]">
                   <div className="neu-button neu-square p-4 text-indigo-500 mb-4">
                     <Landmark size={24} />
@@ -433,14 +433,14 @@ const AnnualLeave = () => {
                 </div>
 
                 <div className="neu-raised p-[20px] rounded-2xl bg-[var(--bg-card)]">
-                  <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-[15px] flex items-center gap-[10px]">
+                  <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-[15px] flex items-center sys-gap">
                     <AlertCircle size={14} className="text-rose-500 animate-pulse" /> Critical Attention
                   </h4>
                   <div className="space-y-[8px]">
                     {summaryData.filter(u => u.remaining < 3).slice(0, 3).map(u => (
-                      <div key={u.id} className="flex items-center justify-between p-[8px] bg-rose-500/5 border border-rose-500/10 rounded-[6px]">
+                      <div key={u.id} className="flex items-center justify-between p-[8px] bg-danger-light rounded-[6px]">
                         <span className="text-[11px] font-black text-[var(--text-main)] uppercase">{u.name}</span>
-                        <span className="text-[11px] font-black text-rose-400">{u.remaining}D Left</span>
+                        <span className="text-[11px] font-black text-danger">{u.remaining}D Left</span>
                       </div>
                     ))}
                   </div>
@@ -451,7 +451,7 @@ const AnnualLeave = () => {
               <div className="lg:col-span-8">
                 <div className="neu-raised rounded-2xl overflow-hidden h-full flex flex-col bg-[var(--bg-card)]">
                   <div className="px-[20px] py-[15px] border-b border-[var(--border)] bg-indigo-500/5 flex justify-between items-center">
-                    <div className="flex items-center gap-[10px]">
+                    <div className="flex items-center sys-gap">
                       <List className="text-indigo-400 animate-pulse" size={14} />
                       <h3 className="text-[11px] font-black text-[var(--text-contrast)] uppercase tracking-[0.2em]">Leave History {selectedYear === 'ALL' ? 'Lifetime' : selectedYear}</h3>
                     </div>
@@ -464,12 +464,12 @@ const AnnualLeave = () => {
                     {currentYearEntries.length === 0 ? (
                       <div className="p-[40px] text-center text-[var(--text-muted)] text-[11px] font-bold uppercase italic">No leave records synchronized for this period.</div>
                     ) : (
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-indigo-500/5 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--border)] sticky top-0 z-10 backdrop-blur-md">
+                      <table className="leave-table">
+                        <thead className="sticky top-0 z-10 backdrop-blur-md">
                           <tr>
-                            <th className="px-[20px] py-[12px]">Event Date</th>
-                            <th className="px-[20px] py-[12px] text-center">Amount</th>
-                            <th className="px-[20px] py-[12px] text-right">Reason / Description</th>
+                            <th>Event Date</th>
+                            <th className="text-center">Amount</th>
+                            <th className="text-right">Reason / Description</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.02]">
@@ -482,16 +482,16 @@ const AnnualLeave = () => {
                             }, 0);
 
                             return (
-                              <tr key={entry.id} className="hover:bg-indigo-500/5 transition-colors" style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
-                                <td className="px-[20px] py-[12px] text-[12px] font-bold text-[var(--text-main)] uppercase">
+                              <tr key={entry.id} style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
+                                <td className="text-[12px] font-bold text-[var(--text-main)] uppercase">
                                   {segments.length > 0 ? format(parseISO(segments[0].LeaveStart || segments[0].Start), 'EEEE, MMM dd, yyyy') : '-'}
                                 </td>
-                                <td className="px-[20px] py-[12px] text-center">
-                                  <span className="px-[8px] py-[3px] rounded-[4px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase">
+                                <td className="text-center">
+                                  <span className="badge-done">
                                     {totalDays.toFixed(1)} Days
                                   </span>
                                 </td>
-                                <td className="px-[20px] py-[12px] text-right text-[12px] text-[var(--text-muted)] font-bold truncate max-w-[300px]">
+                                <td className="text-right text-[12px] text-[var(--text-muted)] font-bold truncate max-w-[300px]">
                                   {entry.leave_reason || '—'}
                                 </td>
                               </tr>
@@ -508,9 +508,9 @@ const AnnualLeave = () => {
         </motion.div>
       ) : (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-[10px] m-[10px]">
-          <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 p-[10px] mb-4">
+          <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 sys-p mb-4">
             <div>
-              <div className="flex items-center gap-[10px] mb-2">
+              <div className="flex items-center sys-gap mb-2">
                 <div className="w-2.5 h-8 bg-indigo-500 rounded-full" />
                 <h2 className="text-[28px] font-black text-[var(--text-main)] uppercase tracking-tight italic leading-none">Team <span className="text-indigo-400">Overview</span></h2>
               </div>
@@ -531,51 +531,51 @@ const AnnualLeave = () => {
           </div>
 
           <div className="neu-raised overflow-hidden rounded-3xl bg-[var(--bg-card)]">
-            <table className="w-full text-left border-collapse">
+            <table className="leave-table">
               <thead>
-                <tr className="bg-indigo-500/5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] border-b border-[var(--border)]">
-                  <th className="px-[20px] py-[15px]">User Intelligence</th>
-                  <th className="px-[20px] py-[15px]">Team</th>
-                  <th className="px-[20px] py-[15px] text-center">Seniority</th>
-                  <th className="px-[20px] py-[15px] text-center">Allowance</th>
-                  <th className="px-[20px] py-[15px] text-center">Used</th>
-                  <th className="px-[20px] py-[15px] text-center">Remaining</th>
-                  <th className="px-[20px] py-[15px] text-right">Status</th>
+                <tr>
+                  <th>User Intelligence</th>
+                  <th>Team</th>
+                  <th className="text-center">Seniority</th>
+                  <th className="text-center">Allowance</th>
+                  <th className="text-center">Used</th>
+                  <th className="text-center">Remaining</th>
+                  <th className="text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
                 {summaryData.map((u, i) => (
                   <tr 
                     key={u.id} 
-                    className="group hover:bg-indigo-500/10 transition-all cursor-pointer" 
+                    className="team-row cursor-pointer" 
                     style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}
                     onClick={() => { setSelectedUser(u.name); setViewMode('personal'); }}
                   >
-                    <td className="px-[20px] py-[15px]">
+                    <td>
                       <div className="flex items-center gap-[15px]">
-                        <div className="w-10 h-10 rounded-[8px] bg-[var(--bg-surface)] flex items-center justify-center text-indigo-500 font-black border border-[var(--border)] group-hover:scale-110 transition-transform">
+                        <div className="team-avatar">
                           {u.name[0]}
                         </div>
-                        <div className="text-[14px] font-black text-[var(--text-main)] group-hover:text-indigo-500 transition-colors uppercase tracking-tight">{u.name}</div>
+                        <div className="team-name">{u.name}</div>
                       </div>
                     </td>
-                    <td className="px-[20px] py-[15px]">
-                      <span className="px-[10px] py-[5px] rounded-[4px] bg-[var(--bg-surface)] border border-[var(--border)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{u.team}</span>
+                    <td>
+                      <span className="sys-px py-[5px] rounded-[4px] bg-[var(--bg-surface)] border border-[var(--border)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{u.team}</span>
                     </td>
-                    <td className="px-[20px] py-[15px] text-center text-[12px] font-bold text-[var(--text-muted)]">{u.seniority} Yrs</td>
-                    <td className="px-[20px] py-[15px] text-center">
-                      <span className="text-[14px] font-black text-indigo-500">{u.allowance}</span>
+                    <td className="text-center text-[12px] font-bold text-[var(--text-muted)]">{u.seniority} Yrs</td>
+                    <td className="text-center">
+                      <span className="text-[14px] font-black text-accent">{u.allowance}</span>
                     </td>
-                    <td className="px-[20px] py-[15px] text-center">
-                      <span className="text-[14px] font-black text-emerald-400">{u.used}</span>
+                    <td className="text-center">
+                      <span className="text-[14px] font-black text-done">{u.used}</span>
                     </td>
-                    <td className="px-[20px] py-[15px] text-center">
-                      <span className={`text-[14px] font-black ${u.remaining < 3 ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{u.remaining}</span>
+                    <td className="text-center">
+                      <span className={`text-[14px] font-black ${u.remaining < 3 ? 'text-danger' : 'text-[var(--text-main)]'}`}>{u.remaining}</span>
                     </td>
-                    <td className="px-[20px] py-[15px] text-right">
-                      <div className="w-24 h-2 bg-[var(--bg-surface)] rounded-[8px] overflow-hidden ml-auto">
+                    <td className="text-right">
+                      <div className="progress-bar-bg">
                         <div 
-                          className="h-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]" 
+                          className="progress-bar-fill" 
                           style={{ width: `${Math.min(100, (u.used / u.allowance) * 100)}%` }}
                         />
                       </div>

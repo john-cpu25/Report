@@ -41,8 +41,8 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
   ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-[10px] pb-20 px-[10px]">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px] ocd-card">
+    <div className="w-full max-w-4xl mx-auto space-y-[10px] pb-20 sys-px">
+      <div className="flex flex-col md:flex-row md:items-center justify-between sys-gap ocd-card">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="w-2 h-8 bg-indigo-500 rounded-full" />
@@ -60,7 +60,7 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
           <ImageIcon size={18} className="text-indigo-500" />
           <h2 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Interface Style</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 sys-gap">
           {themes.map((t) => (
             <motion.div
               key={t.id}
@@ -92,7 +92,7 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
                   </div>
                 )}
               </div>
-              <div className="p-[10px] space-y-[10px]">
+              <div className="sys-p space-y-[10px]">
                 <div className="flex items-center gap-3">
                   <div className={`p-3 rounded-[8px] ${t.color} text-white shadow-lg`}>
                     <t.icon size={20} />
@@ -115,14 +115,14 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
           <ImageIcon size={18} className="text-indigo-500" />
           <h2 className="text-sm font-black text-[var(--text-contrast)] uppercase tracking-widest">Background Environment</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 sys-gap">
           {backgrounds.map((bg) => (
             <motion.div
               key={bg.id}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setBackground(bg.id)}
-              className={`p-[10px] rounded-[8px] border-2 transition-all cursor-pointer flex flex-col items-center gap-[10px] text-center ${
+              className={`sys-p rounded-[8px] border-2 transition-all cursor-pointer flex flex-col items-center sys-gap text-center ${
                 background === bg.id
                   ? 'border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/10'
                   : 'border-[var(--border)] bg-[var(--bg-surface)] hover:border-indigo-500/30'

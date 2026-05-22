@@ -71,9 +71,9 @@ const AdminPanel = () => {
   return (
     <div className="space-y-[10px] animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between sys-gap">
         <div>
-          <h2 className="text-[30px] font-black text-[var(--text-contrast)] uppercase italic tracking-tighter flex items-center gap-[10px]">
+          <h2 className="text-[30px] font-black text-[var(--text-contrast)] uppercase italic tracking-tighter flex items-center sys-gap">
             <ShieldCheck size={32} className="text-indigo-500" />
             Admin <span className="text-indigo-400">Panel</span>
           </h2>
@@ -84,7 +84,7 @@ const AdminPanel = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[10px]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 sys-gap">
         {/* Version Info Card */}
         <div className="lg:col-span-1 space-y-6">
           <motion.div 
@@ -144,7 +144,7 @@ const AdminPanel = () => {
             animate={{ opacity: 1, y: 0 }}
             className="ocd-card shadow-xl"
           >
-            <div className="flex items-center gap-[10px] mb-[10px]">
+            <div className="flex items-center sys-gap mb-[10px]">
               <History size={20} className="text-indigo-400" />
               <h3 className="text-[11px] font-black text-[var(--text-contrast)] uppercase tracking-[0.3em]">Deployment History</h3>
             </div>

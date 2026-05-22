@@ -677,7 +677,7 @@ const NeuralBrain = () => {
   }, [selectedNode, brainData]);
 
   return (
-    <div className="bg-[#090d16] h-[calc(100vh-140px)] min-h-[600px] text-slate-100 font-['Inter'] relative overflow-hidden rounded-xl border border-slate-900 shadow-2xl">
+    <div className="tab-neural h-[calc(100vh-140px)] min-h-[600px] font-['Inter'] relative overflow-hidden rounded-xl border shadow-2xl">
       
       {/* 3D Canvas Box takes up 100% full screen */}
       <div 
@@ -703,32 +703,32 @@ const NeuralBrain = () => {
       </div>
 
       {/* Left Side: Brand Title HUD */}
-      <div className="absolute top-6 left-6 z-20 bg-slate-950/85 backdrop-blur-md border border-slate-800/40 px-4 py-3 rounded-xl flex items-center gap-3 shadow-lg">
-        <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+      <div className="absolute top-6 left-6 z-20 backdrop-blur-md border px-4 py-3 rounded-xl flex items-center gap-3 shadow-lg hud-box">
+        <div className="w-8 h-8 rounded-lg border flex items-center justify-center brand-icon-box">
           <Brain size={18} className="animate-pulse" />
         </div>
         <div>
-          <h1 className="text-xs font-bold uppercase tracking-wider text-slate-100 flex items-center gap-1.5">
+          <h1 className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hud-title">
             Collaboration Brain Map
-            <span className="text-[8px] font-bold tracking-widest bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded">3D</span>
+            <span className="text-[8px] font-bold tracking-widest border px-1.5 py-0.5 rounded badge-3d">3D</span>
           </h1>
-          <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">
+          <p className="text-[9px] font-medium uppercase tracking-wider mt-0.5 hud-subtitle">
             Xoay và tương tác 3D xem liên kết công việc
           </p>
         </div>
       </div>
 
       {/* Right Side: Consolidated Controls & Filters */}
-      <div className="absolute top-6 right-6 z-20 flex flex-wrap items-center gap-3 bg-slate-950/85 backdrop-blur-md border border-slate-800/40 p-2 rounded-xl shadow-lg">
+      <div className="absolute top-6 right-6 z-20 flex flex-wrap items-center gap-3 backdrop-blur-md border p-2 rounded-xl shadow-lg hud-box">
         
         {/* Team Filter Dropdown */}
         <div className="flex items-center gap-1.5 px-2 py-1 border-r border-slate-800/40">
           <Filter size={11} className="text-indigo-400" />
-          <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">TEAM:</span>
+          <span className="text-[9px] font-bold uppercase tracking-wider hud-subtitle">TEAM:</span>
           <select
             value={selectedTeam}
             onChange={(e) => setSelectedTeam(e.target.value)}
-            className="bg-slate-900 border border-slate-800 text-[10px] font-semibold text-slate-200 rounded-lg px-2.5 py-1 outline-none cursor-pointer focus:border-indigo-500/50 transition-colors"
+            className="border text-[10px] font-semibold rounded-lg px-2.5 py-1 outline-none cursor-pointer transition-colors filter-select"
           >
             <option value="ALL TEAMS">ALL TEAMS</option>
             <option value="MODELLING">MODELLING</option>
@@ -739,16 +739,14 @@ const NeuralBrain = () => {
         </div>
 
         {/* Time Range Segment Control */}
-        <div className="flex items-center gap-1 bg-slate-900/60 p-1 rounded-lg border border-slate-800/40">
+        <div className="flex items-center gap-1 p-1 rounded-lg border filter-segment-group">
           <Calendar size={11} className="text-emerald-400 ml-1 shrink-0" />
           {['WEEK', 'MONTH', 'YEAR'].map((t) => (
             <button
               key={t}
               onClick={() => setTimeRange(t)}
-              className={`px-3 py-1 text-[9px] font-bold uppercase tracking-wider rounded-md transition-all duration-200 cursor-pointer ${
-                timeRange === t
-                  ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-300'
+              className={`px-3 py-1 text-[9px] font-bold uppercase tracking-wider rounded-md transition-all duration-200 cursor-pointer filter-segment-btn ${
+                timeRange === t ? 'active shadow-sm' : ''
               }`}
             >
               {t}
@@ -760,10 +758,8 @@ const NeuralBrain = () => {
         <div className="flex items-center gap-1.5 pl-2 border-l border-slate-800/40">
           <button 
             onClick={() => setAutoRotate(!autoRotate)}
-            className={`px-3.5 py-1.5 text-[9px] font-bold uppercase tracking-wider gap-1 flex items-center h-7 rounded-lg border cursor-pointer transition-all duration-300 ${
-              autoRotate 
-                ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/35' 
-                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+            className={`px-3.5 py-1.5 text-[9px] font-bold uppercase tracking-wider gap-1 flex items-center h-7 rounded-lg border cursor-pointer transition-all duration-300 action-btn ${
+              autoRotate ? 'active' : ''
             }`}
           >
             <RotateCcw size={11} className={autoRotate ? 'animate-spin' : ''} />
@@ -772,7 +768,7 @@ const NeuralBrain = () => {
 
           <button 
             onClick={resetCamera}
-            className="px-3.5 py-1.5 text-[9px] font-bold uppercase tracking-wider gap-1 flex items-center h-7 rounded-lg border bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer transition-all duration-300"
+            className="px-3.5 py-1.5 text-[9px] font-bold uppercase tracking-wider gap-1 flex items-center h-7 rounded-lg border cursor-pointer transition-all duration-300 action-btn"
           >
             RESET
           </button>
@@ -781,41 +777,39 @@ const NeuralBrain = () => {
       </div>
 
       {/* Translucent Glass Legend (Bottom Left Floating Overlay - Sleek Curves & Uniform Typography) */}
-      <div className="absolute bottom-6 left-6 z-20 bg-slate-950/80 backdrop-blur-md border border-slate-800/40 p-3.5 rounded-xl flex flex-col gap-2.5 shadow-lg max-w-[220px]">
+      <div className="absolute bottom-6 left-6 z-20 backdrop-blur-md border p-3.5 rounded-xl flex flex-col gap-2.5 shadow-lg max-w-[220px] hud-box">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
-          <span className="text-[9px] font-semibold text-slate-300 uppercase tracking-wider">Nơ-ron Giao Việc</span>
+          <div className="w-2.5 h-2.5 rounded-full legend-dot-giao" />
+          <span className="text-[9px] font-semibold uppercase tracking-wider hud-text">Nơ-ron Giao Việc</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-          <span className="text-[9px] font-semibold text-slate-300 uppercase tracking-wider">Nơ-ron Nhận Việc</span>
+          <div className="w-2.5 h-2.5 rounded-full legend-dot-nhan" />
+          <span className="text-[9px] font-semibold uppercase tracking-wider hud-text">Nơ-ron Nhận Việc</span>
         </div>
         <div className="flex items-center gap-2 border-t border-slate-800/40 pt-2 mt-0.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-          <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">Xung Điện Task</span>
+          <span className="w-2.5 h-2.5 rounded-full legend-dot-t1" />
+          <span className="w-2.5 h-2.5 rounded-full legend-dot-t3" />
+          <span className="w-2.5 h-2.5 rounded-full legend-dot-t5" />
+          <span className="text-[9px] font-semibold uppercase tracking-wider hud-subtitle">Xung Điện Task</span>
         </div>
       </div>
 
       {/* Floating sci-fi detail overlay (Standard rounded-xl curves & uniform typography) */}
       <AnimatePresence>
         {selectedNodeDetails && (
-          <div className="absolute top-24 right-6 bottom-6 w-[310px] z-20 bg-slate-950/90 backdrop-blur-lg border border-indigo-500/20 p-4 rounded-xl flex flex-col gap-3.5 shadow-[0_0_30px_rgba(99,102,241,0.08)]">
+          <div className="absolute top-24 right-6 bottom-6 w-[310px] z-20 backdrop-blur-lg border p-4 rounded-xl flex flex-col gap-3.5 detail-panel">
             
             {/* Header profile */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-slate-900 text-xs font-bold uppercase ${
-                  selectedNodeDetails.node.isLeader 
-                    ? 'bg-purple-300 shadow-[0_0_10px_rgba(216,180,254,0.3)]' 
-                    : 'bg-emerald-300 shadow-[0_0_10px_rgba(167,243,208,0.3)]'
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold uppercase ${
+                  selectedNodeDetails.node.isLeader ? 'avatar-leader' : 'avatar-member'
                 }`}>
                   {selectedNodeDetails.node.name.slice(0, 2)}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-xs font-semibold text-slate-100 uppercase truncate tracking-tight">{selectedNodeDetails.node.name}</h3>
-                  <span className="text-[8.5px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded uppercase tracking-wider inline-block mt-1">
+                  <h3 className="text-xs font-semibold uppercase truncate tracking-tight hud-title">{selectedNodeDetails.node.name}</h3>
+                  <span className="text-[8.5px] font-bold border px-2 py-0.5 rounded uppercase tracking-wider inline-block mt-1 badge-3d">
                     {selectedNodeDetails.node.team}
                   </span>
                 </div>
@@ -830,36 +824,36 @@ const NeuralBrain = () => {
 
             {/* Metrics (Clean rounded corners, standard modern font weights) */}
             <div className="grid grid-cols-2 gap-2.5">
-              <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/40 text-center">
-                <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Giao Việc</p>
-                <p className="text-sm font-bold text-purple-400">{selectedNodeDetails.node.assignedCount}</p>
+              <div className="p-2.5 rounded-lg border text-center metric-box">
+                <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5 hud-subtitle">Giao Việc</p>
+                <p className="text-sm font-bold metric-val-giao">{selectedNodeDetails.node.assignedCount}</p>
               </div>
-              <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/40 text-center">
-                <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Nhận Việc</p>
-                <p className="text-sm font-bold text-emerald-400">{selectedNodeDetails.node.receivedCount}</p>
+              <div className="p-2.5 rounded-lg border text-center metric-box">
+                <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5 hud-subtitle">Nhận Việc</p>
+                <p className="text-sm font-bold metric-val-nhan">{selectedNodeDetails.node.receivedCount}</p>
               </div>
             </div>
 
             {/* Collaboration paths */}
             <div className="flex-1 flex flex-col gap-2 min-h-0">
-              <h4 className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider pl-1">Đường Liên Kết Cộng Tác</h4>
+              <h4 className="text-[8.5px] font-bold uppercase tracking-wider pl-1 hud-subtitle">Đường Liên Kết Cộng Tác</h4>
               
               <div className="flex-grow overflow-y-auto custom-scrollbar space-y-2.5 pr-1">
                 {selectedNodeDetails.collaborations.map((col, idx) => (
                   <div 
                     key={idx} 
-                    className="bg-slate-900/40 border border-slate-800/30 p-3 rounded-lg"
+                    className="border p-3 rounded-lg collab-row"
                   >
                     <div className="flex justify-between items-center text-[9px] font-bold">
-                      <p className={`uppercase tracking-wider ${col.type === 'assigned' ? 'text-purple-400' : 'text-emerald-400'}`}>
+                      <p className={`uppercase tracking-wider ${col.type === 'assigned' ? 'collab-title-giao' : 'collab-title-nhan'}`}>
                         {col.type === 'assigned' ? 'Giao cho' : 'Nhận từ'}
                       </p>
-                      <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded text-[8.5px]">
+                      <span className="border px-2 py-0.5 rounded text-[8.5px] badge-3d">
                         {col.tasksCount} Tasks
                       </span>
                     </div>
 
-                    <p className="text-[10px] font-semibold text-slate-200 uppercase tracking-tight mt-1.5 truncate">
+                    <p className="text-[10px] font-semibold uppercase tracking-tight mt-1.5 truncate collab-name">
                       {col.partnerName}
                     </p>
 
@@ -868,12 +862,12 @@ const NeuralBrain = () => {
                       {col.tasks.slice(0, 2).map((t, tIdx) => (
                         <div key={tIdx} className="flex justify-between items-center gap-2 text-[9px] font-medium uppercase tracking-tight text-slate-400">
                           <span className="truncate flex-1">{t.taskName}</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold shrink-0 ${
+                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold shrink-0 border ${
                             t.priority === 'T1' || t.priority === 'T2' 
-                              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' 
+                              ? 'badge-pri-high' 
                               : t.priority === 'T5' 
-                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
-                                : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                                ? 'badge-pri-low' 
+                                : 'badge-pri-mid'
                           }`}>
                             {t.priority}
                           </span>
@@ -884,7 +878,7 @@ const NeuralBrain = () => {
                 ))}
 
                 {selectedNodeDetails.collaborations.length === 0 && (
-                  <p className="text-[8.5px] font-semibold text-slate-500 uppercase tracking-wider text-center py-6">
+                  <p className="text-[8.5px] font-semibold uppercase tracking-wider text-center py-6 hud-subtitle">
                     Không có liên kết làm việc
                   </p>
                 )}

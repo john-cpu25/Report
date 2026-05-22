@@ -125,19 +125,19 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
 
   const getStatusColor = (status) => {
     switch(status) {
-      case 'DONE': return 'bg-emerald-500';
-      case 'WIP': return 'bg-indigo-500';
-      case 'URGENT': return 'bg-rose-500';
-      case 'ISSUE': return 'bg-red-500';
-      case 'PLANNING': return 'bg-amber-500';
-      default: return 'bg-slate-500';
+      case 'DONE': return 'bar-status-done';
+      case 'WIP': return 'bar-status-wip';
+      case 'URGENT': return 'bar-status-urgent';
+      case 'ISSUE': return 'bar-status-issue';
+      case 'PLANNING': return 'bar-status-planning';
+      default: return 'bar-status-default';
     }
   };
 
   return (
-    <div className={`w-full mx-auto pb-20 transition-all duration-500 ${isExpanded ? 'px-0' : 'px-[10px]'}`}>
+    <div className={`tab-planning w-full mx-auto pb-20 transition-all duration-500 ${isExpanded ? 'px-0' : 'sys-px'}`}>
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-[10px] ocd-card mb-[10px]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between sys-gap ocd-card mb-[10px]">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-[8px] bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
             <ListTodo size={20} />
@@ -152,10 +152,10 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
 
 
         {/* Date Navigation */}
-        <div className="flex items-center gap-[10px]">
+        <div className="flex items-center sys-gap">
           <button 
             onClick={() => handleNavigate('prev')}
-            className="p-[10px] rounded-[8px] bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+            className="plan-nav-btn"
           >
             <ChevronLeft size={18} />
           </button>
@@ -170,7 +170,7 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
 
           <button 
             onClick={() => handleNavigate('next')}
-            className="p-[10px] rounded-[8px] bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+            className="plan-nav-btn"
           >
             <ChevronRight size={18} />
           </button>
@@ -180,14 +180,14 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
       {/* Gantt Container */}
       <div className="ocd-card overflow-hidden relative group">
         {/* Horizontal Lines Accent */}
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
+        <div className="plan-separator" />
         
         {/* Scrollable Area */}
         <div className="overflow-x-auto custom-scrollbar">
           <div className="min-w-[1200px]">
             {/* Grid Header */}
             <div className="grid grid-cols-[280px_1fr] border-b border-[var(--glass-border)] bg-[var(--bg-surface)]">
-              <div className="p-[10px] flex items-center gap-[10px] border-r border-[var(--glass-border)]">
+              <div className="sys-p flex items-center sys-gap border-r border-[var(--glass-border)]">
                 <Layers size={14} className="text-slate-500" />
                 <span className="text-[14px] font-black text-slate-400 uppercase tracking-widest">Project / Workflows</span>
               </div>
@@ -197,10 +197,10 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                   return (
                   <div 
                     key={i} 
-                    className={`flex-1 min-w-[80px] p-[10px] flex flex-col items-center justify-center border-r border-[var(--glass-border)] last:border-0 ${isToday ? 'bg-indigo-500/10' : (col.isWeekend ? 'bg-[var(--bg-surface)]' : '')}`}
+                    className={`flex-1 min-w-[80px] sys-p flex flex-col items-center justify-center border-r border-[var(--glass-border)] last:border-0 ${isToday ? 'plan-col-today' : (col.isWeekend ? 'bg-[var(--bg-surface)]' : '')}`}
                   >
-                    <span className={`text-[14px] font-black uppercase tracking-tighter ${isToday ? 'text-emerald-500' : 'text-[var(--text-contrast)]'}`}>{col.label}</span>
-                    <span className={`text-[12px] font-black mt-0.5 ${isToday ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`}>{col.subLabel}</span>
+                    <span className={`text-[14px] font-black uppercase tracking-tighter day-label ${!isToday ? 'text-[var(--text-contrast)]' : ''}`}>{col.label}</span>
+                    <span className={`text-[12px] font-black mt-0.5 day-sublabel ${!isToday ? 'text-[var(--text-muted)]' : ''}`}>{col.subLabel}</span>
                   </div>
                 )})}
               </div>
@@ -210,17 +210,17 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
             <div className="divide-y divide-[var(--glass-border)]">
               {projectGroups.length === 0 ? (
                 <div className="p-20 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-[var(--bg-surface)] mx-auto flex items-center justify-center border border-[var(--glass-border)]">
-                    <Clock size={30} className="text-slate-700" />
+                  <div className="no-data-icon">
+                    <Clock size={30} />
                   </div>
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-[0.3em]">No Temporal Data Detected</p>
+                  <p className="text-xs font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">No Temporal Data Detected</p>
                 </div>
               ) : (
                 projectGroups.map((group, groupIdx) => (
                   <div key={groupIdx} className="group/row">
                     <div className="grid grid-cols-[280px_1fr]">
                       {/* Left: Project Info */}
-                      <div className="p-[10px] flex items-center bg-[var(--bg-surface)] border-r border-[var(--glass-border)] relative">
+                      <div className="sys-p flex items-center bg-[var(--bg-surface)] border-r border-[var(--glass-border)] relative">
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full opacity-0 group-hover/row:opacity-100 transition-opacity" style={{ backgroundColor: getProjectColor(group.name) }} />
                         <h3 className="text-[14px] font-black uppercase tracking-tight truncate" style={{ color: getProjectColor(group.name) }}>{group.name}</h3>
                       </div>
@@ -266,22 +266,24 @@ const Planning = ({ reportData = [], weekDates = [] }) => {
                                     top: `${(taskIdx % 3) * 12}px`, // Slight offset if multiple tasks
                                     zIndex: 10 
                                   }}
-                                  className={`absolute h-6 rounded-[8px] ${getStatusColor(task.status)} border border-white/20 shadow-lg cursor-pointer group/bar flex items-center px-3 overflow-hidden`}
                                 >
-                                  {/* Bar Content */}
-                                  <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent pointer-events-none" />
-                                  <span className="text-[12px] font-black text-white uppercase truncate relative z-10">
-                                    {task.task}
-                                  </span>
+                                  <div className={`gantt-bar ${getStatusColor(task.status)} group/bar`}
+                                    style={{ left: `${left}%`, top: `${(taskIdx % 3) * 12}px`, width: `${width}%` }}
+                                  >
+                                    <div className="gantt-bar-overlay" />
+                                    <span className="text-[12px] font-black text-white uppercase truncate relative z-10">
+                                      {task.task}
+                                    </span>
 
-                                  {/* Tooltip on Hover */}
-                                  <div className="absolute top-[-40px] left-1/2 -translate-x-1/2 bg-[var(--bg-dark)] border border-[var(--glass-border)] p-[10px] rounded-[8px] opacity-0 group-hover/bar:opacity-100 transition-all whitespace-nowrap z-[100] shadow-2xl pointer-events-none">
-                                    <p className="text-[9px] font-black text-[var(--text-main)] uppercase">{task.task}</p>
-                                    <p className="text-[8px] font-bold text-slate-400 mt-0.5">{task.status} // {group.name}</p>
-                                  </div>
-                                </motion.div>
-                              );
-                            }
+                                    {/* Tooltip on Hover */}
+                                    <div className="gantt-tooltip">
+                                      <p className="text-[9px] font-black text-[var(--text-main)] uppercase">{task.task}</p>
+                                      <p className="text-[8px] font-bold text-[var(--text-muted)] mt-0.5">{task.status} // {group.name}</p>
+                                    </div>
+                                    </div>
+                                  </motion.div>
+                                );
+                              }
                             
                             // Month and Year views would require actual date_start/date_end in the task object
                             // For now, we'll placeholder them or map based on created_at

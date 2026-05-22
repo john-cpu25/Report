@@ -1365,46 +1365,40 @@ const Dashboard = () => {
 
 
   return (
-    <div className="bg-[var(--bg-main)] min-h-screen text-[var(--text-main)] py-5 font-['Inter'] relative transition-colors duration-300">
+    <div className="tab-dashboard min-h-screen sys-py relative transition-colors duration-300">
 
       {/* Background Ambience */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="ambience-indigo absolute top-0 left-1/4 w-96 h-96 rounded-full blur-[100px] pointer-events-none" />
+      <div className="ambience-emerald absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-[100px] pointer-events-none" />
 
 
 
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative z-10 flex flex-col gap-6" style={{ marginTop: '12px' }}>
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative z-10 flex flex-col sys-gap">
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-12 sys-gap">
           {/* LEFT: Teams Section (8/12) */}
           <div className="xl:col-span-8 flex flex-col">
             
             {(isTeamUser || (isAdmin && adminViewMode === 'TEAM')) ? (
               // FIG 1: TEAM VIEW (Side by side structure, max height 258px)
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 sys-gap flex-1">
                 
                 {/* Left Side: Xanh Dương (Card Nhóm) + Khung Cam (Mở Rộng) */}
-                <div className="flex flex-col gap-4 h-full flex-1">
+                <div className="flex flex-col sys-gap h-full flex-1">
                   
                   {/* Blue Box (Card Nhóm) */}
                   <div className="flex flex-col flex-1">
-                    <div className="flex justify-start mb-1 shrink-0">
-                      <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">
-                        {teamPulse.find(t => t.id === activeTeamId)?.name || activeTeamId}
-                      </h2>
-                    </div>
-
                     {(() => {
                       const team = teamPulse.find(t => t.id === activeTeamId) || {
                         name: activeTeamId, members: 0, working: [], available: [], leave: [], dailyTasks: null, hasData: false, isVisible: true
                       };
                       return (
-                        <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex flex-col md:flex-row gap-3 flex-1" style={{ padding: '12px' }}>
+                        <motion.div variants={itemVariants} className="team-card flex flex-col md:flex-row gap-3 relative flex-1 sys-p">
                           {(!team.hasData && loading) ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
                               <div className="flex flex-col items-center gap-1.5">
-                                <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                                <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest animate-pulse">Syncing...</p>
+                                <div className="spinner-ring w-4 h-4 border-2 rounded-full animate-spin"></div>
+                                <p className="spinner-text text-[8px] font-black uppercase tracking-widest animate-pulse">Syncing...</p>
                               </div>
                             </div>
                           ) : !team.isVisible ? (
@@ -1419,20 +1413,20 @@ const Dashboard = () => {
 
                           {/* Left Column - Team Info */}
                           <div className="w-[125px] shrink-0 flex flex-col justify-between h-full">
-                            <p className="text-[10px] text-[var(--text-muted)] font-bold">{team.members} MEMBERS</p>
+                            <p className="text-[14px] text-[var(--text-main)] font-black uppercase tracking-widest leading-tight break-words">{teamPulse.find(t => t.id === activeTeamId)?.name || activeTeamId}</p>
                             <div className="flex flex-col gap-1 text-[12px] font-bold text-[var(--text-main)] my-0.5">
                               <div className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                                <span className="dot-busy w-1.5 h-1.5 rounded-full shrink-0"></span>
                                 <span className="text-[var(--text-muted)] w-[52px] inline-block">BUSY:</span>
                                 <span className="tabular-nums">{team.working.length.toString().padStart(2, '0')}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span className="dot-free w-1.5 h-1.5 rounded-full shrink-0"></span>
                                 <span className="text-[var(--text-muted)] w-[52px] inline-block">FREE:</span>
                                 <span className="tabular-nums">{team.available.length.toString().padStart(2, '0')}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                                <span className="dot-leave w-1.5 h-1.5 rounded-full shrink-0"></span>
                                 <span className="text-[var(--text-muted)] w-[52px] inline-block">LEAVE:</span>
                                 <span className="tabular-nums">{team.leave.length.toString().padStart(2, '0')}</span>
                               </div>
@@ -1444,9 +1438,9 @@ const Dashboard = () => {
                             <div className="flex flex-col justify-start gap-1.5 h-full p-2.5 overflow-y-auto custom-scrollbar">
                               {team.dailyTasks ? team.dailyTasks.map((t, j) => (
                                 <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
-                                  <span className={`w-1 h-1 rounded-full shrink-0 ${t.isWorking ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]' : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'}`}></span>
+                                  <span className={`w-1 h-1 rounded-full shrink-0 ${t.isWorking ? 'task-dot-working' : 'task-dot-free'}`}></span>
                                   <div className="text-[10px] font-bold truncate">
-                                    <span className={`${t.isWorking ? 'text-rose-400' : 'text-[var(--text-muted)]'} uppercase tracking-wide`}>{t.project}</span>
+                                    <span className={`${t.isWorking ? 'task-text-working' : 'task-text-free'} uppercase tracking-wide`}>{t.project}</span>
                                   </div>
                                 </div>
                               )) : (
@@ -1463,10 +1457,8 @@ const Dashboard = () => {
 
                   {/* Orange Box (Active Member Grid) */}
                   <div className="flex flex-col flex-1">
-                    <div className="flex justify-start mb-1 shrink-0">
-                      <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">ACTIVE MEMBERS</h2>
-                    </div>
-                    <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl shadow-sm flex-1" style={{ padding: '12px' }}>
+                    <motion.div variants={itemVariants} className="team-card flex-1 flex flex-col sys-p">
+                      <p className="text-[14px] text-[var(--text-main)] font-black uppercase tracking-widest shrink-0 mb-3">ACTIVE MEMBERS</p>
                       {renderActiveMemberGrid()}
                     </motion.div>
                   </div>
@@ -1475,12 +1467,9 @@ const Dashboard = () => {
 
                 {/* Right Side: Khung Xanh Lá (3D Mini Brain Map) */}
                 <div className="flex flex-col h-full">
-                  <div className="flex justify-start mb-1 shrink-0">
-                    <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">BRAIN MAP</h2>
-                  </div>
                   <motion.div 
                     variants={itemVariants} 
-                    className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex-1 overflow-hidden border-indigo-500/20"
+                    className="team-card brain-card relative flex-1 overflow-hidden"
                     style={{ padding: '0px' }}
                   >
                     <MiniBrainMap teamId={activeTeamId} />
@@ -1490,19 +1479,15 @@ const Dashboard = () => {
               </div>
             ) : (
               // FIG 2: ORIGINAL 2x2 GRID (Default View for Admin/Non-Team users)
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 sys-gap auto-rows-fr flex-1">
                 {teamPulse.map((team, i) => (
                   <div key={i} className="flex flex-col h-full">
-                    <div className="flex justify-start mb-1">
-                      <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">{team.name}</h2>
-                    </div>
-
-                    <motion.div variants={itemVariants} className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl relative shadow-sm flex flex-col md:flex-row gap-3 h-full flex-1" style={{ padding: '12px' }}>
+                    <motion.div variants={itemVariants} className="team-card flex flex-col md:flex-row gap-3 h-full relative flex-1 sys-p">
                       {(!team.hasData && loading) ? (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
                           <div className="flex flex-col items-center gap-3">
-                            <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] animate-pulse">Syncing Data...</p>
+                            <div className="spinner-ring w-6 h-6 border-2 rounded-full animate-spin"></div>
+                            <p className="spinner-text text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">Syncing Data...</p>
                           </div>
                         </div>
                       ) : !team.isVisible ? (
@@ -1517,20 +1502,20 @@ const Dashboard = () => {
 
                       {/* Left Column - Team Info (Compact) */}
                       <div className="w-[125px] shrink-0 flex flex-col justify-between">
-                        <p className="text-[10px] text-[var(--text-muted)] font-bold">{team.members} MEMBERS</p>
+                        <p className="text-[14px] text-[var(--text-main)] font-black uppercase tracking-widest leading-tight break-words">{team.name}</p>
                         <div className="flex flex-col gap-1.5 text-[12px] font-bold text-[var(--text-main)] my-1">
                           <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                            <span className="dot-busy w-1.5 h-1.5 rounded-full shrink-0"></span>
                             <span className="text-[var(--text-muted)] w-[52px] inline-block">BUSY:</span>
                             <span className="tabular-nums">{team.working.length.toString().padStart(2, '0')}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span className="dot-free w-1.5 h-1.5 rounded-full shrink-0"></span>
                             <span className="text-[var(--text-muted)] w-[52px] inline-block">FREE:</span>
                             <span className="tabular-nums">{team.available.length.toString().padStart(2, '0')}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                            <span className="dot-leave w-1.5 h-1.5 rounded-full shrink-0"></span>
                             <span className="text-[var(--text-muted)] w-[52px] inline-block">LEAVE:</span>
                             <span className="tabular-nums">{team.leave.length.toString().padStart(2, '0')}</span>
                           </div>
@@ -1542,9 +1527,9 @@ const Dashboard = () => {
                         <div className="flex flex-col justify-start gap-2 h-full p-2.5 overflow-y-auto custom-scrollbar">
                           {team.dailyTasks ? team.dailyTasks.map((t, j) => (
                             <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
-                              <span className={`w-1 h-1 rounded-full shrink-0 ${t.isWorking ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]' : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'}`}></span>
+                              <span className={`w-1 h-1 rounded-full shrink-0 ${t.isWorking ? 'task-dot-working' : 'task-dot-free'}`}></span>
                               <div className="text-[10px] font-bold truncate">
-                                <span className={`${t.isWorking ? 'text-rose-400' : 'text-[var(--text-muted)]'} uppercase tracking-wide`}>{t.project}</span>
+                                <span className={`${t.isWorking ? 'task-text-working' : 'task-text-free'} uppercase tracking-wide`}>{t.project}</span>
                               </div>
                             </div>
                           )) : (
@@ -1563,23 +1548,19 @@ const Dashboard = () => {
 
           {/* RIGHT: Currency & Market Section (4/12) */}
           <div className="xl:col-span-4 flex flex-col">
-             <div className="flex justify-start mb-1">
-                <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">MARKET</h2>
-             </div>
              <motion.div 
                variants={itemVariants} 
-               className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl shadow-sm flex-1 flex flex-col gap-3"
-               style={{ padding: '12px' }}
+               className="team-card flex-1 flex flex-col gap-3 sys-p"
              >
                 <div className="flex items-center justify-between">
                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                      <div className="market-icon w-10 h-10 rounded-xl flex items-center justify-center">
                          <span className="font-black text-lg">A$</span>
                       </div>
                       <div>
                          <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight">AUD / VND</h3>
-                         <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span> Vietcombank Live
+                         <p className="market-live text-[12px] font-bold uppercase flex items-center gap-1">
+                            <span className="market-live-dot w-1 h-1 rounded-full animate-pulse"></span> Vietcombank Live
                          </p>
                       </div>
                    </div>
@@ -1587,7 +1568,7 @@ const Dashboard = () => {
                        {/* Yesterday's Price (Blue Box) */}
                        {audRate.yesterday && (
                           <div className="text-right pr-3 border-r border-[var(--glass-border)] mr-3">
-                             <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-0.5">YESTERDAY</p>
+                             <p className="text-[12px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-0.5">YESTERDAY</p>
                              <p className="text-xs font-black text-[var(--text-main)]">
                                 {audRate.yesterday.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                              </p>
@@ -1596,11 +1577,11 @@ const Dashboard = () => {
                        
                        {/* Today's Price (Red Box) */}
                        <div className="text-right">
-                          <div className={`flex items-center gap-1.5 font-black text-lg ${audRate.isUp !== false ? 'text-emerald-500' : 'text-rose-500'}`}>
+                          <div className={`flex items-center gap-1.5 font-black text-lg ${audRate.isUp !== false ? 'rate-up' : 'rate-down'}`}>
                              {audRate.isUp !== false ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
                              <span>{audRate.rate.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
-                          <p className={`text-[10px] font-bold ${audRate.isUp !== false ? 'text-emerald-500/90' : 'text-rose-500/90'}`}>
+                          <p className={`text-[10px] font-bold ${audRate.isUp !== false ? 'rate-change-up' : 'rate-change-down'}`}>
                              {audRate.change} Yesterday
                           </p>
                        </div>
@@ -1615,39 +1596,38 @@ const Dashboard = () => {
                        className="bg-[var(--bg-surface)]/50 rounded-xl border border-[var(--border)] hover:bg-[var(--bg-surface)] transition-colors group flex flex-col justify-center flex-1"
                        style={{ padding: '6px 10px' }}
                       >
-                         <p className="text-[8px] font-black text-[var(--text-muted)] uppercase mb-0.5 group-hover:text-[var(--text-main)] transition-colors tracking-tighter">Buy Cash</p>
-                         <p className="text-[11px] font-black text-[var(--text-main)] truncate">{audRate.buy.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                         <p className="text-[14px] font-black text-[var(--text-muted)] uppercase mb-0.5 group-hover:text-[var(--text-main)] transition-colors tracking-tighter">Buy Cash</p>
+                         <p className="text-[12px] font-normal text-[var(--text-main)] truncate">{audRate.buy.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                       <div 
-                       className="bg-[var(--bg-surface)]/50 rounded-xl border border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/10 transition-colors group flex flex-col justify-center flex-1"
-                       style={{ padding: '6px 10px' }}
-                      >
-                         <p className="text-[8px] font-black text-indigo-400 uppercase mb-0.5 group-hover:text-indigo-300 transition-colors tracking-tighter">Buy Transfer</p>
-                         <p className="text-[11px] font-black text-indigo-300 truncate">{audRate.rate.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        className="rate-card-accent rounded-xl flex flex-col justify-center flex-1"
+                        style={{ padding: '6px 10px' }}
+                       >
+                         <p className="rate-card-accent__label text-[14px] font-black uppercase mb-0.5 transition-colors tracking-tighter">Buy Transfer</p>
+                         <p className="rate-card-accent__value text-[12px] font-normal truncate">{audRate.rate.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                       <div 
                        className="bg-[var(--bg-surface)]/50 rounded-xl border border-[var(--border)] hover:bg-[var(--bg-surface)] transition-colors group flex flex-col justify-center flex-1"
                        style={{ padding: '6px 10px' }}
                       >
-                         <p className="text-[8px] font-black text-[var(--text-muted)] uppercase mb-0.5 group-hover:text-[var(--text-main)] transition-colors tracking-tighter">Sell Rate</p>
-                         <p className="text-[11px] font-black text-[var(--text-main)] truncate">{audRate.sell.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                         <p className="text-[14px] font-black text-[var(--text-muted)] uppercase mb-0.5 group-hover:text-[var(--text-main)] transition-colors tracking-tighter">Sell Rate</p>
+                         <p className="text-[12px] font-normal text-[var(--text-main)] truncate">{audRate.sell.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                    </div>
 
                    {/* Right Column: Trend Line Chart */}
                    <div className="flex-1 bg-[var(--bg-surface)]/30 rounded-xl border border-[var(--border)] p-2 relative overflow-hidden flex flex-col justify-between">
                       {/* Chart Header */}
-                      <div className="flex items-center justify-between mb-1 z-10">
-                         <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-wider">Trend (Transfer)</span>
+                      <div className="flex items-center justify-end mb-1 z-10">
                          <div className="flex gap-1 bg-[var(--bg-main)]/60 p-0.5 rounded-lg border border-[var(--border)]/50">
                             {['5D', '1M', '1Y', 'ALL'].map(tab => (
                                <button
                                   key={tab}
                                   onClick={() => setMarketTab(tab)}
-                                  className={`text-[8px] font-black px-1.5 py-0.5 rounded-md transition-all ${
+                                  className={`text-[12px] font-black px-1.5 py-0.5 rounded-md transition-all ${
                                      marketTab === tab 
-                                        ? 'bg-indigo-500 text-white shadow-sm' 
-                                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                        ? 'market-tab-active' 
+                                        : 'market-tab-inactive'
                                   }`}
                                >
                                   {tab}
@@ -1660,7 +1640,7 @@ const Dashboard = () => {
                       <div className="flex-1 relative w-full h-[135px] min-h-[135px] mt-0.5">
                          {isMarketLoading && (
                             <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
-                               <div className="w-4 h-4 border border-t-transparent border-indigo-500 rounded-full animate-spin"></div>
+                               <div className="chart-spinner w-4 h-4 border rounded-full animate-spin"></div>
                             </div>
                          )}
                          <Line 
@@ -1675,9 +1655,9 @@ const Dashboard = () => {
         </div>
 
         {/* Task Trends Section */}
-         <motion.div variants={itemVariants} className="bg-[var(--bg-main)] border border-[var(--border)] rounded-3xl p-10 shadow-sm min-h-[500px] flex flex-col gap-12">
-            <div className="flex flex-col md:flex-row justify-start items-start md:items-center gap-12 pl-2">
-              <div className="flex items-center gap-8 h-12">
+         <motion.div variants={itemVariants} className="trends-card shadow-sm flex flex-col relative pt-[60px]">
+            {/* Top Left Controls */}
+            <div className="absolute top-[10px] left-[10px] z-20 h-12">
                 {/* Team Selector (Neumorphic) */}
                 <div className="relative h-full group" style={{ minWidth: '180px' }}>
                   <div className="absolute inset-0 bg-[var(--bg-surface)] rounded-2xl shadow-[4px_4px_10px_rgba(0,0,0,0.1),-4px_-4px_10px_rgba(255,255,255,0.8)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.3),-2px_-2px_10px_rgba(255,255,255,0.05)] group-hover:scale-[1.02] transition-transform duration-300"></div>
@@ -1715,7 +1695,10 @@ const Dashboard = () => {
                     </div>
                   )}
                 </div>
- 
+            </div>
+
+            {/* Top Right Controls */}
+            <div className="absolute top-[10px] right-[10px] z-20 h-12 flex items-center gap-4">
                 {/* Time Range Selector (Neumorphic) */}
                 <div className="h-full flex bg-[var(--bg-surface)] rounded-2xl p-1.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2),inset_-1px_-1px_5px_rgba(255,255,255,0.02)] gap-2">
                   {['WEEK', 'MONTH', 'YEAR'].map((r) => (
@@ -1724,7 +1707,7 @@ const Dashboard = () => {
                       onClick={() => setTimeRange(r)}
                       className={`h-full w-[80px] flex items-center justify-center text-[12px] font-black uppercase tracking-tight rounded-xl transition-all duration-300 ${
                         timeRange === r 
-                        ? 'bg-[var(--bg-surface)] text-indigo-600 shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,1)] dark:shadow-[2px_2px_5px_rgba(0,0,0,0.3),-1px_-1px_5px_rgba(255,255,255,0.05)] scale-[0.98]' 
+                        ? 'time-range-active bg-[var(--bg-surface)] shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,1)] dark:shadow-[2px_2px_5px_rgba(0,0,0,0.3),-1px_-1px_5px_rgba(255,255,255,0.05)] scale-[0.98]' 
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                     >
@@ -1745,7 +1728,7 @@ const Dashboard = () => {
                       onClick={() => setChartType(t.id)}
                       className={`h-full aspect-square flex items-center justify-center rounded-xl transition-all duration-300 ${
                         chartType === t.id 
-                        ? 'bg-[var(--bg-surface)] text-indigo-600 shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,1)] dark:shadow-[2px_2px_5px_rgba(0,0,0,0.3),-1px_-1px_5px_rgba(255,255,255,0.05)] scale-[0.98]' 
+                        ? 'chart-type-active bg-[var(--bg-surface)] shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,1)] dark:shadow-[2px_2px_5px_rgba(0,0,0,0.3),-1px_-1px_5px_rgba(255,255,255,0.05)] scale-[0.98]' 
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                       title={`${t.id} Chart`}
@@ -1754,10 +1737,9 @@ const Dashboard = () => {
                     </button>
                   ))}
                 </div>
-              </div>
             </div>
 
-            <div className="flex-1 min-h-[400px] w-full relative flex items-center justify-center">
+            <div className="flex-1 min-h-[800px] w-full relative flex items-center justify-center mt-[10px]">
               {chartType === 'LINE' && (
                 <Line 
                   data={trendData}
@@ -1765,6 +1747,9 @@ const Dashboard = () => {
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                      padding: { top: 40, bottom: 10 }
+                    },
                     plugins: {
                       legend: { display: false },
                       tooltip: {
@@ -1805,6 +1790,9 @@ const Dashboard = () => {
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                      padding: { top: 40, bottom: 10 }
+                    },
                     plugins: {
                       legend: { display: false },
                       tooltip: {

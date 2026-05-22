@@ -44,7 +44,7 @@ const FilterBar = ({
 
   return (
     <div className="ocd-card space-y-[10px]">
-      <div className="flex flex-col xl:flex-row gap-[10px]">
+      <div className="flex flex-col xl:flex-row sys-gap">
         {/* Search */}
         <div className="relative flex-grow group">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-indigo-400 transition-colors" size={18} />
@@ -58,8 +58,8 @@ const FilterBar = ({
         </div>
 
         {/* Date Controls */}
-        <div className="flex flex-wrap items-center gap-[10px]">
-          <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] p-[10px] rounded-[8px] border border-[var(--border)] shadow-sm">
+        <div className="flex flex-wrap items-center sys-gap">
+          <div className="flex items-center sys-gap bg-[var(--bg-surface)] sys-p rounded-[8px] border border-[var(--border)] shadow-sm">
             <div className="flex items-center gap-2 px-3 border-r border-[var(--border)]">
               <Calendar size={14} className="text-indigo-500" />
               <input type="month" className="bg-transparent text-[11px] font-black text-[var(--text-main)] outline-none cursor-pointer uppercase"
@@ -74,7 +74,7 @@ const FilterBar = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-[10px] p-[10px] bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)] shadow-sm">
+          <div className="flex items-center sys-gap sys-p bg-[var(--bg-surface)] rounded-[8px] border border-[var(--border)] shadow-sm">
             {['WEEK', 'MONTH', 'YEAR'].map(label => (
               <button key={label} onClick={() => setPreset(label)}
               className="px-4 py-2 rounded-[8px] text-[10px] font-black text-[var(--text-muted)] hover:text-white hover:bg-indigo-500 transition-all uppercase tracking-normal">
@@ -94,8 +94,8 @@ const FilterBar = ({
       </div>
 
       {/* Sub Filters */}
-      <div className="flex flex-wrap items-center gap-[10px] pt-[10px] border-t border-[var(--border)]">
-        <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] px-4 py-2.5 rounded-[8px] border border-[var(--border)] shadow-sm">
+      <div className="flex flex-wrap items-center sys-gap pt-[10px] border-t border-[var(--border)]">
+        <div className="flex items-center sys-gap bg-[var(--bg-surface)] px-4 py-2.5 rounded-[8px] border border-[var(--border)] shadow-sm">
           <Users size={14} className="text-indigo-500" />
           <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">TEAM:</span>
           <select className="bg-transparent text-[10px] font-black text-indigo-500 outline-none cursor-pointer uppercase tracking-normal"
@@ -104,7 +104,7 @@ const FilterBar = ({
           </select>
         </div>
 
-        <div className="flex items-center gap-[10px] bg-[var(--bg-surface)] px-4 py-2.5 rounded-[8px] border border-[var(--border)] shadow-sm">
+        <div className="flex items-center sys-gap bg-[var(--bg-surface)] px-4 py-2.5 rounded-[8px] border border-[var(--border)] shadow-sm">
           <TableIcon size={14} className="text-indigo-500" />
           <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-normal">GROUP:</span>
           <select className="bg-transparent text-[10px] font-black text-indigo-500 outline-none cursor-pointer uppercase tracking-normal"

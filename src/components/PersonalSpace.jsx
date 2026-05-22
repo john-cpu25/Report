@@ -276,7 +276,7 @@ const PersonalSpace = () => {
       <div className="space-y-[10px] pb-20">
         {/* Show header even while loading */}
         <div className="bg-[var(--bg-card)] p-[20px] rounded-[12px] border border-[var(--border)] shadow-xl">
-          <h2 className="text-[28px] font-black text-[var(--text-contrast)] uppercase tracking-tighter flex items-center gap-[10px]">
+          <h2 className="text-[28px] font-black text-[var(--text-contrast)] uppercase tracking-tighter flex items-center sys-gap">
             <span 
               className={isDark ? "text-white" : "text-slate-900"}
               style={{ 
@@ -300,14 +300,14 @@ const PersonalSpace = () => {
   }
 
   return (
-    <div className="w-full space-y-[10px] animate-in fade-in duration-700 pb-[10px]">
+    <div className="tab-personal w-full space-y-[10px] animate-in fade-in duration-700 pb-[10px]">
       {/* Sticky Header + Filter Wrapper */}
       <div className="sticky top-[64px] z-[40] w-full space-y-[10px] pb-[10px] pt-[10px] mt-[-10px]" style={{ background: 'var(--bg-main, #0f172a)' }}>
       {/* Header */}
       <div className="bg-[var(--bg-card)] px-[20px] py-[16px] rounded-[12px] border border-[var(--border)] shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-[12px]">
           <div>
-            <h2 className="text-[28px] font-black text-[var(--text-contrast)] uppercase tracking-tighter flex items-center gap-[10px]">
+            <h2 className="text-[28px] font-black text-[var(--text-contrast)] uppercase tracking-tighter flex items-center sys-gap">
               <span 
                 className={isDark ? "text-white" : "text-slate-900"}
                 style={{ 
@@ -342,21 +342,15 @@ const PersonalSpace = () => {
                 <button
                   key={v.id}
                   onClick={() => setViewMode(v.id)}
-                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
-                    viewMode === v.id 
-                      ? (isDark ? 'text-white' : v.color) 
-                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 view-btn-basic ${
+                    viewMode === v.id ? 'active' : ''
                   }`}
                 >
                   {v.icon} <span className="ml-1">{v.label}</span>
                   {viewMode === v.id && (
                     <motion.div
                       layoutId="activeViewMode"
-                      className={`absolute inset-0 rounded-lg z-[-1] ${
-                        isDark 
-                          ? 'bg-black border border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]' 
-                          : 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
-                      }`}
+                      className="absolute inset-0 rounded-lg z-[-1] toolbar-active-bg"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
@@ -372,21 +366,15 @@ const PersonalSpace = () => {
                 <button
                   key={v.id}
                   onClick={() => setViewMode(v.id)}
-                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
-                    viewMode === v.id 
-                      ? (isDark ? 'text-white' : v.color) 
-                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 view-btn-entity ${
+                    viewMode === v.id ? 'active' : ''
                   }`}
                 >
                   {v.icon} <span className="ml-1">{v.label}</span>
                   {viewMode === v.id && (
                     <motion.div
                       layoutId="activeViewMode"
-                      className={`absolute inset-0 rounded-lg z-[-1] ${
-                        isDark 
-                          ? 'bg-black border border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]' 
-                          : 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
-                      }`}
+                      className="absolute inset-0 rounded-lg z-[-1] toolbar-active-bg"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
@@ -404,21 +392,15 @@ const PersonalSpace = () => {
                 <button
                   key={v.id}
                   onClick={() => setViewMode(v.id)}
-                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 ${
-                    viewMode === v.id 
-                      ? (isDark ? 'text-white' : v.color) 
-                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 view-btn-analysis ${
+                    viewMode === v.id ? 'active' : ''
                   }`}
                 >
                   {v.icon} <span className="ml-1">{v.label}</span>
                   {viewMode === v.id && (
                     <motion.div
                       layoutId="activeViewMode"
-                      className={`absolute inset-0 rounded-lg z-[-1] ${
-                        isDark 
-                          ? 'bg-black border border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]' 
-                          : 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
-                      }`}
+                      className="absolute inset-0 rounded-lg z-[-1] toolbar-active-bg"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
@@ -442,21 +424,15 @@ const PersonalSpace = () => {
                     <button
                       key={id}
                       onClick={() => setTimeRange(id)}
-                      className={`relative px-6 h-[28px] text-[14px] font-black uppercase tracking-widest transition-all duration-300 z-10 ${
-                        isActive 
-                          ? (isDark ? 'text-white' : 'text-indigo-600') 
-                          : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700')
+                      className={`relative px-6 h-[28px] text-[14px] font-black uppercase tracking-widest transition-all duration-300 z-10 time-range-btn ${
+                        isActive ? 'active' : ''
                       }`}
                     >
                       {id}
                       {isActive && (
                         <motion.div
                           layoutId="activeRange"
-                          className={`absolute inset-0 rounded-lg z-[-1] ${
-                            isDark 
-                              ? 'bg-black border border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]' 
-                              : 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
-                          }`}
+                          className="absolute inset-0 rounded-lg z-[-1] toolbar-active-bg"
                           transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
                         />
                       )}
@@ -474,9 +450,7 @@ const PersonalSpace = () => {
           }`}>
             <button
               onClick={() => loadData(true)}
-              className={`flex items-center gap-3 h-[28px] px-5 text-[14px] font-black uppercase tracking-widest transition-colors ${
-                isDark ? 'text-violet-400 hover:text-violet-300' : 'text-violet-500 hover:text-violet-700'
-              }`}
+              className="flex items-center gap-3 h-[28px] px-5 text-[14px] font-black uppercase tracking-widest transition-colors sync-btn"
               title="Force Sync with Supabase"
             >
               <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
@@ -487,7 +461,7 @@ const PersonalSpace = () => {
       </div>
 
       {/* Smart Filters Bar */}
-      <div className="flex items-center gap-[10px] bg-[var(--bg-card)] px-[16px] py-[10px] rounded-[10px] border border-[var(--border)] shadow-sm">
+      <div className="flex items-center sys-gap bg-[var(--bg-card)] px-[16px] sys-py rounded-[10px] border border-[var(--border)] shadow-sm">
         <div className="flex items-center gap-2 text-[var(--text-muted)] shrink-0">
           <Filter size={16} />
           <span className="text-[14px] font-semibold uppercase tracking-wider">Filters</span>
@@ -496,14 +470,14 @@ const PersonalSpace = () => {
         <input 
           type="text"
           placeholder="Search projects or tasks..."
-          className="flex-1 min-w-[180px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-300/30 transition-all"
+          className="flex-1 min-w-[180px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none transition-all filter-input"
           value={localFilters.search}
           onChange={e => setLocalFilters(prev => ({ ...prev, search: e.target.value }))}
         />
 
         {user?.isAdmin && (
           <select 
-            className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none focus:border-blue-500 transition-all"
+            className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none transition-all filter-select-team"
             value={localFilters.team}
             onChange={e => setLocalFilters(prev => ({ ...prev, team: e.target.value }))}
           >
@@ -513,7 +487,7 @@ const PersonalSpace = () => {
         )}
 
         <select 
-          className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none focus:border-emerald-500 transition-all"
+          className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none transition-all filter-select-project"
           value={localFilters.project}
           onChange={e => setLocalFilters(prev => ({ ...prev, project: e.target.value }))}
         >
@@ -522,7 +496,7 @@ const PersonalSpace = () => {
         </select>
 
         <select 
-          className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none focus:border-indigo-500 transition-all"
+          className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none transition-all filter-select-user"
           value={localFilters.user}
           onChange={e => setLocalFilters(prev => ({ ...prev, user: e.target.value }))}
         >
@@ -532,7 +506,7 @@ const PersonalSpace = () => {
 
         <button 
           onClick={() => setLocalFilters({ team: '', user: '', project: '', search: '' })}
-          className="h-[36px] px-4 text-[14px] font-semibold text-rose-500 hover:bg-rose-500/10 rounded-md transition-all shrink-0"
+          className="h-[36px] px-4 text-[14px] font-semibold rounded-md transition-all shrink-0 filter-clear-btn"
         >
           Clear
         </button>
@@ -541,7 +515,7 @@ const PersonalSpace = () => {
         <div className="flex items-center gap-2 shrink-0 border-l border-[var(--border)] pl-3">
           <ArrowUpDown size={14} className="text-[var(--text-muted)]" />
           <select
-            className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none focus:border-blue-500 transition-all"
+            className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none transition-all filter-select-sort"
             value={localSort}
             onChange={e => setLocalSort(e.target.value)}
           >
@@ -562,17 +536,17 @@ const PersonalSpace = () => {
       <div className="px-[20px] space-y-[10px]">
       {/* --- CONTENT AREA: STATS & TIME NAVIGATION --- */}
       <div className="ocd-card p-0 mb-[10px] shadow-xl border border-indigo-500/20 bg-[var(--bg-card)]">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between px-[12px] py-[12px] bg-indigo-500/5 border-b border-[var(--border)] gap-4 rounded-t-[7px]">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between px-[12px] py-[12px] stats-summary-bar gap-4 rounded-t-[7px]">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
               <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Total Hours:</span>
-              <span className="text-[14px] font-black text-indigo-400">
+              <span className="text-[14px] font-black stat-val-hours">
                 {((viewMode === 'daily' || viewMode === 'list') ? timesheetData?.grandTotalHours : projectTimesheetData?.grandTotalHours || 0).toFixed(2)}
               </span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
               <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Tasks:</span>
-              <span className="text-[14px] font-black text-emerald-400">
+              <span className="text-[14px] font-black stat-val-tasks">
                 {(viewMode === 'daily' || viewMode === 'list') ? timesheetData?.grandTotalTasks : projectTimesheetData?.grandTotalTasks || 0}
               </span>
             </div>
@@ -590,12 +564,6 @@ const PersonalSpace = () => {
                   { id: 't5', label: 'T5', color: 'rose', tooltip: 'T5: CREATED_AT → DATE_CHECKED (Complete Lifecycle)' }
                 ].map((m) => {
                   const isActive = selectedTimeMetric === m.id;
-                  const colorClass = 
-                    m.color === 'emerald' ? (isActive ? 'bg-emerald-500 text-white' : 'text-emerald-500 hover:bg-emerald-500/10') :
-                    m.color === 'sky' ? (isActive ? 'bg-sky-500 text-white' : 'text-sky-500 hover:bg-sky-500/10') :
-                    m.color === 'indigo' ? (isActive ? 'bg-indigo-500 text-white' : 'text-indigo-500 hover:bg-indigo-500/10') :
-                    m.color === 'orange' ? (isActive ? 'bg-orange-500 text-white' : 'text-orange-500 hover:bg-orange-500/10') :
-                    (isActive ? 'bg-rose-500 text-white' : 'text-rose-500 hover:bg-rose-500/10');
 
                   return (
                     <div key={m.id} className="relative group/time">
@@ -606,7 +574,7 @@ const PersonalSpace = () => {
 
                       <button
                         onClick={() => setSelectedTimeMetric(m.id)}
-                        className={`px-3 py-1.5 text-[14px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${colorClass} ${isActive ? 'shadow-md' : ''}`}
+                        className={`px-3 py-1.5 text-[14px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 metric-${m.id} ${isActive ? 'active shadow-md' : ''}`}
                       >
                         {m.label}
                       </button>
@@ -619,9 +587,9 @@ const PersonalSpace = () => {
 
           {/* Enhanced Year/Week/Month Picker + Navigation */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-indigo-500/10 p-1.5 rounded-xl border border-indigo-500/30 shadow-sm">
+            <div className="flex items-center gap-2 p-1.5 rounded-xl shadow-sm date-picker-wrapper">
               <select 
-                className="bg-[var(--bg-surface)] border border-indigo-500/20 rounded-lg h-[32px] px-2 text-[14px] font-black text-indigo-400 outline-none cursor-pointer hover:border-indigo-500 transition-all"
+                className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-year"
                 value={currentDate.getFullYear()}
                 onChange={(e) => {
                   const targetYear = parseInt(e.target.value);
@@ -643,7 +611,7 @@ const PersonalSpace = () => {
                     </span>
                     {timeRange === 'week' ? (
                       <select 
-                        className="bg-[var(--bg-surface)] border border-emerald-500/20 rounded-lg h-[32px] px-2 text-[14px] font-black text-emerald-500 outline-none cursor-pointer hover:border-emerald-500 transition-all"
+                        className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-sub"
                         value={getISOWeek(currentDate)}
                         onChange={(e) => {
                           const targetWeek = parseInt(e.target.value);
@@ -655,7 +623,7 @@ const PersonalSpace = () => {
                       </select>
                     ) : (
                       <select 
-                        className="bg-[var(--bg-surface)] border border-emerald-500/20 rounded-lg h-[32px] px-2 text-[14px] font-black text-emerald-500 outline-none cursor-pointer hover:border-emerald-500 transition-all"
+                        className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-sub"
                         value={currentDate.getMonth() + 1}
                         onChange={(e) => {
                           const targetMonth = parseInt(e.target.value) - 1;
@@ -689,7 +657,7 @@ const PersonalSpace = () => {
                     setCurrentDate(addDays(currentDate, -1));
                   }
                 }}
-                className="w-[32px] h-[32px] rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                className="w-[32px] h-[32px] rounded-lg flex items-center justify-center transition-all date-nav-btn"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -709,7 +677,7 @@ const PersonalSpace = () => {
                     setCurrentDate(addDays(currentDate, 1));
                   }
                 }}
-                className="w-[32px] h-[32px] rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                className="w-[32px] h-[32px] rounded-lg flex items-center justify-center transition-all date-nav-btn"
               >
                 <ChevronRight size={16} />
               </button>
@@ -718,7 +686,7 @@ const PersonalSpace = () => {
             {weekOffset !== 0 && (
               <button
                 onClick={() => setCurrentDate(new Date())}
-                className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider px-3 py-1.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 transition-all border border-indigo-500/20"
+                className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded transition-all date-today-btn"
               >
                 {timeRange === 'week' ? 'Current Week' : timeRange === 'month' ? 'Current Month' : timeRange === 'year' ? 'Current Year' : 'Today'}
               </button>

@@ -72,8 +72,8 @@ const Sidebar = () => {
   }
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full p-[10px] gap-[10px]">
-      <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} p-[10px] mb-[10px]`}>
+    <div className="flex flex-col h-full sys-p sys-gap">
+      <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} sys-p mb-[10px]`}>
         {!collapsed && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
             <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
@@ -89,7 +89,7 @@ const Sidebar = () => {
         {mainSections.map((section, idx) => (
           <div key={section.title} className="space-y-[10px]">
             {!collapsed && section.title && (
-              <h3 className="px-[10px] text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-[10px]">
+              <h3 className="sys-px text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-[10px]">
                 {section.title}
               </h3>
             )}
@@ -115,7 +115,7 @@ const Sidebar = () => {
       {/* System Section at the bottom */}
       <div className="mt-auto space-y-[10px] border-t border-white/5 pt-[10px]">
         {!collapsed && (
-          <h3 className="px-[10px] text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-[10px]">
+          <h3 className="sys-px text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-[10px]">
             {systemSection.title}
           </h3>
         )}
