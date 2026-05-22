@@ -1,0 +1,204 @@
+/* ============================================================
+   TAB 4 — PROJECTS
+   File: src/components/Projects.jsx
+   
+   Quản lý CSS cho khu vực Danh sách Dự án (Projects),
+   chế độ xem Bookshelf & Grid, và Modal Detail (Sách Mở).
+   ============================================================ */
+
+/* ── View Switcher Buttons ──
+   Projects.jsx:133, 140
+   was: hover:text-indigo-400 / active: bg-indigo-500 text-white
+   ------------------------------------------------------- */
+.tab-projects .view-btn {
+  color: var(--text-muted);
+}
+.tab-projects .view-btn:hover {
+  color: var(--c-indigo);
+}
+.tab-projects .view-btn.active {
+  background: var(--c-indigo);
+  color: var(--c-text-white);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Search Input Box ──
+   Projects.jsx:148, 149
+   ------------------------------------------------------- */
+.tab-projects .search-icon-box {
+  background: rgba(99, 102, 241, 0.05); /* indigo-500/5 */
+  border-right-color: var(--border);
+}
+.tab-projects .search-icon-box svg {
+  color: var(--text-muted);
+}
+/* When group focused */
+.tab-projects .search-group:focus-within .search-icon-box svg {
+  color: var(--c-indigo);
+}
+
+/* ── Loading Spinner ──
+   Projects.jsx:165, 166
+   ------------------------------------------------------- */
+.tab-projects .loading-spinner {
+  border-color: rgba(99, 102, 241, 0.2);
+  border-top-color: var(--c-indigo);
+}
+.tab-projects .loading-text {
+  color: var(--c-slate-500);
+}
+
+/* ==========================================
+   GRID VIEW
+   ========================================== */
+
+/* ── Grid Card Header (Image Placeholder) ──
+   Projects.jsx:202-206
+   ------------------------------------------------------- */
+.tab-projects .grid-placeholder-box {
+  border-color: #f1f5f9; /* slate-100 */
+}
+.tab-projects .grid-placeholder-tl { background: #dc2626; /* red-600 */ }
+.tab-projects .grid-placeholder-tr { background: #cbd5e1; /* slate-300 */ }
+.tab-projects .grid-placeholder-bl { background: #1e293b; /* slate-800 */ }
+.tab-projects .grid-placeholder-br { background: #94a3b8; /* slate-400 */ }
+
+/* ==========================================
+   BOOKSHELF VIEW
+   ========================================== */
+
+/* ── Scroll Navigation Arrows ──
+   Projects.jsx:260, 268
+   was: text-amber-400
+   ------------------------------------------------------- */
+.tab-projects .shelf-nav-btn {
+  background: linear-gradient(to bottom, #78350f, #451a03); /* Mahogany wood */
+  color: #fbbf24; /* amber-400 */
+  border-color: rgba(180, 83, 9, 0.5);
+}
+.tab-projects .shelf-nav-btn:hover {
+  background: linear-gradient(to bottom, #92400e, #78350f);
+}
+
+/* ── Book Spine Badges & Elements ──
+   Projects.jsx:374, 375
+   ------------------------------------------------------- */
+.tab-projects .book-task-badge {
+  background: rgba(15, 23, 42, 0.6); /* slate-900/60 */
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.tab-projects .book:hover .book-task-badge {
+  border-color: rgba(129, 140, 248, 0.5); /* indigo-400/50 */
+}
+.tab-projects .book-task-text {
+  color: #a5b4fc; /* indigo-300 */
+}
+
+/* ── Wood Bookend ──
+   Projects.jsx:400
+   ------------------------------------------------------- */
+.tab-projects .bookend-text {
+  color: rgba(245, 158, 11, 0.5); /* amber-500/50 */
+}
+
+/* ── Intelligence Vault Banner ──
+   Projects.jsx:406, 407
+   ------------------------------------------------------- */
+.tab-projects .vault-banner {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+.tab-projects .vault-banner-text {
+  color: #818cf8; /* indigo-400 */
+}
+
+/* ==========================================
+   MODAL DETAIL (OPEN BOOK)
+   ========================================== */
+
+/* ── Background & Overlays ──
+   Projects.jsx:425
+   ------------------------------------------------------- */
+.tab-projects .modal-backdrop {
+  background: rgba(11, 15, 26, 0.85); /* #0B0F1A/85 */
+}
+.tab-projects .book-open-bg {
+  background-color: #faf8f5; /* Paper color */
+  border-color: rgba(214, 211, 209, 0.4); /* stone-300/40 */
+}
+
+/* ── Left Page Header & Titles ──
+   Projects.jsx:472, 498, 500, 508
+   ------------------------------------------------------- */
+.tab-projects .page-header {
+  border-bottom-color: #d6d3d1; /* stone-300 */
+  color: #a8a29e; /* stone-400 */
+}
+.tab-projects .page-sub-title {
+  color: #a8a29e; /* stone-400 */
+}
+.tab-projects .page-main-title {
+  color: #292524; /* stone-800 */
+}
+.tab-projects .page-desc-text {
+  color: #57534e; /* stone-600 */
+}
+.tab-projects .page-divider {
+  background-color: #d6d3d1; /* stone-300 */
+}
+
+/* ── Registry Info Box ──
+   Projects.jsx:512, 514, 523
+   ------------------------------------------------------- */
+.tab-projects .registry-box {
+  background: rgba(245, 245, 244, 0.5); /* stone-100/50 */
+  border-color: rgba(231, 229, 228, 0.5); /* stone-200/50 */
+}
+.tab-projects .registry-label {
+  color: #a8a29e; /* stone-400 */
+}
+.tab-projects .registry-value {
+  color: #57534e; /* stone-600 */
+}
+.tab-projects .registry-value-highlight {
+  color: #4f46e5; /* indigo-600 */
+}
+
+/* ── Right Page Content ──
+   Projects.jsx:561, 571, 577, 593
+   ------------------------------------------------------- */
+.tab-projects .story-text {
+  color: #44403c; /* stone-700 */
+}
+.tab-projects .story-text::first-letter {
+  color: #292524; /* stone-800 */
+}
+
+.tab-projects .metrics-box {
+  background: rgba(245, 245, 244, 0.5); /* stone-100/50 */
+  border-color: rgba(231, 229, 228, 0.5); /* stone-200/50 */
+}
+.tab-projects .metrics-val {
+  color: #292524; /* stone-800 */
+}
+.tab-projects .status-secure {
+  color: #047857; /* emerald-700 */
+}
+
+/* ── Right Page Footer & Buttons ──
+   Projects.jsx:603
+   ------------------------------------------------------- */
+.tab-projects .btn-close-vol {
+  background-color: #292524; /* stone-800 */
+  color: #e7e5e4; /* stone-200 */
+}
+.tab-projects .btn-close-vol:hover {
+  background-color: #e11d48; /* rose-600 */
+  color: #ffffff;
+}
+
+.tab-projects .class-confidential {
+  background: rgba(244, 63, 94, 0.1); /* rose-500/10 */
+  color: #e11d48; /* rose-600 */
+  border-color: rgba(244, 63, 94, 0.2);
+}

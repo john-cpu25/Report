@@ -1,0 +1,147 @@
+/* ============================================================
+   TAB 10 — LIBRARY (Workflows)
+   File: src/components/Workflows.jsx
+   ============================================================ */
+
+/* ── Division View ── */
+.lib-division-banner {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.lib-division-banner-title {
+  color: white;
+}
+
+.lib-division-banner-subtitle {
+  color: #94a3b8; /* slate-400 */
+}
+
+.lib-division-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.lib-division-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.lib-shelf-container {
+  background: rgba(15, 23, 42, 0.4);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.lib-scroll-btn {
+  background: linear-gradient(to bottom, #78350f, #451a03);
+  color: #fbbf24;
+  border-color: rgba(180, 83, 9, 0.5);
+}
+
+.lib-scroll-btn:hover {
+  background: linear-gradient(to bottom, #92400e, #78350f);
+}
+
+/* ── Book Modal UI ── */
+.lib-book-overlay {
+  background: rgba(7, 11, 19, 0.9);
+}
+
+.lib-book-btn-primary {
+  background: #059669;
+  color: white;
+  border-color: rgba(52, 211, 153, 0.3);
+}
+.lib-book-btn-primary:hover {
+  background: #10b981;
+}
+
+.lib-book-btn-danger {
+  background: #e11d48;
+  color: white;
+  border-color: rgba(251, 113, 133, 0.3);
+}
+.lib-book-btn-danger:hover {
+  background: #f43f5e;
+}
+
+.lib-book-btn-edit {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+.lib-book-btn-edit:hover {
+  color: #818cf8;
+  border-color: rgba(129, 140, 248, 0.5);
+}
+.lib-book-btn-edit.active {
+  background: #6366f1;
+  border-color: #a5b4fc;
+  color: white;
+}
+
+.lib-book-btn-close {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+.lib-book-btn-close:hover {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+/* ── Paper & Pages ── */
+.lib-paper {
+  background: #faf8f5;
+  border-color: rgba(214, 211, 209, 0.5);
+}
+
+.lib-text-muted {
+  color: #a8a29e;
+}
+
+.lib-text-main {
+  color: #292524;
+}
+
+.lib-text-desc {
+  color: #57534e;
+}
+
+.lib-text-note {
+  color: #312e81;
+}
+
+.lib-border-divider {
+  border-color: #e7e5e4;
+}
+
+.lib-btn-add-step {
+  border-color: #d6d3d1;
+  color: #78716c;
+}
+.lib-btn-add-step:hover {
+  border-color: #818cf8;
+  background: rgba(238, 242, 255, 0.2);
+  color: #4f46e5;
+}
+
+/* Page Turn Brass Buttons */
+.lib-book-nav-btn {
+  background: linear-gradient(to bottom, #f3dfa2, #cfa043, #8d6a1f);
+  color: #2c1e03;
+  border-color: rgba(255, 233, 179, 0.3);
+}
+.lib-book-nav-btn:hover {
+  background: linear-gradient(to bottom, #fbecc0, #ae8129);
+}
+
+.lib-book-close-btn {
+  background: #292524;
+  color: #e7e5e4;
+}
+.lib-book-close-btn:hover {
+  background: #e11d48;
+  color: white;
+}

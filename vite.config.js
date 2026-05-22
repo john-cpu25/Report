@@ -12,14 +12,14 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@ui': path.resolve(__dirname, '../UI'),
+      '@ui': path.resolve(__dirname, './src/UI'),
     },
   },
   server: {
     fs: {
       allow: [
-        // Allow serving files from UI/ folder (parent of project)
-        path.resolve(__dirname, '../UI'),
+        // Allow serving files from UI/ folder
+        path.resolve(__dirname, './src/UI'),
         // Default: project root
         '.',
       ],
