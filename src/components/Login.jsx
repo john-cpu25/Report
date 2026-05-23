@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import CelestialBackground from '../CelestialBackground';
-import RincovitchLogo from '../RincovitchLogo';
+import loginBg from '../assets/login_bg_sign.png';
 import { LogIn } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -10,32 +9,25 @@ const Login = () => {
 
     return (
         <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#020617] px-4">
-            {/* Background Animation */}
+            {/* Background Image */}
             <div className="absolute inset-0 z-0">
-                <CelestialBackground />
+                <img 
+                    src={loginBg} 
+                    alt="Background" 
+                    className="w-full h-full object-cover opacity-90 scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/40 via-[#020617]/20 to-[#020617]/80"></div>
             </div>
 
-            {/* Centered Glassmorphism Card */}
+            {/* Circular Glassmorphism Card */}
             <motion.div 
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="relative z-10 w-full max-w-md p-10 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl flex flex-col items-center text-center"
+                className="relative z-10 w-[240px] h-[240px] rounded-full border border-white/20 bg-white/10 backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center text-center overflow-hidden hover:bg-white/20 transition-colors duration-500"
             >
-                {/* Logo Section */}
-                <div className="mb-8 scale-[1.3] hover:scale-[1.35] transition-transform duration-300">
-                    <RincovitchLogo />
-                </div>
-
-                <h1 className="text-3xl font-black text-white mb-2 tracking-tight uppercase bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-400">
-                    Weekly Report
-                </h1>
-                <p className="text-blue-200/60 mb-8 font-light text-xs uppercase tracking-[0.15em]">
-                    Intelligence & Operational Management
-                </p>
-
                 {error && (
-                    <div className="w-full mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold text-left">
+                    <div className="absolute top-4 w-[80%] p-2 rounded-xl bg-red-500/20 text-red-400 text-[10px] font-bold text-center">
                         {error}
                     </div>
                 )}
@@ -43,23 +35,12 @@ const Login = () => {
                 <button
                     onClick={login}
                     disabled={loading}
-                    className="group relative w-full py-4 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xs uppercase tracking-[0.15em] shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden"
+                    className="group relative px-8 py-4 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-sm uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(59,130,246,0.5)] hover:shadow-[0_0_50px_rgba(59,130,246,0.8)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                    <LogIn size={16} className="group-hover:translate-x-1 transition-transform" />
-                    <span>Sign in with Outlook</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                    <LogIn size={18} className="group-hover:translate-x-1 transition-transform" />
+                    <span>Sign In</span>
                 </button>
-
-                <div className="mt-8 flex items-center gap-4 text-[9px] text-white/30 uppercase tracking-[0.25em]">
-                    <div className="h-px w-6 bg-white/10"></div>
-                    Corporate Authentication
-                    <div className="h-px w-6 bg-white/10"></div>
-                </div>
-
-                {/* Footer Attribution (Inside login card for cleaner layout) */}
-                <div className="text-center text-white/20 text-[9px] font-bold tracking-widest uppercase mt-8 pt-6 border-t border-white/5 w-full">
-                    © 2026 Rincovitch Operations.
-                </div>
             </motion.div>
         </div>
     );
