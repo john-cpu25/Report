@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const queryParams = new URLSearchParams(window.location.search);
         const isAdminMode = queryParams.get('admin_mode') === 'true';
+        const isLeaderMode = queryParams.get('leader_mode') === 'true';
 
         if (isAdminMode) {
             console.log('[AuthContext] Admin Bypass Mode Active');
@@ -62,6 +63,39 @@ export const AuthProvider = ({ children }) => {
                     isAdmin: true,
                     isLeader: true,
                     team: 'Management',
+                    location: 'VIETNAM',
+                    image: null
+                });
+            }
+            setLoading(false);
+            return;
+        }
+
+        if (isLeaderMode) {
+            console.log('[AuthContext] Leader Bypass Mode Active');
+            const savedLeaderUser = localStorage.getItem('bypass_leader_profile');
+            if (savedLeaderUser) {
+                try {
+                    setUser(JSON.parse(savedLeaderUser));
+                } catch (e) {
+                    console.error('[AuthContext] Error parsing saved leader bypass user:', e);
+                    setUser({
+                        name: 'Nhân Nguyễn',
+                        email: 'leader@bypass.local',
+                        isAdmin: false,
+                        isLeader: true,
+                        team: 'BIM',
+                        location: 'VIETNAM',
+                        image: null
+                    });
+                }
+            } else {
+                setUser({
+                    name: 'Nhân Nguyễn',
+                    email: 'leader@bypass.local',
+                    isAdmin: false,
+                    isLeader: true,
+                    team: 'BIM',
                     location: 'VIETNAM',
                     image: null
                 });

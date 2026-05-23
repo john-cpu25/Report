@@ -9,6 +9,7 @@ import { calculateDailyWorkingMinutes, calculateTaskMetrics } from './performanc
 export const usePersonalSpaceEngine = (params) => {
   const {
     filteredData = [],
+    strictlyFilteredData = [],
     analystTasks = [],
     filterOptions = { users: [] },
     weekOffset = 0,
@@ -20,25 +21,25 @@ export const usePersonalSpaceEngine = (params) => {
   // Project Grouping View
   const projectGroups = useMemo(() => {
     const groups = {};
-    filteredData.forEach(t => {
+    strictlyFilteredData.forEach(t => {
       const key = t.project || 'Unassigned';
       if (!groups[key]) groups[key] = { name: key, tasks: [], totalTime: 0 };
       groups[key].tasks.push(t);
       groups[key].totalTime += (t.score || 0);
     });
     return Object.values(groups).sort((a, b) => a.name.localeCompare(b.name));
-  }, [filteredData]);
+  }, [strictlyFilteredData]);
 
   const teamGroups = useMemo(() => {
     const groups = {};
-    filteredData.forEach(t => {
+    strictlyFilteredData.forEach(t => {
       const key = t.team || 'Unknown Team';
       if (!groups[key]) groups[key] = { name: key, tasks: [], totalTime: 0 };
       groups[key].tasks.push(t);
       groups[key].totalTime += (t.score || 0);
     });
     return Object.values(groups).sort((a, b) => a.name.localeCompare(b.name));
-  }, [filteredData]);
+  }, [strictlyFilteredData]);
 
   const ganttTimeline = useMemo(() => {
     const targetDate = addDays(startOfDay(new Date()), weekOffset * 7);
@@ -69,7 +70,7 @@ export const usePersonalSpaceEngine = (params) => {
 
   const workloadData = useMemo(() => {
     return ganttTimeline.map(day => {
-      const activeTasks = filteredData.filter(task => {
+      const activeTasks = strictlyFilteredData.filter(task => {
         let rStart = task.date_start;
         let rEnd = task.date_end;
         if (selectedTimeMetric === 't2') rEnd = task.date_complete;
@@ -88,11 +89,11 @@ export const usePersonalSpaceEngine = (params) => {
       });
       return activeTasks.length;
     });
-  }, [filteredData, ganttTimeline, selectedTimeMetric]);
+  }, [strictlyFilteredData, ganttTimeline, selectedTimeMetric]);
 
   const weeklyData = useMemo(() => {
     const groups = {};
-    filteredData.forEach(task => {
+    strictlyFilteredData.forEach(task => {
       const date = task.dateObj || new Date();
       const weekStart = startOfWeek(date, { weekStartsOn: 1 });
       const weekKey = format(weekStart, 'yyyy-ww');
@@ -109,10 +110,10 @@ export const usePersonalSpaceEngine = (params) => {
     return Object.entries(groups)
       .sort((a, b) => b[0].localeCompare(a[0]))
       .map(([key, data]) => ({ key, ...data }));
-  }, [filteredData]);
+  }, [strictlyFilteredData]);
 
   const timesheetData = useMemo(() => {
-    const dataToProcess = filteredData;
+    const dataToProcess = strictlyFilteredData;
     if (!dataToProcess || dataToProcess.length === 0) {
       const today = new Date();
       const currentMonday = startOfWeek(today, { weekStartsOn: 1 });
@@ -128,7 +129,7 @@ export const usePersonalSpaceEngine = (params) => {
     const weekDates = [0, 1, 2, 3, 4].map(i => addDays(targetMonday, i));
     const weekNum = getISOWeek(targetMonday);
 
-    const weekTasks = filteredData.filter(t => {
+    const weekTasks = strictlyFilteredData.filter(t => {
       let rangeStart = t.date_start;
       let rangeEnd = t.date_end;
       if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
@@ -238,7 +239,7 @@ export const usePersonalSpaceEngine = (params) => {
       grandTotalHours: totalPerDay.reduce((a, b) => a + b, 0),
       grandTotalTasks: tasksPerDay.reduce((a, b) => a + b, 0)
     };
-  }, [filteredData, weekOffset, selectedTimeMetric]);
+  }, [strictlyFilteredData, weekOffset, selectedTimeMetric]);
 
   const projectTimesheetData = useMemo(() => {
     const today = new Date();
@@ -247,7 +248,7 @@ export const usePersonalSpaceEngine = (params) => {
     const weekDates = [0, 1, 2, 3, 4].map(i => addDays(targetMonday, i));
     const weekNum = getISOWeek(targetMonday);
 
-    const weekTasks = filteredData.filter(t => {
+    const weekTasks = strictlyFilteredData.filter(t => {
       let rangeStart = t.date_start;
       let rangeEnd = t.date_end;
       if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
@@ -353,7 +354,7 @@ export const usePersonalSpaceEngine = (params) => {
       grandTotalHours,
       grandTotalTasks
     };
-  }, [filteredData, weekOffset, selectedTimeMetric]);
+  }, [strictlyFilteredData, weekOffset, selectedTimeMetric]);
 
   const deepAnalysisData = useMemo(() => {
     if (filteredData.length === 0) return null;
@@ -411,11 +412,11 @@ export const usePersonalSpaceEngine = (params) => {
 
   const efficiencyData = useMemo(() => {
     const data = analystTasks || [];
-    // Only show users who have tasks in the current filtered dataset
-    const activeUsers = [...new Set(filteredData.map(t => t.userName).filter(Boolean))];
+    // Only show users who have tasks in the current strictly filtered dataset
+    const activeUsers = [...new Set(strictlyFilteredData.map(t => t.userName).filter(Boolean))];
     const users = activeUsers.length > 0 ? activeUsers : filterOptions.users;
     return users.map(uName => {
-      const uTasks = filteredData.filter(t => t.userName === uName);
+      const uTasks = strictlyFilteredData.filter(t => t.userName === uName);
       const metrics = uTasks.map(t => calculateTaskMetrics(t));
       const projectTime = metrics.reduce((acc, curr) => acc + (curr.t3 || 0), 0) / 60;
       const checkTime = 0; // Temporarily disabled
@@ -427,7 +428,7 @@ export const usePersonalSpaceEngine = (params) => {
       const performance = Math.min(((projectTime + otTime) / 40) * 100, 100);
       return { name: uName, projectTime, checkTime, otTime, leaveDays, freeTime, efficiency, performance };
     }).sort((a, b) => b.projectTime - a.projectTime);
-  }, [filteredData, analystTasks, filterOptions.users, manualData, selectedTimeMetric]);
+  }, [strictlyFilteredData, analystTasks, filterOptions.users, manualData, selectedTimeMetric]);
 
   return {
     projectGroups,

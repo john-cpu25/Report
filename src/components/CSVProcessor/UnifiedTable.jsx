@@ -151,15 +151,15 @@ const UnifiedTable = (props) => {
               <HeaderWithTooltip id="T5" color="text-[var(--text-contrast)]" stickyOffset={stickyOffset} rowSpan={2} />
             </tr>
             <tr className="text-[12px] font-black uppercase tracking-wide text-[var(--text-muted)] bg-[var(--bg-card)]" style={{ height: '32px' }}>
-              <th className="py-[4px] text-left border-r border-b border-[var(--border)] min-w-[110px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset, paddingLeft: '12px', paddingRight: '12px' }} onClick={() => handleSort('createdBy')}>create_by</th>
-              <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('createdAt')}>created_at</th>
-              <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStart')}>date_start</th>
-              <th className="px-[8px] py-[4px] text-center border-r-2 border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateEnd')}>date_end</th>
-              <th className="py-[4px] text-left border-r border-b border-[var(--border)] min-w-[110px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset, paddingLeft: '12px', paddingRight: '12px' }} onClick={() => handleSort('userName')}>user_id</th>
-              <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateAccepted')}>date_accepted</th>
-              <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStarted')}>date_started</th>
-              <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateComplete')}>date_complete</th>
-              <th className="px-[8px] py-[4px] text-center border-r-2 border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateChecked')}>date_checked</th>
+              <th className="py-[4px] text-left border-r border-b border-[var(--border)] min-w-[110px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset, paddingLeft: '12px', paddingRight: '12px' }} onClick={() => handleSort('createdBy')}>CREATE BY</th>
+              <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('createdAt')}>CREATE</th>
+              <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStart')}>START</th>
+              <th className="px-[8px] py-[4px] text-center border-r-2 border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateEnd')}>END</th>
+              <th className="py-[4px] text-left border-r border-b border-[var(--border)] min-w-[110px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset, paddingLeft: '12px', paddingRight: '12px' }} onClick={() => handleSort('userName')}>USER</th>
+              <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateAccepted')}>ACCEPTED</th>
+              <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStarted')}>STARTED</th>
+              <th className="px-[8px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateComplete')}>COMPLETED</th>
+              <th className="px-[8px] py-[4px] text-center border-r-2 border-b border-[var(--border)] min-w-[115px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateChecked')}>CHECKED</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">

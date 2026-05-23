@@ -180,10 +180,24 @@ const PersonalSpace = () => {
     }
   }, [viewMode]);
 
+  const rbacBaseTasks = useMemo(() => {
+    const tasks = analystTasks || [];
+    if (user?.isAdmin) return tasks;
+    
+    const uTeam = (user?.team || '').toString().trim().toLowerCase();
+    const uName = (user?.name || '').toLowerCase();
+    
+    return tasks.filter(t => {
+      const tTeam = (t.team || '').toString().trim().toLowerCase();
+      const isMyTask = (t.createdBy || '').toLowerCase() === uName || 
+                       (t.userName || '').toLowerCase() === uName;
+      return tTeam === uTeam || isMyTask;
+    });
+  }, [analystTasks, user]);
+
   // Dynamic Options for Filters
   const filterOptions = useMemo(() => {
-    // We use all tasks to populate the base options
-    const data = analystTasks || [];
+    const data = rbacBaseTasks;
     const projects = [...new Set(data.map(t => t.project))].sort();
     const users = [...new Set(data.map(t => t.userName))].sort();
     // Include teams from both tasks AND the full user/team map so teams always appear
@@ -191,10 +205,10 @@ const PersonalSpace = () => {
     const mapTeams = Object.values(localMaps.teamMap || {});
     const teams = [...new Set([...taskTeams, ...mapTeams])].sort().filter(Boolean);
     return { projects, users, teams };
-  }, [analystTasks, localMaps.teamMap]);
+  }, [rbacBaseTasks, localMaps.teamMap]);
 
   const filteredData = useMemo(() => {
-    const tasks = analystTasks || [];
+    const tasks = rbacBaseTasks;
     if (tasks.length === 0) return [];
     
     const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -218,13 +232,6 @@ const PersonalSpace = () => {
       }
 
       if (!dateMatch) return false;
-
-      // 1.5 Role-Based Self-Data Filter
-      if (!user?.isAdmin && !user?.isLeader) {
-        if (t.userName && t.userName.toString().trim().toLowerCase() !== user?.name?.trim().toLowerCase()) {
-          return false;
-        }
-      }
 
       // 2. Team Filter
       const matchTeam = !localFilters.team || 
@@ -261,9 +268,24 @@ const PersonalSpace = () => {
       default: break;
     }
     return sorted;
-  }, [analystTasks, localFilters, timeRange, localSort, user, currentDate, viewMode]);
+  }, [rbacBaseTasks, localFilters, timeRange, localSort, user, currentDate, viewMode]);
 
-  const { projectGroups, teamGroups, ganttTimeline, workloadData, weeklyData, timesheetData, projectTimesheetData, deepAnalysisData, efficiencyData } = usePersonalSpaceEngine({ filteredData, analystTasks, filterOptions, weekOffset, timeRange, selectedTimeMetric, manualData });
+  const strictlyFilteredData = useMemo(() => {
+    if (user?.isAdmin) return filteredData;
+    const uName = (user?.name || '').toLowerCase();
+    
+    if (user?.isLeader) {
+      return filteredData.filter(t => 
+        (t.createdBy || '').toLowerCase() === uName ||
+        (t.userName || '').toLowerCase() === uName
+      );
+    }
+    return filteredData.filter(t => 
+      (t.userName || '').toLowerCase() === uName
+    );
+  }, [filteredData, user]);
+
+  const { projectGroups, teamGroups, ganttTimeline, workloadData, weeklyData, timesheetData, projectTimesheetData, deepAnalysisData, efficiencyData } = usePersonalSpaceEngine({ filteredData, strictlyFilteredData, analystTasks, filterOptions, weekOffset, timeRange, selectedTimeMetric, manualData });
 
   const toggleWeek = (key) => {
     setExpandedWeeks(prev => ({ ...prev, [key]: !prev[key] }));
@@ -583,7 +605,7 @@ const PersonalSpace = () => {
         <div className="personal-table-wrapper">
           <div className="max-h-[calc(100vh-335px)] overflow-auto custom-scrollbar sticky-header-container">
             <UnifiedTable 
-              data={filteredData}
+              data={strictlyFilteredData}
               columnFilters={columnFilters}
               setColumnFilters={setColumnFilters}
               sortConfig={sortConfig}
