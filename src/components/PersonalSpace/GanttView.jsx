@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, isSameDay, addDays, differenceInHours, differenceInCalendarMonths, differenceInDays } from 'date-fns';
+import { format, isSameDay, addDays, differenceInHours, differenceInCalendarMonths, differenceInDays, startOfDay } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, TrendingUp } from 'lucide-react';
 
@@ -45,7 +45,7 @@ const GanttView = ({
           </div>
 
           {/* Gantt Rows */}
-          <div className="max-h-[calc(100vh-530px)] min-h-[100px] overflow-y-auto">
+          <div className="min-h-[100px]">
             <AnimatePresence initial={false}>
               {projectGroups.map(group => {
                 const chartStart = ganttTimeline[0];
@@ -67,12 +67,40 @@ const GanttView = ({
                   if (!endDate || isNaN(endDate.getTime())) endDate = addDays(startDate, 1);
                   if (endDate < startDate) endDate = addDays(startDate, 1);
                   
-                  const startOffsetRaw = timeRange === 'day' ? differenceInHours(startDate, chartStart) : 
-                                         timeRange === 'year' ? differenceInCalendarMonths(startDate, chartStart) : 
-                                         differenceInDays(startDate, chartStart);
-                  const durationRaw = timeRange === 'day' ? differenceInHours(endDate, startDate) : 
-                                      timeRange === 'year' ? differenceInCalendarMonths(endDate, startDate) + 1 : 
-                                      differenceInDays(endDate, startDate) + 1;
+                  let startOffsetRaw;
+                  let durationRaw;
+
+                  if (timeRange === 'day') {
+                    startOffsetRaw = differenceInHours(startDate, chartStart);
+                    durationRaw = differenceInHours(endDate, startDate);
+                  } else if (timeRange === 'year') {
+                    startOffsetRaw = differenceInCalendarMonths(startDate, chartStart);
+                    durationRaw = differenceInCalendarMonths(endDate, startDate) + 1;
+                  } else {
+                    const sd = startOfDay(startDate);
+                    const ed = startOfDay(endDate);
+                    const cs = startOfDay(chartStart);
+                    const ce = startOfDay(ganttTimeline[ganttTimeline.length - 1]);
+
+                    if (sd > ce || ed < cs) {
+                      startOffsetRaw = totalDays;
+                      durationRaw = 0;
+                    } else {
+                      const sIdx = ganttTimeline.findIndex(d => startOfDay(d) >= sd);
+                      let eIdx = -1;
+                      for (let i = ganttTimeline.length - 1; i >= 0; i--) {
+                        if (startOfDay(ganttTimeline[i]) <= ed) {
+                          eIdx = i;
+                          break;
+                        }
+                      }
+                      startOffsetRaw = sIdx;
+                      if (sd < cs) {
+                        startOffsetRaw = -1;
+                      }
+                      durationRaw = eIdx - startOffsetRaw + 1;
+                    }
+                  }
                   
                   const renderOffset = Math.max(0, startOffsetRaw);
                   const overflowLeft = startOffsetRaw < 0 ? Math.abs(startOffsetRaw) : 0;
@@ -138,22 +166,69 @@ const GanttView = ({
                           })}
                         </div>
 
-                        {/* Project Aggregated Bar */}
-                        <motion.div 
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: `${(projectDuration / totalDays) * 100}%` }}
-                          style={{ 
-                            marginLeft: `${(minOffset / totalDays) * 100}%`,
-                            backgroundColor: `${getProjectColor(group.name)}20`,
-                            border: `1.5px solid ${getProjectColor(group.name)}`,
-                            boxShadow: `0 0 12px ${getProjectColor(group.name)}30`,
-                            background: `linear-gradient(to right, ${getProjectColor(group.name)}40, ${getProjectColor(group.name)}10)`,
-                            zIndex: 5
-                          }}
-                          className="h-6 rounded-[6px] relative overflow-hidden group/bar flex items-center px-2"
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent pointer-events-none" />
-                        </motion.div>
+                        {/* Project Aggregated Bar - Segmented */}
+                        <div className="absolute top-0 left-0 w-full h-full flex items-center">
+                          {(() => {
+                            const activeIndices = new Set();
+                            visibleTasks.forEach(task => {
+                              for (let i = 0; i < task.renderDuration; i++) {
+                                const idx = Math.floor(task.renderOffset) + i;
+                                if (idx >= 0 && idx < totalDays) {
+                                  activeIndices.add(idx);
+                                }
+                              }
+                            });
+                            
+                            if (activeIndices.size === 0) return null;
+
+                            const sortedIndices = Array.from(activeIndices).sort((a, b) => a - b);
+                            const segments = [];
+                            let currentSegment = null;
+
+                            sortedIndices.forEach(idx => {
+                              if (!currentSegment) {
+                                currentSegment = { start: idx, end: idx };
+                              } else if (idx === currentSegment.end + 1) {
+                                currentSegment.end = idx;
+                              } else {
+                                segments.push(currentSegment);
+                                currentSegment = { start: idx, end: idx };
+                              }
+                            });
+                            if (currentSegment) segments.push(currentSegment);
+                            
+                            return segments.map((seg, i) => {
+                              const duration = seg.end - seg.start + 1;
+                              const widthPct = (duration / totalDays) * 100;
+                              const leftPct = (seg.start / totalDays) * 100;
+                              return (
+                                <motion.div
+                                  key={i}
+                                  initial={{ opacity: 0, width: 0 }}
+                                  animate={{ opacity: 1, width: `${widthPct}%` }}
+                                  style={{
+                                    left: `${leftPct}%`,
+                                    paddingRight: '4px',
+                                    paddingLeft: '4px',
+                                    zIndex: 5
+                                  }}
+                                  className="absolute h-full flex items-center justify-center"
+                                >
+                                  <div 
+                                    className="w-full h-[24px] rounded-[6px] relative overflow-hidden" 
+                                    style={{ 
+                                      backgroundColor: `${getProjectColor(group.name)}30`,
+                                      border: `1.5px solid ${getProjectColor(group.name)}`,
+                                      boxShadow: `0 0 12px ${getProjectColor(group.name)}30`
+                                    }} 
+                                  >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent pointer-events-none" />
+                                  </div>
+                                </motion.div>
+                              );
+                            });
+                          })()}
+                        </div>
                       </div>
                     </div>
 

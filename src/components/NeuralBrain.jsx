@@ -18,19 +18,15 @@ const PALETTE = {
   pulseT5: 'rgba(245, 158, 11, 0.95)'        // Amber/Orange (Low priority)
 };
 
-const NeuralBrain = () => {
+const NeuralBrain = ({ filteredTasks = [], timeRange, setTimeRange }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const { dashboardUsers: users, dashboardTasks: tasks, isDashboardLoading: loading } = useApp();
+  const { dashboardUsers: users, isDashboardLoading: loading } = useApp();
 
-  // Filter States
-  const [selectedTeam, setSelectedTeam] = useState('ALL TEAMS');
-  const [timeRange, setTimeRange] = useState('WEEK');
-
-  // Reset selected node when filters change to avoid sidebar data mismatch
+  // Reset selected node when filtered data changes
   useEffect(() => {
     setSelectedNode(null);
-  }, [selectedTeam, timeRange]);
+  }, [filteredTasks]);
 
   // Interactive 3D Camera / Engine States
   const [angleX, setAngleX] = useState(-0.3); // Rotation around X-axis
@@ -51,46 +47,18 @@ const NeuralBrain = () => {
   const brainData = useMemo(() => {
     if (!users || users.length === 0) return { nodes: [], synapses: [] };
 
-    // 1. Filter tasks by time range
-    let filteredTasks = tasks;
-    const now = new Date();
-    if (timeRange === 'WEEK') {
-      const limit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      filteredTasks = filteredTasks.filter(t => new Date(t.created_at || t.date) >= limit);
-    } else if (timeRange === 'MONTH') {
-      const limit = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      filteredTasks = filteredTasks.filter(t => new Date(t.created_at || t.date) >= limit);
-    } else if (timeRange === 'YEAR') {
-      const limit = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-      filteredTasks = filteredTasks.filter(t => new Date(t.created_at || t.date) >= limit);
-    }
+    // Filter users to only those involved in the filteredTasks
+    const activeUserIdentifiers = new Set();
+    filteredTasks.forEach(t => {
+      if (t.createdBy) activeUserIdentifiers.add(t.createdBy.toLowerCase());
+      if (t.userName) activeUserIdentifiers.add(t.userName.toLowerCase());
+    });
 
-    // 2. Filter users by selected team
-    let filteredUsers = users;
-    if (selectedTeam !== 'ALL TEAMS') {
-      // Find members of selected team
-      const teamMembers = users.filter(u => (u.team || '').toUpperCase().includes(selectedTeam.toUpperCase()));
-      const teamMemberIds = new Set(teamMembers.map(u => u.id));
-
-      // Find creators of tasks assigned to these members
-      const managerIds = new Set();
-      filteredTasks.forEach(t => {
-        const creatorName = t.create_by || 'Unknown';
-        const assigneeName = t.user_id || 'Unknown';
-
-        // Check if assignee is in the team
-        const matchedAssignee = users.find(u => u.id === assigneeName || u.name === assigneeName || u.email === assigneeName);
-        if (matchedAssignee && teamMemberIds.has(matchedAssignee.id)) {
-          const matchedCreator = users.find(u => u.id === creatorName || u.name === creatorName || u.email === creatorName);
-          if (matchedCreator) {
-            managerIds.add(matchedCreator.id);
-          }
-        }
-      });
-
-      // Filtered users = team members + connected managers
-      filteredUsers = users.filter(u => teamMemberIds.has(u.id) || managerIds.has(u.id));
-    }
+    const filteredUsers = users.filter(u => 
+      activeUserIdentifiers.has(u.id.toLowerCase()) || 
+      (u.name && activeUserIdentifiers.has(u.name.toLowerCase())) || 
+      (u.email && activeUserIdentifiers.has(u.email.toLowerCase()))
+    );
 
     const userMap = new Map();
     filteredUsers.forEach(u => {
@@ -104,8 +72,8 @@ const NeuralBrain = () => {
     const taskRelations = []; // relationships mapping creator -> assignee
 
     filteredTasks.forEach(t => {
-      const creatorName = t.create_by || 'Unknown';
-      const assigneeName = t.user_id || 'Unknown';
+      const creatorName = t.createdBy || 'Unknown';
+      const assigneeName = t.userName || 'Unknown';
 
       let creatorUser = userMap.get(creatorName) || userMap.get(creatorName.toLowerCase());
       let assigneeUser = userMap.get(assigneeName) || userMap.get(assigneeName.toLowerCase());
@@ -126,7 +94,7 @@ const NeuralBrain = () => {
         assigneeName: assigneeUser.name,
         priority: t.priority_level || t.priority || 'T3',
         status: t.status,
-        taskName: t.name || t.task_name || t.task || 'Report Log'
+        taskName: t.taskName || 'Report Log'
       });
     });
 
@@ -232,7 +200,7 @@ const NeuralBrain = () => {
       nodes,
       synapses: Array.from(synapseMap.values())
     };
-  }, [users, tasks, selectedTeam, timeRange]);
+  }, [users, filteredTasks]);
 
   // Handle Canvas Drawing and 3D Rotation Animation Loop
   useEffect(() => {
@@ -293,12 +261,11 @@ const NeuralBrain = () => {
       const centerY = height / 2;
       const focalLength = 350 * zoom;
 
-      // Space background
-      ctx.fillStyle = '#090d16'; // Extremely dark background
-      ctx.fillRect(0, 0, width, height);
+      // Clear canvas to show the CSS background (which adapts to light/dark themes)
+      ctx.clearRect(0, 0, width, height);
 
       // Draw subtle grid lines
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.02)';
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.05)';
       ctx.lineWidth = 1;
       for (let i = 0; i < width; i += 60) {
         ctx.beginPath();
@@ -677,7 +644,7 @@ const NeuralBrain = () => {
   }, [selectedNode, brainData]);
 
   return (
-    <div className="tab-neural h-[calc(100vh-140px)] min-h-[600px] font-['Inter'] relative overflow-hidden rounded-xl border shadow-2xl">
+    <div className="tab-neural h-[calc(100vh-240px)] min-h-[500px] font-['Inter'] relative overflow-hidden rounded-xl border shadow-2xl">
       
       {/* 3D Canvas Box takes up 100% full screen */}
       <div 
@@ -685,7 +652,7 @@ const NeuralBrain = () => {
         className="absolute inset-0 w-full h-full flex items-center justify-center bg-transparent"
       >
         {loading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#090d16]/90 backdrop-blur-md z-30">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-main)]/90 backdrop-blur-md z-30">
             <div className="w-10 h-10 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
             <p className="text-[11px] font-semibold text-indigo-400 uppercase tracking-[0.25em] animate-pulse mt-4">Generating Neural Network...</p>
           </div>
@@ -703,7 +670,7 @@ const NeuralBrain = () => {
       </div>
 
       {/* Left Side: Brand Title HUD */}
-      <div className="absolute top-6 left-6 z-20 backdrop-blur-md border px-4 py-3 rounded-xl flex items-center gap-3 shadow-lg hud-box">
+      <div className="absolute top-[10px] left-[10px] z-20 backdrop-blur-md border px-4 py-3 rounded-xl flex items-center gap-3 shadow-lg hud-box">
         <div className="w-8 h-8 rounded-lg border flex items-center justify-center brand-icon-box">
           <Brain size={18} className="animate-pulse" />
         </div>
@@ -718,44 +685,35 @@ const NeuralBrain = () => {
         </div>
       </div>
 
-      {/* Right Side: Consolidated Controls & Filters */}
-      <div className="absolute top-6 right-6 z-20 flex flex-wrap items-center gap-3 backdrop-blur-md border p-2 rounded-xl shadow-lg hud-box">
+      {/* Right Side: Consolidated Controls */}
+      <div className="absolute top-[10px] right-[10px] z-20 flex flex-wrap items-center gap-3 backdrop-blur-md border p-2 rounded-xl shadow-lg hud-box">
         
-        {/* Team Filter Dropdown */}
-        <div className="flex items-center gap-1.5 px-2 py-1 border-r border-slate-800/40">
-          <Filter size={11} className="text-indigo-400" />
-          <span className="text-[9px] font-bold uppercase tracking-wider hud-subtitle">TEAM:</span>
-          <select
-            value={selectedTeam}
-            onChange={(e) => setSelectedTeam(e.target.value)}
-            className="border text-[10px] font-semibold rounded-lg px-2.5 py-1 outline-none cursor-pointer transition-colors filter-select"
-          >
-            <option value="ALL TEAMS">ALL TEAMS</option>
-            <option value="MODELLING">MODELLING</option>
-            <option value="ENGINEER">ENGINEER</option>
-            <option value="ETABS">ETABS</option>
-            <option value="PT&REO">PT & REO</option>
-          </select>
-        </div>
-
-        {/* Time Range Segment Control */}
-        <div className="flex items-center gap-1 p-1 rounded-lg border filter-segment-group">
-          <Calendar size={11} className="text-emerald-400 ml-1 shrink-0" />
-          {['WEEK', 'MONTH', 'YEAR'].map((t) => (
-            <button
-              key={t}
-              onClick={() => setTimeRange(t)}
-              className={`px-3 py-1 text-[9px] font-bold uppercase tracking-wider rounded-md transition-all duration-200 cursor-pointer filter-segment-btn ${
-                timeRange === t ? 'active shadow-sm' : ''
-              }`}
+        {/* Time Filters */}
+        {timeRange && setTimeRange && (
+          <div className="flex items-center gap-1 border-r border-[var(--border)]/40 pr-3 filter-segment-group p-1 rounded-lg">
+            <button 
+              onClick={() => setTimeRange('week')}
+              className={`px-2.5 py-1 text-[9px] font-bold uppercase rounded filter-segment-btn transition-colors ${timeRange === 'week' ? 'active' : ''}`}
             >
-              {t}
+              W
             </button>
-          ))}
-        </div>
+            <button 
+              onClick={() => setTimeRange('month')}
+              className={`px-2.5 py-1 text-[9px] font-bold uppercase rounded filter-segment-btn transition-colors ${timeRange === 'month' ? 'active' : ''}`}
+            >
+              M
+            </button>
+            <button 
+              onClick={() => setTimeRange('year')}
+              className={`px-2.5 py-1 text-[9px] font-bold uppercase rounded filter-segment-btn transition-colors ${timeRange === 'year' ? 'active' : ''}`}
+            >
+              Y
+            </button>
+          </div>
+        )}
 
         {/* Canvas Actions */}
-        <div className="flex items-center gap-1.5 pl-2 border-l border-slate-800/40">
+        <div className="flex items-center gap-1.5 px-2">
           <button 
             onClick={() => setAutoRotate(!autoRotate)}
             className={`px-3.5 py-1.5 text-[9px] font-bold uppercase tracking-wider gap-1 flex items-center h-7 rounded-lg border cursor-pointer transition-all duration-300 action-btn ${
@@ -777,7 +735,7 @@ const NeuralBrain = () => {
       </div>
 
       {/* Translucent Glass Legend (Bottom Left Floating Overlay - Sleek Curves & Uniform Typography) */}
-      <div className="absolute bottom-6 left-6 z-20 backdrop-blur-md border p-3.5 rounded-xl flex flex-col gap-2.5 shadow-lg max-w-[220px] hud-box">
+      <div className="absolute bottom-[10px] left-[10px] z-20 backdrop-blur-md border p-3.5 rounded-xl flex flex-col gap-2.5 shadow-lg max-w-[220px] hud-box">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full legend-dot-giao" />
           <span className="text-[9px] font-semibold uppercase tracking-wider hud-text">Nơ-ron Giao Việc</span>
@@ -786,7 +744,7 @@ const NeuralBrain = () => {
           <div className="w-2.5 h-2.5 rounded-full legend-dot-nhan" />
           <span className="text-[9px] font-semibold uppercase tracking-wider hud-text">Nơ-ron Nhận Việc</span>
         </div>
-        <div className="flex items-center gap-2 border-t border-slate-800/40 pt-2 mt-0.5">
+        <div className="flex items-center gap-2 border-t border-[var(--border)]/40 pt-2 mt-0.5">
           <span className="w-2.5 h-2.5 rounded-full legend-dot-t1" />
           <span className="w-2.5 h-2.5 rounded-full legend-dot-t3" />
           <span className="w-2.5 h-2.5 rounded-full legend-dot-t5" />
@@ -816,7 +774,7 @@ const NeuralBrain = () => {
               </div>
               <button 
                 onClick={() => setSelectedNode(null)}
-                className="text-slate-400 hover:text-slate-200 transition-colors p-1 rounded-lg hover:bg-slate-900/60"
+                className="hud-subtitle hover:text-slate-200 transition-colors p-1 rounded-lg hover:bg-[var(--bg-surface)]/60"
               >
                 <X size={14} />
               </button>
@@ -858,9 +816,9 @@ const NeuralBrain = () => {
                     </p>
 
                     {/* Mini tasks list (Standard size and curves) */}
-                    <div className="mt-2.5 pt-2 border-t border-slate-800/20 space-y-1.5">
+                    <div className="mt-2.5 pt-2 border-t border-[var(--border)]/20 space-y-1.5">
                       {col.tasks.slice(0, 2).map((t, tIdx) => (
-                        <div key={tIdx} className="flex justify-between items-center gap-2 text-[9px] font-medium uppercase tracking-tight text-slate-400">
+                        <div key={tIdx} className="flex justify-between items-center gap-2 text-[9px] font-medium uppercase tracking-tight hud-subtitle">
                           <span className="truncate flex-1">{t.taskName}</span>
                           <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold shrink-0 border ${
                             t.priority === 'T1' || t.priority === 'T2' 

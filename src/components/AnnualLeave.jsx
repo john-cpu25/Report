@@ -267,7 +267,7 @@ const AnnualLeave = () => {
   return (
     <div className="tab-leave w-full space-y-[10px] pb-12">
       {/* Control Header (Neumorphic Action Bar) */}
-      <div className="neu-raised p-6 flex flex-wrap items-center justify-between gap-8 m-[10px] rounded-3xl">
+      <div className="leave-header-bar flex flex-wrap items-center justify-between gap-8">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-4">
             <div className="neu-button neu-square p-4 text-indigo-500">
@@ -368,7 +368,7 @@ const AnnualLeave = () => {
                 </div>
 
                 {/* Right: Analytics Chart */}
-                <div className="flex-grow bg-[var(--bg-card)]/50 border border-[var(--border)] rounded-[8px] p-[20px] shadow-inner">
+                <div className="flex-grow leave-chart-card">
                   <div className="flex items-center sys-gap mb-[15px]">
                     <TrendingUp size={16} className="text-indigo-400" />
                     <h3 className="text-[14px] font-black text-[var(--text-main)] uppercase tracking-widest">Team Leave Distribution (Days)</h3>
@@ -421,7 +421,7 @@ const AnnualLeave = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-[15px]">
               {/* Stats Column */}
               <div className="lg:col-span-4 flex flex-col sys-gap">
-                <div className="flex-grow neu-raised p-[20px] rounded-2xl flex flex-col items-center justify-center text-center bg-[var(--bg-card)]">
+                <div className="flex-grow leave-stats-card flex flex-col items-center justify-center text-center">
                   <div className="neu-button neu-square p-4 text-indigo-500 mb-4">
                     <Landmark size={24} />
                   </div>
@@ -432,7 +432,7 @@ const AnnualLeave = () => {
                   <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest mt-3">Available Days Remaining</p>
                 </div>
 
-                <div className="neu-raised p-[20px] rounded-2xl bg-[var(--bg-card)]">
+                <div className="leave-stats-card">
                   <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-[15px] flex items-center sys-gap">
                     <AlertCircle size={14} className="text-rose-500 animate-pulse" /> Critical Attention
                   </h4>
@@ -449,7 +449,7 @@ const AnnualLeave = () => {
 
               {/* History Column */}
               <div className="lg:col-span-8">
-                <div className="neu-raised rounded-2xl overflow-hidden h-full flex flex-col bg-[var(--bg-card)]">
+                <div className="leave-history-card">
                   <div className="px-[20px] py-[15px] border-b border-[var(--border)] bg-indigo-500/5 flex justify-between items-center">
                     <div className="flex items-center sys-gap">
                       <List className="text-indigo-400 animate-pulse" size={14} />
@@ -517,11 +517,11 @@ const AnnualLeave = () => {
               <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Aggregate leave statistics for Vietnam operations</p>
             </div>
             <div className="flex gap-4">
-              <div className="neu-raised px-6 py-4 rounded-2xl text-center min-w-[130px] bg-[var(--bg-card)]">
+              <div className="leave-overview-card">
                 <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-1">Total Users</p>
                 <p className="text-[28px] font-black text-[var(--text-contrast)] tracking-tighter leading-none">{summaryData.length}</p>
               </div>
-              <div className="neu-raised px-6 py-4 rounded-2xl text-center min-w-[130px] bg-[var(--bg-card)] border border-indigo-500/10">
+              <div className="leave-overview-card">
                 <p className="text-[9px] font-black text-indigo-400 uppercase tracking-wider mb-1">Avg Used</p>
                 <p className="text-[28px] font-black text-indigo-500 tracking-tighter leading-none">
                   {summaryData.length ? (summaryData.reduce((s, u) => s + u.used, 0) / summaryData.length).toFixed(1) : 0}D
@@ -530,7 +530,7 @@ const AnnualLeave = () => {
             </div>
           </div>
 
-          <div className="neu-raised overflow-hidden rounded-3xl bg-[var(--bg-card)]">
+          <div className="leave-table-wrapper">
             <table className="leave-table">
               <thead>
                 <tr>

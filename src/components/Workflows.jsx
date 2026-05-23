@@ -437,7 +437,7 @@ const Workflows = () => {
     return (
       <div className="flex flex-col justify-between h-full">
         {/* Left Page Header */}
-        <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[9px] font-black text-stone-400 tracking-[0.25em] uppercase shrink-0">
+        <div className="border-b lib-border-divider pb-2 flex justify-between items-center text-[9px] font-black lib-text-muted tracking-[0.25em] uppercase shrink-0">
           <span>Rincovitch Standard Log</span>
           <span>{selectedWorkflow.title}</span>
         </div>
@@ -465,7 +465,7 @@ const Workflows = () => {
                 <EditableField
                   value={leftData.classification}
                   tag="h3"
-                  className="text-[10px] font-black text-stone-400 tracking-[0.3em] uppercase mb-1"
+                  className="text-[10px] font-black lib-text-muted tracking-[0.3em] uppercase mb-1"
                   onSave={(val) => {
                     const spread = selectedWorkflow.spreads[spreadIndex];
                     const page = { ...spread.left };
@@ -474,14 +474,14 @@ const Workflows = () => {
                   }}
                 />
               ) : (
-                <h3 className="text-[10px] font-black text-stone-400 tracking-[0.3em] uppercase mb-1">{leftData.classification}</h3>
+                <h3 className="text-[10px] font-black lib-text-muted tracking-[0.3em] uppercase mb-1">{leftData.classification}</h3>
               )}
 
               {isEditMode && isAdmin ? (
                 <EditableField
                   value={leftData.title}
                   tag="h2"
-                  className="text-[28px] font-black text-stone-800 leading-tight uppercase tracking-wide mb-3 font-serif"
+                  className="text-[28px] font-black lib-text-main leading-tight uppercase tracking-wide mb-3 font-serif"
                   style={{ fontFamily: 'Georgia, serif' }}
                   onSave={(val) => {
                     const spread = selectedWorkflow.spreads[spreadIndex];
@@ -491,7 +491,7 @@ const Workflows = () => {
                   }}
                 />
               ) : (
-                <h2 className="text-[28px] font-black text-stone-800 leading-tight uppercase tracking-wide mb-3 font-serif" style={{ fontFamily: 'Georgia, serif' }}>
+                <h2 className="text-[28px] font-black lib-text-main leading-tight uppercase tracking-wide mb-3 font-serif" style={{ fontFamily: 'Georgia, serif' }}>
                   {leftData.title}
                 </h2>
               )}
@@ -503,7 +503,7 @@ const Workflows = () => {
                   value={leftData.subtitle}
                   tag="p"
                   multiline
-                  className="text-[13px] text-stone-500 font-bold max-w-[260px] leading-relaxed italic block"
+                  className="text-[13px] lib-text-desc font-bold max-w-[260px] leading-relaxed italic block"
                   onSave={(val) => {
                     const spread = selectedWorkflow.spreads[spreadIndex];
                     const page = { ...spread.left };
@@ -512,7 +512,7 @@ const Workflows = () => {
                   }}
                 />
               ) : (
-                <p className="text-[13px] text-stone-500 font-bold max-w-[260px] leading-relaxed italic">
+                <p className="text-[13px] lib-text-desc font-bold max-w-[260px] leading-relaxed italic">
                   {leftData.subtitle}
                 </p>
               )}
@@ -521,7 +521,7 @@ const Workflows = () => {
                 <EditableField
                   value={leftData.volume}
                   tag="span"
-                  className="mt-8 px-3 py-1 bg-stone-200/50 text-stone-600 text-[9px] font-black uppercase rounded tracking-wider border border-stone-300/40 inline-block"
+                  className="mt-8 px-3 py-1 bg-[var(--bg-surface)] lib-text-desc text-[9px] font-black uppercase rounded tracking-wider border lib-border-divider/40 inline-block"
                   onSave={(val) => {
                     const spread = selectedWorkflow.spreads[spreadIndex];
                     const page = { ...spread.left };
@@ -530,14 +530,14 @@ const Workflows = () => {
                   }}
                 />
               ) : (
-                <span className="mt-8 px-3 py-1 bg-stone-200/50 text-stone-600 text-[9px] font-black uppercase rounded tracking-wider border border-stone-300/40">{leftData.volume}</span>
+                <span className="mt-8 px-3 py-1 bg-[var(--bg-surface)] lib-text-desc text-[9px] font-black uppercase rounded tracking-wider border lib-border-divider/40">{leftData.volume}</span>
               )}
             </div>
           )}
 
           {leftData.type === 'steps' && (
             <div className="space-y-6">
-              <h3 className="text-[10px] font-black text-stone-400 tracking-[0.25em] uppercase border-b border-stone-200 pb-2">{leftData.title}</h3>
+              <h3 className="text-[10px] font-black lib-text-muted tracking-[0.25em] uppercase border-b lib-border-divider pb-2">{leftData.title}</h3>
               <div className="space-y-6 max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
                 {leftData.steps.map((step, sIdx) => {
                   const StepIcon = typeof step.icon === 'string' ? resolveIcon(step.icon) : (step.icon || HelpCircle);
@@ -557,7 +557,7 @@ const Workflows = () => {
                             <EditableField
                               value={step.titleEn}
                               tag="h4"
-                              className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5"
+                              className="text-[13px] font-black lib-text-main uppercase tracking-tight leading-none mt-0.5"
                               onSave={(val) => {
                                 const spread = selectedWorkflow.spreads[spreadIndex];
                                 const page = { ...spread.left };
@@ -587,18 +587,18 @@ const Workflows = () => {
                             </button>
                           </div>
                         ) : (
-                          <h4 className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
+                          <h4 className="text-[13px] font-black lib-text-main uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
                         )}
                       </div>
                     </div>
-                    <div className="pl-12 space-y-1.5 border-l-2 border-stone-200 ml-4.5">
+                    <div className="pl-12 space-y-1.5 border-l-2 lib-border-divider ml-4.5">
                       {isEditMode && isAdmin ? (
                         <>
                           <EditableField
                             value={step.descEn}
                             tag="p"
                             multiline
-                            className="text-[11px] text-stone-600 font-bold leading-relaxed"
+                            className="text-[11px] lib-text-desc font-bold leading-relaxed"
                             onSave={(val) => {
                               const spread = selectedWorkflow.spreads[spreadIndex];
                               const page = { ...spread.left };
@@ -623,7 +623,7 @@ const Workflows = () => {
                         </>
                       ) : (
                         <>
-                          <p className="text-[11px] text-stone-600 font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
+                          <p className="text-[11px] lib-text-desc font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
                           <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2">{step.descVn}</p>
                         </>
                       )}
@@ -650,7 +650,7 @@ const Workflows = () => {
                       ];
                       handleSaveSpread(spread.spreadId, 'left_page', page);
                     }}
-                    className="mt-4 w-full py-2.5 border-2 border-dashed border-stone-300 hover:border-indigo-400 hover:bg-indigo-50/20 text-stone-500 hover:text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                    className="mt-4 w-full py-2.5 border-2 border-dashed lib-border-divider hover:border-indigo-400 hover:bg-indigo-50/20 lib-text-desc hover:text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
                   >
                     <Plus size={14} /> Thêm Bước (Step)
                   </button>
@@ -661,7 +661,7 @@ const Workflows = () => {
         </div>
 
         {/* Left Page Footer */}
-        <div className="flex justify-between text-[9px] text-stone-400 font-bold tracking-widest uppercase shrink-0">
+        <div className="flex justify-between text-[9px] lib-text-muted font-bold tracking-widest uppercase shrink-0">
           <span>PAGE {spreadIndex * 2 + 1}</span>
           <span>CONFIDENTIAL</span>
         </div>
@@ -675,7 +675,7 @@ const Workflows = () => {
     return (
       <div className="flex flex-col justify-between h-full">
         {/* Right Page Header */}
-        <div className="border-b border-stone-300 pb-2 flex justify-between items-center text-[9px] font-black text-stone-400 tracking-[0.25em] uppercase shrink-0">
+        <div className="border-b lib-border-divider pb-2 flex justify-between items-center text-[9px] font-black lib-text-muted tracking-[0.25em] uppercase shrink-0">
           <span>Standard Operating Guidelines</span>
           <span>Classified</span>
         </div>
@@ -685,7 +685,7 @@ const Workflows = () => {
           {rightData.type === 'intro' && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase flex items-center gap-2">
+                <h4 className="text-[9px] font-black lib-text-muted tracking-[0.2em] uppercase flex items-center gap-2">
                   <Sparkles size={12} className="text-yellow-600" /> Executive Overview
                 </h4>
                 {isEditMode && isAdmin ? (
@@ -693,7 +693,7 @@ const Workflows = () => {
                     value={rightData.desc}
                     tag="p"
                     multiline
-                    className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif block"
+                    className="text-[13px] lib-text-desc leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:lib-text-main first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif block"
                     onSave={(val) => {
                       const spread = selectedWorkflow.spreads[spreadIndex];
                       const page = { ...spread.right };
@@ -702,17 +702,17 @@ const Workflows = () => {
                     }}
                   />
                 ) : (
-                  <p className="text-[13px] text-stone-700 leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:text-stone-800 first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif">
+                  <p className="text-[13px] lib-text-desc leading-relaxed text-justify first-letter:text-[36px] first-letter:font-black first-letter:lib-text-main first-letter:mr-2 first-letter:float-left first-letter:leading-[0.8] first-letter:font-serif">
                     {rightData.desc}
                   </p>
                 )}
               </div>
 
-              <div className="pt-6 border-t border-stone-200 space-y-4">
-                <h5 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">Volume Index</h5>
+              <div className="pt-6 border-t lib-border-divider space-y-4">
+                <h5 className="text-[9px] font-black lib-text-muted tracking-[0.2em] uppercase">Volume Index</h5>
                 <div className="space-y-2">
                   {(rightData.meta || []).map((m, mIdx) => (
-                    <div key={mIdx} className="flex justify-between text-[11px] text-stone-600 border-b border-stone-100 pb-1.5 last:border-0 items-center">
+                    <div key={mIdx} className="flex justify-between text-[11px] lib-text-desc border-b border-stone-100 pb-1.5 last:border-0 items-center">
                       <div className="flex items-center gap-1.5 min-w-0">
                         {isEditMode && isAdmin && (
                           <button
@@ -733,7 +733,7 @@ const Workflows = () => {
                           <EditableField
                             value={m.label}
                             tag="span"
-                            className="font-bold text-stone-400 uppercase tracking-widest text-[8px]"
+                            className="font-bold lib-text-muted uppercase tracking-widest text-[8px]"
                             onSave={(val) => {
                               const spread = selectedWorkflow.spreads[spreadIndex];
                               const page = { ...spread.right };
@@ -743,7 +743,7 @@ const Workflows = () => {
                             }}
                           />
                         ) : (
-                          <span className="font-bold text-stone-400 uppercase tracking-widest text-[8px]">{m.label}</span>
+                          <span className="font-bold lib-text-muted uppercase tracking-widest text-[8px]">{m.label}</span>
                         )}
                       </div>
                       
@@ -751,7 +751,7 @@ const Workflows = () => {
                         <EditableField
                           value={m.val}
                           tag="span"
-                          className="font-black text-stone-800"
+                          className="font-black lib-text-main"
                           onSave={(val) => {
                             const spread = selectedWorkflow.spreads[spreadIndex];
                             const page = { ...spread.right };
@@ -761,7 +761,7 @@ const Workflows = () => {
                           }}
                         />
                       ) : (
-                        <span className="font-black text-stone-800">{m.val}</span>
+                        <span className="font-black lib-text-main">{m.val}</span>
                       )}
                     </div>
                   ))}
@@ -786,7 +786,7 @@ const Workflows = () => {
 
           {rightData.type === 'steps' && (
             <div className="space-y-6">
-              <h3 className="text-[10px] font-black text-stone-400 tracking-[0.25em] uppercase border-b border-stone-200 pb-2">{rightData.title}</h3>
+              <h3 className="text-[10px] font-black lib-text-muted tracking-[0.25em] uppercase border-b lib-border-divider pb-2">{rightData.title}</h3>
               <div className="space-y-6 max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
                 {rightData.steps.map((step, sIdx) => {
                   const StepIcon = typeof step.icon === 'string' ? resolveIcon(step.icon) : (step.icon || HelpCircle);
@@ -806,7 +806,7 @@ const Workflows = () => {
                             <EditableField
                               value={step.titleEn}
                               tag="h4"
-                              className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5"
+                              className="text-[13px] font-black lib-text-main uppercase tracking-tight leading-none mt-0.5"
                               onSave={(val) => {
                                 const spread = selectedWorkflow.spreads[spreadIndex];
                                 const page = { ...spread.right };
@@ -836,18 +836,18 @@ const Workflows = () => {
                             </button>
                           </div>
                         ) : (
-                          <h4 className="text-[13px] font-black text-stone-800 uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
+                          <h4 className="text-[13px] font-black lib-text-main uppercase tracking-tight leading-none mt-0.5">{step.titleEn}</h4>
                         )}
                       </div>
                     </div>
-                    <div className="pl-12 space-y-1.5 border-l-2 border-stone-200 ml-4.5">
+                    <div className="pl-12 space-y-1.5 border-l-2 lib-border-divider ml-4.5">
                       {isEditMode && isAdmin ? (
                         <>
                           <EditableField
                             value={step.descEn}
                             tag="p"
                             multiline
-                            className="text-[11px] text-stone-600 font-bold leading-relaxed"
+                            className="text-[11px] lib-text-desc font-bold leading-relaxed"
                             onSave={(val) => {
                               const spread = selectedWorkflow.spreads[spreadIndex];
                               const page = { ...spread.right };
@@ -872,7 +872,7 @@ const Workflows = () => {
                         </>
                       ) : (
                         <>
-                          <p className="text-[11px] text-stone-600 font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
+                          <p className="text-[11px] lib-text-desc font-bold leading-relaxed">{formatContent(step.descEn, step.highlight)}</p>
                           <p className="text-[11px] text-indigo-900 font-semibold leading-relaxed italic pr-2">{step.descVn}</p>
                         </>
                       )}
@@ -899,7 +899,7 @@ const Workflows = () => {
                       ];
                       handleSaveSpread(spread.spreadId, 'right_page', page);
                     }}
-                    className="mt-4 w-full py-2.5 border-2 border-dashed border-stone-300 hover:border-indigo-400 hover:bg-indigo-50/20 text-stone-500 hover:text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                    className="mt-4 w-full py-2.5 border-2 border-dashed lib-border-divider hover:border-indigo-400 hover:bg-indigo-50/20 lib-text-desc hover:text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
                   >
                     <Plus size={14} /> Thêm Bước (Step)
                   </button>
@@ -915,7 +915,7 @@ const Workflows = () => {
                   <EditableField
                     value={rightData.title}
                     tag="h4"
-                    className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase block"
+                    className="text-[9px] font-black lib-text-muted tracking-[0.2em] uppercase block"
                     onSave={(val) => {
                       const spread = selectedWorkflow.spreads[spreadIndex];
                       const page = { ...spread.right };
@@ -924,18 +924,18 @@ const Workflows = () => {
                     }}
                   />
                 ) : (
-                  <h4 className="text-[9px] font-black text-stone-400 tracking-[0.2em] uppercase">{rightData.title}</h4>
+                  <h4 className="text-[9px] font-black lib-text-muted tracking-[0.2em] uppercase">{rightData.title}</h4>
                 )}
                 <div className="grid grid-cols-1 gap-2">
                   {rightData.checklist.map((c, cIdx) => (
-                    <div key={cIdx} className="flex items-center justify-between gap-2.5 p-2 bg-stone-100/50 rounded border border-stone-200/40">
+                    <div key={cIdx} className="flex items-center justify-between gap-2.5 p-2 bg-stone-100/50 rounded border lib-border-divider/40">
                       <div className="flex items-center gap-2.5 flex-grow min-w-0">
                         <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
                         {isEditMode && isAdmin ? (
                           <EditableField
                             value={c}
                             tag="span"
-                            className="text-[10px] font-bold text-stone-700 leading-tight block w-full"
+                            className="text-[10px] font-bold lib-text-desc leading-tight block w-full"
                             onSave={(val) => {
                               const spread = selectedWorkflow.spreads[spreadIndex];
                               const page = { ...spread.right };
@@ -945,7 +945,7 @@ const Workflows = () => {
                             }}
                           />
                         ) : (
-                          <span className="text-[10px] font-bold text-stone-700 leading-tight">{c}</span>
+                          <span className="text-[10px] font-bold lib-text-desc leading-tight">{c}</span>
                         )}
                       </div>
                       {isEditMode && isAdmin && (
@@ -982,14 +982,14 @@ const Workflows = () => {
                 )}
               </div>
 
-              <div className="pt-4 border-t border-stone-200">
-                <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest leading-none mb-1 block">Authoritative Note</span>
+              <div className="pt-4 border-t lib-border-divider">
+                <span className="text-[8px] font-bold lib-text-muted uppercase tracking-widest leading-none mb-1 block">Authoritative Note</span>
                 {isEditMode && isAdmin ? (
                   <EditableField
                     value={rightData.notes}
                     tag="p"
                     multiline
-                    className="text-[11px] font-medium text-stone-600 italic leading-relaxed bg-amber-500/5 p-3 border-l-2 border-amber-500/50 rounded-r block"
+                    className="text-[11px] font-medium lib-text-desc italic leading-relaxed bg-amber-500/5 p-3 border-l-2 border-amber-500/50 rounded-r block"
                     onSave={(val) => {
                       const spread = selectedWorkflow.spreads[spreadIndex];
                       const page = { ...spread.right };
@@ -998,17 +998,17 @@ const Workflows = () => {
                     }}
                   />
                 ) : (
-                  <p className="text-[11px] font-medium text-stone-600 italic leading-relaxed bg-amber-500/5 p-3 border-l-2 border-amber-500/50 rounded-r">{rightData.notes}</p>
+                  <p className="text-[11px] font-medium lib-text-desc italic leading-relaxed bg-amber-500/5 p-3 border-l-2 border-amber-500/50 rounded-r">{rightData.notes}</p>
                 )}
               </div>
 
-              <div className="pt-3 border-t border-dashed border-stone-300 flex justify-between items-end">
+              <div className="pt-3 border-t border-dashed lib-border-divider flex justify-between items-end">
                 <div>
-                  <p className="text-[8px] text-stone-400 font-bold uppercase tracking-wider leading-none mb-1">Standardized by</p>
-                  <p className="text-[12px] text-stone-700 italic font-serif leading-none" style={{ fontFamily: 'Georgia, serif' }}>Rincovitch Engineering</p>
+                  <p className="text-[8px] lib-text-muted font-bold uppercase tracking-wider leading-none mb-1">Standardized by</p>
+                  <p className="text-[12px] lib-text-desc italic font-serif leading-none" style={{ fontFamily: 'Georgia, serif' }}>Rincovitch Engineering</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[8px] text-stone-400 font-bold uppercase tracking-wider leading-none mb-1">Status</p>
+                  <p className="text-[8px] lib-text-muted font-bold uppercase tracking-wider leading-none mb-1">Status</p>
                   <p className="text-[8px] font-black text-emerald-700 tracking-widest uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 leading-none">VERIFIED</p>
                 </div>
               </div>
@@ -1017,7 +1017,7 @@ const Workflows = () => {
         </div>
 
         {/* Right Page Footer */}
-        <div className="flex justify-between items-center text-[9px] text-stone-400 font-bold tracking-widest uppercase shrink-0">
+        <div className="flex justify-between items-center text-[9px] lib-text-muted font-bold tracking-widest uppercase shrink-0">
           <span>PAGE {spreadIndex * 2 + 2}</span>
           
           {showControls && (
@@ -1582,7 +1582,7 @@ const Workflows = () => {
                   {selectedWorkflow.spreads.flatMap((spread, spreadIdx) => [
                     // LEFT PAGE
                     <div key={`page-${spreadIdx}-left`} className="page-item" data-density="soft">
-                      <div className="book-page-left h-full border-r border-stone-200/70 relative">
+                      <div className="book-page-left h-full border-r lib-border-divider/70 relative">
                         {renderLeftPageContent(spreadIdx)}
                       </div>
                     </div>,

@@ -134,3 +134,28 @@
   border: 1px solid var(--border);
   color: var(--text-muted);
 }
+
+/* -- UI Refactoring Added Classes -- */
+.plan-date-badge {
+  background: var(--bg-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 10px 24px;
+  text-align: center;
+  min-width: 200px;
+}
+
+.plan-grid-header {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.plan-row-header {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--glass-border);
+}
+
+.plan-weekend-col {
+  background: var(--bg-surface);
+}
+

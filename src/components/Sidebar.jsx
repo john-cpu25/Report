@@ -40,15 +40,13 @@ const Sidebar = () => {
 
   const mainSections = [
     {
-      title: 'MAIN',
+      title: '',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'projects', label: 'Projects', icon: FolderKanban },
-        { id: 'report', label: 'Weekly Planner', icon: CalendarClock },
-        { id: 'planning', label: 'Planning', icon: ListTodo },
+        { id: 'report', label: 'Planner', icon: CalendarClock },
         { id: 'organization', label: 'Organization', icon: Network },
         { id: 'personal', label: 'Personal', icon: UserIcon },
-        { id: 'neural-brain', label: 'Neural Brain', icon: Brain },
         { id: 'leave', label: 'Annual Leave', icon: Battery },
         { id: 'issues', label: 'Issues', icon: AlertCircle },
         { id: 'workflows', label: 'Library', icon: WorkflowIcon },
@@ -73,16 +71,17 @@ const Sidebar = () => {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full sys-p sys-gap">
-      <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} sys-p mb-[10px]`}>
-        {!collapsed && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-            <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
-            <span className="text-[24px] font-black text-[var(--text-main)] uppercase tracking-tight">NAV</span>
-          </motion.div>
-        )}
-        <button onClick={() => setCollapsed(!collapsed)} className="flex p-2 rounded-[8px] hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-colors">
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </button>
+      <div 
+        className={`flex items-center ${collapsed ? 'justify-center' : 'justify-start !pl-[14px]'} p-[10px] mb-[20px] cursor-pointer hover:opacity-80 transition-opacity`}
+        onClick={() => setCollapsed(!collapsed)}
+        title="Toggle Sidebar"
+      >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3">
+          <img src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} alt="Rincovitch" className="w-8 h-8" />
+          {!collapsed && (
+            <span className="text-[20px] font-black text-[var(--text-main)] uppercase tracking-tight">RINCOVITCH</span>
+          )}
+        </motion.div>
       </div>
 
       <div className="flex-grow overflow-y-auto custom-scrollbar space-y-[10px]">

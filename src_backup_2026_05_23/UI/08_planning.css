@@ -1,0 +1,136 @@
+/* ============================================================
+   TAB 8 — PLANNING
+   File: src/components/Planning.jsx
+   
+   MỌI MÀU SẮC được quản lý tại đây.
+   Thay đổi CSS → thay đổi giao diện Planning Gantt Chart.
+   ============================================================ */
+
+/* ── Navigation Buttons ──
+   Planning.jsx:158
+   ------------------------------------------------------- */
+.tab-planning .plan-nav-btn {
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.tab-planning .plan-nav-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-surface);
+}
+
+/* ── Grid Elements ──
+   Planning.jsx:200
+   ------------------------------------------------------- */
+.tab-planning .plan-col-today {
+  background: rgba(99, 102, 241, 0.1); /* indigo-500/10 */
+}
+
+.tab-planning .plan-col-today .day-label,
+.tab-planning .plan-col-today .day-sublabel {
+  color: var(--c-done); /* emerald-500 */
+}
+
+/* ── Separators ──
+   Planning.jsx:183
+   ------------------------------------------------------- */
+.tab-planning .plan-separator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(99, 102, 241, 0.3), transparent);
+}
+
+/* ── Gantt Bars Status Colors ──
+   Planning.jsx:127
+   ------------------------------------------------------- */
+.tab-planning .bar-status-done {
+  background: var(--c-done);
+}
+
+.tab-planning .bar-status-wip {
+  background: var(--c-indigo);
+}
+
+.tab-planning .bar-status-urgent {
+  background: var(--c-danger);
+}
+
+.tab-planning .bar-status-issue {
+  background: #ef4444; /* red-500 */
+}
+
+.tab-planning .bar-status-planning {
+  background: var(--c-warning);
+}
+
+.tab-planning .bar-status-default {
+  background: #64748b; /* slate-500 */
+}
+
+/* ── Gantt Bar Base Styles ──
+   Planning.jsx:269
+   ------------------------------------------------------- */
+.tab-planning .gantt-bar {
+  position: absolute;
+  height: 24px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.tab-planning .gantt-bar-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.1), transparent);
+  pointer-events: none;
+}
+
+.tab-planning .gantt-tooltip {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card); /* originally var(--bg-dark) */
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 8px;
+  opacity: 0;
+  white-space: nowrap;
+  z-index: 100;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.tab-planning .gantt-bar:hover .gantt-tooltip {
+  opacity: 1;
+}
+
+/* ── No Data State ──
+   Planning.jsx:214
+   ------------------------------------------------------- */
+.tab-planning .no-data-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}

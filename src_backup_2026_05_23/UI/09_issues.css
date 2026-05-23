@@ -1,0 +1,205 @@
+/* ============================================================
+   TAB 9 — ISSUES (Drawings Manager)
+   File: src/components/DrawingsManager.jsx
+   
+   MỌI MÀU SẮC được quản lý tại đây.
+   Thay đổi CSS → thay đổi giao diện Tab Issues.
+   ============================================================ */
+
+.tab-issues {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+/* ── Header ── */
+.tab-issues .issue-header {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-issues .issue-title {
+  color: var(--text-main);
+}
+
+.tab-issues .issue-subtitle {
+  color: var(--text-muted);
+}
+
+.tab-issues .issue-icon-box {
+  background: linear-gradient(to bottom right, var(--c-indigo), #9333ea);
+  color: white;
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);
+}
+
+/* ── Toggle Controls ── */
+.tab-issues .issue-toggle-wrapper {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.tab-issues .issue-toggle-btn {
+  color: var(--text-muted);
+}
+
+.tab-issues .issue-toggle-btn:hover {
+  color: var(--text-main);
+}
+
+.tab-issues .issue-toggle-btn.active {
+  background: var(--c-indigo);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.tab-issues .issue-btn-primary {
+  background: var(--c-indigo);
+  color: white;
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+}
+
+.tab-issues .issue-btn-primary:hover {
+  background: #4f46e5;
+}
+
+/* ── Search Bar ── */
+.tab-issues .issue-search-wrapper {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+.tab-issues .issue-search-wrapper:focus-within {
+  border-color: var(--c-indigo);
+}
+
+.tab-issues .issue-search-input {
+  color: var(--text-main);
+}
+
+/* ── Project Cards ── */
+.tab-issues .issue-proj-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+.tab-issues .issue-proj-card:hover {
+  border-color: var(--text-muted);
+}
+
+.tab-issues .issue-proj-code {
+  background: var(--bg-surface);
+  color: var(--text-muted);
+}
+
+.tab-issues .issue-proj-name {
+  color: var(--text-main);
+}
+
+/* ── Drawing Cards ── */
+.tab-issues .issue-draw-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+.tab-issues .issue-draw-card:hover {
+  border-color: var(--text-muted);
+}
+
+.tab-issues .issue-draw-card.active {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--c-indigo);
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);
+}
+
+.tab-issues .issue-draw-title {
+  color: var(--text-main);
+}
+
+.tab-issues .issue-draw-card.active .issue-draw-title {
+  color: var(--c-indigo);
+}
+
+.tab-issues .issue-draw-rev {
+  background: var(--bg-surface);
+  color: var(--text-muted);
+}
+
+.tab-issues .issue-draw-date {
+  color: var(--text-muted);
+}
+
+.tab-issues .issue-empty {
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+/* ── Action Buttons ── */
+.tab-issues .issue-action-btn {
+  background: var(--bg-surface);
+  color: var(--c-indigo);
+}
+.tab-issues .issue-action-btn:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.tab-issues .issue-action-btn-danger {
+  background: rgba(244, 63, 94, 0.1);
+  color: #e11d48;
+}
+.tab-issues .issue-action-btn-danger:hover {
+  background: rgba(244, 63, 94, 0.2);
+}
+
+.tab-issues .issue-btn-ghost {
+  background: var(--bg-surface);
+  color: var(--text-muted);
+}
+.tab-issues .issue-btn-ghost:hover {
+  background: var(--border);
+}
+
+/* ── Markups ── */
+.tab-issues .issue-markup-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+.tab-issues .issue-markup-author {
+  color: var(--text-main);
+}
+
+.tab-issues .issue-markup-date {
+  color: var(--text-muted);
+}
+
+.tab-issues .issue-markup-text {
+  background: var(--bg-surface);
+}
+
+/* ── Modals ── */
+.tab-issues-modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.tab-issues-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.tab-issues-modal .modal-title {
+  color: var(--text-main);
+}
+
+.tab-issues-modal .modal-label {
+  color: var(--text-muted);
+}
+
+.tab-issues-modal .modal-input {
+  background: var(--bg-surface);
+  border-color: var(--border);
+  color: var(--text-main);
+}
+
+.tab-issues-modal .modal-input:focus {
+  border-color: var(--c-indigo);
+}

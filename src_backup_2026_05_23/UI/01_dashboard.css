@@ -1,0 +1,369 @@
+/* ============================================================
+   TAB 1 — DASHBOARD
+   File: src/components/Dashboard.jsx
+   
+   MỌI MÀU SẮC được quản lý tại đây.
+   Thay đổi CSS → thay đổi giao diện Dashboard.
+   ============================================================ */
+
+/* ── Root Layout ──
+   Thẻ áp dụng: <div className="tab-dashboard min-h-screen py-5 relative transition-colors duration-300">
+   Vị trí: Bao bọc toàn bộ giao diện Dashboard (Dashboard.jsx)
+   ------------------------------------------------------- */
+.tab-dashboard {
+  padding: var(--sp-5);
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  position: relative;
+  transition: color 0.3s, background 0.3s;
+}
+
+/* ── Background Ambience (Hiệu ứng ánh sáng nền nền) ──
+   Thẻ áp dụng: 
+   <div className="ambience-indigo absolute top-0 left-1/4 w-96 h-96 rounded-full blur-[100px] pointer-events-none" />
+   <div className="ambience-emerald absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-[100px] pointer-events-none" />
+   ------------------------------------------------------- */
+.tab-dashboard .ambience-indigo {
+  background: rgba(99, 102, 241, 0.05);
+  /* Change to var(--c-indigo) opacity to adjust glow */
+}
+
+.tab-dashboard .ambience-emerald {
+  background: rgba(16, 185, 129, 0.05);
+  /* Change to var(--c-done) opacity to adjust glow */
+}
+
+/* ── Section Titles (Tiêu đề các khu vực) ──
+   Thẻ áp dụng: <h2 className="section-title">{team.name}</h2>
+   Giá trị hiển thị: "MODELLING", "ACTIVE MEMBERS"
+   ------------------------------------------------------- */
+.tab-dashboard .section-title {
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Team Card (Glass Effect) ──
+   Thẻ áp dụng: <motion.div className="team-card flex flex-col md:flex-row gap-3 relative flex-1" style={{ padding: '12px' }}>
+   Vị trí: Thẻ chứa thông tin số lượng BUSY, FREE, LEAVE của từng team.
+   ------------------------------------------------------- */
+.tab-dashboard .team-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  padding: var(--sp-6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Loading Spinner (Hiệu ứng xoay khi tải dữ liệu) ──
+   Thẻ áp dụng: 
+   <div className="spinner-ring w-4 h-4 border-2 rounded-full animate-spin"></div>
+   <p className="spinner-text text-[8px] font-black uppercase tracking-widest animate-pulse">Syncing...</p>
+   ------------------------------------------------------- */
+.tab-dashboard .spinner-ring {
+  border-color: var(--c-indigo);
+  border-top-color: transparent;
+  /* Dashboard.jsx:1406 — border-indigo-500 border-t-transparent */
+}
+
+.tab-dashboard .spinner-text {
+  color: var(--c-indigo-light);
+  /* Dashboard.jsx:1407,1505 — text-indigo-400 */
+}
+
+/* ── Status Dots (Dấu chấm trạng thái trong Team Card) ──
+   Thẻ áp dụng: 
+   <span className="dot-busy w-1.5 h-1.5 rounded-full shrink-0"></span> (BUSY)
+   <span className="dot-free w-1.5 h-1.5 rounded-full shrink-0"></span> (FREE)
+   <span className="dot-leave w-1.5 h-1.5 rounded-full shrink-0"></span> (LEAVE)
+   ------------------------------------------------------- */
+.tab-dashboard .dot-busy {
+  background-color: var(--c-team-modelling);
+  /* was: bg-blue-500 (#3b82f6) */
+}
+
+.tab-dashboard .dot-free {
+  background-color: var(--c-done);
+  /* was: bg-emerald-500 (#10b981) */
+}
+
+.tab-dashboard .dot-leave {
+  background-color: var(--c-warning);
+  /* was: bg-amber-500 (#f59e0b) */
+}
+
+/* ── Task List Status Indicators (Dấu chấm phát sáng ở danh sách Task) ──
+   Thẻ áp dụng: 
+   <span className="task-dot-working w-2 h-2 rounded-full"></span> (Đang làm - sáng viền đỏ)
+   <span className="task-dot-free w-2 h-2 rounded-full"></span> (Rảnh rỗi - sáng viền xanh)
+   ------------------------------------------------------- */
+.tab-dashboard .task-dot-working {
+  background-color: var(--c-urgent);
+  box-shadow: 0 0 6px rgba(244, 63, 94, 0.5);
+  /* was: bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)] */
+}
+
+.tab-dashboard .task-dot-free {
+  background-color: var(--c-done);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+  /* was: bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)] */
+}
+
+/* ── Task Project Text (Màu chữ của tên Project trong danh sách Task) ──
+   Thẻ áp dụng: 
+   <span className="task-text-working font-black truncate text-[11px] uppercase tracking-wider">{task.project}</span>
+   <span className="task-text-free font-bold truncate text-[10px] uppercase tracking-wider line-through opacity-50">{task.project}</span>
+   ------------------------------------------------------- */
+.tab-dashboard .task-text-working {
+  color: rgba(251, 113, 133, 1);
+  /* was: text-rose-400 */
+}
+
+.tab-dashboard .task-text-free {
+  color: var(--text-muted);
+}
+
+/* ── Brain Map Container (Khung chứa biểu đồ Brain Map) ──
+   Thẻ áp dụng: <div className="brain-card bg-[var(--bg-card)] border rounded-2xl p-6 relative overflow-hidden flex flex-col min-h-[258px]">
+   ------------------------------------------------------- */
+.tab-dashboard .brain-card {
+  border-color: var(--c-indigo-border);
+  /* was: border-indigo-500/20 */
+}
+
+/* ── Market / AUD Section Icon (Biểu tượng $ trong phần Tỷ giá) ──
+   Thẻ áp dụng: <div className="market-icon w-8 h-8 rounded-lg flex items-center justify-center border shadow-sm">
+   ------------------------------------------------------- */
+.tab-dashboard .market-icon {
+  background: var(--c-warning-bg);
+  border-color: var(--c-warning-border);
+  color: var(--c-warning);
+  /* was: bg-amber-500/10 border-amber-500/20 text-amber-500 */
+}
+
+/* ── Market Live Indicator (Chữ Live và dấu chấm nhấp nháy bên cạnh Vietcombank) ──
+   Thẻ áp dụng: 
+   <span className="market-live text-[10px] font-black uppercase tracking-widest">Vietcombank Live</span>
+   <span className="market-live-dot w-1.5 h-1.5 rounded-full animate-pulse"></span>
+   ------------------------------------------------------- */
+.tab-dashboard .market-live {
+  color: var(--c-done);
+  /* was: text-emerald-500 */
+}
+
+.tab-dashboard .market-live-dot {
+  background-color: var(--c-done);
+  /* was: bg-emerald-500 */
+}
+
+/* ── AUD Rate Display (Chữ hiển thị số tỷ giá và phần trăm tăng/giảm) ──
+   Thẻ áp dụng: 
+   <div className="rate-up text-[32px] font-black leading-none">{value}</div> (hoặc rate-down)
+   <div className="rate-change-up text-[13px] font-black flex items-center gap-1">{percent}</div> (hoặc rate-change-down)
+   ------------------------------------------------------- */
+.tab-dashboard .rate-up {
+  color: var(--c-done);
+  /* was: text-emerald-500 */
+}
+
+.tab-dashboard .rate-down {
+  color: var(--c-urgent);
+  /* was: text-rose-500 */
+}
+
+.tab-dashboard .rate-change-up {
+  color: rgba(16, 185, 129, 0.9);
+  /* was: text-emerald-500/90 */
+}
+
+.tab-dashboard .rate-change-down {
+  color: rgba(244, 63, 94, 0.9);
+  /* was: text-rose-500/90 */
+}
+
+/* ── Buy Transfer Card (Khung card tỷ giá chuyển khoản được in đậm) ──
+   Thẻ áp dụng: 
+   <div className="rate-card-accent p-3 rounded-xl border flex flex-col gap-1 transition-all">
+     <span className="rate-card-accent__label text-[9px] font-bold uppercase tracking-widest transition-colors">Buy Transfer</span>
+     <span className="rate-card-accent__value text-[14px] font-black font-mono tracking-tight">{value}</span>
+   </div>
+   ------------------------------------------------------- */
+.tab-dashboard .rate-card-accent {
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.05);
+  /* was: border-indigo-500/30 bg-indigo-500/5 */
+}
+
+.tab-dashboard .rate-card-accent:hover {
+  background: var(--c-indigo-bg);
+  /* was: hover:bg-indigo-500/10 */
+}
+
+.tab-dashboard .rate-card-accent__label {
+  color: var(--c-indigo-light);
+  /* was: text-indigo-400 */
+}
+
+.tab-dashboard .rate-card-accent__label:hover {
+  color: rgba(165, 180, 252, 1);
+  /* was: hover:text-indigo-300 */
+}
+
+.tab-dashboard .rate-card-accent__value {
+  color: rgba(165, 180, 252, 1);
+  /* was: text-indigo-300 */
+}
+
+/* ── Market Tab Buttons (Các nút bấm 5D, 1M, 1Y, ALL trong biểu đồ Tỷ giá) ──
+   Thẻ áp dụng: 
+   Nút đang chọn: <button className="market-tab-active px-3 py-1.5 rounded-md text-[10px] font-black tracking-widest transition-all">
+   Nút không chọn: <button className="market-tab-inactive px-3 py-1.5 rounded-md text-[10px] font-black tracking-widest transition-all">
+   ------------------------------------------------------- */
+.tab-dashboard .market-tab-active {
+  background: var(--c-indigo);
+  color: var(--c-text-white);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  /* was: bg-indigo-500 text-white shadow-sm */
+}
+
+.tab-dashboard .market-tab-inactive {
+  color: var(--text-muted);
+}
+
+.tab-dashboard .market-tab-inactive:hover {
+  color: var(--text-main);
+}
+
+/* ── Chart Loading Spinner (Vòng xoay loading bên trong biểu đồ Tỷ giá/Task) ──
+   Thẻ áp dụng: <div className="chart-spinner w-8 h-8 border-4 rounded-full animate-spin"></div>
+   ------------------------------------------------------- */
+.tab-dashboard .chart-spinner {
+  border-color: var(--c-indigo);
+  border-top-color: transparent;
+  /* was: border-indigo-500 border-t-transparent */
+}
+
+/* ── Task Trends Section (Khung bọc toàn bộ biểu đồ Task Trends lớn) ──
+   Thẻ áp dụng: <div className="trends-card flex flex-col">
+   ------------------------------------------------------- */
+.tab-dashboard .trends-card {
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3xl);
+  padding: 40px;
+  min-height: 500px;
+}
+
+/* ── Time Range Selector (Màu chữ của nút đang được chọn trong bộ lọc thời gian: Day, Week, Month, Year) ──
+   Thẻ áp dụng: <button className="time-range-active px-4 py-2 text-[10px] font-black transition-all">Day</button>
+   ------------------------------------------------------- */
+.tab-dashboard .time-range-active {
+  color: var(--c-indigo-dark);
+  /* was: text-indigo-600 */
+}
+
+/* ── Chart Type Selector (Màu chữ của nút đang được chọn trong loại biểu đồ: Line, Bar, Polar) ──
+   Thẻ áp dụng: <button className="chart-type-active p-1.5 rounded-md transition-all"><LineChart/></button>
+   ------------------------------------------------------- */
+.tab-dashboard .chart-type-active {
+  color: var(--c-indigo-dark);
+  /* was: text-indigo-600 */
+}
+
+/* ── Chart.js Config Colors ──
+   Dashboard.jsx:1771,1811,1859 — Tooltip background
+   Dashboard.jsx:1783,1791,1823,1831,1853,1868,1869 — Grid/axis colors
+   NOTE: Các màu trong Chart.js options phải dùng string, 
+   không thể dùng var() — nên giữ nguyên hardcoded.
+   ------------------------------------------------------- */
+
+/* ── Stat Cards (nếu dùng) ──
+   Cấu trúc class từ CSS token ban đầu
+   ------------------------------------------------------- */
+.tab-dashboard .stat-card {
+  border-radius: var(--radius-2xl);
+  padding: var(--sp-8);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  transition: all var(--transition-base);
+}
+
+.tab-dashboard .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.tab-dashboard .stat-card__label {
+  font-size: var(--fs-base);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-2);
+}
+
+.tab-dashboard .stat-card__value {
+  font-size: var(--fs-5xl);
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.tab-dashboard .stat-card__trend {
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  margin-top: var(--sp-2);
+}
+
+/* ── Project Cards ── */
+.tab-dashboard .project-card {
+  border-radius: var(--radius-xl);
+  padding: var(--sp-6);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.tab-dashboard .project-card:hover {
+  border-color: var(--c-indigo-border);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.tab-dashboard .project-card__name {
+  font-size: var(--fs-md);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.tab-dashboard .project-card__key {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+/* ── Chart Container ── */
+.tab-dashboard .chart-container {
+  border-radius: var(--radius-2xl);
+  padding: var(--sp-9);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.tab-dashboard .chart-container__title {
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-6);
+}

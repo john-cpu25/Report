@@ -206,3 +206,59 @@
 .tab-leave .team-row:hover .team-name {
   color: var(--c-indigo);
 }
+
+/* -- UI Refactoring Added Classes -- */
+.leave-header-bar {
+  background: var(--bg-card);
+  border-radius: 1.5rem; /* 24px = 3xl */
+  padding: 1.5rem; /* p-6 */
+  margin: 10px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+}
+
+.leave-chart-card {
+  background: rgba(var(--bg-card-rgb), 0.5);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+}
+
+.leave-stats-card {
+  background: var(--bg-card);
+  border-radius: 1rem; /* 2xl */
+  padding: 20px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+}
+
+.leave-history-card {
+  background: var(--bg-card);
+  border-radius: 1rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+  height: 100%;
+}
+
+.leave-overview-card {
+  background: var(--bg-card);
+  border-radius: 1rem;
+  padding: 1rem 1.5rem; /* px-6 py-4 */
+  text-align: center;
+  min-width: 130px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+}
+
+.leave-table-wrapper {
+  background: var(--bg-card);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+}
+

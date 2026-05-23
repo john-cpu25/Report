@@ -12,8 +12,12 @@ import TimesheetView from './PersonalSpace/TimesheetView';
 import ProjectView from './PersonalSpace/ProjectView';
 import GanttView from './PersonalSpace/GanttView';
 import DeepAnalysisView from './PersonalSpace/DeepAnalysisView';
+import NeuralBrain from './NeuralBrain';
+import NeumorphicPersonalSwitcher from './buttons/NeumorphicPersonalSwitcher';
+import NeumorphicSearch from './buttons/NeumorphicSearch';
+import NeumorphicDropdown from './buttons/NeumorphicDropdown';
 
-import { Filter, List, LayoutGrid, Layers, ChevronRight, ChevronLeft, ChevronDown, BarChart2, Users, ArrowUpDown, Search, PieChart } from 'lucide-react';
+import { Filter, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
 import { differenceInDays, startOfDay, addDays, isSameDay, isWithinInterval, eachMonthOfInterval, subDays } from 'date-fns';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import {
@@ -274,23 +278,6 @@ const PersonalSpace = () => {
   if (isLoading && (!analystTasks || analystTasks.length === 0)) {
     return (
       <div className="space-y-[10px] pb-20">
-        {/* Show header even while loading */}
-        <div className="bg-[var(--bg-card)] p-[20px] rounded-[12px] border border-[var(--border)] shadow-xl">
-          <h2 className="text-[28px] font-black text-[var(--text-contrast)] uppercase tracking-tighter flex items-center sys-gap">
-            <span 
-              className={isDark ? "text-white" : "text-slate-900"}
-              style={{ 
-                textShadow: isDark 
-                  ? '0 0 10px rgba(255,255,255,0.15), 0.5px 0.5px 1px rgba(255,255,255,0.2)' 
-                  : '0.5px 0.5px 1px rgba(255,255,255,0.2), -0.5px -0.5px 1px rgba(0,0,0,0.5)',
-                opacity: 0.95,
-                letterSpacing: '-0.05em'
-              }}
-            >
-              PERSONAL
-            </span>
-          </h2>
-        </div>
         <div className="h-[50vh] flex flex-col items-center justify-center space-y-4">
           <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-400">Syncing Intelligence...</p>
@@ -300,119 +287,87 @@ const PersonalSpace = () => {
   }
 
   return (
-    <div className="tab-personal w-full space-y-[10px] animate-in fade-in duration-700 pb-[10px]">
+    <div className="tab-personal w-full flex flex-col gap-[10px] animate-in fade-in duration-700 pb-[10px]">
       {/* Sticky Header + Filter Wrapper */}
-      <div className="sticky top-[64px] z-[40] w-full space-y-[10px] pb-[10px] pt-[10px] mt-[-10px]" style={{ background: 'var(--bg-main, #0f172a)' }}>
+      <div className="sticky top-[64px] z-[40] w-full flex flex-col gap-[10px] pb-[10px] pt-[10px]" style={{ background: 'var(--bg-main, #0f172a)' }}>
       {/* Header */}
-      <div className="bg-[var(--bg-card)] px-[20px] py-[16px] rounded-[12px] border border-[var(--border)] shadow-xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-[12px]">
-          <div>
-            <h2 className="text-[28px] font-black text-[var(--text-contrast)] uppercase tracking-tighter flex items-center sys-gap">
-              <span 
-                className={isDark ? "text-white" : "text-slate-900"}
-                style={{ 
-                  textShadow: isDark 
-                    ? '0 0 10px rgba(255,255,255,0.15), 0.5px 0.5px 1px rgba(255,255,255,0.2)' 
-                    : '0.5px 0.5px 1px rgba(255,255,255,0.2), -0.5px -0.5px 1px rgba(0,0,0,0.5)',
-                  opacity: 0.95,
-                  letterSpacing: '-0.05em'
-                }}
-              >
-                PERSONAL
-              </span>
-            </h2>
-          </div>
-        </div>
+      <div className="personal-header-card">
 
         {/* Windows 11 Fluent Toolbar - REDESIGNED */}
-        <div className="mt-[12px] flex items-center gap-[12px] overflow-x-auto custom-scrollbar py-[4px]">
+        <div className="flex items-center gap-[12px] overflow-x-auto custom-scrollbar py-[4px] flex-nowrap">
           
-          {/* Unified Navigation: Basic, Project, Analysis Groups */}
-          <div className={`flex items-center gap-[12px] p-[3px] backdrop-blur-md rounded-xl shadow-inner shrink-0 ${
-            isDark 
-              ? 'bg-slate-950/80 border border-slate-800' 
-              : 'bg-slate-200/50 border border-white/20'
-          }`}>
-            {/* Group 1: Basic Modes */}
-            <div className="flex items-center border-r border-slate-300/30 pr-2 mr-2">
-              {[
-                { id: 'list', label: 'List', icon: <List size={14} />, color: 'text-orange-500' },
-                { id: 'daily', label: 'Daily', icon: <CalendarDays size={14} />, color: 'text-orange-500' }
-              ].map(v => (
-                <button
-                  key={v.id}
-                  onClick={() => setViewMode(v.id)}
-                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 view-btn-basic ${
-                    viewMode === v.id ? 'active' : ''
-                  }`}
-                >
-                  {v.icon} <span className="ml-1">{v.label}</span>
-                  {viewMode === v.id && (
-                    <motion.div
-                      layoutId="activeViewMode"
-                      className="absolute inset-0 rounded-lg z-[-1] toolbar-active-bg"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
+          <NeumorphicPersonalSwitcher viewMode={viewMode} setViewMode={setViewMode} />
 
-            {/* Group 2: Entity Modes */}
-            <div className="flex items-center border-r border-slate-300/30 pr-2 mr-2">
-              {[
-                { id: 'project', label: 'Project', icon: <LayoutGrid size={14} />, color: 'text-emerald-500' }
-              ].map(v => (
-                <button
-                  key={v.id}
-                  onClick={() => setViewMode(v.id)}
-                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 view-btn-entity ${
-                    viewMode === v.id ? 'active' : ''
-                  }`}
-                >
-                  {v.icon} <span className="ml-1">{v.label}</span>
-                  {viewMode === v.id && (
-                    <motion.div
-                      layoutId="activeViewMode"
-                      className="absolute inset-0 rounded-lg z-[-1] toolbar-active-bg"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Group 3: Analysis Modes */}
-            <div className="flex items-center">
-              {[
-                { id: 'gantt', label: 'Gantt', icon: <BarChart2 size={14} />, color: 'text-indigo-600' },
-                { id: 'deep-analysis', label: 'Deep Analysis', icon: <Target size={14} />, color: 'text-indigo-600' },
-                { id: 'performance', label: 'Performance', icon: <TrendingUp size={14} />, color: 'text-indigo-600' }
-              ].map(v => (
-                <button
-                  key={v.id}
-                  onClick={() => setViewMode(v.id)}
-                  className={`relative flex items-center gap-3 h-[32px] px-5 text-[14px] font-black uppercase tracking-wider transition-all duration-300 z-10 view-btn-analysis ${
-                    viewMode === v.id ? 'active' : ''
-                  }`}
-                >
-                  {v.icon} <span className="ml-1">{v.label}</span>
-                  {viewMode === v.id && (
-                    <motion.div
-                      layoutId="activeViewMode"
-                      className="absolute inset-0 rounded-lg z-[-1] toolbar-active-bg"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
+          {/* Search Input in Top Toolbar (Stretched) */}
+          <div className="flex-1 min-w-[200px] px-2">
+            <NeumorphicSearch 
+              value={localFilters.search} 
+              onChange={(e) => setLocalFilters(prev => ({ ...prev, search: e.target.value }))} 
+              placeholder="Search projects or tasks..." 
+            />
           </div>
 
-          <div className="flex-1" /> {/* Spacer */}
+          <div className="flex items-center justify-center shrink-0 w-[46px] h-[46px] group cursor-pointer transition-all duration-300 hover:scale-110">
+            <Filter size={24} className="text-[#4f46e5] fill-[#4f46e5] drop-shadow-[0_0_8px_rgba(79,70,229,0.4)]" />
+          </div>
+
+          {user?.isAdmin && (
+            <NeumorphicDropdown
+              value={localFilters.team}
+              onChange={e => setLocalFilters(prev => ({ ...prev, team: e.target.value }))}
+              options={filterOptions.teams}
+              defaultLabel="TEAMS"
+              className="min-w-[140px] shrink-0"
+            />
+          )}
+
+          <NeumorphicDropdown
+            value={localFilters.project}
+            onChange={e => setLocalFilters(prev => ({ ...prev, project: e.target.value }))}
+            options={filterOptions.projects}
+            defaultLabel="PROJECTS"
+            className="min-w-[140px] shrink-0"
+          />
+
+          <NeumorphicDropdown
+            value={localFilters.user}
+            onChange={e => setLocalFilters(prev => ({ ...prev, user: e.target.value }))}
+            options={filterOptions.users}
+            defaultLabel="MEMBERS"
+            className="min-w-[140px] shrink-0"
+          />
+
+          <button 
+            onClick={() => setLocalFilters({ team: '', user: '', project: '', search: '' })}
+            className="w-[60px] h-[46px] flex items-center justify-center text-[14px] font-bold rounded-xl transition-all shrink-0 text-[#4f46e5] bg-white hover:bg-slate-50 border border-white/50 shadow-[4px_4px_10px_rgba(163,177,198,0.4),-4px_-4px_10px_rgba(255,255,255,1)] active:shadow-[inset_3px_3px_8px_rgba(163,177,198,0.4),inset_-3px_-3px_8px_rgba(255,255,255,1)]"
+          >
+            Clear
+          </button>
+
+          {/* Sort Dropdown */}
+          {viewMode !== 'neural-brain' && (
+            <div className="flex items-center shrink-0 border-l border-r border-[var(--border)] px-3 mx-1">
+              <NeumorphicDropdown
+                icon={ArrowUpDown}
+                value={localSort}
+                onChange={e => setLocalSort(e.target.value)}
+                options={[
+                  { value: 'date-desc', label: 'Date ↓ Newest' },
+                  { value: 'date-asc', label: 'Date ↑ Oldest' },
+                  { value: 'project-asc', label: 'Project A→Z' },
+                  { value: 'project-desc', label: 'Project Z→A' },
+                  { value: 'user-asc', label: 'User A→Z' },
+                  { value: 'user-desc', label: 'User Z→A' },
+                  { value: 'team-asc', label: 'Team A→Z' }
+                ]}
+                defaultLabel="Sort By..."
+                className="min-w-[170px]"
+              />
+            </div>
+          )}
 
             {/* Time Segmented Control (New Design) */}
-            {['list', 'daily', 'project', 'gantt', 'performance'].includes(viewMode) && (
+            {['list', 'daily', 'project', 'gantt', 'performance', 'neural-brain'].includes(viewMode) && (
               <div className={`flex items-center gap-1 p-[3px] backdrop-blur-md rounded-xl shadow-inner relative shrink-0 ${
                 isDark 
                   ? 'bg-slate-950/80 border border-slate-800' 
@@ -424,11 +379,11 @@ const PersonalSpace = () => {
                     <button
                       key={id}
                       onClick={() => setTimeRange(id)}
-                      className={`relative px-6 h-[28px] text-[14px] font-black uppercase tracking-widest transition-all duration-300 z-10 time-range-btn ${
+                      className={`relative w-[46px] h-[46px] text-[14px] font-black uppercase transition-all duration-300 z-10 time-range-btn flex items-center justify-center ${
                         isActive ? 'active' : ''
                       }`}
                     >
-                      {id}
+                      {{ week: 'W', month: 'M', year: 'Y' }[id]}
                       {isActive && (
                         <motion.div
                           layoutId="activeRange"
@@ -460,243 +415,172 @@ const PersonalSpace = () => {
         </div>
       </div>
 
-      {/* Smart Filters Bar */}
-      <div className="flex items-center sys-gap bg-[var(--bg-card)] px-[16px] sys-py rounded-[10px] border border-[var(--border)] shadow-sm">
-        <div className="flex items-center gap-2 text-[var(--text-muted)] shrink-0">
-          <Filter size={16} />
-          <span className="text-[14px] font-semibold uppercase tracking-wider">Filters</span>
-        </div>
 
-        <input 
-          type="text"
-          placeholder="Search projects or tasks..."
-          className="flex-1 min-w-[180px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none transition-all filter-input"
-          value={localFilters.search}
-          onChange={e => setLocalFilters(prev => ({ ...prev, search: e.target.value }))}
-        />
-
-        {user?.isAdmin && (
-          <select 
-            className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none transition-all filter-select-team"
-            value={localFilters.team}
-            onChange={e => setLocalFilters(prev => ({ ...prev, team: e.target.value }))}
-          >
-            <option value="">All Teams</option>
-            {filterOptions.teams.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-        )}
-
-        <select 
-          className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none transition-all filter-select-project"
-          value={localFilters.project}
-          onChange={e => setLocalFilters(prev => ({ ...prev, project: e.target.value }))}
-        >
-          <option value="">All Projects</option>
-          {filterOptions.projects.map(p => <option key={p} value={p}>{p}</option>)}
-        </select>
-
-        <select 
-          className="min-w-[160px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none transition-all filter-select-user"
-          value={localFilters.user}
-          onChange={e => setLocalFilters(prev => ({ ...prev, user: e.target.value }))}
-        >
-          <option value="">All Members</option>
-          {filterOptions.users.map(u => <option key={u} value={u}>{u}</option>)}
-        </select>
-
-        <button 
-          onClick={() => setLocalFilters({ team: '', user: '', project: '', search: '' })}
-          className="h-[36px] px-4 text-[14px] font-semibold rounded-md transition-all shrink-0 filter-clear-btn"
-        >
-          Clear
-        </button>
-
-        {/* Sort Dropdown */}
-        <div className="flex items-center gap-2 shrink-0 border-l border-[var(--border)] pl-3">
-          <ArrowUpDown size={14} className="text-[var(--text-muted)]" />
-          <select
-            className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-md h-[36px] px-3 text-[14px] font-medium text-[var(--text-main)] outline-none transition-all filter-select-sort"
-            value={localSort}
-            onChange={e => setLocalSort(e.target.value)}
-          >
-            <option value="date-desc">Date ↓ Newest</option>
-            <option value="date-asc">Date ↑ Oldest</option>
-            <option value="project-asc">Project A→Z</option>
-            <option value="project-desc">Project Z→A</option>
-            <option value="user-asc">User A→Z</option>
-            <option value="user-desc">User Z→A</option>
-            <option value="team-asc">Team A→Z</option>
-          </select>
-        </div>
-      </div>
       </div>{/* End Sticky Wrapper */}
 
       {/* Content Area */}
       {/* Timesheet Summary & Navigation Header (Visible for Daily, Project, and Gantt) */}
-      <div className="px-[20px] space-y-[10px]">
+      <div className="px-[10px] flex flex-col gap-[10px]">
       {/* --- CONTENT AREA: STATS & TIME NAVIGATION --- */}
-      <div className="ocd-card p-0 mb-[10px] shadow-xl border border-indigo-500/20 bg-[var(--bg-card)]">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between px-[12px] py-[12px] stats-summary-bar gap-4 rounded-t-[7px]">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
-              <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Total Hours:</span>
-              <span className="text-[14px] font-black stat-val-hours">
-                {((viewMode === 'daily' || viewMode === 'list') ? timesheetData?.grandTotalHours : projectTimesheetData?.grandTotalHours || 0).toFixed(2)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
-              <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Tasks:</span>
-              <span className="text-[14px] font-black stat-val-tasks">
-                {(viewMode === 'daily' || viewMode === 'list') ? timesheetData?.grandTotalTasks : projectTimesheetData?.grandTotalTasks || 0}
-              </span>
-            </div>
-
-            <div className="w-[1px] h-8 bg-[var(--border)] mx-2 hidden xl:block" />
-
-            {/* Time Metric Selector */}
-            {['daily', 'project'].includes(viewMode) && (
-              <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-inner">
-                {[
-                  { id: 't1', label: 'T1', color: 'emerald', tooltip: 'T1: DATE_START → DATE_END (Planned)' },
-                  { id: 't2', label: 'T2', color: 'sky', tooltip: 'T2: DATE_START → DATE_COMPLETE (Actual Complete)' },
-                  { id: 't3', label: 'T3', color: 'indigo', tooltip: 'T3: DATE_START → DATE_CHECKED (Up to Checked)' },
-                  { id: 't4', label: 'T4', color: 'orange', tooltip: 'T4: DATE_STARTED → DATE_CHECKED (Processing Time)' },
-                  { id: 't5', label: 'T5', color: 'rose', tooltip: 'T5: CREATED_AT → DATE_CHECKED (Complete Lifecycle)' }
-                ].map((m) => {
-                  const isActive = selectedTimeMetric === m.id;
-
-                  return (
-                    <div key={m.id} className="relative group/time">
-                      <div className="absolute -top-[38px] left-1/2 -translate-x-1/2 px-3 py-1.5 bg-slate-900 border border-slate-700/80 rounded-lg shadow-2xl opacity-0 group-hover/time:opacity-100 transition-all pointer-events-none whitespace-nowrap z-[60] duration-200 transform translate-y-1 group-hover/time:translate-y-0">
-                        <span className="text-[10px] font-bold text-slate-100 tracking-wide">{m.tooltip}</span>
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 border-r border-b border-slate-700/80 rotate-45" />
-                      </div>
-
-                      <button
-                        onClick={() => setSelectedTimeMetric(m.id)}
-                        className={`px-3 py-1.5 text-[14px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 metric-${m.id} ${isActive ? 'active shadow-md' : ''}`}
-                      >
-                        {m.label}
-                      </button>
-                    </div>
-                  );
-                })}
+      {viewMode !== 'deep-analysis' && (
+        <div className="personal-stats-bar relative z-[38]">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between stats-summary-bar gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
+                <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Total Hours:</span>
+                <span className="text-[14px] font-black stat-val-hours">
+                  {((viewMode === 'daily' || viewMode === 'list' || viewMode === 'neural-brain') ? timesheetData?.grandTotalHours : projectTimesheetData?.grandTotalHours || 0).toFixed(2)}
+                </span>
               </div>
-            )}
-          </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
+                <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Tasks:</span>
+                <span className="text-[14px] font-black stat-val-tasks">
+                  {(viewMode === 'daily' || viewMode === 'list' || viewMode === 'neural-brain') ? timesheetData?.grandTotalTasks : projectTimesheetData?.grandTotalTasks || 0}
+                </span>
+              </div>
 
-          {/* Enhanced Year/Week/Month Picker + Navigation */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 p-1.5 rounded-xl shadow-sm date-picker-wrapper">
-              <select 
-                className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-year"
-                value={currentDate.getFullYear()}
-                onChange={(e) => {
-                  const targetYear = parseInt(e.target.value);
-                  const newDate = new Date(currentDate);
-                  newDate.setFullYear(targetYear);
-                  setCurrentDate(newDate);
-                }}
-              >
-                {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-              
-              {timeRange !== 'year' && (
-                <>
-                  <div className="w-[1px] h-4 bg-indigo-500/20" />
-                  
-                  <div className="flex items-center gap-1.5 px-1">
-                    <span className="text-[14px] font-black text-indigo-500/60">
-                      {timeRange === 'week' ? 'W' : 'M'}
-                    </span>
-                    {timeRange === 'week' ? (
-                      <select 
-                        className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-sub"
-                        value={getISOWeek(currentDate)}
-                        onChange={(e) => {
-                          const targetWeek = parseInt(e.target.value);
-                          const currentWeek = getISOWeek(currentDate);
-                          setCurrentDate(addDays(currentDate, (targetWeek - currentWeek) * 7));
-                        }}
-                      >
-                        {[...Array(53)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
-                      </select>
-                    ) : (
-                      <select 
-                        className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-sub"
-                        value={currentDate.getMonth() + 1}
-                        onChange={(e) => {
-                          const targetMonth = parseInt(e.target.value) - 1;
-                          const newDate = new Date(currentDate);
-                          newDate.setMonth(targetMonth);
-                          setCurrentDate(newDate);
-                        }}
-                      >
-                        {[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
-                      </select>
-                    )}
-                  </div>
-                </>
+              <div className="w-[1px] h-8 bg-[var(--border)] mx-2 hidden xl:block" />
+
+              {/* Time Metric Selector */}
+              {['daily', 'project'].includes(viewMode) && (
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-inner">
+                  {[
+                    { id: 't1', label: 'T1', color: 'emerald', tooltip: 'T1: DATE_START → DATE_END (Planned)' },
+                    { id: 't2', label: 'T2', color: 'sky', tooltip: 'T2: DATE_START → DATE_COMPLETE (Actual Complete)' },
+                    { id: 't3', label: 'T3', color: 'indigo', tooltip: 'T3: DATE_START → DATE_CHECKED (Up to Checked)' },
+                    { id: 't4', label: 'T4', color: 'orange', tooltip: 'T4: DATE_STARTED → DATE_CHECKED (Processing Time)' },
+                    { id: 't5', label: 'T5', color: 'rose', tooltip: 'T5: CREATED_AT → DATE_CHECKED (Complete Lifecycle)' }
+                  ].map((m) => {
+                    const isActive = selectedTimeMetric === m.id;
+
+                    return (
+                      <div key={m.id} className="relative group/time">
+                        <button
+                          onClick={() => setSelectedTimeMetric(m.id)}
+                          className={`px-3 py-1.5 text-[14px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 metric-${m.id} ${isActive ? 'active shadow-md' : ''}`}
+                        >
+                          {m.label}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
 
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => {
-                  if (timeRange === 'week') {
-                    setCurrentDate(addDays(currentDate, -7));
-                  } else if (timeRange === 'month') {
+            {/* Enhanced Year/Week/Month Picker + Navigation */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 p-1.5 rounded-xl shadow-sm date-picker-wrapper">
+                <select 
+                  className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-year"
+                  value={currentDate.getFullYear()}
+                  onChange={(e) => {
+                    const targetYear = parseInt(e.target.value);
                     const newDate = new Date(currentDate);
-                    newDate.setMonth(currentDate.getMonth() - 1);
+                    newDate.setFullYear(targetYear);
                     setCurrentDate(newDate);
-                  } else if (timeRange === 'year') {
-                    const newDate = new Date(currentDate);
-                    newDate.setFullYear(currentDate.getFullYear() - 1);
-                    setCurrentDate(newDate);
-                  } else {
-                    setCurrentDate(addDays(currentDate, -1));
-                  }
-                }}
-                className="w-[32px] h-[32px] rounded-lg flex items-center justify-center transition-all date-nav-btn"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={() => {
-                  if (timeRange === 'week') {
-                    setCurrentDate(addDays(currentDate, 7));
-                  } else if (timeRange === 'month') {
-                    const newDate = new Date(currentDate);
-                    newDate.setMonth(currentDate.getMonth() + 1);
-                    setCurrentDate(newDate);
-                  } else if (timeRange === 'year') {
-                    const newDate = new Date(currentDate);
-                    newDate.setFullYear(currentDate.getFullYear() + 1);
-                    setCurrentDate(newDate);
-                  } else {
-                    setCurrentDate(addDays(currentDate, 1));
-                  }
-                }}
-                className="w-[32px] h-[32px] rounded-lg flex items-center justify-center transition-all date-nav-btn"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+                  }}
+                >
+                  {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+                
+                {timeRange !== 'year' && (
+                  <>
+                    <div className="w-[1px] h-4 bg-indigo-500/20" />
+                    
+                    <div className="flex items-center gap-1.5 px-1">
+                      <span className="text-[14px] font-black text-indigo-500/60">
+                        {timeRange === 'week' ? 'W' : 'M'}
+                      </span>
+                      {timeRange === 'week' ? (
+                        <select 
+                          className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-sub"
+                          value={getISOWeek(currentDate)}
+                          onChange={(e) => {
+                            const targetWeek = parseInt(e.target.value);
+                            const currentWeek = getISOWeek(currentDate);
+                            setCurrentDate(addDays(currentDate, (targetWeek - currentWeek) * 7));
+                          }}
+                        >
+                          {[...Array(53)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
+                        </select>
+                      ) : (
+                        <select 
+                          className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-sub"
+                          value={currentDate.getMonth() + 1}
+                          onChange={(e) => {
+                            const targetMonth = parseInt(e.target.value) - 1;
+                            const newDate = new Date(currentDate);
+                            newDate.setMonth(targetMonth);
+                            setCurrentDate(newDate);
+                          }}
+                        >
+                          {[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
+                        </select>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
 
-            {weekOffset !== 0 && (
-              <button
-                onClick={() => setCurrentDate(new Date())}
-                className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded transition-all date-today-btn"
-              >
-                {timeRange === 'week' ? 'Current Week' : timeRange === 'month' ? 'Current Month' : timeRange === 'year' ? 'Current Year' : 'Today'}
-              </button>
-            )}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    if (timeRange === 'week') {
+                      setCurrentDate(addDays(currentDate, -7));
+                    } else if (timeRange === 'month') {
+                      const newDate = new Date(currentDate);
+                      newDate.setMonth(currentDate.getMonth() - 1);
+                      setCurrentDate(newDate);
+                    } else if (timeRange === 'year') {
+                      const newDate = new Date(currentDate);
+                      newDate.setFullYear(currentDate.getFullYear() - 1);
+                      setCurrentDate(newDate);
+                    } else {
+                      setCurrentDate(addDays(currentDate, -1));
+                    }
+                  }}
+                  className="w-[32px] h-[32px] rounded-lg flex items-center justify-center transition-all date-nav-btn"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() => {
+                    if (timeRange === 'week') {
+                      setCurrentDate(addDays(currentDate, 7));
+                    } else if (timeRange === 'month') {
+                      const newDate = new Date(currentDate);
+                      newDate.setMonth(currentDate.getMonth() + 1);
+                      setCurrentDate(newDate);
+                    } else if (timeRange === 'year') {
+                      const newDate = new Date(currentDate);
+                      newDate.setFullYear(currentDate.getFullYear() + 1);
+                      setCurrentDate(newDate);
+                    } else {
+                      setCurrentDate(addDays(currentDate, 1));
+                    }
+                  }}
+                  className="w-[32px] h-[32px] rounded-lg flex items-center justify-center transition-all date-nav-btn"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+
+              {weekOffset !== 0 && (
+                <button
+                  onClick={() => setCurrentDate(new Date())}
+                  className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded transition-all date-today-btn"
+                >
+                  {timeRange === 'week' ? 'Current Week' : timeRange === 'month' ? 'Current Month' : timeRange === 'year' ? 'Current Year' : 'Today'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {viewMode === 'list' && (
-        <div className="ocd-card p-0 overflow-hidden shadow-2xl shadow-black/20">
+        <div className="personal-table-wrapper">
           <div className="max-h-[calc(100vh-335px)] overflow-auto custom-scrollbar sticky-header-container">
             <UnifiedTable 
               data={filteredData}
@@ -742,7 +626,7 @@ const PersonalSpace = () => {
       )}
 
       {viewMode === 'performance' && (
-        <div className="ocd-card p-0 shadow-2xl shadow-black/20 border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden">
+        <div className="personal-table-wrapper">
           <div className="max-h-[calc(100vh-335px)] overflow-y-auto overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse min-w-[1000px]">
               <thead>
@@ -793,6 +677,14 @@ const PersonalSpace = () => {
             </table>
           </div>
         </div>
+      )}
+
+      {viewMode === 'neural-brain' && (
+        <NeuralBrain 
+          filteredTasks={filteredData} 
+          timeRange={timeRange} 
+          setTimeRange={setTimeRange} 
+        />
       )}
       </div>
     </div>

@@ -243,7 +243,7 @@
 }
 
 .tab-personal .stat-val-tasks {
-  color: var(--c-emerald-light);
+  color: var(--c-indigo-light); /* Changed to Indigo for theme sync */
 }
 
 /* ── Time Metric Selectors (T1-T5) ──
@@ -292,11 +292,11 @@
 }
 
 .tab-personal .date-picker-sub {
-  color: var(--c-emerald);
-  border-color: var(--status-done-border);
+  color: var(--c-indigo);
+  border-color: var(--status-wip-border);
 }
 .tab-personal .date-picker-sub:hover {
-  border-color: var(--c-emerald);
+  border-color: var(--c-indigo);
 }
 
 .tab-personal .date-nav-btn {
@@ -317,3 +317,27 @@
   color: #a5b4fc; /* indigo-300 */
   background: rgba(99, 102, 241, 0.2);
 }
+/* -- UI Refactoring Added Classes -- */
+.personal-header-card {
+  background: var(--bg-card);
+  padding: 16px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.personal-stats-bar {
+  background: var(--bg-card);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 7px 7px 0 0;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+}
+
+.personal-table-wrapper {
+  background: var(--bg-card);
+  border-radius: 0 0 7px 7px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+

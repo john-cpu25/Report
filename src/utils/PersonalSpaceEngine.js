@@ -51,12 +51,14 @@ export const usePersonalSpaceEngine = (params) => {
       });
     } else if (timeRange === 'week') {
       const targetMonday = startOfWeek(targetDate, { weekStartsOn: 1 });
-      return [...Array(7)].map((_, i) => addDays(targetMonday, i));
+      return [...Array(5)].map((_, i) => addDays(targetMonday, i));
     } else if (timeRange === 'month') {
       const startOfCurrentMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
       const endOfCurrentMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
       const daysInMonth = endOfCurrentMonth.getDate();
-      return [...Array(daysInMonth)].map((_, i) => addDays(startOfCurrentMonth, i));
+      return [...Array(daysInMonth)]
+        .map((_, i) => addDays(startOfCurrentMonth, i))
+        .filter(d => d.getDay() !== 0 && d.getDay() !== 6);
     } else if (timeRange === 'year') {
       return [...Array(12)].map((_, i) => new Date(targetDate.getFullYear(), i, 1));
     } else {

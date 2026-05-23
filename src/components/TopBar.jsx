@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react'
 import { Menu, Bell, Search, User, ChevronDown, FolderKanban, CheckCircle2, Clipboard, Check, AlertTriangle, Calendar } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -7,6 +6,8 @@ import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import AvatarWithFrame from './AvatarWithFrame'
+import NeumorphicSearch from './buttons/NeumorphicSearch';
+import NeumorphicWeeklySwitcher from './buttons/NeumorphicWeeklySwitcher';
 
 const TopBar = () => {
   const { user, isAdmin } = useAuth();
@@ -18,7 +19,11 @@ const TopBar = () => {
     activeTab, setActiveTab, dashboardStats, dashboardProjects, dashboardTasks, dashboardUsers,
     setShowProfileModal,
     adminViewMode, setAdminViewMode,
-    adminActiveTeam, setAdminActiveTeam
+    adminActiveTeam, setAdminActiveTeam,
+    reportData,
+    weeklyViewMode, setWeeklyViewMode,
+    triggerWeeklyExpand, setTriggerWeeklyExpand,
+    triggerWeeklyCollapse, setTriggerWeeklyCollapse
   } = useApp();
 
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
@@ -94,27 +99,25 @@ const TopBar = () => {
             <Menu size={24} />
           </button>
           <div className="flex items-center gap-6">
-             <div className="flex items-center gap-3">
-               <RincovitchLogo size={36} />
-               <h1 className="text-[28px] font-black text-[var(--text-main)] uppercase tracking-tighter leading-none">
-                 RINCOVITCH
+             {activeTab !== 'dashboard' && (
+               <h1 className="text-[28px] font-black text-[var(--text-main)] uppercase tracking-tighter leading-none ml-[32px]">
+                 {activeTab === 'projects' ? 'PROJECT' : activeTab === 'report' ? 'PLANNER' : activeTab.replace('-', ' ').toUpperCase()}
                </h1>
-             </div>
+             )}
 
-             {/* Dynamic Stats Header with Dropdowns - Only on Dashboard */}
-             {activeTab === 'dashboard' && (
+             {/* Dynamic Stats Header with Dropdowns - On Dashboard and Projects */}
+             {(activeTab === 'dashboard' || activeTab === 'projects') && (
              <div className="hidden xl:flex items-center gap-12 ml-10 relative" ref={dropdownRef}>
                {/* Total Projects */}
                <div 
                  className="flex flex-col cursor-pointer group/stat select-none"
                  onClick={() => setDropdownOpen(dropdownOpen === 'TOTAL' ? null : 'TOTAL')}
                >
-                 <div className="flex items-center gap-2 mb-2.5">
-                   <p className="text-[12px] font-black text-[var(--text-muted)] uppercase leading-none group-hover/stat:text-indigo-400 transition-colors">Total Projects</p>
-                   <ChevronDown size={10} className={`text-[var(--text-muted)] transition-transform duration-300 ${dropdownOpen === 'TOTAL' ? 'rotate-180 text-indigo-400' : ''}`} />
+                 <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1 group-hover/stat:text-indigo-400 transition-colors">
+                   TOTAL PROJECTS <ChevronDown size={12} className={`transition-transform duration-300 ${dropdownOpen === 'TOTAL' ? 'rotate-180 text-indigo-400' : ''}`} />
                  </div>
-                 <div className="flex items-center gap-3">
-                   <span className="text-2xl font-black text-[var(--text-main)] leading-none tracking-tighter group-hover/stat:text-indigo-300 transition-colors">{dashboardStats.totalProjects}</span>
+                 <div className="text-[28px] font-black text-[var(--text-main)] leading-none mt-1 group-hover/stat:text-indigo-300 transition-colors">
+                   {dashboardStats.totalProjects}
                  </div>
                </div>
 
@@ -123,12 +126,11 @@ const TopBar = () => {
                  className="flex flex-col cursor-pointer group/stat select-none"
                  onClick={() => setDropdownOpen(dropdownOpen === 'ACTIVE' ? null : 'ACTIVE')}
                >
-                 <div className="flex items-center gap-2 mb-2.5">
-                   <p className="text-[12px] font-black text-[var(--text-muted)] uppercase leading-none group-hover/stat:text-emerald-400 transition-colors">Active Projects</p>
-                   <ChevronDown size={10} className={`text-[var(--text-muted)] transition-transform duration-300 ${dropdownOpen === 'ACTIVE' ? 'rotate-180 text-emerald-400' : ''}`} />
+                 <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1 group-hover/stat:text-emerald-400 transition-colors">
+                   ACTIVE PROJECTS <ChevronDown size={12} className={`transition-transform duration-300 ${dropdownOpen === 'ACTIVE' ? 'rotate-180 text-emerald-400' : ''}`} />
                  </div>
-                 <div className="flex items-center gap-3">
-                   <span className="text-2xl font-black text-emerald-500 leading-none tracking-tighter group-hover/stat:text-emerald-400 transition-colors">{dashboardStats.activeProjects}</span>
+                 <div className="text-[28px] font-black text-emerald-500 leading-none mt-1 group-hover/stat:text-emerald-400 transition-colors">
+                   {dashboardStats.activeProjects}
                  </div>
                </div>
 
@@ -143,10 +145,10 @@ const TopBar = () => {
                    >
                      <div className="px-5 py-4 pt-5 border-b border-[var(--border)] bg-white/5">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.25em]">
+                          <h3 className="text-[14px] font-black text-[var(--text-main)] uppercase">
                             {dropdownOpen === 'TOTAL' ? 'Project Portfolio' : 'Active Operations'}
                           </h3>
-                          <span className="text-[9px] font-black text-[var(--text-muted)] bg-white/5 px-2.5 py-1 rounded border border-[var(--border)]">
+                          <span className="text-[14px] font-black text-[var(--text-muted)] bg-white/5 px-2.5 py-1 rounded border border-[var(--border)]">
                             {dropdownOpen === 'TOTAL' ? dashboardProjects.length : activeProjectsList.length} UNITS
                           </span>
                         </div>
@@ -164,14 +166,14 @@ const TopBar = () => {
                               
                               {/* Text slides slightly right to accommodate the dot */}
                               <div className="flex flex-col transition-all duration-300 ease-out translate-x-0 group-hover/item:translate-x-3.5">
-                                <span className="text-[11px] font-bold text-[var(--text-main)] group-hover/item:text-indigo-300 transition-colors uppercase tracking-tight leading-tight">{p.name}</span>
-                                <span className="text-[8px] font-medium text-[var(--text-muted)] uppercase tracking-widest mt-0.5">{p.key || 'RIN-PROJ'}</span>
+                                <span className="text-[14px] font-bold text-[var(--text-main)] group-hover/item:text-indigo-300 transition-colors uppercase tracking-tight leading-tight">{p.name}</span>
+                                <span className="text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-widest mt-0.5">{p.key || 'RIN-PROJ'}</span>
                               </div>
                             </div>
                             {activeProjectIds.has(p.id) && (
                               <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded border border-emerald-500/20">
-                                <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
-                                <span className="text-[7px] font-black text-emerald-500 uppercase">Live</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span className="text-[12px] font-black text-emerald-500 uppercase">Live</span>
                               </div>
                             )}
                           </div>
@@ -187,12 +189,33 @@ const TopBar = () => {
 
         <div className="flex items-center sys-gap">
           {activeTab === 'report' && (
-            <button 
-              onClick={() => setShowProjectGroups(!showProjectGroups)}
-              className={`neu-button neu-pill px-6 py-2.5 text-[11px] ${showProjectGroups ? 'active text-emerald-500' : ''}`}
-            >
-              PROJECT GROUP
-            </button>
+            <div className="flex items-center gap-[10px]">
+              {/* EX and CO Buttons */}
+              {showProjectGroups && weeklyViewMode === 'list' && (
+                <div className="neu-inset rounded-[12px] p-1 flex gap-1">
+                  <button onClick={() => setTriggerWeeklyExpand(prev => prev + 1)} className="neu-button px-4 py-1 text-[11px] font-black uppercase rounded-[8px]">EX</button>
+                  <button onClick={() => setTriggerWeeklyCollapse(prev => prev + 1)} className="neu-button px-4 py-1 text-[11px] font-black uppercase rounded-[8px]">CO</button>
+                </div>
+              )}
+              
+              {/* View Switcher (List/Gantt) */}
+              <NeumorphicWeeklySwitcher viewMode={weeklyViewMode} setViewMode={setWeeklyViewMode} />
+
+              {/* Project Group Toggle */}
+              {weeklyViewMode === 'list' && (
+                <button
+                  onClick={() => setShowProjectGroups(!showProjectGroups)}
+                  className={`neumorphic-switcher-btn ${showProjectGroups ? 'active text-emerald-500' : ''}`}
+                  title="Toggle Project Group"
+                >
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 12l10 5 10-5" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  </svg>
+                </button>
+              )}
+            </div>
           )}
 
           <div className="flex items-center sys-gap">

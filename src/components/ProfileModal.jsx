@@ -138,7 +138,7 @@ export default function ProfileModal({ isOpen, onClose }) {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
         {/* Backdrop overlay */}
         <motion.div 
           initial={{ opacity: 0 }}
@@ -230,7 +230,7 @@ export default function ProfileModal({ isOpen, onClose }) {
             <div style={{ marginTop: '24px' }}>
               {/* Preset Avatars */}
               <div>
-                <p className={isDark ? "text-xs font-black uppercase tracking-widest text-indigo-400" : "text-xs font-black uppercase tracking-widest text-emerald-600"} style={{ marginBottom: '12px' }}>Preset Avatars</p>
+                <p className={isDark ? "text-[12px] font-black uppercase text-indigo-400" : "text-[12px] font-black uppercase text-emerald-600"} style={{ marginBottom: '12px' }}>Preset Avatars</p>
                 <div className="flex flex-wrap gap-2.5">
                   {presetAvatars.map((gradient, index) => (
                     <button
@@ -268,14 +268,14 @@ export default function ProfileModal({ isOpen, onClose }) {
             <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: '24px' }}>
               {/* Short Name */}
               <div>
-                <label className={`block text-xs font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
+                <label className={`block text-[14px] font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
                   Short Name
                 </label>
                 <input
                   type="text"
                   value={formData.shortName}
                   onChange={(e) => handleInputChange('shortName', e.target.value)}
-                  className={`w-full border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold ${
+                  className={`w-full border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold text-[14px] ${
                     isDark 
                       ? 'bg-slate-950/60 border-white/10 text-white placeholder:text-slate-600' 
                       : 'bg-stone-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
@@ -286,14 +286,14 @@ export default function ProfileModal({ isOpen, onClose }) {
 
               {/* Full Name */}
               <div>
-                <label className={`block text-xs font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
+                <label className={`block text-[14px] font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
                   Full Name
                 </label>
                 <input
                   type="text"
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
-                  className={`w-full border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold ${
+                  className={`w-full border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold text-[14px] ${
                     isDark 
                       ? 'bg-slate-950/60 border-white/10 text-white placeholder:text-slate-600' 
                       : 'bg-stone-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
@@ -304,14 +304,14 @@ export default function ProfileModal({ isOpen, onClose }) {
 
               {/* Team */}
               <div>
-                <label className={`block text-xs font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
-                  <Users size={14} className="inline mr-1.5 mb-0.5" />
+                <label className={`block text-[14px] font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
+                  <Users size={14} className="inline mr-[10px] mb-0.5" />
                   Team
                 </label>
                 <select
                   value={formData.team}
                   onChange={(e) => handleInputChange('team', e.target.value)}
-                  className={`w-full border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold ${
+                  className={`w-full border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold text-[14px] ${
                     isDark 
                       ? 'bg-slate-950/60 border-white/10 text-white bg-slate-900' 
                       : 'bg-stone-50 border-slate-200 text-slate-900 bg-white'
@@ -329,14 +329,14 @@ export default function ProfileModal({ isOpen, onClose }) {
 
               {/* Location */}
               <div>
-                <label className={`block text-xs font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
-                  <MapPin size={14} className="inline mr-1.5 mb-0.5" />
+                <label className={`block text-[14px] font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
+                  <MapPin size={14} className="inline mr-[10px] mb-0.5" />
                   Location
                 </label>
                 <select
                   value={formData.location}
                   onChange={(e) => handleInputChange('location', e.target.value)}
-                  className={`w-full border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold ${
+                  className={`w-full border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold text-[14px] ${
                     isDark 
                       ? 'bg-slate-950/60 border-white/10 text-white bg-slate-900' 
                       : 'bg-stone-50 border-slate-200 text-slate-900 bg-white'
@@ -350,15 +350,15 @@ export default function ProfileModal({ isOpen, onClose }) {
 
               {/* Position */}
               <div>
-                <label className={`block text-xs font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
-                  <Briefcase size={14} className="inline mr-1.5 mb-0.5" />
+                <label className={`block text-[14px] font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
+                  <Briefcase size={14} className="inline mr-[10px] mb-0.5" />
                   Position
                 </label>
                 <input
                   type="text"
                   value={formData.position}
                   onChange={(e) => handleInputChange('position', e.target.value)}
-                  className={`w-full border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold ${
+                  className={`w-full border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold text-[14px] ${
                     isDark 
                       ? 'bg-slate-950/60 border-white/10 text-white placeholder:text-slate-600' 
                       : 'bg-stone-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
@@ -369,12 +369,12 @@ export default function ProfileModal({ isOpen, onClose }) {
 
               {/* Email */}
               <div>
-                <label className={`block text-xs font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
-                  <Mail size={14} className="inline mr-1.5 mb-0.5" />
+                <label className={`block text-[14px] font-black uppercase tracking-widest ${isDark ? 'text-indigo-400' : 'text-emerald-600'}`} style={{ marginBottom: '8px' }}>
+                  <Mail size={14} className="inline mr-[10px] mb-0.5" />
                   Email Address
                 </label>
                 <div 
-                  className={`text-sm font-mono border rounded-[6px] flex items-center select-all select-none ${
+                  className={`text-[14px] font-mono border rounded-[6px] flex items-center select-all select-none ${
                     isDark 
                       ? 'bg-slate-950/20 border-white/5 text-slate-500' 
                       : 'bg-stone-100 border-stone-200/50 text-stone-400'
@@ -395,7 +395,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                 type="button"
                 onClick={onClose}
                 disabled={isSaving}
-                className="px-6 font-semibold text-sm transition-all duration-200 cursor-pointer hover:opacity-90 disabled:opacity-50"
+                className="px-[20px] font-semibold text-[14px] transition-all duration-200 cursor-pointer hover:opacity-90 disabled:opacity-50"
                 style={{ 
                   height: '44px', 
                   borderRadius: '14px', 
@@ -409,7 +409,7 @@ export default function ProfileModal({ isOpen, onClose }) {
               <button 
                 type="submit"
                 disabled={isSaving || saveSuccess}
-                className="px-7 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                className="px-[20px] bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-[14px] transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                 style={{ 
                   height: '44px', 
                   borderRadius: '14px',

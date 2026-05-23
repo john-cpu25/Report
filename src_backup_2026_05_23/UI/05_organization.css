@@ -1,0 +1,275 @@
+/* ============================================================
+   TAB 5 — ORGANIZATION
+   File: src/components/OrgChart.jsx
+   
+   Quản lý CSS cho Sơ đồ Tổ chức (Organization Chart).
+   Phần lớn logic màu sắc phụ thuộc vào Team (dynamic) nên
+   sử dụng inline styles. File này quản lý các thành phần tĩnh.
+   ============================================================ */
+
+/* ── Container Chính ──
+   OrgChart.jsx:1125
+   ------------------------------------------------------- */
+.tab-org {
+  position: relative;
+  width: 100%;
+  height: 88vh;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+/* ── Header ──
+   OrgChart.jsx:1127
+   ------------------------------------------------------- */
+.tab-org .org-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  backdrop-filter: blur(12px);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-org .org-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: -0.03em;
+  margin: 0;
+  line-height: 1;
+}
+
+.tab-org .org-subtitle {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin: 3px 0 0;
+}
+
+/* ── Tool Buttons (Zoom, Grid, etc.) ──
+   OrgChart.jsx:1161, 1177
+   ------------------------------------------------------- */
+.tab-org .org-tool-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-org .org-tool-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+
+/* Active State for Grid Snap */
+.tab-org .org-tool-btn.active-snap {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+/* ── Sync & Cancel Buttons ──
+   OrgChart.jsx:1186, 1208
+   ------------------------------------------------------- */
+.tab-org .org-btn-cancel {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.tab-org .org-btn-cancel:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.tab-org .org-btn-sync {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  border: none;
+}
+
+.tab-org .org-btn-sync.ready {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+}
+
+.tab-org .org-btn-sync.disabled {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.tab-org .org-btn-sync.saving {
+  opacity: 0.7;
+}
+
+/* ── Detail Panel Modal ──
+   OrgChart.jsx:1331-1342
+   ------------------------------------------------------- */
+.tab-org .org-modal-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-org .org-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 15, 26, 0.5); /* dark overlay */
+  backdrop-filter: blur(4px);
+}
+
+.tab-org .org-modal-content {
+  position: relative;
+  width: 340px;
+  max-width: 90%;
+  z-index: 501;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  animation: fadeInUp 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tab-org .org-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.tab-org .org-modal-close:hover {
+  color: var(--text-main);
+  background: var(--bg-surface);
+}
+
+.tab-org .org-modal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.tab-org .org-modal-label {
+  padding: 10px 12px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  width: 90px;
+  vertical-align: top;
+}
+
+.tab-org .org-modal-value {
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border-radius: 8px;
+}
+
+/* ── Node Card Static Parts ──
+   OrgChart.jsx:260
+   ------------------------------------------------------- */
+.tab-org .org-card {
+  position: absolute;
+  border-radius: 12px;
+  background: var(--bg-card);
+  overflow: visible;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.tab-org .org-card-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.tab-org .org-card-avatar {
+  position: absolute;
+  left: -26px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 32px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.tab-org .org-card-actions {
+  position: absolute;
+  inset: -2px;
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 12px;
+  z-index: 100;
+  padding: 4px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}

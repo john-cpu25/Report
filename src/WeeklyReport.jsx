@@ -2,6 +2,8 @@ import React from 'react'
 import { ArrowUp, ArrowDown, FileSpreadsheet, Filter, Activity, Zap } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import WorkflowAnimation from './WorkflowAnimation'
+import NeumorphicWeeklySwitcher from './components/buttons/NeumorphicWeeklySwitcher'
+import Planning from './components/Planning'
 
 import {
   Chart as ChartJS,
@@ -42,6 +44,9 @@ const WeeklyReport = ({ exportExcel }) => {
     weekDates,
     showProjectGroups,
     dashboardProjects,
+    weeklyViewMode,
+    triggerWeeklyExpand,
+    triggerWeeklyCollapse
   } = useApp();
 
   const [sortConfig, setSortConfig] = React.useState({ key: 'project', direction: 'asc' })
@@ -49,6 +54,14 @@ const WeeklyReport = ({ exportExcel }) => {
   const [focusedProject, setFocusedProject] = React.useState(null)
   const [visibleStatuses, setVisibleStatuses] = React.useState(ALL_STATUSES)
   const [showStatusFilter, setShowStatusFilter] = React.useState(false)
+
+  React.useEffect(() => {
+    if (triggerWeeklyExpand > 0) expandAll();
+  }, [triggerWeeklyExpand]);
+
+  React.useEffect(() => {
+    if (triggerWeeklyCollapse > 0) collapseAll();
+  }, [triggerWeeklyCollapse]);
 
   const projectColorMap = React.useMemo(() => {
     const map = {};
@@ -175,28 +188,25 @@ const WeeklyReport = ({ exportExcel }) => {
 
 
   return (
-    <div className="tab-weekly relative min-h-screen pt-[10px] pr-[10px] pb-[10px] pl-[20px]">
+    <div className="tab-weekly relative min-h-screen">
       <div className="w-full mx-auto pb-[10px]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-[10px] items-start">
 
           {/* MAIN TABLE */}
           <div className="lg:col-span-9 flex flex-col gap-[10px]">
-            <div className="flex items-center justify-between gap-[10px] p-[10px]">
-              {showProjectGroups && (
-                <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
-                  <button onClick={expandAll} className="neu-button px-6 py-2 text-[14px]">EXPAND ALL</button>
-                  <button onClick={collapseAll} className="neu-button px-6 py-2 text-[14px]">COLLAPSE ALL</button>
-                  {focusedProject && (
-                    <button onClick={() => setFocusedProject(null)} className="neu-button px-6 py-2 text-[14px] text-rose-500">RESET FOCUS</button>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="bg-[var(--bg-card)] rounded-[8px] border border-[var(--border)] shadow-2xl overflow-hidden m-[10px]">
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full text-left border-separate border-spacing-0" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-                  <thead>
-                    <tr className="bg-[var(--bg-header)] text-[14px] font-black uppercase text-[var(--text-muted)] border-b border-[var(--border)]">
+            {focusedProject && (
+              <div className="flex items-center justify-end p-[10px]">
+                <button onClick={() => setFocusedProject(null)} className="neu-button px-6 py-2 text-[14px] text-rose-500">RESET FOCUS</button>
+              </div>
+            )}
+            
+            {weeklyViewMode === 'list' ? (
+              <div className="report-table-wrapper">
+                <div className="overflow-x-auto custom-scrollbar">
+                  <div className="overflow-y-auto hidden-scroll-y max-h-[calc(100vh-140px)] min-w-[1200px]">
+                    <table className="report-table w-full text-left border-separate border-spacing-0" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                  <thead className="sticky top-0 z-40">
+                    <tr className="text-[14px] font-black uppercase text-[var(--text-muted)] border-b border-[var(--border)] bg-[var(--bg-header)] backdrop-blur-md">
                       <th className="py-[10px] border-r border-b border-[var(--border)] cursor-pointer hover:bg-white/[0.05] transition-all group" style={{ paddingLeft: '32px', paddingRight: '32px' }} onClick={() => handleSort('project')}>
                         <div className="flex items-center gap-[10px]">Project
                           <div className="text-slate-600 group-hover:text-slate-400">{sortConfig.key==='project'?(sortConfig.direction==='asc'?<ArrowUp size={12}/>:<ArrowDown size={12}/>):<ArrowUp size={12} className="opacity-0 group-hover:opacity-50"/>}</div>
@@ -253,7 +263,7 @@ const WeeklyReport = ({ exportExcel }) => {
                           const isCollapsed=collapsedProjects[projectName];
                           return(
                             <React.Fragment key={projectName}>
-                              <tr className={`sticky top-0 z-20 bg-[var(--table-sticky)] backdrop-blur-md cursor-pointer hover:bg-indigo-500/5 transition-all ${focusedProject===projectName?'ring-1 ring-indigo-500 ring-inset':''}`} onClick={()=>toggleCollapse(projectName)}>
+                              <tr className={`bg-[var(--table-sticky)] backdrop-blur-md cursor-pointer hover:bg-indigo-500/5 transition-all ${focusedProject===projectName?'ring-1 ring-indigo-500 ring-inset':''}`} onClick={()=>toggleCollapse(projectName)}>
                                 <td colSpan={9} className="p-0 border-r border-b border-[var(--border)]">
                                   <div className="flex items-center justify-between" style={{ padding: '10px 32px 10px 10px' }}>
                                     <div className="flex items-center gap-[10px]">
@@ -304,19 +314,24 @@ const WeeklyReport = ({ exportExcel }) => {
                       </td></tr>
                     )}
                   </tbody>
-                </table>
+                    </table>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="w-full">
+                <Planning reportData={reportData} weekDates={weekDates} />
+              </div>
+            )}
           </div>
 
           {/* RIGHT SIDEBAR */}
-          <aside className="lg:col-span-3 space-y-4 sticky top-24">
+          <aside className="lg:col-span-3 space-y-4 sticky top-[90px]">
             <div className="analytics-panel">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-1.5 h-6 rounded-full" style={{ background: 'var(--c-indigo)' }}></div>
                 <div>
-                  <h2 className="text-sm font-black text-[var(--text-main)] tracking-tight uppercase">Data Intelligence</h2>
-                  <p className="text-[14px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Real-time Analytics</p>
+                  <h2 className="text-[14px] font-black text-[var(--text-main)] tracking-widest uppercase">Data</h2>
                 </div>
               </div>
               <div className="space-y-8">
@@ -345,11 +360,11 @@ const WeeklyReport = ({ exportExcel }) => {
                   <div className="stat-card"><p className="stat-label">Done</p><p className="text-xl font-black" style={{ color: 'var(--c-done)' }}>{stats.doneTasks}</p></div>
                 </div>
                 <div className="space-y-3">
-                  <p className="text-[14px] font-black text-slate-500 uppercase tracking-widest">Project Load</p>
-                  <div className="h-[150px]">
+                  <p className="text-[14px] font-black text-[var(--text-main)] uppercase tracking-widest">Project Load</p>
+                  <div className="h-[200px]">
                     <Bar
-                      data={{ labels: Object.keys(stats.projectCounts).map(k=>k.length>8?k.substring(0,8)+'...':k), datasets: [{label:'Tasks',data:Object.values(stats.projectCounts),backgroundColor:'rgba(99,102,241,0.4)',borderColor:'#6366f1',borderWidth:1,borderRadius:4}] }}
-                      options={{ indexAxis:'y', plugins:{legend:{display:false}}, maintainAspectRatio:false, scales:{x:{display:false,grid:{display:false}},y:{grid:{display:false},ticks:{color:'#64748b',font:{size:9,weight:'bold'}}}} }}
+                      data={{ labels: Object.keys(stats.projectCounts).map(k=>k.length>15?k.substring(0,15)+'...':k), datasets: [{label:'Tasks',data:Object.values(stats.projectCounts),backgroundColor:'rgba(99,102,241,0.4)',borderColor:'#6366f1',borderWidth:1,borderRadius:4}] }}
+                      options={{ indexAxis:'y', plugins:{legend:{display:false}}, maintainAspectRatio:false, scales:{x:{display:true,grid:{display:true,color:'rgba(255,255,255,0.05)'},ticks:{color:'#64748b',font:{size:9,weight:'bold'},stepSize:1}},y:{grid:{display:false},ticks:{color:'#64748b',font:{size:9,weight:'bold'}}}} }}
                     />
                   </div>
                 </div>
@@ -364,7 +379,7 @@ const WeeklyReport = ({ exportExcel }) => {
                 <div className="space-y-2">
                   {DAYS_OF_WEEK.map(day=>(
                     <div key={day} className="group flex flex-col gap-1">
-                      <div className="flex justify-between items-center text-[12px] font-black uppercase tracking-tighter">
+                      <div className="flex justify-between items-center text-[14px] font-black uppercase tracking-tighter">
                         <span className={stats.dayCounts[day]>0?'opacity-100':'opacity-50'} style={{ color: stats.dayCounts[day]>0 ? 'var(--c-indigo)' : 'var(--text-muted)' }}>{day}</span>
                         <span className={stats.dayCounts[day]>0?'opacity-100':'opacity-50'} style={{ color: stats.dayCounts[day]>0 ? 'var(--text-main)' : 'var(--text-muted)' }}>{stats.dayCounts[day]}</span>
                       </div>

@@ -4,7 +4,7 @@ import { CalendarDays } from 'lucide-react';
 
 const ProjectView = ({ projectTimesheetData, getProjectColor }) => {
   return (
-    <div className="ocd-card p-0 shadow-2xl shadow-black/20 border border-[var(--border)] bg-[var(--bg-card)]">
+    <div className="personal-table-wrapper">
         <div className="max-h-[calc(100vh-335px)] overflow-y-auto overflow-x-auto custom-scrollbar">
           <table className="w-full border-collapse table-fixed" style={{ minWidth: '1020px' }}>
             <colgroup>
