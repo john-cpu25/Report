@@ -1402,12 +1402,14 @@ const Dashboard = () => {
                               </div>
                             </div>
                           ) : !team.isVisible ? (
-                            <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-main)]/80 backdrop-blur-[4px] z-20 rounded-2xl border border-dashed border-[var(--border)]">
-                              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">NO TASKS TODAY</p>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-surface)]/80 backdrop-blur-[8px] z-20 rounded-2xl border border-[var(--border)]">
+                              <CheckCircle2 size={20} className="text-[var(--text-dim)] mb-2" />
+                              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">No tasks scheduled</p>
                             </div>
                           ) : !team.hasData ? (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/5 z-20 rounded-2xl">
-                              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">No Active Logs</p>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-card)]/50 z-20 rounded-2xl">
+                              <Activity size={20} className="text-[var(--text-dim)] mb-2" />
+                              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">No Active Logs</p>
                             </div>
                           ) : null}
 
@@ -1444,8 +1446,9 @@ const Dashboard = () => {
                                   </div>
                                 </div>
                               )) : (
-                                <div className="flex items-center justify-center h-full">
-                                  <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-35">NO TASKS TODAY</span>
+                                <div className="flex flex-col items-center justify-center h-full gap-2 opacity-60">
+                                  <CheckCircle2 size={16} className="text-[var(--text-dim)]" />
+                                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">No Tasks Scheduled</span>
                                 </div>
                               )}
                             </div>
@@ -1491,12 +1494,14 @@ const Dashboard = () => {
                           </div>
                         </div>
                       ) : !team.isVisible ? (
-                        <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-main)]/80 backdrop-blur-[4px] z-20 rounded-2xl border border-dashed border-[var(--border)]">
-                          <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">NO TASKS TODAY</p>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-surface)]/80 backdrop-blur-[8px] z-20 rounded-2xl border border-[var(--border)]">
+                          <CheckCircle2 size={20} className="text-[var(--text-dim)] mb-2" />
+                          <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">No tasks scheduled</p>
                         </div>
                       ) : !team.hasData ? (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/5 z-20 rounded-2xl">
-                          <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">No Active Logs</p>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-card)]/50 z-20 rounded-2xl">
+                          <Activity size={20} className="text-[var(--text-dim)] mb-2" />
+                          <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">No Active Logs</p>
                         </div>
                       ) : null}
 
@@ -1533,8 +1538,9 @@ const Dashboard = () => {
                               </div>
                             </div>
                           )) : (
-                            <div className="flex items-center justify-center h-full">
-                              <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-30">NO TASKS TODAY</span>
+                            <div className="flex flex-col items-center justify-center h-full gap-2 opacity-60">
+                              <CheckCircle2 size={16} className="text-[var(--text-dim)]" />
+                              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">All Caught Up</span>
                             </div>
                           )}
                         </div>

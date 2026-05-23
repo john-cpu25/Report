@@ -92,7 +92,7 @@ const TopBar = () => {
   };
 
   return (
-    <header className="h-[80px] bg-[var(--bg-main)]/80 backdrop-blur-md border-b border-[var(--border)] sticky top-0 z-[99] sys-px">
+    <header className="h-[88px] bg-[var(--bg-main)]/70 backdrop-blur-2xl border-b border-[var(--border)] sticky top-0 z-[99] sys-px transition-all duration-300">
       <div className="h-full max-w-full mx-auto flex items-center justify-between sys-gap">
         <div className="flex items-center sys-gap">
           <button onClick={handleMenuClick} className="sys-p rounded-[8px] hover:bg-white/5 text-[var(--text-muted)] lg:hidden">
@@ -141,7 +141,7 @@ const TopBar = () => {
                      initial={{ opacity: 0, y: 10, scale: 0.99 }}
                      animate={{ opacity: 1, y: 0, scale: 1 }}
                      exit={{ opacity: 0, y: 10, scale: 0.99 }}
-                     className="absolute top-[calc(100%+28px)] left-0 w-96 bg-[var(--bg-card)]/98 backdrop-blur-2xl border border-[var(--border)] rounded-md shadow-2xl z-50 overflow-hidden"
+                     className="absolute top-[calc(100%+28px)] left-0 w-96 bg-[var(--bg-card)]/95 backdrop-blur-2xl border border-[var(--glass-border)] rounded-2xl shadow-xl z-50 overflow-hidden"
                    >
                      <div className="px-5 py-4 pt-5 border-b border-[var(--border)] bg-white/5">
                         <div className="flex items-center justify-between">

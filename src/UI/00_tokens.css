@@ -4,24 +4,24 @@
    ============================================================ */
 
 :root {
-  /* ──────────── FONT SCALE ──────────── */
-  --fs-micro: 7px;
+  /* ──────────── FONT SCALE (Enterprise Scale) ──────────── */
+  --fs-micro: 9px;
   /* TopBar "Live" badge only */
-  --fs-xs: 8px;
+  --fs-xs: 10px;
   /* Micro labels */
-  --fs-sm: 9px;
+  --fs-sm: 11px;
   /* Timestamps, tracking labels */
-  --fs-base: 10px;
+  --fs-base: 12px;
   /* Secondary text, badges */
-  --fs-md: 11px;
+  --fs-md: 13px;
   /* Body text, menu items */
-  --fs-lg: 12px;
+  --fs-lg: 14px;
   /* Table headers, stat labels */
-  --fs-xl: 13px;
+  --fs-xl: 15px;
   /* Primary content text */
-  --fs-2xl: 14px;
+  --fs-2xl: 16px;
   /* Headings, nav items */
-  --fs-3xl: 17px;
+  --fs-3xl: 18px;
   /* Sub-section titles */
   --fs-4xl: 20px;
   /* Section headers */
@@ -29,54 +29,54 @@
   /* Page titles */
   --fs-6xl: 28px;
   /* Hero headings */
-  --fs-7xl: 30px;
+  --fs-7xl: 32px;
   /* Feature numbers */
-  --fs-8xl: 36px;
+  --fs-8xl: 40px;
   /* Drop caps, display */
-  --fs-9xl: 40px;
+  --fs-9xl: 48px;
   /* Oversized stat numbers */
 
-  /* ──────────── SPACING SCALE ──────────── */
-  --layout-gap: 10px;
-  --card-padding: 10px;
+  /* ──────────── SPACING SCALE (More Breathing Room) ──────────── */
+  --layout-gap: 16px;
+  --card-padding: 20px;
   --sp-0: 0px;
   --sp-1: 2px;
   --sp-2: 4px;
   --sp-3: 6px;
   --sp-4: 8px;
-  --sp-5: 10px;
-  --sp-6: 12px;
-  --sp-7: 14px;
-  --sp-8: 16px;
-  --sp-9: 20px;
-  --sp-10: 24px;
-  --sp-11: 28px;
-  --sp-12: 32px;
-  --sp-14: 40px;
-  --sp-16: 48px;
-  --sp-20: 64px;
-  --sp-24: 80px;
+  --sp-5: 12px;
+  --sp-6: 16px;
+  --sp-7: 20px;
+  --sp-8: 24px;
+  --sp-9: 28px;
+  --sp-10: 32px;
+  --sp-11: 40px;
+  --sp-12: 48px;
+  --sp-14: 56px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
 
-  /* ──────────── BORDER RADIUS ──────────── */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-3xl: 24px;
+  /* ──────────── BORDER RADIUS (Softer, Modern) ──────────── */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 28px;
   --radius-full: 9999px;
 
-  /* ──────────── COLORS — Accent Palette ──────────── */
-  --c-indigo: #6366f1;
-  --c-indigo-light: #818cf8;
-  --c-indigo-dark: #4f46e5;
-  --c-emerald: #10b981;
-  --c-emerald-light: #34d399;
-  --c-rose: #f43f5e;
-  --c-amber: #f59e0b;
-  --c-orange: #f97316;
-  --c-violet: #8b5cf6;
-  --c-cyan: #06b6d4;
+  /* ──────────── COLORS — Premium SaaS Palette ──────────── */
+  --c-indigo: #4f46e5;
+  --c-indigo-light: #6366f1;
+  --c-indigo-dark: #3730a3;
+  --c-emerald: #059669;
+  --c-emerald-light: #10b981;
+  --c-rose: #e11d48;
+  --c-amber: #d97706;
+  --c-orange: #ea580c;
+  --c-violet: #7c3aed;
+  --c-cyan: #0891b2;
   --c-slate-400: #94a3b8;
   --c-slate-500: #64748b;
   --c-slate-600: #475569;
