@@ -377,7 +377,7 @@ const Projects = () => {
       {/* Selected Project Detail Modal */}
       <AnimatePresence>
         {selectedId && selectedProject && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 md:p-12 overflow-y-auto" style={{ perspective: 1200 }}>
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 md:p-12 overflow-y-auto" style={{ perspective: 1200 }}>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

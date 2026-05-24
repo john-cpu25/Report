@@ -1,0 +1,296 @@
+@reference "../index.css";
+
+/* =========================================================================
+   PROFILE MODAL STYLES (Cập nhật theo bản thiết kế mới)
+   ========================================================================= */
+
+/* 1. Kích thước và Màu nền của Thẻ Profile */
+.profile-card {
+  @apply relative w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden font-sans z-50 flex flex-col transition-all duration-500 bg-white;
+  box-shadow: 0 25px 50px -12px rgba(30, 58, 138, 0.1); /* shadow-blue-900/10 */
+  min-height: 520px;
+  color: #1e293b;
+}
+.profile-card.profile-dark {
+  background-color: #121212;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Lớp phủ màn hình mờ phía sau */
+.profile-backdrop {
+  @apply absolute inset-0 backdrop-blur-sm z-40;
+  background-color: rgba(2, 6, 23, 0.4);
+}
+
+/* Vùng chứa toàn bộ nội dung */
+.profile-content-wrapper {
+  @apply flex-1 flex flex-col relative z-10;
+}
+
+/* 2. HEADER: Padding và Layout */
+.profile-header-section {
+  @apply relative z-10 p-8 pb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-slate-50 bg-gradient-to-b from-blue-50/30 to-white;
+}
+.profile-card.profile-dark .profile-header-section {
+  @apply bg-gradient-to-b from-blue-900/10 to-[#121212] border-white/5;
+}
+
+.profile-avatar-group {
+  @apply flex items-center gap-6;
+}
+
+/* Avatar */
+.profile-avatar-gradient-ring {
+  @apply w-24 h-24 rounded-[2.2rem] bg-gradient-to-tr from-blue-600 to-indigo-500 p-1 shadow-xl shadow-blue-200;
+}
+.profile-card.profile-dark .profile-avatar-gradient-ring {
+  @apply shadow-none border border-white/10;
+}
+
+.profile-avatar-inner {
+  @apply w-full h-full bg-white rounded-[2rem] overflow-hidden border-2 border-white;
+}
+.profile-card.profile-dark .profile-avatar-inner { 
+  @apply bg-[#121212] border-[#121212];
+}
+
+.profile-shield-badge {
+  @apply absolute -bottom-1 -right-1 bg-blue-600 text-white p-1.5 rounded-xl border-4 border-white shadow-lg;
+}
+.profile-card.profile-dark .profile-shield-badge { 
+  @apply border-[#121212]; 
+}
+
+.profile-camera-btn {
+  @apply absolute inset-0 m-auto w-8 h-8 rounded-full shadow-md flex items-center justify-center transition-opacity cursor-pointer border z-20 opacity-0;
+  background-color: #ffffff; border-color: #e2e8f0; color: #475569;
+}
+.profile-avatar-gradient-ring:hover ~ .profile-camera-btn,
+.profile-camera-btn:hover {
+  opacity: 1;
+}
+/* Hoặc có thể hover qua thẻ cha */
+.group:hover .profile-camera-btn {
+  opacity: 1;
+}
+.profile-card.profile-dark .profile-camera-btn {
+  background-color: #1e293b; border-color: rgba(255, 255, 255, 0.1); color: #cbd5e1;
+}
+
+/* Tên và Chức vụ */
+.profile-name {
+  @apply text-3xl font-black text-slate-900;
+}
+.profile-card.profile-dark .profile-name {
+  color: #ffffff;
+}
+
+.profile-subtitle-group {
+  @apply flex items-center gap-2 mt-1;
+}
+
+.profile-job-title {
+  @apply text-sm font-bold text-slate-500;
+}
+
+.profile-dot-separator {
+  @apply w-1 h-1 rounded-full bg-slate-300;
+}
+.profile-card.profile-dark .profile-dot-separator {
+  @apply bg-slate-600;
+}
+
+.profile-team-badge {
+  @apply px-2.5 py-1 bg-slate-100 rounded-lg text-slate-400 uppercase text-[9px] font-black;
+}
+.profile-card.profile-dark .profile-team-badge {
+  @apply bg-slate-800 text-slate-300;
+}
+
+/* 3. TABS: Thanh điều hướng */
+.profile-tabs-container {
+  @apply px-8 bg-white border-b border-slate-50 overflow-x-auto;
+}
+.profile-card.profile-dark .profile-tabs-container {
+  @apply bg-[#121212] border-white/10;
+}
+
+.profile-tabs-nav {
+  @apply flex gap-10;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.profile-tabs-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.profile-tab-button {
+  @apply py-6 text-[14px] font-black uppercase transition-all relative whitespace-nowrap text-slate-400 border-transparent;
+}
+.profile-tab-button:hover {
+  @apply text-slate-600;
+}
+.profile-card.profile-dark .profile-tab-button:hover {
+  @apply text-slate-300;
+}
+
+.profile-tab-button.active {
+  @apply text-blue-600;
+}
+.profile-card.profile-dark .profile-tab-button.active {
+  @apply text-blue-400;
+}
+
+.profile-tab-button.active::after {
+  content: '';
+  @apply absolute bottom-0 left-0 w-full h-1.5 bg-blue-600 rounded-t-full;
+  box-shadow: 0 -2px 10px rgba(37,99,235,0.3);
+}
+
+/* 4. TAB CONTENT */
+.profile-tab-content-area {
+  @apply flex-1 overflow-y-auto p-10;
+}
+
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.profile-tab-pane {
+  @apply space-y-10;
+  animation: tabFadeIn 0.3s ease-out forwards;
+}
+
+.profile-section-header {
+  @apply flex items-center justify-between mb-8;
+}
+
+.profile-section-title {
+  @apply text-[10px] font-black uppercase text-slate-300;
+}
+
+.profile-edit-btn {
+  @apply text-[10px] font-black uppercase flex items-center gap-1.5 transition-colors text-blue-600;
+}
+.profile-edit-btn:hover { @apply text-blue-700; }
+.profile-card.profile-dark .profile-edit-btn { @apply text-blue-400; }
+
+/* Grid */
+.profile-info-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-8;
+}
+
+.profile-info-item {
+  @apply flex items-start gap-5 p-4 rounded-3xl transition-all border border-transparent;
+}
+.profile-info-item:hover {
+  @apply bg-slate-50/50 border-slate-200;
+}
+.profile-card.profile-dark .profile-info-item:hover {
+  @apply bg-white/5 border-white/10;
+}
+
+.profile-info-icon-box {
+  @apply w-14 h-14 shrink-0 rounded-2xl bg-white shadow-sm border border-slate-100 text-slate-400 flex items-center justify-center transition-transform;
+}
+.profile-info-item:hover .profile-info-icon-box {
+  transform: scale(1.1);
+}
+.profile-card.profile-dark .profile-info-icon-box {
+  @apply bg-slate-800 border-slate-700;
+}
+
+/* Các tuỳ chỉnh màu sắc riêng nếu muốn (mặc định theo thiết kế mới) */
+.profile-info-item.email-item:hover {
+  @apply bg-blue-50/50 border-blue-100;
+}
+.profile-card.profile-dark .profile-info-item.email-item:hover {
+  @apply bg-blue-900/20 border-blue-900/50;
+}
+.profile-info-item.email-item .profile-info-icon-box {
+  @apply text-blue-600;
+}
+
+.profile-info-label {
+  @apply text-[9px] font-black text-slate-300 uppercase;
+}
+
+.profile-info-value {
+  @apply text-sm font-bold text-slate-700 mt-1 transition-colors;
+  word-break: break-word;
+}
+.profile-card.profile-dark .profile-info-value {
+  @apply text-slate-200;
+}
+.profile-info-item:hover .profile-info-value.link {
+  @apply text-blue-600;
+}
+.profile-card.profile-dark .profile-info-item:hover .profile-info-value.link {
+  @apply text-blue-400;
+}
+
+/* 5. CÁC THÀNH PHẦN KHÁC (Nút bấm, Đường viền) */
+.profile-footer-btn-wrapper {
+  @apply pt-6 mt-6;
+}
+.profile-footer-btn {
+  @apply w-full flex items-center justify-center gap-2 px-8 py-5 bg-slate-900 text-white rounded-3xl hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 hover:shadow-blue-200 active:scale-[0.98];
+}
+.profile-card.profile-dark .profile-footer-btn {
+  @apply shadow-none border border-white/10 bg-slate-800 hover:bg-blue-600 hover:border-transparent;
+}
+
+/* Thanh màu sắc trang trí ở chân trang (4 màu) */
+.profile-bottom-border {
+  @apply absolute bottom-0 left-0 right-0 h-1.5 z-0;
+  background: linear-gradient(to right,
+    #2563eb 0%, #2563eb 25%,
+    #6366f1 25%, #6366f1 50%,
+    #10b981 50%, #10b981 75%,
+    #f43f5e 75%, #f43f5e 100%
+  );
+}
+
+.profile-top-utilities {
+  @apply absolute top-6 right-6 flex items-center gap-2 z-20;
+}
+.profile-icon-btn {
+  @apply p-2.5 text-slate-400 hover:text-blue-600 transition-all rounded-xl hover:bg-blue-50;
+}
+.profile-icon-btn:last-child {
+  @apply hover:text-red-500 hover:bg-red-50;
+}
+.profile-card.profile-dark .profile-icon-btn:hover {
+  @apply bg-white/10 text-white;
+}
+.profile-card.profile-dark .profile-icon-btn:last-child:hover {
+  @apply bg-red-500/20 text-red-400;
+}
+
+.profile-action-buttons-group {
+  @apply flex items-center gap-2 bg-white/50 backdrop-blur-sm p-2 rounded-2xl border border-slate-100 shadow-sm;
+}
+.profile-card.profile-dark .profile-action-buttons-group {
+  @apply bg-slate-800/50 border-white/5;
+}
+
+.profile-action-btn {
+  @apply p-3.5 rounded-xl transition-all active:scale-95;
+}
+.profile-action-btn.chat {
+  @apply bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200;
+}
+.profile-card.profile-dark .profile-action-btn.chat {
+  @apply shadow-none;
+}
+.profile-action-btn.video,
+.profile-action-btn.call {
+  @apply bg-slate-50 text-slate-600 hover:bg-slate-100;
+}
+.profile-card.profile-dark .profile-action-btn.video,
+.profile-card.profile-dark .profile-action-btn.call {
+  @apply bg-slate-800 text-slate-300 hover:bg-slate-700;
+}

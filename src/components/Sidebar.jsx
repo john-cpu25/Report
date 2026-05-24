@@ -58,7 +58,6 @@ const Sidebar = () => {
     title: 'SYSTEM',
     items: [
       { id: 'settings', label: 'Settings', icon: Settings },
-      { id: 'export', label: 'Export Data', icon: FileOutput },
       // Only show Admin Panel to Admin
       ...(isAdmin ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldCheck }] : []),
     ]
@@ -135,14 +134,12 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {!collapsed && (
-        <div className="px-6 mt-8">
-          <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
-            <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest mb-1">Version</p>
-            <p className="text-[13px] font-bold text-[var(--text-muted)]">Intelligence v5.0.0</p>
-          </div>
+      <div className={`mt-8 mb-6 ${collapsed ? 'px-3' : 'px-6'}`}>
+        <div className={`${collapsed ? 'px-2 py-2 text-center flex justify-center' : 'px-4 py-3 flex items-center justify-between'} rounded-2xl bg-indigo-500/5 border border-indigo-500/10`}>
+          {!collapsed && <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">Version</span>}
+          <span className={`font-bold text-[var(--text-muted)] ${collapsed ? 'text-[10px]' : 'text-[12px]'}`}>v5.0.0</span>
         </div>
-      )}
+      </div>
     </div>
   )
 

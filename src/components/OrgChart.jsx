@@ -431,7 +431,7 @@ const OrgChart = () => {
     const loadData = async () => {
       try {
         setLoading(true)
-        const rawData = await fetchOrgChartData()
+        const rawData = await fetchOrgChartData(); console.log('Raw data from Supabase:', rawData[0]);
         
         // Filter only Vietnam users and valid full_name
         const localData = rawData.filter(u => 
@@ -457,6 +457,7 @@ const OrgChart = () => {
             layout: item.layout || ((item.manager_id === null || item.manager_id === "" || item.level === 0) ? 'horizontal' : 'vertical'),
             // Check custom offset or use default
             offset: item.offset_xy ? (() => {
+              if (typeof item.offset_xy === 'object') return item.offset_xy
               try {
                 return JSON.parse(item.offset_xy)
               } catch(e) {
@@ -964,13 +965,18 @@ const OrgChart = () => {
       })
       
       if (upsertPayload.length > 0) {
-        const { error: upsertError } = await supabase
-          .from('NMK_User')
-          .upsert(upsertPayload, { onConflict: 'id' })
+        // Use individual updates instead of upsert to bypass INSERT RLS restrictions
+        const updatePromises = upsertPayload.map(payload => {
+          const { id, ...updates } = payload
+          return supabase.from('NMK_User').update(updates).eq('id', id)
+        })
         
-        if (upsertError) {
-          console.error('Error upserting nodes to Supabase:', upsertError)
-          throw new Error('Không thể lưu thông tin nhân sự vào Supabase.')
+        const results = await Promise.all(updatePromises)
+        
+        const errors = results.filter(r => r.error).map(r => r.error)
+        if (errors.length > 0) {
+          console.error('Error updating nodes to Supabase:', errors)
+          throw new Error('Không thể lưu thông tin nhân sự vào Supabase. Lỗi: ' + errors[0].message)
         }
       }
       
@@ -996,6 +1002,7 @@ const OrgChart = () => {
           children: [],
           layout: item.layout || ((item.manager_id === null || item.manager_id === "" || item.level === 0) ? 'horizontal' : 'vertical'),
           offset: item.offset_xy ? (() => {
+            if (typeof item.offset_xy === 'object') return item.offset_xy
             try {
               return JSON.parse(item.offset_xy)
             } catch(e) {
@@ -1123,37 +1130,34 @@ const OrgChart = () => {
 
   return (
     <div className="tab-org">
-      {/* Header */}
-      <div className="org-header" style={{ background: isDark ? 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 100%)' : 'linear-gradient(180deg, rgba(248,250,252,0.95) 0%, rgba(248,250,252,0.7) 100%)' }}>
-        <div className="org-header-branding">
-          <div className="org-icon-wrapper">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-          <div>
-            <h1 className="org-title">Organization Chart</h1>
-            <p className="org-subtitle">Rincovitch Engineering</p>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* Header Utilities */}      <div style={{ 
+        position: 'absolute', top: 20, right: 20, zIndex: 100,
+        display: 'flex', flexDirection: 'column', gap: 16, padding: '16px 12px', borderRadius: 12,
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+        background: isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.9)',
+        backdropFilter: 'blur(12px)',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
           {/* Draft indicator */}
           {isAdmin && hasPendingChanges && (
             <span style={{
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 800,
               color: '#F59E0B',
               background: 'rgba(245, 158, 11, 0.1)',
-              padding: '6px 12px',
-              borderRadius: 20,
+              padding: '6px 8px',
+              borderRadius: 8,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              gap: 6,
+              textAlign: 'center',
+              gap: 4,
               border: '1px solid rgba(245, 158, 11, 0.25)',
-              marginRight: 10,
               animation: 'pulse 2s infinite'
             }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B' }} />
-              Bản nháp (chưa đồng bộ)
+              Bản nháp
             </span>
           )}
 
@@ -1166,39 +1170,46 @@ const OrgChart = () => {
             <LayoutGrid size={16} />
           </button>
 
+          <div style={{ width: '20px', height: '1px', background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', margin: '4px 0' }} />
+
           {/* Zoom controls */}
           <button onClick={() => setZoom(z => Math.min(2, z * 1.2))} className="org-tool-btn" title="Phóng to"><ZoomIn size={16} /></button>
           <button onClick={() => setZoom(z => Math.max(0.2, z * 0.8))} className="org-tool-btn" title="Thu nhỏ"><ZoomOut size={16} /></button>
           <button onClick={fitToScreen} className="org-tool-btn" title="Vừa khít màn hình"><Maximize2 size={16} /></button>
-          <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, minWidth: 45, textAlign: 'center', marginRight: 10 }}>{Math.round(zoom * 100)}%</div>
+          <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textAlign: 'center', marginTop: 4 }}>{Math.round(zoom * 100)}%</div>
 
           {/* Sync controls */}
           {isAdmin && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {hasPendingChanges && (
-                <button
-                  onClick={handleDiscardChanges}
-                  disabled={isSaving}
-                  className="org-btn-cancel"
-                  title="Hủy toàn bộ thay đổi chưa đồng bộ"
-                >
-                  <RotateCcw size={14} /> HỦY
-                </button>
-              )}
-              <button
-                onClick={handleSaveChanges}
-                disabled={!hasPendingChanges || isSaving}
-                className={`org-btn-sync ${hasPendingChanges && !isSaving ? 'ready' : (isSaving ? 'saving ready' : 'disabled')}`}
-                title="Đồng bộ sơ đồ hiện tại lên Supabase"
-              >
-                {isSaving ? (
-                  <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                ) : (
-                  <Save size={14} />
+            <>
+              <div style={{ width: '20px', height: '1px', background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', margin: '4px 0' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 8, width: '100%' }}>
+                {hasPendingChanges && (
+                  <button
+                    onClick={handleDiscardChanges}
+                    disabled={isSaving}
+                    className="org-btn-cancel"
+                    style={{ justifyContent: 'center' }}
+                    title="Hủy toàn bộ thay đổi chưa đồng bộ"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
                 )}
-                {isSaving ? 'ĐANG LƯU...' : 'ĐỒNG BỘ SUPABASE'}
-              </button>
-            </div>
+                <button
+                  onClick={handleSaveChanges}
+                  disabled={!hasPendingChanges || isSaving}
+                  className={`org-btn-sync ${hasPendingChanges && !isSaving ? 'ready' : (isSaving ? 'saving ready' : 'disabled')}`}
+                  style={{ flexDirection: 'column', padding: '10px 8px', gap: 4 }}
+                  title="Đồng bộ sơ đồ hiện tại lên Supabase"
+                >
+                  {isSaving ? (
+                    <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  ) : (
+                    <Save size={16} />
+                  )}
+                  <span style={{ fontSize: '8px', lineHeight: 1 }}>ĐỒNG BỘ</span>
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
