@@ -325,7 +325,7 @@ const PersonalSpace = () => {
             <NeumorphicSearch 
               value={localFilters.search} 
               onChange={(e) => setLocalFilters(prev => ({ ...prev, search: e.target.value }))} 
-              placeholder="Search projects or tasks..." 
+              placeholder="Search ..." 
             />
           </div>
 
@@ -652,15 +652,15 @@ const PersonalSpace = () => {
           <div className="max-h-[calc(100vh-335px)] overflow-y-auto overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse min-w-[1000px]">
               <thead>
-                <tr className="text-[14px] uppercase tracking-wide border-b border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-muted)]">
-                  <th className="pr-6 py-[14px] font-black vertical-align-middle" style={{ paddingLeft: '12px' }}>Full Name</th>
-                  <th className="px-4 py-[14px] font-black text-center vertical-align-middle">Project Time</th>
-                  <th className="px-4 py-[14px] font-black text-center vertical-align-middle">Check Time</th>
-                  <th className="px-4 py-[14px] font-black text-center bg-indigo-500/5 vertical-align-middle">OT Time</th>
-                  <th className="px-4 py-[14px] font-black text-center bg-orange-500/5 vertical-align-middle">Leave (D)</th>
-                  <th className="px-4 py-[14px] font-black text-center vertical-align-middle">Free Time</th>
-                  <th className="px-4 py-[14px] font-black text-center text-emerald-500 vertical-align-middle">Efficiency</th>
-                  <th className="px-4 py-[14px] font-black text-center vertical-align-middle pr-4 text-right">Performance (%)</th>
+                <tr className="th-primary border-b border-[var(--border)]">
+                  <th className="pr-6 text-left" style={{ paddingLeft: '12px' }}>Full Name</th>
+                  <th className="px-4 text-center">Project Time</th>
+                  <th className="px-4 text-center">Check Time</th>
+                  <th className="px-4 text-center bg-indigo-500/5">OT Time</th>
+                  <th className="px-4 text-center bg-orange-500/5">Leave (D)</th>
+                  <th className="px-4 text-center">Free Time</th>
+                  <th className="px-4 text-center text-emerald-500">Efficiency</th>
+                  <th className="px-4 text-right pr-4">Performance (%)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]">

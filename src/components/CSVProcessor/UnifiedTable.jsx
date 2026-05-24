@@ -128,38 +128,38 @@ const UnifiedTable = (props) => {
     <div className="bg-[var(--bg-card)] border border-[var(--border)] shadow-md rounded-2xl m-[20px] min-w-[calc(100%-40px)] w-fit overflow-hidden">
         <table className="w-full text-left border-separate border-spacing-0" style={{ minWidth: '1500px' }}>
           <thead>
-            <tr className="text-[13px] font-bold uppercase tracking-widest bg-[var(--bg-surface)] text-[var(--text-muted)]" style={{ height: '48px' }}>
-              <th rowSpan={2} className="py-[4px] text-left border-b border-[var(--border)] sticky left-0 z-30 min-w-[140px] backdrop-blur-md bg-[var(--bg-surface)]" style={{ top: stickyOffset, paddingLeft: '20px', paddingRight: '16px' }}>
+            <tr className="th-primary">
+              <th rowSpan={2} className="py-[4px] text-left border-r border-b border-[var(--border)] sticky left-0 z-30 min-w-[140px] backdrop-blur-md bg-[var(--bg-card)]" style={{ top: stickyOffset, paddingLeft: '20px', paddingRight: '16px' }}>
                 <div className="flex items-center h-full cursor-pointer hover:text-[var(--text-main)] transition-colors" onClick={() => handleSort('project')}>
                   <span>PROJECT {renderSortIcon('project')}</span>
                 </div>
               </th>
-              <th rowSpan={2} className="py-[4px] text-left border-b border-[var(--border)] sticky left-[160px] z-30 min-w-[160px] backdrop-blur-md bg-[var(--bg-surface)]" style={{ top: stickyOffset, paddingLeft: '16px', paddingRight: '16px' }}>
+              <th rowSpan={2} className="py-[4px] text-left border-r border-b border-[var(--border)] sticky left-[160px] z-30 min-w-[160px] backdrop-blur-md bg-[var(--bg-card)]" style={{ top: stickyOffset, paddingLeft: '16px', paddingRight: '16px' }}>
                 <div className="flex items-center h-full cursor-pointer hover:text-[var(--text-main)] transition-colors" onClick={() => handleSort('taskName')}>
                   <span>TASK NAME {renderSortIcon('taskName')}</span>
                 </div>
               </th>
-              <th colSpan={4} className="px-[12px] py-[6px] text-center border-b border-[var(--border)] sticky z-20 bg-[var(--bg-surface)]" style={{ top: stickyOffset }}>MANAGER / LEADER</th>
-              <th colSpan={5} className="px-[12px] py-[6px] text-center border-b border-[var(--border)] sticky z-20 bg-[var(--bg-surface)]" style={{ top: stickyOffset }}>USER</th>
-              <th rowSpan={2} className="px-[12px] py-[4px] text-center border-b border-[var(--border)] min-w-[80px] sticky z-20 bg-[var(--bg-surface)]" style={{ top: stickyOffset }} onClick={() => handleSort('area')}>
+              <th colSpan={4} className="px-[12px] py-[6px] text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>MANAGER / LEADER</th>
+              <th colSpan={5} className="px-[12px] py-[6px] text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>USER</th>
+              <th rowSpan={2} className="px-[12px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[80px] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }} onClick={() => handleSort('area')}>
                 AREA {renderSortIcon('area')}
               </th>
-              <HeaderWithTooltip id="T1" color="text-[var(--text-contrast)]" stickyOffset={stickyOffset} rowSpan={2} />
-              <HeaderWithTooltip id="T2" color="text-[var(--text-contrast)]" stickyOffset={stickyOffset} rowSpan={2} />
-              <HeaderWithTooltip id="T3" color="text-[var(--text-contrast)]" stickyOffset={stickyOffset} rowSpan={2} />
-              <HeaderWithTooltip id="T4" color="text-[var(--text-contrast)]" stickyOffset={stickyOffset} rowSpan={2} />
-              <HeaderWithTooltip id="T5" color="text-[var(--text-contrast)]" stickyOffset={stickyOffset} rowSpan={2} />
+              <HeaderWithTooltip id="T1" color="text-black font-black" stickyOffset={stickyOffset} rowSpan={2} />
+              <HeaderWithTooltip id="T2" color="text-black font-black" stickyOffset={stickyOffset} rowSpan={2} />
+              <HeaderWithTooltip id="T3" color="text-black font-black" stickyOffset={stickyOffset} rowSpan={2} />
+              <HeaderWithTooltip id="T4" color="text-black font-black" stickyOffset={stickyOffset} rowSpan={2} />
+              <HeaderWithTooltip id="T5" color="text-black font-black" stickyOffset={stickyOffset} rowSpan={2} />
             </tr>
-            <tr className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-dim)] bg-[var(--bg-surface)]" style={{ height: '36px' }}>
-              <th className="py-[6px] text-left border-b border-[var(--border)] min-w-[110px] sticky z-20 bg-[var(--bg-surface)]" style={{ top: row2Offset, paddingLeft: '16px', paddingRight: '12px' }} onClick={() => handleSort('createdBy')}>CREATE BY</th>
-              <th className="px-[10px] py-[6px] text-center border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-surface)]" style={{ top: row2Offset }} onClick={() => handleSort('createdAt')}>CREATE</th>
-              <th className="px-[10px] py-[6px] text-center border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-surface)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStart')}>START</th>
-              <th className="px-[10px] py-[6px] text-center border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-surface)]" style={{ top: row2Offset }} onClick={() => handleSort('dateEnd')}>END</th>
-              <th className="py-[6px] text-left border-b border-[var(--border)] min-w-[110px] sticky z-20 bg-[var(--bg-surface)]" style={{ top: row2Offset, paddingLeft: '16px', paddingRight: '12px' }} onClick={() => handleSort('userName')}>USER</th>
-              <th className="px-[10px] py-[6px] text-center border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-surface)]" style={{ top: row2Offset }} onClick={() => handleSort('dateAccepted')}>ACCEPTED</th>
-              <th className="px-[10px] py-[6px] text-center border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-surface)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStarted')}>STARTED</th>
-              <th className="px-[10px] py-[6px] text-center border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-surface)]" style={{ top: row2Offset }} onClick={() => handleSort('dateComplete')}>COMPLETED</th>
-              <th className="px-[10px] py-[6px] text-center border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-surface)]" style={{ top: row2Offset }} onClick={() => handleSort('dateChecked')}>CHECKED</th>
+            <tr className="th-secondary">
+              <th className="py-[6px] text-left border-r border-b border-[var(--border)] min-w-[110px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset, paddingLeft: '16px', paddingRight: '12px' }} onClick={() => handleSort('createdBy')}>CREATE BY</th>
+              <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('createdAt')}>CREATE</th>
+              <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStart')}>START</th>
+              <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateEnd')}>END</th>
+              <th className="py-[6px] text-left border-r border-b border-[var(--border)] min-w-[110px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset, paddingLeft: '16px', paddingRight: '12px' }} onClick={() => handleSort('userName')}>USER</th>
+              <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateAccepted')}>ACCEPTED</th>
+              <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStarted')}>STARTED</th>
+              <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateComplete')}>COMPLETED</th>
+              <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateChecked')}>CHECKED</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">
@@ -171,27 +171,27 @@ const UnifiedTable = (props) => {
               
               return (
                 <tr key={r.id || i} className={`transition-all duration-200 text-[14px] align-middle ${rowBg} hover:bg-[var(--bg-surface)] group cursor-default`}>
-                  <td className={`sys-py text-left sticky left-0 z-10 border-b border-[var(--border)] backdrop-blur-md bg-[var(--bg-card)] group-hover:bg-[var(--bg-surface)] transition-colors duration-200`} style={{ paddingLeft: '20px', paddingRight: '16px', verticalAlign: 'middle' }}>
+                  <td className={`sys-py text-left sticky left-0 z-10 border-r border-b border-[var(--border)] backdrop-blur-md bg-[var(--bg-card)] group-hover:bg-[var(--bg-surface)] transition-colors duration-200`} style={{ paddingLeft: '20px', paddingRight: '16px', verticalAlign: 'middle' }}>
                     <span className="text-[13px] font-semibold tracking-wide uppercase line-clamp-1" style={{ color: getProjectColor(r.project) }}>{r.project}</span>
                   </td>
-                  <td className={`sys-py text-left sticky left-[160px] z-10 border-b border-[var(--border)] backdrop-blur-md bg-[var(--bg-card)] group-hover:bg-[var(--bg-surface)] transition-colors duration-200`} style={{ paddingLeft: '16px', paddingRight: '16px', verticalAlign: 'middle' }}>
+                  <td className={`sys-py text-left sticky left-[160px] z-10 border-r border-b border-[var(--border)] backdrop-blur-md bg-[var(--bg-card)] group-hover:bg-[var(--bg-surface)] transition-colors duration-200`} style={{ paddingLeft: '16px', paddingRight: '16px', verticalAlign: 'middle' }}>
                     <span className="text-[var(--text-main)] font-medium line-clamp-1">{r.taskName}</span>
                   </td>
-                  <td className="sys-py align-middle text-left text-[var(--c-indigo)] font-medium border-b border-[var(--border)]" style={{ paddingLeft: '16px', paddingRight: '12px' }}>{r.createdBy || '-'}</td>
-                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-b border-[var(--border)]">{r.createdAtStr || '-'}</td>
-                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-b border-[var(--border)]">{r.dateStartStr || '-'}</td>
-                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-b border-[var(--border)]">{r.dateEndStr || '-'}</td>
-                  <td className="sys-py text-left text-[var(--c-cyan)] font-medium border-b border-[var(--border)]" style={{ paddingLeft: '16px', paddingRight: '12px', verticalAlign: 'middle' }}>{r.userName || '-'}</td>
-                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-b border-[var(--border)]">{r.dateAcceptedStr || '-'}</td>
-                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-b border-[var(--border)]">{r.dateStartedStr || '-'}</td>
-                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-b border-[var(--border)]">{r.dateCompleteStr || '-'}</td>
-                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-b border-[var(--border)]">{r.dateCheckedStr || '-'}</td>
-                  <td className="px-[10px] sys-py align-middle text-center border-b border-[var(--border)] text-[var(--text-muted)]">{r.area || '-'}</td>
-                  <td className="sys-px sys-py align-middle text-center border-b border-[var(--border)] font-semibold text-[var(--c-emerald)]">{r.time1Str || '-'}</td>
-                  <td className="sys-px sys-py align-middle text-center border-b border-[var(--border)] font-semibold text-[var(--c-indigo)]">{r.time2Str || '-'}</td>
-                  <td className="sys-px sys-py align-middle text-center border-b border-[var(--border)] font-semibold text-[var(--c-violet)]">{r.time3Str || '-'}</td>
-                  <td className="sys-px sys-py align-middle text-center border-b border-[var(--border)] font-semibold text-[var(--c-amber)]">{r.time4Str || '-'}</td>
-                  <td className="sys-px sys-py align-middle text-center border-b border-[var(--border)] font-semibold text-[var(--c-rose)]">{r.time5Str || '-'}</td>
+                  <td className="sys-py align-middle text-left text-[var(--c-indigo)] font-medium border-r border-b border-[var(--border)]" style={{ paddingLeft: '16px', paddingRight: '12px' }}>{r.createdBy || '-'}</td>
+                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-r border-b border-[var(--border)]">{r.createdAtStr || '-'}</td>
+                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-r border-b border-[var(--border)]">{r.dateStartStr || '-'}</td>
+                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-r border-b border-[var(--border)]">{r.dateEndStr || '-'}</td>
+                  <td className="sys-py text-left text-[var(--c-cyan)] font-medium border-r border-b border-[var(--border)]" style={{ paddingLeft: '16px', paddingRight: '12px', verticalAlign: 'middle' }}>{r.userName || '-'}</td>
+                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-r border-b border-[var(--border)]">{r.dateAcceptedStr || '-'}</td>
+                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-r border-b border-[var(--border)]">{r.dateStartedStr || '-'}</td>
+                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-r border-b border-[var(--border)]">{r.dateCompleteStr || '-'}</td>
+                  <td className="px-[10px] sys-py align-middle text-center text-[var(--text-muted)] font-medium border-r border-b border-[var(--border)]">{r.dateCheckedStr || '-'}</td>
+                  <td className="px-[10px] sys-py align-middle text-center border-r border-b border-[var(--border)] text-[var(--text-muted)]">{r.area || '-'}</td>
+                  <td className="sys-px sys-py align-middle text-center border-r border-b border-[var(--border)] font-semibold text-[var(--c-emerald)]">{r.time1Str || '-'}</td>
+                  <td className="sys-px sys-py align-middle text-center border-r border-b border-[var(--border)] font-semibold text-[var(--c-indigo)]">{r.time2Str || '-'}</td>
+                  <td className="sys-px sys-py align-middle text-center border-r border-b border-[var(--border)] font-semibold text-[var(--c-violet)]">{r.time3Str || '-'}</td>
+                  <td className="sys-px sys-py align-middle text-center border-r border-b border-[var(--border)] font-semibold text-[var(--c-amber)]">{r.time4Str || '-'}</td>
+                  <td className="sys-px sys-py align-middle text-center border-r border-b border-[var(--border)] font-semibold text-[var(--c-rose)]">{r.time5Str || '-'}</td>
                 </tr>
               );
             })}

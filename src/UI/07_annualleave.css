@@ -36,42 +36,9 @@
   color: var(--text-main);
 }
 
-/* ── Personal View: Zones ──
-   AnnualLeave.jsx:352 (Orange Zone), 418 (Green Zone)
-   ------------------------------------------------------- */
+/* ── Personal View: Zones ── */
 .tab-leave .zone-card {
-  background: var(--bg-card);
-  border-radius: 24px;
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-}
-
-.tab-leave .zone-card.zone-orange {
-  border: 1px solid rgba(249, 115, 22, 0.2);
-}
-
-.tab-leave .zone-card.zone-orange .zone-accent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 10px;
-  height: 100%;
-  background: rgba(249, 115, 22, 0.4); /* orange-500/40 */
-}
-
-.tab-leave .zone-card.zone-green {
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.tab-leave .zone-card.zone-green .zone-accent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 10px;
-  height: 100%;
-  background: rgba(16, 185, 129, 0.4); /* emerald-500/40 */
+  /* Removed background, padding, and shadow to let inner cards sit directly on the page background */
 }
 
 .tab-leave .heading-indicator {
@@ -89,7 +56,6 @@
 .tab-leave .text-accent-light {
   color: var(--c-indigo-light, #818cf8);
 }
-
 .tab-leave .text-danger {
   color: var(--c-danger);
 }
@@ -115,28 +81,11 @@
   color: var(--c-done);
   border: 1px solid rgba(16, 185, 129, 0.2);
   padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
+  transition: color 0.2s;
 }
 
-/* ── Progress Bar ──
-   AnnualLeave.jsx:577
-   ------------------------------------------------------- */
-.tab-leave .progress-bar-bg {
-  width: 96px;
-  height: 8px;
-  background: var(--bg-surface);
-  border-radius: 8px;
-  overflow: hidden;
-  margin-left: auto;
-}
-
-.tab-leave .progress-bar-fill {
-  height: 100%;
-  background: var(--c-indigo);
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+.tab-leave .team-row:hover .team-name {
+  color: var(--c-indigo);
 }
 
 /* ── Tables ──
@@ -150,17 +99,18 @@
 
 .tab-leave .leave-table th {
   background: rgba(99, 102, 241, 0.05);
-  font-size: 9px;
+  font-size: 14px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   color: var(--text-muted);
-  border-bottom: 1px solid var(--border);
+  border: 1px solid var(--border);
   padding: 12px 20px;
 }
 
 .tab-leave .leave-table td {
   padding: 12px 20px;
+  border: 1px solid var(--border);
 }
 
 .tab-leave .leave-table tr {
@@ -176,27 +126,9 @@
   background: rgba(99, 102, 241, 0.1) !important;
 }
 
-.tab-leave .team-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: var(--bg-surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--c-indigo);
-  font-weight: 900;
-  border: 1px solid var(--border);
-  transition: transform 0.2s;
-}
-
-.tab-leave .team-row:hover .team-avatar {
-  transform: scale(1.1);
-}
-
 .tab-leave .team-name {
   font-size: 14px;
-  font-weight: 900;
+  font-weight: normal;
   color: var(--text-main);
   text-transform: uppercase;
   letter-spacing: -0.05em;
@@ -210,8 +142,9 @@
 /* -- UI Refactoring Added Classes -- */
 .leave-header-bar {
   background: var(--bg-card);
-  border-radius: 1.5rem; /* 24px = 3xl */
-  padding: 1.5rem; /* p-6 */
+  border-radius: 12px;
+  padding: 0 1.5rem;
+  height: 66px;
   margin: 10px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border);
@@ -220,14 +153,15 @@
 .leave-chart-card {
   background: rgba(var(--bg-card-rgb), 0.5);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 20px;
   box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  margin: 10px 10px 0 10px;
 }
 
 .leave-stats-card {
   background: var(--bg-card);
-  border-radius: 1rem; /* 2xl */
+  border-radius: 12px;
   padding: 20px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border);
@@ -235,18 +169,19 @@
 
 .leave-history-card {
   background: var(--bg-card);
-  border-radius: 1rem;
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border);
   height: 100%;
+  margin: 10px 10px 0 10px;
 }
 
 .leave-overview-card {
   background: var(--bg-card);
-  border-radius: 1rem;
+  border-radius: 12px;
   padding: 1rem 1.5rem; /* px-6 py-4 */
   text-align: center;
   min-width: 130px;
@@ -256,9 +191,25 @@
 
 .leave-table-wrapper {
   background: var(--bg-card);
-  border-radius: 1.5rem;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border);
+  margin: 10px 10px 0 10px;
 }
 
+/* ── Progress Bar ── */
+.tab-leave .progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(99, 102, 241, 0.1); /* indigo-500/10 */
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tab-leave .progress-bar-fill {
+  height: 100%;
+  background: var(--c-indigo);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}

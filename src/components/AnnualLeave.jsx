@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Trash2, Plus, Clock, Award, Info, AlertCircle, Users, User, LayoutGrid, List, Landmark, TrendingUp } from 'lucide-react';
+import { Calendar, Trash2, Plus, Clock, Award, Info, AlertCircle, Users, User, LayoutGrid, List, Landmark, TrendingUp, ChevronDown } from 'lucide-react';
 import { format, differenceInYears, parseISO, startOfYear, endOfYear, isWithinInterval, differenceInMinutes } from 'date-fns';
-import EnergyBar from './EnergyBar';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -43,6 +43,7 @@ const VN_HOLIDAYS_2026 = [
 ];
 
 const AnnualLeave = () => {
+  const { user: currentUser, isAdmin } = useAuth();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('ADMIN');
   const [selectedTeam, setSelectedTeam] = useState('ALL');
@@ -102,17 +103,35 @@ const AnnualLeave = () => {
     fetchData();
   }, []);
 
-  // Filtered users by team
+  // Filtered users by team (excluding MANAGER and ADMIN)
   const filteredUsersByTeam = useMemo(() => {
-    if (selectedTeam === 'ALL') return users;
-    return users.filter(u => u.team === selectedTeam);
-  }, [users, selectedTeam]);
+    const nonManagerUsers = users.filter(u => 
+      u.team?.toUpperCase() !== 'MANAGER' && 
+      !u.name?.toUpperCase().includes('ADMIN')
+    );
+    
+    if (isAdmin) {
+      if (selectedTeam === 'ALL') return nonManagerUsers;
+      return nonManagerUsers.filter(u => u.team === selectedTeam);
+    } else {
+      const myTeam = currentUser?.team;
+      return nonManagerUsers.filter(u => u.team === myTeam);
+    }
+  }, [users, selectedTeam, isAdmin, currentUser]);
 
   const teamOptions = useMemo(() => {
     const teams = new Set();
-    users.forEach(u => { if (u.team) teams.add(u.team) });
-    return ['ALL', ...Array.from(teams).sort()];
-  }, [users]);
+    users.forEach(u => { 
+      if (u.team && u.team.toUpperCase() !== 'MANAGER' && !u.name?.toUpperCase().includes('ADMIN')) teams.add(u.team);
+    });
+    
+    const allTeams = Array.from(teams).sort();
+    if (isAdmin) {
+      return ['ALL', ...allTeams];
+    } else {
+      return [currentUser?.team].filter(Boolean);
+    }
+  }, [users, isAdmin, currentUser]);
 
   // Sync leaveEntries for selectedUser from the global pool
   useEffect(() => {
@@ -142,7 +161,13 @@ const AnnualLeave = () => {
     }
   }, [startDate]);
 
-  const totalAllowance = seniority >= 1 ? 15 : 12;
+  const totalAllowance = useMemo(() => {
+    let base = 15;
+    if (selectedYear === 'ALL') {
+      base = 15 * Math.max(1, seniority);
+    }
+    return base;
+  }, [seniority, selectedYear]);
 
   const usedDays = useMemo(() => {
     const currentYear = parseInt(selectedYear);
@@ -196,7 +221,10 @@ const AnnualLeave = () => {
       const uEntries = allLeaveEntries.filter(e => e.create_by === u.id);
       
       const uSeniority = differenceInYears(new Date(), parseISO(uStart)) || 0;
-      const uAllowance = uSeniority >= 1 ? 15 : 12;
+      let uAllowance = 15;
+      if (selectedYear === 'ALL') {
+        uAllowance = 15 * Math.max(1, uSeniority);
+      }
       
       const currentYear = parseInt(selectedYear);
       const start = selectedYear === 'ALL' ? new Date(2000, 0, 1) : startOfYear(new Date(currentYear, 0, 1));
@@ -249,12 +277,17 @@ const AnnualLeave = () => {
         id: u.id,
         name: uName,
         team: u.team || '-',
+        startDate: uStart,
         seniority: uSeniority,
         allowance: uAllowance,
         used: uUsed,
-        remaining: uAllowance - uUsed
+        remaining: Math.max(0, uAllowance - uUsed)
       };
-    }).sort((a, b) => b.used - a.used);
+    }).sort((a, b) => {
+      if (a.team < b.team) return -1;
+      if (a.team > b.team) return 1;
+      return b.used - a.used;
+    });
   }, [filteredUsersByTeam, allLeaveEntries]);
 
   useEffect(() => {
@@ -274,75 +307,89 @@ const AnnualLeave = () => {
               <Landmark size={24} />
             </div>
             <div>
-              <h2 className="text-[14px] font-black text-indigo-500 uppercase tracking-widest leading-none">VN Annual Leave</h2>
-              <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest mt-1">Management Dashboard</p>
+              <h2 className="text-[12px] font-black text-indigo-500 uppercase tracking-widest leading-none">ANNUAL LEAVE</h2>
             </div>
           </div>
 
           <div className="h-12 w-px bg-[var(--border)] opacity-50" />
 
-          <div className="neu-inset rounded-2xl p-1.5 flex gap-2">
+          <div className="flex gap-4">
             <button 
               onClick={() => setViewMode('personal')}
-              className={`neu-button px-6 py-2.5 text-[11px] gap-2 ${viewMode === 'personal' ? 'active text-indigo-500' : ''}`}
+              title="Personal + Analytics"
+              className={`neu-button w-[46px] h-[46px] rounded-2xl flex items-center justify-center p-0 ${viewMode === 'personal' ? 'active text-indigo-500' : ''}`}
             >
-              <User size={14} /> PERSONAL + ANALYTICS
+              <User size={20} />
             </button>
             <button 
               onClick={() => setViewMode('team')}
-              className={`neu-button px-6 py-2.5 text-[11px] gap-2 ${viewMode === 'team' ? 'active text-indigo-500' : ''}`}
+              title="Team Summary"
+              className={`neu-button w-[46px] h-[46px] rounded-2xl flex items-center justify-center p-0 ${viewMode === 'team' ? 'active text-indigo-500' : ''}`}
             >
-              <LayoutGrid size={14} /> TEAM SUMMARY
+              <LayoutGrid size={20} />
             </button>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="neu-inset rounded-2xl p-1.5 flex gap-4 items-center">
-            <div className="flex items-center gap-3 pl-4 border-r border-[var(--border)] pr-4">
-              <Calendar size={14} className="text-indigo-400" />
-              <select 
-                className="leave-select"
-                style={{ colorScheme: 'dark' }}
-                value={selectedYear}
-                onChange={e => setSelectedYear(e.target.value)}
-              >
-                <option value="2024" className="leave-select-option">YEAR 2024</option>
-                <option value="2025" className="leave-select-option">YEAR 2025</option>
-                <option value="2026" className="leave-select-option">YEAR 2026</option>
-                <option value="ALL" className="leave-select-option">ALL DATA</option>
-              </select>
+          <div className="relative flex items-center justify-between bg-[var(--bg-card)] border border-[var(--border)] rounded-full pl-[24px] pr-[10px] py-[8px] shadow-sm hover:shadow-md transition-shadow min-w-[160px]">
+            <span className="font-medium text-[14px] uppercase tracking-wider text-[var(--text-main)] pointer-events-none">
+              {selectedYear === 'ALL' ? 'YEARS' : selectedYear}
+            </span>
+            <div className="w-[28px] h-[28px] rounded-full border-[2px] border-indigo-500 flex items-center justify-center text-indigo-500 pointer-events-none">
+              <ChevronDown size={14} strokeWidth={3} />
             </div>
-
-            <div className="flex items-center gap-3 pr-4">
-              <Users size={14} className="text-indigo-400" />
-              <select 
-                className="leave-select"
-                style={{ colorScheme: 'dark' }}
-                value={selectedTeam}
-                onChange={e => setSelectedTeam(e.target.value)}
-              >
-                {teamOptions.map(t => <option key={t} value={t} className="leave-select-option">{t === 'ALL' ? 'ALL TEAMS' : t}</option>)}
-              </select>
-            </div>
-
-            {viewMode === 'personal' && (
-              <div className="flex items-center gap-3 bg-[var(--bg-surface)] px-4 py-2 rounded-xl border border-[var(--border)] shadow-inner">
-                <User size={14} className="text-[var(--text-muted)]" />
-                <select 
-                  className="leave-select leave-select-user min-w-[120px]"
-                  style={{ colorScheme: 'dark' }}
-                  value={selectedUser}
-                  onChange={e => setSelectedUser(e.target.value)}
-                >
-                  <option value="ADMIN" className="leave-select-option">SYSTEM ADMIN</option>
-                  {filteredUsersByTeam.map(u => (
-                    <option key={u.id} value={u.name || u.email} className="leave-select-option">{u.name || u.email}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <select 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              value={selectedYear}
+              onChange={e => setSelectedYear(e.target.value)}
+            >
+              <option value="2024" className="leave-select-option">2024</option>
+              <option value="2025" className="leave-select-option">2025</option>
+              <option value="2026" className="leave-select-option">2026</option>
+              <option value="ALL" className="leave-select-option">YEARS</option>
+            </select>
           </div>
+
+          <div className="relative flex items-center justify-between bg-[var(--bg-card)] border border-[var(--border)] rounded-full pl-[24px] pr-[10px] py-[8px] shadow-sm hover:shadow-md transition-shadow min-w-[160px]">
+            <span className="font-medium text-[14px] uppercase tracking-wider text-[var(--text-main)] pointer-events-none">
+              {isAdmin 
+                ? (selectedTeam === 'ALL' ? 'TEAMS' : selectedTeam)
+                : (currentUser?.team || 'MY TEAM')
+              }
+            </span>
+            <div className="w-[28px] h-[28px] rounded-full border-[2px] border-indigo-500 flex items-center justify-center text-indigo-500 pointer-events-none">
+              <ChevronDown size={14} strokeWidth={3} />
+            </div>
+            <select 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              value={isAdmin ? selectedTeam : currentUser?.team}
+              onChange={e => { if (isAdmin) setSelectedTeam(e.target.value); }}
+              disabled={!isAdmin}
+            >
+              {teamOptions.map(t => <option key={t} value={t} className="leave-select-option">{t === 'ALL' ? 'TEAMS' : t}</option>)}
+            </select>
+          </div>
+
+          {viewMode === 'personal' && (
+            <div className="relative flex items-center justify-between bg-[var(--bg-card)] border border-[var(--border)] rounded-full pl-[24px] pr-[10px] py-[8px] shadow-sm hover:shadow-md transition-shadow min-w-[160px]">
+              <span className="font-medium text-[14px] uppercase tracking-wider text-[var(--text-main)] pointer-events-none">
+                {selectedUser ? (filteredUsersByTeam.find(u => (u.name || u.email) === selectedUser)?.name || selectedUser) : 'MEMBERS'}
+              </span>
+              <div className="w-[28px] h-[28px] rounded-full border-[2px] border-indigo-500 flex items-center justify-center text-indigo-500 pointer-events-none">
+                <ChevronDown size={14} strokeWidth={3} />
+              </div>
+              <select 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                value={selectedUser}
+                onChange={e => setSelectedUser(e.target.value)}
+              >
+                {filteredUsersByTeam.map(u => (
+                  <option key={u.id} value={u.name || u.email} className="leave-select-option">{u.name || u.email}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -353,46 +400,37 @@ const AnnualLeave = () => {
             <div className="zone-accent" />
             
             <div className="flex flex-col gap-[15px]">
-              <div className="flex items-center sys-gap mb-[10px]">
-                <div className="heading-indicator" />
-                <h1 className="text-[28px] font-black text-[var(--text-main)] uppercase tracking-tight italic">
-                  {selectedUser.split(' ')[0]}'s <span className="text-accent">Leave</span>
-                </h1>
-                <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em] mt-auto pb-1 ml-2">Energy & Wellness Intelligence</p>
-              </div>
+
 
               <div className="flex flex-col lg:flex-row gap-[20px] items-stretch">
-                {/* Left: Vertical Energy Bar */}
-                <div className="h-[450px]">
-                  <EnergyBar used={usedDays} total={totalAllowance} />
-                </div>
-
                 {/* Right: Analytics Chart */}
                 <div className="flex-grow leave-chart-card">
-                  <div className="flex items-center sys-gap mb-[15px]">
-                    <TrendingUp size={16} className="text-indigo-400" />
-                    <h3 className="text-[14px] font-black text-[var(--text-main)] uppercase tracking-widest">Team Leave Distribution (Days)</h3>
-                  </div>
                   <div className="h-[350px]">
                     <Bar 
                       data={{
-                        labels: summaryData.slice(0, 10).map(u => u.name),
+                        labels: summaryData.map(u => u.name),
                         datasets: [
                           {
                             label: 'Used',
-                            data: summaryData.slice(0, 10).map(u => u.used),
-                            backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                            data: summaryData.map(u => u.used),
+                            backgroundColor: 'rgba(99, 102, 241, 0.3)',
                             borderColor: '#6366f1',
                             borderWidth: 1,
                             borderRadius: 4,
+                            maxBarThickness: 40,
                           },
                           {
                             label: 'Remaining',
-                            data: summaryData.slice(0, 10).map(u => u.remaining),
-                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                            borderColor: 'rgba(16, 185, 129, 0.4)',
+                            data: summaryData.map(u => u.remaining),
+                            backgroundColor: summaryData.map(u => 
+                              u.seniority >= 1 ? 'rgba(249, 115, 22, 0.15)' : 'rgba(16, 185, 129, 0.15)'
+                            ),
+                            borderColor: summaryData.map(u => 
+                              u.seniority >= 1 ? 'rgba(249, 115, 22, 0.4)' : 'rgba(16, 185, 129, 0.4)'
+                            ),
                             borderWidth: 1,
                             borderRadius: 4,
+                            maxBarThickness: 40,
                           }
                         ]
                       }}
@@ -419,41 +457,13 @@ const AnnualLeave = () => {
             <div className="zone-accent" />
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-[15px]">
-              {/* Stats Column */}
-              <div className="lg:col-span-4 flex flex-col sys-gap">
-                <div className="flex-grow leave-stats-card flex flex-col items-center justify-center text-center">
-                  <div className="neu-button neu-square p-4 text-indigo-500 mb-4">
-                    <Landmark size={24} />
-                  </div>
-                  <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">Total Team Reserve</h4>
-                  <p className="text-[40px] font-black text-[var(--text-contrast)] leading-none">
-                    {summaryData.reduce((s, u) => s + u.remaining, 0)}
-                  </p>
-                  <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest mt-3">Available Days Remaining</p>
-                </div>
-
-                <div className="leave-stats-card">
-                  <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-[15px] flex items-center sys-gap">
-                    <AlertCircle size={14} className="text-rose-500 animate-pulse" /> Critical Attention
-                  </h4>
-                  <div className="space-y-[8px]">
-                    {summaryData.filter(u => u.remaining < 3).slice(0, 3).map(u => (
-                      <div key={u.id} className="flex items-center justify-between p-[8px] bg-danger-light rounded-[6px]">
-                        <span className="text-[11px] font-black text-[var(--text-main)] uppercase">{u.name}</span>
-                        <span className="text-[11px] font-black text-danger">{u.remaining}D Left</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
               {/* History Column */}
-              <div className="lg:col-span-8">
+              <div className="lg:col-span-12">
                 <div className="leave-history-card">
                   <div className="px-[20px] py-[15px] border-b border-[var(--border)] bg-indigo-500/5 flex justify-between items-center">
                     <div className="flex items-center sys-gap">
                       <List className="text-indigo-400 animate-pulse" size={14} />
-                      <h3 className="text-[11px] font-black text-[var(--text-contrast)] uppercase tracking-[0.2em]">Leave History {selectedYear === 'ALL' ? 'Lifetime' : selectedYear}</h3>
+                      <h3 className="text-[14px] font-black text-[var(--text-contrast)] uppercase">Leave History {selectedYear === 'ALL' ? '' : selectedYear}</h3>
                     </div>
                     <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest neu-inset px-[12px] py-[4px] rounded-full">
                       {currentYearEntries.length} Records Detected
@@ -507,81 +517,76 @@ const AnnualLeave = () => {
           </div>
         </motion.div>
       ) : (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-[10px] m-[10px]">
-          <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 sys-p mb-4">
-            <div>
-              <div className="flex items-center sys-gap mb-2">
-                <div className="w-2.5 h-8 bg-indigo-500 rounded-full" />
-                <h2 className="text-[28px] font-black text-[var(--text-main)] uppercase tracking-tight italic leading-none">Team <span className="text-indigo-400">Overview</span></h2>
-              </div>
-              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Aggregate leave statistics for Vietnam operations</p>
-            </div>
-            <div className="flex gap-4">
-              <div className="leave-overview-card">
-                <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-1">Total Users</p>
-                <p className="text-[28px] font-black text-[var(--text-contrast)] tracking-tighter leading-none">{summaryData.length}</p>
-              </div>
-              <div className="leave-overview-card">
-                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-wider mb-1">Avg Used</p>
-                <p className="text-[28px] font-black text-indigo-500 tracking-tighter leading-none">
-                  {summaryData.length ? (summaryData.reduce((s, u) => s + u.used, 0) / summaryData.length).toFixed(1) : 0}D
-                </p>
-              </div>
-            </div>
-          </div>
-
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="leave-table-wrapper">
             <table className="leave-table">
               <thead>
                 <tr>
-                  <th>User Intelligence</th>
-                  <th>Team</th>
-                  <th className="text-center">Seniority</th>
-                  <th className="text-center">Allowance</th>
-                  <th className="text-center">Used</th>
-                  <th className="text-center">Remaining</th>
-                  <th className="text-right">Status</th>
+                  <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Team</th>
+                  <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>USER</th>
+                  <th className="th-primary sticky z-[35] text-center border-b border-r border-[var(--border)]" style={{ top: '0px' }}>Start</th>
+                  <th className="th-primary sticky z-[35] text-center border-b border-r border-[var(--border)]" style={{ top: '0px' }}>Seniority</th>
+                  <th className="th-primary sticky z-[35] text-center border-b border-r border-[var(--border)]" style={{ top: '0px' }}>Allowance</th>
+                  <th className="th-primary sticky z-[35] text-center border-b border-r border-[var(--border)]" style={{ top: '0px' }}>Used</th>
+                  <th className="th-primary sticky z-[35] text-center border-b border-r border-[var(--border)]" style={{ top: '0px' }}>Remaining</th>
+                  <th className="th-primary sticky z-[35] text-right border-b border-[var(--border)]" style={{ top: '0px', paddingRight: '16px' }}>Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
-                {summaryData.map((u, i) => (
-                  <tr 
-                    key={u.id} 
-                    className="team-row cursor-pointer" 
-                    style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}
-                    onClick={() => { setSelectedUser(u.name); setViewMode('personal'); }}
-                  >
-                    <td>
-                      <div className="flex items-center gap-[15px]">
-                        <div className="team-avatar">
-                          {u.name[0]}
+                {summaryData.map((u, i) => {
+                  const isFirstOfTeam = i === 0 || summaryData[i - 1].team !== u.team;
+                  let teamRowCount = 1;
+                  if (isFirstOfTeam) {
+                    for (let j = i + 1; j < summaryData.length; j++) {
+                      if (summaryData[j].team === u.team) teamRowCount++;
+                      else break;
+                    }
+                  }
+
+                  return (
+                    <tr 
+                      key={u.id} 
+                      className="team-row cursor-pointer" 
+                      style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}
+                      onClick={() => { setSelectedUser(u.name); setViewMode('personal'); }}
+                    >
+                      {isFirstOfTeam && (
+                        <td 
+                          rowSpan={teamRowCount} 
+                          className="align-middle border-r border-[var(--border)] bg-[var(--bg-surface)]/30"
+                        >
+                          <span className="text-[14px] font-normal text-indigo-500 uppercase tracking-widest px-2">{u.team}</span>
+                        </td>
+                      )}
+                      <td>
+                        <div className="flex items-center gap-[15px]">
+                          <div className="team-name">{u.name}</div>
                         </div>
-                        <div className="team-name">{u.name}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="sys-px py-[5px] rounded-[4px] bg-[var(--bg-surface)] border border-[var(--border)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{u.team}</span>
-                    </td>
-                    <td className="text-center text-[12px] font-bold text-[var(--text-muted)]">{u.seniority} Yrs</td>
-                    <td className="text-center">
-                      <span className="text-[14px] font-black text-accent">{u.allowance}</span>
-                    </td>
-                    <td className="text-center">
-                      <span className="text-[14px] font-black text-done">{u.used}</span>
-                    </td>
-                    <td className="text-center">
-                      <span className={`text-[14px] font-black ${u.remaining < 3 ? 'text-danger' : 'text-[var(--text-main)]'}`}>{u.remaining}</span>
-                    </td>
-                    <td className="text-right">
-                      <div className="progress-bar-bg">
-                        <div 
-                          className="progress-bar-fill" 
-                          style={{ width: `${Math.min(100, (u.used / u.allowance) * 100)}%` }}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="text-center text-[14px] font-normal text-[var(--text-muted)]">
+                        {u.startDate ? format(parseISO(u.startDate), 'dd/MM/yyyy') : '-'}
+                      </td>
+                      <td className="text-center text-[14px] font-normal text-[var(--text-muted)]">{u.seniority} Yrs</td>
+                      <td className="text-center">
+                        <span className="text-[14px] font-normal text-accent">{u.allowance}</span>
+                      </td>
+                      <td className="text-center">
+                        <span className="text-[14px] font-normal text-done">{u.used}</span>
+                      </td>
+                      <td className="text-center">
+                        <span className={`text-[14px] font-normal ${u.remaining < 3 ? 'text-danger' : 'text-[var(--text-main)]'}`}>{u.remaining}</span>
+                      </td>
+                      <td className="text-right">
+                        <div className="progress-bar-bg">
+                          <div 
+                            className="progress-bar-fill" 
+                            style={{ width: `${Math.min(100, (u.used / u.allowance) * 100)}%` }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

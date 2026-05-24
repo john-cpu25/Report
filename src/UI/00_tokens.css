@@ -281,4 +281,4 @@
 .sys-gap { gap: var(--layout-gap) !important; }
 .sys-p { padding: var(--card-padding) !important; }
 .sys-py { padding-top: 10px !important; padding-bottom: var(--card-padding) !important; }
-.sys-px { padding-left: var(--card-padding) !important; padding-right: var(--card-padding) !important; }
+.sys-px { padding-left: var(--card-padding) !important; padding-right: var(--card-padding) !important; }

@@ -1,0 +1,25 @@
+/* ============================================================
+   TABLE SETTINGS — Shared configuration for table UI
+   ============================================================ */
+
+/* Primary Table Header (Top Level: PROJECT, TASK NAME, MANAGER, USER...) */
+.th-primary {
+  font-size: 14px;
+  font-weight: 900; /* Extra Black */
+  text-transform: uppercase;
+  letter-spacing: 0.1em; /* tracking-widest */
+  color: #000000; /* text-black */
+  height: 48px;
+  background-color: var(--bg-card);
+}
+
+/* Secondary Table Header (Sub Level: CREATE BY, START, ACCEPTED...) */
+.th-secondary {
+  font-size: 12px;
+  font-weight: 900; /* Extra Black */
+  text-transform: uppercase;
+  letter-spacing: 0.1em; /* tracking-widest */
+  color: #000000; /* text-black */
+  height: 36px;
+  background-color: var(--bg-card);
+}

@@ -31,22 +31,22 @@ const TimesheetView = ({ timesheetData, getProjectColor }) => {
           </colgroup>
           <thead>
             <tr className="bg-[var(--bg-card)]">
-              <th className="sticky z-[35] text-left py-[14px] text-[14px] font-black text-[var(--text-muted)] uppercase tracking-wide border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Team</th>
-              <th className="sticky z-[35] text-left py-[14px] text-[14px] font-black text-[var(--text-muted)] uppercase tracking-wide border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Project</th>
-              <th className="sticky z-[35] text-left py-[14px] text-[14px] font-black text-[var(--text-muted)] uppercase tracking-wide border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Member</th>
+              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Team</th>
+              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Project</th>
+              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>USER</th>
               {timesheetData.weekDates.map((date, i) => {
                 const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
                 const isToday = isSameDay(date, new Date());
-                const dateColor = isToday ? 'text-emerald-500' : 'text-[var(--text-contrast)]';
-                const labelColor = isToday ? 'text-emerald-400' : 'text-[var(--text-muted)]';
+                const dateColor = isToday ? 'text-emerald-500' : 'text-black';
+                const labelColor = isToday ? 'text-emerald-500' : 'text-black';
                 return (
                   <th key={i} className={`sticky z-[35] text-center sys-px py-[12px] border-b border-r border-[var(--border)] ${isToday ? 'bg-indigo-500/10' : 'bg-[var(--bg-card)]'}`} style={{ top: '0px' }}>
-                    <div className={`text-[12px] font-black uppercase tracking-wider ${labelColor}`}>{dayLabels[i].toUpperCase()}</div>
-                    <div className={`text-[12px] font-medium ${dateColor}`}>{format(date, 'dd/MM')}</div>
+                    <div className={`text-[14px] font-black uppercase tracking-wider ${labelColor}`}>{dayLabels[i].toUpperCase()}</div>
+                    <div className={`text-[12px] font-normal ${dateColor}`}>{format(date, 'dd/MM')}</div>
                   </th>
                 );
               })}
-              <th className="sticky z-[35] text-center sys-px py-[14px] border-b border-[var(--border)] text-[14px] font-black text-[var(--text-muted)] uppercase tracking-wide bg-[var(--bg-card)]" style={{ top: '0px' }}>Total</th>
+              <th className="th-primary sticky z-[35] text-center sys-px border-b border-[var(--border)]" style={{ top: '0px' }}>Total</th>
             </tr>
           </thead>
           <tbody>
@@ -90,7 +90,7 @@ const TimesheetView = ({ timesheetData, getProjectColor }) => {
                       {pi === 0 && (
                         <td
                           rowSpan={user.projects.length}
-                          className="py-[15px] text-[14px] text-sky-500 uppercase tracking-tight border-r border-[var(--border)] bg-[var(--bg-surface)]/10 min-w-[200px]"
+                          className="py-[15px] text-[14px] text-[var(--c-cyan)] font-medium border-r border-[var(--border)] bg-[var(--bg-surface)]/10 min-w-[200px]"
                           style={{ paddingLeft: '12px', paddingRight: '12px' }}
                         >
                           {user.name}
