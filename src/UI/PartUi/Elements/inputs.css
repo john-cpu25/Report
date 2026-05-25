@@ -1,0 +1,60 @@
+.ocd-input {
+  padding: var(--pad-std);
+  margin: var(--mar-std);
+  border-radius: var(--radius-std);
+  font-size: var(--font-body);
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface);
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(15, 23, 42, 1);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+select option {
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 8px 16px;
+}
+
+select {
+  color-scheme: dark;
+}
+
+option {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  padding: 8px;
+}
+
+/* Ensure contrast in native dropdowns */

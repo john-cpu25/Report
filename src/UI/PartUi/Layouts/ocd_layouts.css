@@ -1,0 +1,12 @@
+.ocd-grid {
+  display: grid;
+  gap: var(--pad-std);
+  padding: var(--pad-std);
+}
+
+.ocd-flex {
+  display: flex;
+  gap: var(--pad-std);
+  padding: var(--pad-std);
+}
+

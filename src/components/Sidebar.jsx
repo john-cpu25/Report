@@ -69,29 +69,29 @@ const Sidebar = () => {
   }
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full sys-p sys-gap">
+    <div className="nav-sidebar-content">
       <div 
-        className={`flex items-center ${collapsed ? 'justify-center' : 'justify-start !pl-[14px]'} p-[10px] mb-[20px] cursor-pointer hover:opacity-80 transition-opacity`}
+        className={`nav-sidebar-header ${collapsed ? 'justify-center' : 'justify-start !pl-[14px]'}`}
         onClick={() => setCollapsed(!collapsed)}
         title="Toggle Sidebar"
       >
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3">
           <img src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} alt="Rincovitch" className="w-8 h-8" />
           {!collapsed && (
-            <span className="text-[20px] font-black text-[var(--text-main)] uppercase tracking-tight">RINCOVITCH</span>
+            <span className="nav-sidebar-logo-text">RINCOVITCH</span>
           )}
         </motion.div>
       </div>
 
-      <div className="flex-grow overflow-y-auto custom-scrollbar space-y-[10px]">
+      <div className="nav-sidebar-menu-list custom-scrollbar">
         {mainSections.map((section, idx) => (
-          <div key={section.title} className="space-y-[10px]">
+          <div key={section.title} className="nav-sidebar-section">
             {!collapsed && section.title && (
-              <h3 className="sys-px text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-[10px]">
+              <h3 className="nav-sidebar-section-title">
                 {section.title}
               </h3>
             )}
-            <div className="flex flex-col gap-0">
+            <div className="nav-sidebar-item-group">
               {section.items.map(item => (
                 <NavItem
                   key={item.id}
@@ -111,13 +111,13 @@ const Sidebar = () => {
       </div>
 
       {/* System Section at the bottom */}
-      <div className="mt-auto space-y-[10px] border-t border-white/5 pt-[10px]">
+      <div className="nav-sidebar-system-section">
         {!collapsed && (
-          <h3 className="sys-px text-[14px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-[10px]">
+          <h3 className="nav-sidebar-section-title">
             {systemSection.title}
           </h3>
         )}
-        <div className="flex flex-col gap-0">
+        <div className="nav-sidebar-item-group">
           {systemSection.items.map(item => (
             <NavItem
               key={item.id}
@@ -134,10 +134,10 @@ const Sidebar = () => {
         </div>
       </div>
 
-      <div className={`mt-8 mb-6 ${collapsed ? 'px-3' : 'px-6'}`}>
-        <div className={`${collapsed ? 'px-2 py-2 text-center flex justify-center' : 'px-4 py-3 flex items-center justify-between'} rounded-2xl bg-indigo-500/5 border border-indigo-500/10`}>
-          {!collapsed && <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">Version</span>}
-          <span className={`font-bold text-[var(--text-muted)] ${collapsed ? 'text-[10px]' : 'text-[12px]'}`}>v5.0.0</span>
+      <div className={`nav-sidebar-footer ${collapsed ? 'collapsed' : 'expanded'}`}>
+        <div className={`nav-sidebar-version-box ${collapsed ? 'collapsed' : 'expanded'}`}>
+          {!collapsed && <span className="nav-sidebar-version-label">Version</span>}
+          <span className={`nav-sidebar-version-value ${collapsed ? 'collapsed' : 'expanded'}`}>v5.0.0</span>
         </div>
       </div>
     </div>
@@ -149,7 +149,7 @@ const Sidebar = () => {
         initial={false}
         animate={collapsed ? 'collapsed' : 'expanded'}
         variants={sidebarVariants}
-        className="hidden lg:block fixed left-0 top-0 h-screen bg-[var(--glass-bg)] backdrop-blur-3xl border-r border-[var(--glass-border)] z-40 overflow-hidden"
+        className="nav-sidebar"
       >
         <SidebarContent />
       </motion.aside>
@@ -157,8 +157,8 @@ const Sidebar = () => {
       <AnimatePresence>
         {mobileOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileOpen(false)} className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] lg:hidden" />
-            <motion.aside initial={{ x: -260 }} animate={{ x: 0 }} exit={{ x: -260 }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed left-0 top-0 h-screen w-[260px] bg-[var(--bg-dark)] z-[101] lg:hidden overflow-hidden shadow-2xl">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileOpen(false)} className="nav-sidebar-mobile-overlay" />
+            <motion.aside initial={{ x: -260 }} animate={{ x: 0 }} exit={{ x: -260 }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="nav-sidebar-mobile-container">
               <div className="absolute top-6 right-6 lg:hidden">
                 <button onClick={() => setMobileOpen(false)} className="text-slate-500 hover:text-white"><X size={20} /></button>
               </div>

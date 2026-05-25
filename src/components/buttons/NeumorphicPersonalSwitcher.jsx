@@ -1,5 +1,4 @@
 import React from 'react';
-import '../../UI/buttons/neumorphic_switcher.css';
 import { ListIcon, GanttIcon, DailyIcon, ProjectIcon, DeepAnalysisIcon, PerformanceIcon, NeuralBrainIcon } from './CustomIcons';
 import PillSwitcher from './PillSwitcher';
 

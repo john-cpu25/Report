@@ -1,6 +1,5 @@
 import React from 'react';
 import { Search } from 'lucide-react';
-import '../../UI/buttons/neumorphic_search.css';
 
 const NeumorphicSearch = ({ value, onChange, placeholder = "Search..." }) => {
   return (

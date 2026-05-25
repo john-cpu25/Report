@@ -1,6 +1,5 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
-import '../../UI/buttons/neumorphic_dropdown.css';
 
 const NeumorphicDropdown = ({ value, onChange, options, defaultLabel, icon: Icon, className = '' }) => {
   // Find the selected label

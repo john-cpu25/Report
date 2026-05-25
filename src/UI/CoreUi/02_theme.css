@@ -1,0 +1,74 @@
+/* SaaS Deep Dark Mode (Premium Galaxy) */
+body.theme-galaxy {
+  --bg-main: #0B0F19;
+  --bg-card: #111827;
+  --bg-surface: #1F2937;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-dim: #475569;
+  --border: rgba(255, 255, 255, 0.04);
+  --glass-bg: rgba(17, 24, 39, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.03);
+}
+
+/* SaaS Minimal Light Mode (Premium News) */
+body.theme-news {
+  --bg-main: #FAFAFA;
+  --bg-card: #FFFFFF;
+  --bg-surface: #F4F4F5;
+  --text-main: #09090B;
+  --text-muted: #52525B;
+  --text-dim: #A1A1AA;
+  --border: rgba(0, 0, 0, 0.06);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.04);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+
+
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+html::-webkit-scrollbar, body::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera */
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+
+body.theme-galaxy select option {
+  background-color: #161B26;
+  color: #F8FAFC;
+}
+
+body.theme-news select option {
+  background-color: #FFFFFF;
+  color: #0F172A;
+}
+
+
+body.theme-galaxy ::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+body.theme-news ::-webkit-calendar-picker-indicator {
+  filter: none;
+  cursor: pointer;
+}
+

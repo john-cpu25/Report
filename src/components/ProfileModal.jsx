@@ -8,7 +8,6 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import AvatarWithFrame from './AvatarWithFrame';
-import '../UI/Profile.css';
 
 export default function ProfileModal({ isOpen, onClose }) {
   const { user, updateUserProfile } = useAuth();

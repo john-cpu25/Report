@@ -92,15 +92,15 @@ const TopBar = () => {
   };
 
   return (
-    <header className="h-[88px] bg-[var(--bg-main)]/70 backdrop-blur-2xl border-b border-[var(--border)] sticky top-0 z-[99] sys-px transition-all duration-300">
-      <div className="h-full max-w-full mx-auto flex items-center justify-between sys-gap">
+    <header className="nav-topbar">
+      <div className="nav-topbar-inner">
         <div className="flex items-center sys-gap">
           <button onClick={handleMenuClick} className="sys-p rounded-[8px] hover:bg-white/5 text-[var(--text-muted)] lg:hidden">
             <Menu size={24} />
           </button>
           <div className="flex items-center gap-6">
              {activeTab !== 'dashboard' && (
-               <h1 className="text-[28px] font-black text-[var(--text-main)] uppercase tracking-tighter leading-none ml-[32px]">
+               <h1 className="nav-topbar-title">
                  {activeTab === 'projects' ? 'PROJECT' : activeTab === 'report' ? 'PLANNER' : activeTab.replace('-', ' ').toUpperCase()}
                </h1>
              )}
