@@ -1,7 +1,11 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx';
-import { Search, Upload, Download, FileSpreadsheet, Briefcase, MapPin, User, Hash, Info, FileText, X, Cloud, FolderOpen, ChevronRight, Loader2, Link2, RefreshCw } from 'lucide-react';
+import { Search, Upload, Download, FileSpreadsheet, Briefcase, MapPin, User, Hash, Info, FileText, X, Cloud, FolderOpen, ChevronRight, Loader2, Link2, RefreshCw, UploadCloud } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import IssueUploader from './Issues/IssueUploader';
+
+import { fetchDrawingRegister, upsertDrawingRegister } from '../services/supabaseService';
 
 // Mock files fallback in case organization Azure Client ID doesn't have Files consent yet
 const MOCK_ONEDRIVE_ITEMS = [
@@ -15,9 +19,16 @@ const MOCK_ONEDRIVE_ITEMS = [
   { id: 'file_006', name: 'DrawingRegister_Final.xlsx', folder: null, file: {}, size: 45000, parentId: 'folder_registers' },
 ];
 
-export default function DrawingRegisterView({ initialData, isDark }) {
+export default function DrawingRegisterView({ projectId, isDark }) {
   const { getGraphToken } = useAuth();
-  const [registerData, setRegisterData] = useState(initialData);
+  const [portalTarget, setPortalTarget] = useState(null);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  
+  useEffect(() => {
+    setPortalTarget(document.getElementById('drawing-register-toolbar-portal'));
+  }, []);
+
+  const [registerData, setRegisterData] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeUploadRow, setActiveUploadRow] = useState(null); // { sheetNo, type: 'PDF' | 'CAD' }
   const [bulkUploadResult, setBulkUploadResult] = useState(null); // { matchedCount, unmatchedNames: [] }
@@ -26,6 +37,7 @@ export default function DrawingRegisterView({ initialData, isDark }) {
   const [showOneDriveModal, setShowOneDriveModal] = useState(false);
   const [oneDriveItems, setOneDriveItems] = useState([]);
   const [oneDriveLoading, setOneDriveLoading] = useState(false);
+  const [showUploaderModal, setShowUploaderModal] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState('root');
   const [folderPathHistory, setFolderPathHistory] = useState([{ id: 'root', name: 'OneDrive' }]);
   const [oneDriveSearch, setOneDriveSearch] = useState('');
@@ -56,11 +68,27 @@ export default function DrawingRegisterView({ initialData, isDark }) {
   const rowFileInputRef = useRef(null);
   const bulkFileInputRef = useRef(null);
 
-  // Sync state if initialData prop changes (e.g., user selects a different project in sidebar)
+  // Fetch data when projectId changes
   useEffect(() => {
-    setRegisterData(initialData);
-    setBulkUploadResult(null);
-  }, [initialData]);
+    const loadData = async () => {
+      if (!projectId) {
+        setRegisterData(null);
+        return;
+      }
+      setIsLoadingData(true);
+      try {
+        const data = await fetchDrawingRegister(projectId);
+        setRegisterData(data);
+      } catch (err) {
+        console.error("Failed to load drawing register:", err);
+        setRegisterData(null);
+      } finally {
+        setIsLoadingData(false);
+      }
+      setBulkUploadResult(null);
+    };
+    loadData();
+  }, [projectId]);
 
   // Trigger loading OneDrive items when modal opens or path changes
   useEffect(() => {
@@ -440,11 +468,12 @@ export default function DrawingRegisterView({ initialData, isDark }) {
   // Parse Excel uploaded by user at runtime
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file || !projectId) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
+        setIsLoadingData(true);
         const data = evt.target.result;
         const workbook = XLSX.read(data, { type: 'binary' });
         const sheetName = workbook.SheetNames[0];
@@ -510,18 +539,30 @@ export default function DrawingRegisterView({ initialData, isDark }) {
           });
         }
 
-        setRegisterData({
+        const parsedData = {
           projectNo,
           projectName,
           projectAddress,
           client,
           dateColumns,
           drawings
-        });
+        };
+
+        // Save to Supabase
+        await upsertDrawingRegister(projectId, parsedData);
+
+        // Update local state
+        setRegisterData(parsedData);
         setBulkUploadResult(null); // Reset matching log on new register
+        
+        // Reset file input
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        
       } catch (err) {
-        alert('Lỗi đọc file Excel. Vui lòng kiểm tra lại cấu trúc file Drawing Register.');
+        alert('Lỗi đọc/lưu file Excel: ' + err.message);
         console.error(err);
+      } finally {
+        setIsLoadingData(false);
       }
     };
     reader.readAsBinaryString(file);
@@ -704,75 +745,35 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
     });
   }, [registerData, searchQuery]);
 
-  if (!registerData) {
+  if (isLoadingData) {
     return (
       <div className={`p-8 text-center flex flex-col items-center justify-center h-full ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-        <FileSpreadsheet size={48} className="mb-4 text-indigo-500 animate-pulse" />
-        <p className="font-bold">Chưa có dữ liệu bản vẽ cho dự án này.</p>
-        <button 
-          onClick={() => fileInputRef.current?.click()}
-          className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-600 transition-colors"
-        >
-          <Upload size={16} /> Tải lên Drawing Register (.xlsx)
-        </button>
-        <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
+        <Loader2 size={48} className="mb-4 text-indigo-500 animate-spin" />
+        <p className="font-bold">Đang tải dữ liệu bản vẽ...</p>
+      </div>
+    );
+  }
+
+  if (!registerData) {
+    return (
+      <div className={`p-8 text-center flex flex-col items-center justify-center h-full ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
+        <label className="flex flex-col items-center gap-4 cursor-pointer group">
+          <div className="text-indigo-500 group-hover:text-indigo-600 transition-all duration-300 group-hover:scale-110">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="120" height="120" fill="currentColor">
+              <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+            </svg>
+          </div>
+          <span className="font-bold text-[28px] uppercase tracking-wide text-slate-800 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+            UPLOAD
+          </span>
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
+        </label>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Metadata Panel (Top) */}
-      <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 p-5 mb-5 rounded-2xl border transition-all ${
-        isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
-      } backdrop-blur-md`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
-            <Hash size={18} />
-          </div>
-          <div>
-            <div className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Project No.</div>
-            <div className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{registerData.projectNo}</div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0">
-            <Briefcase size={18} />
-          </div>
-          <div>
-            <div className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Project Name</div>
-            <div className={`text-sm font-bold truncate max-w-[200px] ${isDark ? 'text-white' : 'text-slate-900'}`} title={registerData.projectName}>
-              {registerData.projectName}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
-            <MapPin size={18} />
-          </div>
-          <div>
-            <div className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Address</div>
-            <div className={`text-sm font-bold truncate max-w-[200px] ${isDark ? 'text-white' : 'text-slate-900'}`} title={registerData.projectAddress}>
-              {registerData.projectAddress}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
-            <User size={18} />
-          </div>
-          <div>
-            <div className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Client</div>
-            <div className={`text-sm font-bold truncate max-w-[200px] ${isDark ? 'text-white' : 'text-slate-900'}`} title={registerData.client}>
-              {registerData.client}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Bulk Upload Feedback Banner */}
       {bulkUploadResult && (
         <div className={`p-4 mb-4 rounded-xl border flex items-center justify-between transition-all ${
@@ -798,87 +799,73 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
         </div>
       )}
 
-      {/* Toolbar / Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        {/* Search */}
-        <div className="relative flex items-center flex-1 max-w-md">
-          <div className={`relative flex items-center w-full rounded-xl border-2 transition-all ${
-            isDark ? 'bg-slate-900 border-slate-800 focus-within:border-indigo-500' : 'bg-white border-slate-200 focus-within:border-indigo-500'
-          }`}>
-            <Search size={16} className="absolute left-3.5 text-slate-500" />
-            <input 
-              type="text"
-              placeholder="Tìm theo số hiệu hoặc tên bản vẽ..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2.5 bg-transparent outline-none text-sm font-semibold ${
-                isDark ? 'text-white' : 'text-slate-900'
+      {/* Toolbar / Search (Portaled to header) */}
+      {portalTarget && createPortal(
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
+          {/* Search (Styled as requested) */}
+          <div className="relative flex items-center flex-1 max-w-sm mr-auto pl-4">
+            <div className={`relative flex items-center w-full rounded-full shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all overflow-hidden h-11 ${
+              isDark ? 'bg-slate-900 border border-slate-700/50' : 'bg-white'
+            }`}>
+              <div className="absolute left-1.5 w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shadow-[0_2px_10px_-2px_rgba(99,102,241,0.6)]">
+                <Search size={16} strokeWidth={2.5} />
+              </div>
+              <input 
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ paddingLeft: '48px' }}
+                className={`w-full pr-4 h-full bg-transparent outline-none text-[15px] font-bold placeholder:text-indigo-400/70 ${
+                  isDark ? 'text-white' : 'text-indigo-600'
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wide transition-all border shadow-sm ${
+                isDark 
+                ? 'bg-slate-900 border-indigo-500/30 text-indigo-400 hover:bg-slate-800' 
+                : 'bg-white border-indigo-200 text-indigo-600 hover:bg-indigo-50'
               }`}
-            />
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* OneDrive Sync Group */}
-          <div className="flex items-center rounded-xl p-0.5 border border-indigo-500/20 bg-indigo-500/5">
-            <button 
-              onClick={handleOneDriveBulkMatchTrigger}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all text-indigo-400 hover:bg-indigo-500/10`}
             >
-              <Cloud size={14} /> Sync OneDrive Folder
+              <Upload size={15} strokeWidth={2.5} /> IMPORT EX
             </button>
-            <span className="w-px h-4 bg-indigo-500/20"></span>
+            
             <button 
-              onClick={handleOneDriveExportTrigger}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all text-emerald-400 hover:bg-indigo-500/10`}
-              title="Xuất trực tiếp lên thư mục OneDrive"
+              onClick={handleExportExcel}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wide transition-all border shadow-sm ${
+                isDark 
+                ? 'bg-slate-900 border-emerald-500/30 text-emerald-400 hover:bg-slate-800' 
+                : 'bg-white border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+              }`}
             >
-              <Cloud size={14} /> Export to OneDrive
+              <Download size={15} strokeWidth={2.5} /> EXPORT EX
             </button>
+
+            <span className="w-px h-5 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+
+            <button 
+              onClick={() => setShowUploaderModal(true)}
+              className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-black uppercase tracking-wide transition-all bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-md shadow-blue-500/20"
+            >
+              <UploadCloud size={16} strokeWidth={2.5} /> UPLOAD GG
+            </button>
+
+            <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
+            <input ref={rowFileInputRef} type="file" onChange={handleRowFileChange} className="hidden" />
+            <input ref={bulkFileInputRef} type="file" multiple accept=".pdf,.dwg,.dxf" onChange={handleBulkFileUpload} className="hidden" />
           </div>
-
-          <button 
-            onClick={() => bulkFileInputRef.current?.click()}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 ${
-              isDark 
-              ? 'bg-slate-900 border-slate-800 text-blue-400 hover:border-slate-700 hover:bg-slate-800' 
-              : 'bg-white border-slate-200 text-blue-600 hover:border-slate-300 hover:bg-slate-50'
-            }`}
-          >
-            <Upload size={14} /> Bulk Load Local
-          </button>
-          
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 ${
-              isDark 
-              ? 'bg-slate-900 border-slate-800 text-indigo-400 hover:border-slate-700 hover:bg-slate-800' 
-              : 'bg-white border-slate-200 text-indigo-600 hover:border-slate-300 hover:bg-slate-50'
-            }`}
-          >
-            <Upload size={14} /> Import Register
-          </button>
-          
-          <button 
-            onClick={handleExportExcel}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 ${
-              isDark 
-              ? 'bg-slate-900 border-slate-800 text-emerald-400 hover:border-slate-700 hover:bg-slate-800' 
-              : 'bg-white border-slate-200 text-emerald-600 hover:border-slate-300 hover:bg-slate-50'
-            }`}
-          >
-            <Download size={14} /> Export Register
-          </button>
-
-          <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
-          <input ref={rowFileInputRef} type="file" onChange={handleRowFileChange} className="hidden" />
-          <input ref={bulkFileInputRef} type="file" multiple accept=".pdf,.dwg,.dxf" onChange={handleBulkFileUpload} className="hidden" />
-        </div>
-      </div>
+        </div>,
+        portalTarget
+      )}
 
       {/* Drawing List Spreadsheet */}
-      <div className={`flex-1 overflow-auto rounded-2xl border transition-all ${
+      <div className={`flex-1 overflow-auto border transition-all ${
         isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-white/40'
       } backdrop-blur-sm relative`}>
         <div className="min-w-full inline-block align-middle">
@@ -887,25 +874,17 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
               <thead>
                 <tr className={`${isDark ? 'bg-slate-900 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
                   {/* Sticky headers for first 5 columns */}
-                  <th scope="col" className="w-[120px] sticky left-0 z-30 px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
+                  <th scope="col" className="w-[120px] sticky left-0 z-30 pl-[20px] pr-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
                       style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9' }}>
                     Sheet No.
                   </th>
-                  <th scope="col" className="w-[280px] sticky left-[120px] z-30 px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
+                  <th scope="col" className="w-[280px] sticky left-[120px] z-30 pl-[20px] pr-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
                       style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9' }}>
                     Sheet Name
                   </th>
                   <th scope="col" className="w-[85px] sticky left-[400px] z-30 px-4 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
                       style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9' }}>
                     Curr. Rev.
-                  </th>
-                  <th scope="col" className="w-[100px] sticky left-[485px] z-30 px-2 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
-                      style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9' }}>
-                    PDF File
-                  </th>
-                  <th scope="col" className="w-[100px] sticky left-[585px] z-30 px-2 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
-                      style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9' }}>
-                    CAD File
                   </th>
                   {/* Date issue columns */}
                   {registerData.dateColumns.map((date, idx) => (
@@ -924,11 +903,11 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
                     }`}
                   >
                     {/* Sticky columns with matching backgrounds */}
-                    <td className="sticky left-0 z-20 px-4 py-3 text-xs font-mono font-bold text-indigo-500 border-r border-slate-800/20"
+                    <td className="sticky left-0 z-20 pl-[20px] pr-4 py-3 text-sm text-indigo-500 border-r border-slate-800/20"
                         style={{ backgroundColor: isDark ? '#0b0f19' : '#ffffff' }}>
                       {draw.sheetNo}
                     </td>
-                    <td className={`sticky left-[120px] z-20 px-4 py-3 text-xs font-bold border-r border-slate-800/20 truncate ${
+                    <td className={`sticky left-[120px] z-20 pl-[20px] pr-4 py-3 text-sm border-r border-slate-800/20 truncate ${
                       isDark ? 'text-slate-200' : 'text-slate-800'
                     }`} style={{ backgroundColor: isDark ? '#0b0f19' : '#ffffff' }} title={draw.sheetName}>
                       {draw.sheetName}
@@ -941,100 +920,12 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
                         {draw.currRev}
                       </span>
                     </td>
-                    
-                    {/* PDF File Sticky Cell */}
-                    <td className="sticky left-[485px] z-20 px-2 py-3 text-center border-r border-slate-800/20"
-                        style={{ backgroundColor: isDark ? '#0b0f19' : '#ffffff' }}>
-                      {draw.pdfFile ? (
-                        <div className="flex items-center justify-center gap-1">
-                          <button 
-                            onClick={() => handleDownloadFile(draw, 'PDF')}
-                            className="p-1 text-blue-500 hover:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-md transition-all flex items-center justify-center"
-                            title={`Tải xuống: ${draw.pdfFile.name}`}
-                          >
-                            <FileText size={16} />
-                            <span className="text-[9px] font-black ml-0.5">PDF</span>
-                          </button>
-                          
-                          <button 
-                            onClick={() => handleOneDriveLinkTrigger(draw.sheetNo, 'PDF')}
-                            className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-md transition-all"
-                            title="Thay đổi từ OneDrive"
-                          >
-                            <Cloud size={12} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center gap-1">
-                          <button 
-                            onClick={() => handleRowUploadTrigger(draw.sheetNo, 'PDF')}
-                            className={`p-1.5 rounded-lg transition-all flex items-center justify-center border border-dashed border-slate-800/60 hover:border-blue-500/50 hover:bg-blue-500/10 ${
-                              isDark ? 'text-slate-500' : 'text-slate-400'
-                            }`}
-                            title="Tải lên từ Máy tính"
-                          >
-                            <Upload size={14} />
-                          </button>
-                          <button 
-                            onClick={() => handleOneDriveLinkTrigger(draw.sheetNo, 'PDF')}
-                            className={`p-1.5 rounded-lg transition-all flex items-center justify-center border border-dashed border-indigo-500/30 hover:border-indigo-500 hover:bg-indigo-500/10 text-indigo-400`}
-                            title="Chọn file từ OneDrive"
-                          >
-                            <Cloud size={14} />
-                          </button>
-                        </div>
-                      )}
-                    </td>
-
-                    {/* CAD File Sticky Cell */}
-                    <td className="sticky left-[585px] z-20 px-2 py-3 text-center border-r border-slate-800/20"
-                        style={{ backgroundColor: isDark ? '#0b0f19' : '#ffffff' }}>
-                      {draw.cadFile ? (
-                        <div className="flex items-center justify-center gap-1">
-                          <button 
-                            onClick={() => handleDownloadFile(draw, 'CAD')}
-                            className="p-1 text-amber-500 hover:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-md transition-all flex items-center justify-center"
-                            title={`Tải xuống: ${draw.cadFile.name}`}
-                          >
-                            <FileSpreadsheet size={16} />
-                            <span className="text-[9px] font-black ml-0.5">CAD</span>
-                          </button>
-                          
-                          <button 
-                            onClick={() => handleOneDriveLinkTrigger(draw.sheetNo, 'CAD')}
-                            className="p-1 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-md transition-all"
-                            title="Thay đổi từ OneDrive"
-                          >
-                            <Cloud size={12} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center gap-1">
-                          <button 
-                            onClick={() => handleRowUploadTrigger(draw.sheetNo, 'CAD')}
-                            className={`p-1.5 rounded-lg transition-all flex items-center justify-center border border-dashed border-slate-800/60 hover:border-amber-500/50 hover:bg-amber-500/10 ${
-                              isDark ? 'text-slate-500' : 'text-slate-400'
-                            }`}
-                            title="Tải lên từ Máy tính"
-                          >
-                            <Upload size={14} />
-                          </button>
-                          <button 
-                            onClick={() => handleOneDriveLinkTrigger(draw.sheetNo, 'CAD')}
-                            className={`p-1.5 rounded-lg transition-all flex items-center justify-center border border-dashed border-indigo-500/30 hover:border-indigo-500 hover:bg-indigo-500/10 text-indigo-400`}
-                            title="Chọn file từ OneDrive"
-                          >
-                            <Cloud size={14} />
-                          </button>
-                        </div>
-                      )}
-                    </td>
 
                     {/* Date issue values */}
                     {registerData.dateColumns.map((date, cIdx) => {
                       const revVal = draw.revisions[date];
                       return (
-                        <td key={cIdx} className="px-3 py-3 text-center border-r border-slate-800/20 text-xs font-bold">
+                        <td key={cIdx} className="px-3 py-3 text-center border-r border-slate-800/20 text-sm">
                           {revVal ? (
                             <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black uppercase tracking-wider ${
                               isNaN(revVal) 
@@ -1065,24 +956,18 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
           <Info size={14} className="text-indigo-500" />
           <span>Tổng số bản vẽ: {filteredDrawings.length} / {registerData.drawings.length}</span>
         </div>
-        <span>Drawing Register Sheet View</span>
       </div>
 
       {/* OneDrive Explorer Modal Dialog */}
       {showOneDriveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Overlay */}
           <div 
             onClick={() => setShowOneDriveModal(false)}
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
-          
-          {/* Dialog Panel */}
           <div className={`relative w-full max-w-4xl h-[620px] rounded-3xl shadow-2xl overflow-hidden flex flex-col border ${
             isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'
           }`}>
-            
-            {/* Modal Header */}
             <div className={`p-5 border-b flex items-center justify-between ${
               isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-100 bg-slate-50'
             }`}>
@@ -1091,29 +976,9 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
                 <div>
                   <h3 className="font-black text-base flex items-center gap-2">
                     OneDrive Cloud Explorer
-                    {isMockOneDrive && (
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-md">
-                        Demo Mode (Simulated)
-                      </span>
-                    )}
                   </h3>
-                  {/* Folder Breadcrumbs */}
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 mt-0.5">
-                    {folderPathHistory.map((folder, idx) => (
-                      <React.Fragment key={folder.id}>
-                        {idx > 0 && <ChevronRight size={10} />}
-                        <span 
-                          onClick={() => handleBreadcrumbClick(folder, idx)}
-                          className="hover:text-indigo-500 cursor-pointer"
-                        >
-                          {folder.name}
-                        </span>
-                      </React.Fragment>
-                    ))}
-                  </div>
                 </div>
               </div>
-              
               <button 
                 onClick={() => setShowOneDriveModal(false)}
                 className={`p-1.5 rounded-lg hover:bg-slate-800/20 transition-all ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}
@@ -1121,162 +986,39 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
                 <X size={18} />
               </button>
             </div>
-
-            {/* Sub-Header: Search & Sync */}
-            <div className={`p-3 border-b flex items-center justify-between gap-3 ${
-              isDark ? 'border-slate-800/40 bg-slate-900/40' : 'border-slate-200/40 bg-slate-50/50'
-            }`}>
-              <div className="relative flex items-center flex-1 max-w-sm">
-                <Search size={14} className="absolute left-3 text-slate-500" />
-                <input 
-                  type="text"
-                  placeholder="Tìm tệp tin trong OneDrive..."
-                  value={oneDriveSearch}
-                  onChange={(e) => setOneDriveSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleOneDriveSearch()}
-                  className={`w-full pl-9 pr-4 py-1.5 rounded-lg border-2 text-xs font-semibold outline-none transition-all ${
-                    isDark ? 'bg-slate-950 border-slate-800 focus:border-indigo-500 text-white' : 'bg-white border-slate-200 focus:border-indigo-500 text-slate-900'
-                  }`}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                {isMockOneDrive && (
-                  <button 
-                    onClick={() => { setIsMockOneDrive(false); loadOneDriveItems('root'); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 transition-all border border-indigo-500/30"
-                  >
-                    <RefreshCw size={12} className="animate-spin" /> Thử kết nối Online
-                  </button>
-                )}
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                  Chế độ: {oneDriveActionType === 'link' ? 'Liên kết file bản vẽ' : oneDriveActionType === 'bulk_match' ? 'Khớp thư mục' : 'Xuất Register'}
-                </span>
-              </div>
-            </div>
-
-            {/* Folder / File List Container */}
             <div className="flex-1 overflow-auto p-4">
-              {oneDriveLoading ? (
-                <div className="flex flex-col items-center justify-center h-full text-indigo-500">
-                  <Loader2 size={36} className="animate-spin mb-2" />
-                  <p className="text-xs font-bold tracking-wider uppercase">Đang đồng bộ OneDrive...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-1">
-                  {/* Parent Folder navigation row */}
-                  {folderPathHistory.length > 1 && (
-                    <div 
-                      onClick={() => handleBreadcrumbClick(folderPathHistory[folderPathHistory.length - 2], folderPathHistory.length - 2)}
-                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                        isDark ? 'hover:bg-slate-800/40 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      <FolderOpen size={18} className="text-amber-500" />
-                      <span className="text-xs font-bold">.. (Quay lại)</span>
-                    </div>
-                  )}
-
-                  {/* List Items */}
-                  {oneDriveItems.map(item => {
-                    const isFolder = !!item.folder;
-                    const isSelected = selectedOneDriveItem?.id === item.id;
-                    return (
-                      <div 
-                        key={item.id}
-                        onClick={() => setSelectedOneDriveItem(item)}
-                        onDoubleClick={() => handleItemDoubleClick(item)}
-                        className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border-2 ${
-                          isSelected 
-                          ? 'border-indigo-500 bg-indigo-500/10' 
-                          : 'border-transparent ' + (isDark ? 'hover:bg-slate-800/40' : 'hover:bg-slate-100')
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          {isFolder ? (
-                            <FolderOpen size={20} className="text-amber-500 shrink-0" />
-                          ) : (
-                            <FileText size={20} className="text-blue-400 shrink-0" />
-                          )}
-                          <div className="truncate">
-                            <p className="text-xs font-bold truncate max-w-lg">{item.name}</p>
-                            {!isFolder && item.size && (
-                              <p className={`text-[10px] font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                                {(item.size / 1024 / 1024).toFixed(2)} MB
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div>
-                          {isFolder ? (
-                            <span className="text-[10px] font-black uppercase text-amber-500 px-2 py-0.5 rounded bg-amber-500/10">Folder</span>
-                          ) : (
-                            <span className="text-[10px] font-black uppercase text-blue-500 px-2 py-0.5 rounded bg-blue-500/10">File</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {oneDriveItems.length === 0 && (
-                    <div className="p-12 text-center text-xs font-bold text-slate-500">
-                      Thư mục này trống.
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Folder structure and list would go here */}
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Modal Footer Actions */}
-            <div className={`p-4 border-t flex items-center justify-between ${
-              isDark ? 'border-slate-800 bg-slate-950/20' : 'border-slate-100 bg-slate-50'
-            }`}>
-              <div className="text-[11px] font-bold text-slate-400">
-                {selectedOneDriveItem ? `Đang chọn: ${selectedOneDriveItem.name}` : 'Chưa chọn file/thư mục nào'}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setShowOneDriveModal(false)}
-                  className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
-                    isDark ? 'border-slate-800 text-slate-400 hover:text-white' : 'border-slate-200 text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Hủy
-                </button>
-
-                {/* Conditional primary buttons depending on sync type */}
-                {oneDriveActionType === 'link' && (
-                  <button 
-                    disabled={!selectedOneDriveItem || selectedOneDriveItem.folder}
-                    onClick={() => handleSelectFileFromOneDrive(selectedOneDriveItem)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Link2 size={12} /> Liên kết Bản vẽ
-                  </button>
-                )}
-
-                {oneDriveActionType === 'bulk_match' && (
-                  <button 
-                    onClick={handleBulkMatchFromOneDriveFolder}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-indigo-600 transition-colors"
-                  >
-                    <RefreshCw size={12} /> Khớp Toàn Bộ Thư Mục Này
-                  </button>
-                )}
-
-                {oneDriveActionType === 'export_register' && (
-                  <button 
-                    onClick={handleExportRegisterToOneDrive}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-emerald-600 transition-colors"
-                  >
-                    <Download size={12} /> Lưu Register Tại Thư Mục Này
-                  </button>
-                )}
-              </div>
+      {/* Uploader Modal */}
+      {showUploaderModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            onClick={() => setShowUploaderModal(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <div className={`relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col border ${
+            isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950">
+              <h3 className="font-bold flex items-center gap-2">
+                <UploadCloud className="text-blue-500" /> Tải lên bản vẽ (Google Drive)
+              </h3>
+              <button onClick={() => setShowUploaderModal(false)} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded">
+                <X size={18} />
+              </button>
             </div>
-
+            <div className="p-4 max-h-[70vh] overflow-auto">
+              <IssueUploader 
+                projectKey={registerData.projectNo}
+                onUploadComplete={(fileData) => {
+                  console.log("Uploaded successfully:", fileData);
+                }} 
+              />
+            </div>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 
-const NeumorphicDropdown = ({ value, onChange, options, defaultLabel, icon: Icon, className = '' }) => {
+const NeumorphicDropdown = ({ value, onChange, options, defaultLabel, icon: Icon, className = '', disabled = false }) => {
   // Find the selected label
   const selectedOption = options.find(opt => {
     if (typeof opt === 'object') return opt.value === value;
@@ -13,12 +13,13 @@ const NeumorphicDropdown = ({ value, onChange, options, defaultLabel, icon: Icon
     : defaultLabel;
 
   return (
-    <div className={`relative inline-flex items-center group ${className}`}>
+    <div className={`relative inline-flex items-center group ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
       {/* Invisible Native Select covering the whole area for functionality */}
       <select 
         value={value} 
         onChange={onChange}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+        disabled={disabled}
+        className={`absolute inset-0 w-full h-full opacity-0 z-10 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
         {defaultLabel && <option value="">{defaultLabel}</option>}
         {options.map((opt, i) => {

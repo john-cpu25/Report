@@ -1431,7 +1431,7 @@ const Workflows = () => {
       {/* 3D Multi-Page Flip Book Modal */}
       <AnimatePresence>
          {selectedWorkflowId && selectedWorkflow && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 md:p-12 overflow-y-auto" style={{ perspective: 1500 }}>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 overflow-y-auto" style={{ perspective: 1500 }}>
             {/* Dark background overlay */}
             <motion.div 
               initial={{ opacity: 0 }}

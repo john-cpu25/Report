@@ -16,6 +16,7 @@ import {
   LineElement
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import NeumorphicDropdown from './buttons/NeumorphicDropdown';
 
 ChartJS.register(
   CategoryScale, 
@@ -302,17 +303,6 @@ const AnnualLeave = () => {
       {/* Control Header (Neumorphic Action Bar) */}
       <div className="leave-header-bar flex flex-wrap items-center justify-between gap-8">
         <div className="flex items-center gap-8">
-          <div className="flex items-center gap-4">
-            <div className="neu-button neu-square p-4 text-indigo-500">
-              <Landmark size={24} />
-            </div>
-            <div>
-              <h2 className="text-[12px] font-black text-indigo-500 uppercase tracking-widest leading-none">ANNUAL LEAVE</h2>
-            </div>
-          </div>
-
-          <div className="h-12 w-px bg-[var(--border)] opacity-50" />
-
           <div className="flex gap-4">
             <button 
               onClick={() => setViewMode('personal')}
@@ -332,63 +322,35 @@ const AnnualLeave = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="relative flex items-center justify-between bg-[var(--bg-card)] border border-[var(--border)] rounded-full pl-[24px] pr-[10px] py-[8px] shadow-sm hover:shadow-md transition-shadow min-w-[160px]">
-            <span className="font-medium text-[14px] uppercase tracking-wider text-[var(--text-main)] pointer-events-none">
-              {selectedYear === 'ALL' ? 'YEARS' : selectedYear}
-            </span>
-            <div className="w-[28px] h-[28px] rounded-full border-[2px] border-indigo-500 flex items-center justify-center text-indigo-500 pointer-events-none">
-              <ChevronDown size={14} strokeWidth={3} />
-            </div>
-            <select 
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              value={selectedYear}
-              onChange={e => setSelectedYear(e.target.value)}
-            >
-              <option value="2024" className="leave-select-option">2024</option>
-              <option value="2025" className="leave-select-option">2025</option>
-              <option value="2026" className="leave-select-option">2026</option>
-              <option value="ALL" className="leave-select-option">YEARS</option>
-            </select>
-          </div>
+          <NeumorphicDropdown
+            className="min-w-[160px]"
+            value={selectedYear}
+            onChange={e => setSelectedYear(e.target.value)}
+            options={[
+              { value: '2024', label: '2024' },
+              { value: '2025', label: '2025' },
+              { value: '2026', label: '2026' },
+              { value: 'ALL', label: 'YEARS' }
+            ]}
+          />
 
-          <div className="relative flex items-center justify-between bg-[var(--bg-card)] border border-[var(--border)] rounded-full pl-[24px] pr-[10px] py-[8px] shadow-sm hover:shadow-md transition-shadow min-w-[160px]">
-            <span className="font-medium text-[14px] uppercase tracking-wider text-[var(--text-main)] pointer-events-none">
-              {isAdmin 
-                ? (selectedTeam === 'ALL' ? 'TEAMS' : selectedTeam)
-                : (currentUser?.team || 'MY TEAM')
-              }
-            </span>
-            <div className="w-[28px] h-[28px] rounded-full border-[2px] border-indigo-500 flex items-center justify-center text-indigo-500 pointer-events-none">
-              <ChevronDown size={14} strokeWidth={3} />
-            </div>
-            <select 
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              value={isAdmin ? selectedTeam : currentUser?.team}
-              onChange={e => { if (isAdmin) setSelectedTeam(e.target.value); }}
-              disabled={!isAdmin}
-            >
-              {teamOptions.map(t => <option key={t} value={t} className="leave-select-option">{t === 'ALL' ? 'TEAMS' : t}</option>)}
-            </select>
-          </div>
+          <NeumorphicDropdown
+            className="min-w-[160px]"
+            value={isAdmin ? selectedTeam : currentUser?.team}
+            onChange={e => { if (isAdmin) setSelectedTeam(e.target.value); }}
+            disabled={!isAdmin}
+            defaultLabel={isAdmin ? 'TEAMS' : (currentUser?.team || 'MY TEAM')}
+            options={teamOptions.map(t => ({ value: t, label: t === 'ALL' ? 'TEAMS' : t }))}
+          />
 
           {viewMode === 'personal' && (
-            <div className="relative flex items-center justify-between bg-[var(--bg-card)] border border-[var(--border)] rounded-full pl-[24px] pr-[10px] py-[8px] shadow-sm hover:shadow-md transition-shadow min-w-[160px]">
-              <span className="font-medium text-[14px] uppercase tracking-wider text-[var(--text-main)] pointer-events-none">
-                {selectedUser ? (filteredUsersByTeam.find(u => (u.name || u.email) === selectedUser)?.name || selectedUser) : 'MEMBERS'}
-              </span>
-              <div className="w-[28px] h-[28px] rounded-full border-[2px] border-indigo-500 flex items-center justify-center text-indigo-500 pointer-events-none">
-                <ChevronDown size={14} strokeWidth={3} />
-              </div>
-              <select 
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                value={selectedUser}
-                onChange={e => setSelectedUser(e.target.value)}
-              >
-                {filteredUsersByTeam.map(u => (
-                  <option key={u.id} value={u.name || u.email} className="leave-select-option">{u.name || u.email}</option>
-                ))}
-              </select>
-            </div>
+            <NeumorphicDropdown
+              className="min-w-[160px]"
+              value={selectedUser}
+              onChange={e => setSelectedUser(e.target.value)}
+              defaultLabel="MEMBERS"
+              options={filteredUsersByTeam.map(u => ({ value: u.name || u.email, label: u.name || u.email }))}
+            />
           )}
         </div>
       </div>

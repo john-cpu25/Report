@@ -216,7 +216,7 @@ export const AppProvider = ({ children }) => {
   });
 
   // Data States
-  const [reportData, setReportData] = useState([]);
+  
   const [customProjects, setCustomProjects] = useState([]);
   const [supabaseProjects, setSupabaseProjects] = useState([]);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -279,59 +279,18 @@ export const AppProvider = ({ children }) => {
 
   // Initial Data Load
   useEffect(() => {
-    const savedLogs = localStorage.getItem('weeklyReportData');
     const savedProjects = localStorage.getItem('customProjects');
-    
-    const initData = async () => {
-      if (savedLogs && JSON.parse(savedLogs).length > 0) {
-        const logs = JSON.parse(savedLogs);
-        const migratedLogs = logs.map(log =>
-          log.status === 'PLANING' ? { ...log, status: 'PLANNING' } : log
-        );
-        setReportData(migratedLogs);
-      } else {
-        try {
-          const [dbTasks, dbProjectsRes, dbUsersRes] = await Promise.all([
-            fetchTemporaryTasks(),
-            supabase.from('NMK_Project').select('id, name, key'),
-            supabase.from('NMK_User').select('id, email, name, team')
-          ]);
-
-          const dbProjects = dbProjectsRes.data || [];
-          const dbUsers = dbUsersRes.data || [];
-          const mappedTasks = mapDbTasksToPlanner(dbTasks, dbProjects, dbUsers);
-
-          if (mappedTasks.length > 0) {
-            setReportData(mappedTasks);
-            localStorage.setItem('weeklyReportData', JSON.stringify(mappedTasks));
-            
-            const mappedProjectKeys = Array.from(new Set(mappedTasks.map(t => t.project).filter(Boolean)));
-            const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
-            const updatedCustom = Array.from(new Set([...(savedProjects ? JSON.parse(savedProjects) : []), ...requiredProjects, ...mappedProjectKeys]));
-            setCustomProjects(updatedCustom);
-            localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
-          } else {
-            setReportData(DEFAULT_WEEKLY_PLANNER_TASKS);
-            localStorage.setItem('weeklyReportData', JSON.stringify(DEFAULT_WEEKLY_PLANNER_TASKS));
-            
-            const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
-            const updatedCustom = Array.from(new Set([...(savedProjects ? JSON.parse(savedProjects) : []), ...requiredProjects]));
-            setCustomProjects(updatedCustom);
-            localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
-          }
-        } catch (err) {
-          console.error('Failed to auto-seed from Supabase on load, using defaults:', err);
-          setReportData(DEFAULT_WEEKLY_PLANNER_TASKS);
-          localStorage.setItem('weeklyReportData', JSON.stringify(DEFAULT_WEEKLY_PLANNER_TASKS));
-          
-          const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
-          const updatedCustom = Array.from(new Set([...(savedProjects ? JSON.parse(savedProjects) : []), ...requiredProjects]));
-          setCustomProjects(updatedCustom);
-          localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
-        }
+    if (savedProjects) {
+      try {
+        setCustomProjects(JSON.parse(savedProjects));
+      } catch (e) {
+        // ignore
       }
-    };
-    initData();
+    } else {
+      const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
+      setCustomProjects(requiredProjects);
+      localStorage.setItem('customProjects', JSON.stringify(requiredProjects));
+    }
 
     const fetchSupabaseProjects = async () => {
       try {
@@ -349,21 +308,18 @@ export const AppProvider = ({ children }) => {
     
     // Subscribe to changes
     const channel = supabase
-      .channel('public_dashboard')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Project' }, () => fetchDashboardData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task' }, () => fetchDashboardData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_User' }, () => fetchDashboardData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Leave' }, () => fetchDashboardData())
+      .channel('schema-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Project' }, fetchSupabaseProjects)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_User' }, fetchDashboardData)
       .subscribe();
 
     return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
+      supabase.removeChannel(channel);
     };
   }, []);
 
-  const fetchDashboardData = async () => {
+  async function fetchDashboardData() {
     setIsDashboardLoading(true);
     try {
       const [projRes, userRes, taskRes, leaveRes] = await Promise.all([
@@ -383,85 +339,22 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const seedPlannerData = async () => {
-    try {
-      const [dbTasks, dbProjectsRes, dbUsersRes] = await Promise.all([
-        fetchTemporaryTasks(),
-        supabase.from('NMK_Project').select('id, name, key'),
-        supabase.from('NMK_User').select('id, email, name, team')
-      ]);
-
-      const dbProjects = dbProjectsRes.data || [];
-      const dbUsers = dbUsersRes.data || [];
-
-      const mappedTasks = mapDbTasksToPlanner(dbTasks, dbProjects, dbUsers);
-
-      setReportData(mappedTasks);
-      localStorage.setItem('weeklyReportData', JSON.stringify(mappedTasks));
-
-      const mappedProjectKeys = Array.from(new Set(mappedTasks.map(t => t.project).filter(Boolean)));
-      const requiredProjects = ['DLD', 'MEL02', 'MAC', 'RIVER TERRACE', 'CW2', 'CW3', 'MORAY', 'LEEDS', 'FGWB'];
-      const updatedCustom = Array.from(new Set([...customProjects, ...requiredProjects, ...mappedProjectKeys]));
-      setCustomProjects(updatedCustom);
-      localStorage.setItem('customProjects', JSON.stringify(updatedCustom));
-
-      sendNotification({
-        recipient: 'admin@bypass.local',
-        sender: 'system',
-        senderName: 'Hệ thống',
-        type: 'SYSTEM',
-        title: 'Đồng bộ Weekly Planner thành công 📋',
-        content: `Đã đồng bộ thành công ${mappedTasks.length} nhiệm vụ từ cơ sở dữ liệu Supabase.`,
-        link: '?tab=weekly'
-      });
-    } catch (err) {
-      console.error('Failed to seed Weekly Planner from Supabase:', err);
-      sendNotification({
-        recipient: 'admin@bypass.local',
-        sender: 'system',
-        senderName: 'Hệ thống',
-        type: 'SYSTEM',
-        title: 'Đồng bộ Weekly Planner thất bại ❌',
-        content: `Lỗi: ${err.message || 'Không xác định'}.`,
-        link: '?tab=weekly'
-      });
-    }
-  };
-
-  // Save data on change
-  useEffect(() => {
-    localStorage.setItem('weeklyReportData', JSON.stringify(reportData));
-  }, [reportData]);
+  
 
   useEffect(() => {
     localStorage.setItem('customProjects', JSON.stringify(customProjects));
   }, [customProjects]);
 
   // Data Manipulation Functions
-  const handleAddTask = (e, batchTasks = null, batchOverrides = null) => {
+  
+  const handleAddTask = async (e, batchTasks = null, batchOverrides = null) => {
     if (e) e.preventDefault();
     const targetProject = batchOverrides?.project || formData.project;
     if (!targetProject) return;
 
-    const newReportData = [...reportData];
-    let dataChanged = false;
-
-    if (batchOverrides?.isDirectBatch) {
-      batchTasks.forEach(taskObj => {
-        const taskWithProject = { ...taskObj, project: taskObj.projectId };
-        delete taskWithProject.projectId;
-        const existingIndex = newReportData.findIndex(
-          (r) => r.project === taskWithProject.project && r.task === taskWithProject.task && r.team === taskWithProject.team
-        );
-        if (existingIndex > -1) {
-          newReportData[existingIndex] = { ...newReportData[existingIndex], ...taskWithProject };
-        } else {
-          newReportData.push(taskWithProject);
-        }
-      });
-      dataChanged = true;
-    } else {
+    try {
       const tasksToAdd = batchTasks || (formData.tasks.length > 0 ? [formData.tasks.join(' ')] : ['']);
+      const inserts = [];
       tasksToAdd.forEach(taskText => {
         const useBatchLevel = batchOverrides !== null;
         const levelEnabled = useBatchLevel ? !!batchOverrides.level : formData.showLevel;
@@ -472,130 +365,46 @@ export const AppProvider = ({ children }) => {
         if (taskText) taskName += (taskName ? ' ' : '') + taskText;
         if (!useBatchLevel && formData.note) taskName += (taskName ? ' ' : '') + formData.note;
         if (!taskName) taskName = '(no detail)';
-
-        const existingIndex = newReportData.findIndex(
-          (r) => r.project === targetProject && r.task === taskName && r.team === formData.team
-        );
-        if (existingIndex > -1) {
-          newReportData[existingIndex] = {
-            ...newReportData[existingIndex],
-            status: formData.status,
-            days: {
-              ...newReportData[existingIndex].days,
-              [formData.day]: formData.eta
-            }
-          };
-          dataChanged = true;
-
-          // Trigger local notification in bypass mode
-          if (isAdminMode) {
-            sendNotification({
-              recipient: 'admin@bypass.local',
-              sender: 'system',
-              senderName: 'Hệ thống',
-              type: 'TASK_ASSIGNED',
-              title: 'Cập nhật tiến độ nhiệm vụ 🎯',
-              content: `Bạn vừa cập nhật tiến độ cho nhiệm vụ **"${taskName}"** trong dự án **"${targetProject}"**.`,
-              link: '?tab=personal'
-            });
-          }
-        } else {
-          newReportData.push({
-            id: Date.now() + Math.random(),
-            project: targetProject,
-            team: formData.team,
-            task: taskName,
-            status: formData.status,
-            markupDate: null,
-            markupTime: null,
-            days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '', ...{ [formData.day]: formData.eta } }
-          });
-          dataChanged = true;
-
-          // Trigger local notification in bypass mode
-          if (isAdminMode) {
-            sendNotification({
-              recipient: 'admin@bypass.local',
-              sender: 'system',
-              senderName: 'Hệ thống',
-              type: 'TASK_ASSIGNED',
-              title: 'Nhiệm vụ mới được giao 🎯',
-              content: `Bạn vừa gán nhiệm vụ mới **"${taskName}"** trong dự án **"${targetProject}"** cho bản thân.`,
-              link: '?tab=personal'
-            });
-          }
-        }
+        
+        inserts.push({
+           project_id: targetProject, // Assuming targetProject is the ID or we should find the ID
+           name: taskName,
+           status: formData.status || 'WIP',
+           team: formData.team || 'CIVIL'
+        });
       });
+      if (inserts.length > 0) {
+        const p = dashboardProjects.find(p => p.key === targetProject || p.name === targetProject);
+        if (p) {
+          inserts.forEach(i => i.project_id = p.id);
+        }
+        await supabase.from('NMK_Task').insert(inserts);
+      }
+    } catch (err) {
+      console.error(err);
     }
-    if (dataChanged) setReportData(newReportData);
+    
     if (!batchOverrides) {
       setFormData(prev => ({ ...prev, project: '', level: '', tasks: [], note: '', eta: '' }));
     }
   };
+const deleteRow = async (id) => { await supabase.from("NMK_Task").delete().eq("id", id); };
 
-  const deleteRow = (id) => setReportData(reportData.filter(r => r.id !== id));
+  const moveRow = () => {};
 
-  const moveRow = (id, dir) => {
-    const idx = reportData.findIndex(r => r.id === id);
-    if (idx === -1) return;
-    const ni = idx + dir;
-    if (ni < 0 || ni >= reportData.length) return;
-    const newData = [...reportData];
-    ;[newData[idx], newData[ni]] = [newData[ni], newData[idx]];
-    setReportData(newData);
-  };
+  const updateDayTime = () => {};
 
-  const updateDayTime = (id, day, value) => {
-    setReportData(reportData.map(r => r.id === id ? { ...r, days: { ...r.days, [day]: value } } : r));
-  };
-
-  const updateStatus = (id, status) => {
-    const task = reportData.find(r => r.id === id);
-    setReportData(reportData.map(r => r.id === id ? { ...r, status } : r));
-
-    // Trigger local notification in bypass mode
-    if (isAdminMode && task) {
-      if (status === 'DONE') {
-        sendNotification({
-          recipient: 'admin@bypass.local',
-          sender: 'admin@bypass.local',
-          senderName: 'Super Admin',
-          type: 'TASK_COMPLETED',
-          title: 'Nhiệm vụ hoàn thành 🎉',
-          content: `Bạn đã báo cáo HOÀN THÀNH nhiệm vụ **"${task.task}"** thuộc dự án **"${task.project}"**.`,
-          link: '?tab=personal'
-        });
-      } else if (status === 'ISSUE') {
-        sendNotification({
-          recipient: 'admin@bypass.local',
-          sender: 'admin@bypass.local',
-          senderName: 'Super Admin',
-          type: 'TASK_INTERRUPTED',
-          title: 'Nhiệm vụ bị gián đoạn 🚨',
-          content: `Bạn đã báo cáo GIÁN ĐOẠN nhiệm vụ **"${task.task}"** thuộc dự án **"${task.project}"**.`,
-          link: '?tab=personal'
-        });
-      } else {
-        sendNotification({
-          recipient: 'admin@bypass.local',
-          sender: 'admin@bypass.local',
-          senderName: 'Super Admin',
-          type: 'SYSTEM',
-          title: 'Trạng thái thay đổi ⚙️',
-          content: `Nhiệm vụ **"${task.task}"** đã chuyển trạng thái sang **${status}**.`,
-          link: '?tab=personal'
-        });
-      }
+  const updateStatus = async (id, status) => {
+    try {
+      await supabase.from('NMK_Task').update({ status }).eq('id', id);
+    } catch (err) {
+      console.error('Failed to update status:', err);
     }
   };
 
-  const updateMarkup = (id, { date, time }) => {
-    setReportData(reportData.map(r => r.id === id ? { ...r, markupDate: date, markupTime: time } : r));
-  };
+  const updateMarkup = () => {};
 
-  const bulkUpdateMarkup = (ids, { date, time }) => {
-    setReportData(reportData.map(r => ids.includes(r.id) ? { ...r, markupDate: date, markupTime: time } : r));
-  };
+  const bulkUpdateMarkup = () => {};
 
   // Derived States
   const allProjects = useMemo(() => {
@@ -609,6 +418,89 @@ export const AppProvider = ({ children }) => {
       format(addDays(monday, i), 'dd/MM/yyyy')
     );
   }, [selectedDate]);
+  const reportData = useMemo(() => {
+    if (!dashboardTasks || dashboardTasks.length === 0) return [];
+    
+    // Get start and end of weekDates
+    const [d1, m1, y1] = weekDates[0].split('/');
+    const weekStart = new Date(y1, m1 - 1, d1, 0, 0, 0);
+    const [d2, m2, y2] = weekDates[4].split('/');
+    const weekEnd = new Date(y2, m2 - 1, d2, 23, 59, 59);
+
+    const projectMap = {};
+    dashboardProjects.forEach(p => {
+      projectMap[p.id] = (p.key || p.name || 'UNKNOWN').toUpperCase();
+    });
+
+    const userMap = {};
+    dashboardUsers.forEach(u => {
+      if (u.email) userMap[u.email.toLowerCase()] = u;
+      if (u.id) userMap[u.id] = u;
+    });
+
+    const isSameDayFn = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+
+    const mapped = dashboardTasks.filter(t => {
+      let rStart = t.date_start;
+      let rEnd = t.date_end;
+      
+      if (!rStart || !rEnd || rStart === '-' || rEnd === '-') {
+        const fallback = new Date(t.created_at || Date.now());
+        return fallback >= weekStart && fallback <= weekEnd;
+      }
+      
+      const startD = new Date(rStart);
+      const endD = new Date(rEnd);
+      if (isNaN(startD.getTime()) || isNaN(endD.getTime())) return false;
+      
+      return startD <= weekEnd && endD >= weekStart;
+    }).map(t => {
+      const projectKey = projectMap[t.project_id] || 'UNKNOWN';
+      let team = 'CIVIL';
+      if (t.create_by) {
+        const creator = userMap[t.create_by] || userMap[String(t.create_by).toLowerCase()];
+        if (creator && creator.team) team = creator.team.toUpperCase();
+      }
+
+      let rStart = t.date_start;
+      let rEnd = t.date_end;
+      if (!rStart || !rEnd || rStart === '-' || rEnd === '-') {
+        rStart = t.created_at;
+        rEnd = t.created_at;
+      }
+      const startD = new Date(rStart);
+      const endD = new Date(rEnd);
+
+      const days = { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' };
+      
+      weekDates.forEach((dateStr, idx) => {
+        const [d, m, y] = dateStr.split('/');
+        const colDate = new Date(y, m - 1, d, 12, 0, 0); // Noon for safe comparison
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        
+        startD.setHours(0,0,0,0);
+        endD.setHours(23,59,59,999);
+        
+        if (colDate >= startD && colDate <= endD) {
+          days[dayNames[idx]] = '100%';
+        }
+      });
+
+      return {
+        id: t.id,
+        project: projectKey,
+        team,
+        task: t.name || '(no detail)',
+        status: t.status || 'WIP',
+        markupDate: null,
+        markupTime: null,
+        days
+      };
+    });
+    
+    return mapped;
+  }, [dashboardTasks, dashboardProjects, dashboardUsers, weekDates]);
+
 
   const dashboardStats = useMemo(() => {
     const activeProjectIds = new Set(dashboardTasks.map(t => t.project_id));
@@ -628,7 +520,7 @@ export const AppProvider = ({ children }) => {
     mobileSidebarOpen, setMobileSidebarOpen,
     theme, setTheme,
     background, setBackground,
-    reportData, setReportData,
+    reportData,
     customProjects, setCustomProjects,
     supabaseProjects, setSupabaseProjects,
     selectedDate, setSelectedDate,
@@ -648,7 +540,7 @@ export const AppProvider = ({ children }) => {
     adminViewMode, setAdminViewMode,
     adminActiveTeam, setAdminActiveTeam,
     handleAddTask, deleteRow, moveRow, updateStatus, updateDayTime, updateMarkup, bulkUpdateMarkup,
-    seedPlannerData
+    
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

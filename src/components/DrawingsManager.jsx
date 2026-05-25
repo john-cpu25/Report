@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, PenTool, Search } from 'lucide-react';
+import { Folder, PenTool, Search, Building2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import DrawingRegisterView from './DrawingRegisterView';
 import { drawingRegisterData } from '../data/drawingRegisterData';
@@ -20,30 +20,19 @@ export default function DrawingsManager() {
           id: p.id,
           name: p.name || 'Unnamed Project',
           code: p.key || `PROJ-${String(i+1).padStart(2, '0')}`,
-          color: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'][i % 5]
+          color: p.color || ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'][i % 5]
         }))
       : MOCK_PROJECTS;
-      
-    const hasSurfParade = baseProjects.some(p => p.id === '12011' || p.name.includes('SURF PARADE'));
-    if (!hasSurfParade) {
-      return [
-        { id: '12011', name: '7-9 SURF PARADE BROADBEACH', code: '12011', color: '#8B5CF6' },
-        ...baseProjects
-      ];
-    }
-    return baseProjects;
+    
+    return baseProjects.sort((a, b) => a.code.localeCompare(b.code));
   }, [dashboardProjects]);
 
-  const [selectedProj, setSelectedProj] = useState(() => {
-    const hasSurfParade = projects.some(p => p.id === '12011');
-    return hasSurfParade ? '12011' : (projects[0]?.id || null);
-  });
   const [projectSearch, setProjectSearch] = useState('');
+  const [selectedProj, setSelectedProj] = useState(projects[0]?.id || null);
   
   useEffect(() => {
     if (projects.length > 0 && !selectedProj) {
-      const hasSurfParade = projects.some(p => p.id === '12011');
-      setSelectedProj(hasSurfParade ? '12011' : projects[0].id);
+      setSelectedProj(projects[0].id);
     }
   }, [projects]);
 
@@ -54,23 +43,34 @@ export default function DrawingsManager() {
 
   return (
     <div 
-      style={{ margin: '24px', width: 'calc(100% - 48px)', height: 'calc(100vh - 140px)' }}
-      className={`tab-issues rounded-2xl overflow-hidden relative flex flex-col shadow-sm`}
+      style={{ margin: '10px 10px 0 10px', width: 'calc(100% - 20px)', height: 'calc(100vh - 110px)' }}
+      className={`rounded-2xl overflow-hidden shadow-md flex flex-col transition-colors duration-300 ${
+        isDark ? 'bg-slate-950 text-slate-200' : 'bg-white text-slate-800'
+      }`}
     >
       
       {/* Header */}
-      <div className={`px-6 py-4 flex items-center justify-between z-10 issue-header backdrop-blur-md`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl issue-icon-box flex items-center justify-center">
-            <PenTool size={20} />
+      <div className={`px-6 py-4 flex items-center z-10 issue-header backdrop-blur-md gap-8`}>
+        {/* Left Side: PROJECT */}
+        <div className="w-64 shrink-0 flex items-center gap-3">
+           <div className={`flex items-center justify-center ${isDark ? 'text-white' : 'text-black'}`}>
+             <Building2 size={24} strokeWidth={1.5} />
+           </div>
+           <h1 className="text-[24px] font-normal uppercase tracking-normal" style={{ color: isDark ? '#fff' : '#000' }}>Project</h1>
+        </div>
+
+        {/* Right Side: Drawing Issues */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="w-9 h-9 flex items-center justify-center text-indigo-500">
+            <PenTool size={24} strokeWidth={1.5} />
           </div>
           <div>
-            <h1 className={`text-xl font-black tracking-tight issue-title`}>Drawing Issues</h1>
-            <p className={`text-[10px] font-bold uppercase tracking-[0.2em] issue-subtitle`}>
-              Drawing Register Sheet View
-            </p>
+            <h1 className={`text-[24px] font-normal uppercase tracking-normal issue-title`}>Drawing Issues</h1>
           </div>
         </div>
+        
+        {/* Portal Target for Search & Buttons from RegisterView */}
+        <div id="drawing-register-toolbar-portal" className="flex-1 flex items-center justify-end min-w-0"></div>
       </div>
 
       {/* Main Content Area */}
@@ -81,18 +81,24 @@ export default function DrawingsManager() {
           
           {/* COLUMN 1: PROJECTS */}
           <div className="flex flex-col gap-4 w-64 shrink-0 h-full">
-            <h3 className={`text-xs font-black uppercase tracking-widest pl-2 mb-2 issue-subtitle`}>1. Projects</h3>
             
             {/* Search Bar */}
             <div className="px-2 mb-2">
-              <div className={`relative flex items-center rounded-xl border-2 transition-all issue-search-wrapper`}>
-                <Search size={14} className="absolute left-3 issue-subtitle" />
+              <div className={`relative flex items-center w-full rounded-full shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all overflow-hidden h-11 ${
+                isDark ? 'bg-slate-900 border border-slate-700/50' : 'bg-white'
+              }`}>
+                <div className="absolute left-1.5 w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shadow-[0_2px_10px_-2px_rgba(99,102,241,0.6)]">
+                  <Search size={16} strokeWidth={2.5} />
+                </div>
                 <input 
                   type="text"
-                  placeholder="Search projects..."
+                  placeholder="Search..."
                   value={projectSearch}
                   onChange={(e) => setProjectSearch(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2 bg-transparent outline-none text-xs font-bold issue-search-input`}
+                  style={{ paddingLeft: '48px' }}
+                  className={`w-full pr-4 h-full bg-transparent outline-none text-[15px] font-bold placeholder:text-indigo-400/70 ${
+                    isDark ? 'text-white' : 'text-indigo-600'
+                  }`}
                 />
               </div>
             </div>
@@ -101,30 +107,34 @@ export default function DrawingsManager() {
               {filteredProjects.map(proj => {
                 const active = selectedProj === proj.id;
                 return (
-                  <div key={proj.id} className="relative mb-2 mt-2">
-                    {/* Card Body */}
+                  <div key={proj.id} className="mb-3">
                     <div 
                       onClick={() => setSelectedProj(proj.id)}
-                      className={`py-4 pr-4 rounded-2xl border-2 transition-all cursor-pointer min-h-[72px] flex flex-col justify-center issue-proj-card ${active ? 'active' : ''}`}
-                      style={{
-                        paddingLeft: '64px',
-                        ...(active ? { borderColor: proj.color, background: `${proj.color}15`, boxShadow: `0 10px 30px -10px ${proj.color}50` } : {})
-                      }}
+                      className={`flex items-center w-full p-1.5 pr-4 rounded-full border transition-all duration-300 cursor-pointer ${
+                        active 
+                          ? (isDark ? 'bg-slate-800 border-slate-600 shadow-md' : 'bg-slate-50 border-slate-300 shadow-md')
+                          : (isDark ? 'bg-slate-900/50 border-slate-800 hover:bg-slate-800' : 'bg-white border-slate-200 hover:bg-slate-50')
+                      }`}
                     >
-                      <div className="flex items-center">
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded issue-proj-code`}>
-                          {proj.code}
-                        </span>
+                      <div 
+                        className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-all duration-300 ${
+                          active
+                            ? (isDark ? 'bg-slate-700 shadow-inner' : 'bg-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.1)] border border-slate-200')
+                            : (isDark ? 'bg-slate-800' : 'bg-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-slate-100')
+                        }`}
+                      >
+                        <Folder 
+                          size={18} 
+                          strokeWidth={active ? 2.5 : 2} 
+                          color={active ? proj.color : (isDark ? '#94a3b8' : '#64748b')} 
+                        />
                       </div>
-                      <h4 className={`text-sm font-bold mt-1.5 leading-tight issue-proj-name`}>{proj.name}</h4>
-                    </div>
-
-                    {/* Floating Icon (Overlapping) */}
-                    <div 
-                      className={`absolute -left-4 top-1/2 -translate-y-1/2 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-md pointer-events-none transition-transform duration-300 ${active ? 'scale-110 shadow-lg' : 'scale-100'}`}
-                      style={{ background: proj.color, boxShadow: active ? `0 10px 20px -5px ${proj.color}80` : '' }}
-                    >
-                      <Folder size={24} strokeWidth={2.5} />
+                      <h4 
+                        className={`ml-4 text-[15px] font-normal tracking-normal issue-proj-name`}
+                        style={{ color: active ? proj.color : (isDark ? '#fff' : '#334155') }}
+                      >
+                        {proj.code}
+                      </h4>
                     </div>
                   </div>
                 );
@@ -134,7 +144,7 @@ export default function DrawingsManager() {
 
           <div className="flex-1 min-w-0 pr-6 h-full" style={{ minWidth: 0 }}>
             <DrawingRegisterView 
-              initialData={selectedProj === '12011' ? drawingRegisterData : null} 
+              projectId={selectedProj}
               isDark={isDark} 
             />
           </div>

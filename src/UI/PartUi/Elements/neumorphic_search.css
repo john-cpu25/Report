@@ -83,3 +83,26 @@
   font-weight: 500;
   letter-spacing: 0.05em;
 }
+
+/* For dark mode */
+body.theme-galaxy .neumorphic-search-wrapper {
+  background-color: #1e293b;
+  box-shadow: 
+    4px 4px 12px #0f172a, 
+    -4px -4px 12px #334155;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+body.theme-galaxy .neumorphic-search-wrapper:focus-within {
+  box-shadow: 
+    6px 6px 15px #0f172a, 
+    -6px -6px 15px #334155;
+}
+
+body.theme-galaxy .neumorphic-search-input {
+  color: #c7d2fe;
+}
+
+body.theme-galaxy .neumorphic-search-input::placeholder {
+  color: #6366f1;
+}

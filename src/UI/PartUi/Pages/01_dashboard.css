@@ -267,12 +267,20 @@
   /* was: text-indigo-600 */
 }
 
+body.theme-galaxy .tab-dashboard .time-range-active {
+  color: #ffffff;
+}
+
 /* ── Chart Type Selector (Màu chữ của nút đang được chọn trong loại biểu đồ: Line, Bar, Polar) ──
    Thẻ áp dụng: <button className="chart-type-active p-1.5 rounded-md transition-all"><LineChart/></button>
    ------------------------------------------------------- */
 .tab-dashboard .chart-type-active {
   color: var(--c-indigo-dark);
   /* was: text-indigo-600 */
+}
+
+body.theme-galaxy .tab-dashboard .chart-type-active {
+  color: #ffffff;
 }
 
 /* ── Chart.js Config Colors ──

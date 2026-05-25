@@ -65,6 +65,11 @@
   color: var(--text-muted);
 }
 
+body.theme-galaxy .neu-button {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 4px 4px 10px rgba(0,0,0,0.2), -2px -2px 10px rgba(255,255,255,0.02);
+}
+
 .neu-button:hover {
   color: var(--text-main);
   transform: translateY(-1px);
@@ -72,7 +77,7 @@
               -6px -6px 15px rgba(255, 255, 255, 0.9);
 }
 
-.dark .neu-button:hover {
+body.theme-galaxy .neu-button:hover {
   box-shadow: 6px 6px 18px rgba(0, 0, 0, 0.5), 
               -2px -2px 10px rgba(255, 255, 255, 0.07);
 }
@@ -84,9 +89,12 @@
   transform: scale(0.97);
 }
 
-.dark .neu-button:active, .dark .neu-button.active {
-  box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.4), 
-              inset -1px -1px 6px rgba(255, 255, 255, 0.03);
+body.theme-galaxy .neu-button:active, body.theme-galaxy .neu-button.active {
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.6), 
+              inset -2px -2px 6px rgba(255, 255, 255, 0.15),
+              0 0 8px rgba(99, 102, 241, 0.15);
+  color: var(--c-indigo-light, #818cf8);
 }
 
 /* Rounded variants */

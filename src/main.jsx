@@ -9,19 +9,22 @@ import { MsalProvider } from '@azure/msal-react'
 import { msalConfig } from './services/authConfig'
 import { AuthProvider } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
+import { ErrorBoundary } from './ErrorBoundary.jsx'
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <MsalProvider instance={msalInstance}>
-      <AuthProvider>
-        <NotificationProvider>
-          <AppProvider>
-            <App />
-          </AppProvider>
-        </NotificationProvider>
-      </AuthProvider>
-    </MsalProvider>
+    <ErrorBoundary>
+      <MsalProvider instance={msalInstance}>
+        <AuthProvider>
+          <NotificationProvider>
+            <AppProvider>
+              <App />
+            </AppProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </MsalProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )

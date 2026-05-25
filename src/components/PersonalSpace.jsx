@@ -361,7 +361,7 @@ const PersonalSpace = () => {
 
           <button 
             onClick={() => setLocalFilters({ team: '', user: '', project: '', search: '' })}
-            className="w-[60px] h-[46px] flex items-center justify-center text-[14px] font-bold rounded-xl transition-all shrink-0 text-[#4f46e5] bg-white hover:bg-slate-50 border border-white/50 shadow-[4px_4px_10px_rgba(163,177,198,0.4),-4px_-4px_10px_rgba(255,255,255,1)] active:shadow-[inset_3px_3px_8px_rgba(163,177,198,0.4),inset_-3px_-3px_8px_rgba(255,255,255,1)]"
+            className={`w-[60px] h-[46px] flex items-center justify-center text-[14px] font-bold rounded-xl transition-all shrink-0 border ${isDark ? 'bg-slate-800 text-indigo-400 hover:bg-slate-700 border-slate-700 shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] active:shadow-[inset_3px_3px_8px_#0f172a,inset_-3px_-3px_8px_#334155]' : 'bg-white text-[#4f46e5] hover:bg-slate-50 border-white/50 shadow-[4px_4px_10px_rgba(163,177,198,0.4),-4px_-4px_10px_rgba(255,255,255,1)] active:shadow-[inset_3px_3px_8px_rgba(163,177,198,0.4),inset_-3px_-3px_8px_rgba(255,255,255,1)]'}`}
           >
             Clear
           </button>

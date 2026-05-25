@@ -43,3 +43,30 @@
     inset -2px -2px 4px rgba(0, 0, 0, 0.15),
     4px 4px 12px rgba(163, 177, 198, 0.4);
 }
+
+/* For dark mode */
+body.theme-galaxy .neumorphic-switcher-btn {
+  background-color: #1e293b;
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    4px 4px 10px #0f172a, 
+    -4px -4px 10px #334155;
+}
+
+body.theme-galaxy .neumorphic-switcher-btn:hover {
+  color: #c7d2fe;
+  box-shadow: 
+    6px 6px 12px #0f172a, 
+    -6px -6px 12px #334155;
+}
+
+body.theme-galaxy .neumorphic-switcher-btn.active {
+  background-color: #4f46e5;
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 
+    inset 2px 2px 4px rgba(255, 255, 255, 0.1),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.5),
+    4px 4px 12px #0f172a;
+}

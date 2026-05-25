@@ -470,3 +470,51 @@ export const getCachedData = (key) => {
 export const setCachedData = (key, data) => {
   localStorage.setItem(`supabase_cache_${key}`, JSON.stringify(data));
 };
+
+// ============================================
+// DRAWING REGISTER FUNCTIONS
+// ============================================
+
+/**
+ * Fetch Drawing Register data for a specific project
+ * @param {string} projectId 
+ */
+export const fetchDrawingRegister = async (projectId) => {
+  if (!projectId) return null;
+  const { data, error } = await supabase
+    .from('NMK_Drawing_Register')
+    .select('register_data')
+    .eq('project_id', projectId)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null; // No rows found
+    console.error("Error fetching drawing register:", error);
+    return null;
+  }
+  return data?.register_data || null;
+};
+
+/**
+ * Upsert Drawing Register data for a project
+ * @param {string} projectId 
+ * @param {object} registerData 
+ */
+export const upsertDrawingRegister = async (projectId, registerData) => {
+  if (!projectId) throw new Error("Missing projectId");
+  const { data, error } = await supabase
+    .from('NMK_Drawing_Register')
+    .upsert(
+      {
+        project_id: projectId,
+        register_data: registerData,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: 'project_id' }
+    )
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
