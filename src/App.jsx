@@ -115,7 +115,7 @@ function App() {
             className="flex-1 min-h-screen flex flex-col transition-all duration-300 min-w-0"
             style={{ 
               paddingLeft: windowWidth >= 1024 
-                ? (sidebarCollapsed ? '80px' : '260px') 
+                ? (sidebarCollapsed ? '100px' : '260px') 
                 : '0px' 
             }}
           >

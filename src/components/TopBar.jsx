@@ -141,7 +141,7 @@ const TopBar = () => {
                      initial={{ opacity: 0, y: 10, scale: 0.99 }}
                      animate={{ opacity: 1, y: 0, scale: 1 }}
                      exit={{ opacity: 0, y: 10, scale: 0.99 }}
-                     className="absolute top-[calc(100%+28px)] left-0 w-96 bg-[var(--bg-card)]/95 backdrop-blur-2xl border border-[var(--glass-border)] rounded-2xl shadow-xl z-50 overflow-hidden"
+                     className="absolute top-[calc(100%+28px)] left-0 w-96 bg-[var(--bg-card)]/95 backdrop-blur-2xl border border-[var(--glass-border)] rounded-lg shadow-xl z-50 overflow-hidden"
                    >
                      <div className="px-5 py-4 pt-5 border-b border-[var(--border)] bg-white/5">
                         <div className="flex items-center justify-between">

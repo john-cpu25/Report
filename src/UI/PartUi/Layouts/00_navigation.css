@@ -44,12 +44,12 @@
 
 .nav-sidebar-content {
   @apply flex flex-col h-full;
-  padding: var(--card-padding) !important;
+  padding: 25px !important;
   gap: var(--layout-gap) !important;
 }
 
 .nav-sidebar-header {
-  @apply flex items-center p-[10px] mb-[20px] cursor-pointer transition-opacity;
+  @apply flex items-center mb-[20px] cursor-pointer transition-opacity;
 }
 
 .nav-sidebar-header:hover {
@@ -63,13 +63,11 @@
 
 .nav-sidebar-section-title {
   @apply text-[14px] font-bold uppercase tracking-widest mb-[10px];
-  padding-left: var(--card-padding) !important;
-  padding-right: var(--card-padding) !important;
   color: var(--text-muted);
 }
 
 .nav-sidebar-menu-list {
-  @apply flex-grow overflow-y-auto space-y-[10px];
+  @apply flex-grow overflow-y-auto overflow-x-hidden space-y-[10px];
 }
 
 .nav-sidebar-section {
@@ -81,17 +79,17 @@
 }
 
 .nav-sidebar-system-section {
-  @apply mt-auto space-y-[10px] border-t border-white/5 pt-[10px];
+  @apply mt-auto space-y-[10px];
 }
 
 .nav-sidebar-footer {
   @apply mt-8 mb-6 transition-all duration-300;
 }
 .nav-sidebar-footer.expanded {
-  @apply px-6;
+  @apply px-0;
 }
 .nav-sidebar-footer.collapsed {
-  @apply px-3;
+  @apply px-0;
 }
 
 .nav-sidebar-version-box {
@@ -101,7 +99,7 @@
   @apply px-4 py-3 flex items-center justify-between;
 }
 .nav-sidebar-version-box.collapsed {
-  @apply px-2 py-2 text-center flex justify-center;
+  @apply px-2 py-3 text-center flex items-center justify-center;
 }
 
 .nav-sidebar-version-label {
@@ -109,14 +107,8 @@
 }
 
 .nav-sidebar-version-value {
-  @apply font-bold transition-all duration-300;
+  @apply text-[12px] font-bold transition-all duration-300;
   color: var(--text-muted);
-}
-.nav-sidebar-version-value.expanded {
-  @apply text-[12px];
-}
-.nav-sidebar-version-value.collapsed {
-  @apply text-[10px];
 }
 
 /* ──────────── TOPBAR ──────────── */
@@ -146,12 +138,16 @@
 }
 
 .nav-item-btn.collapsed {
-  @apply justify-center w-[50px] h-[50px] mx-auto;
+  @apply justify-start w-[50px] h-[50px];
 }
 
 .nav-item-btn.expanded {
-  @apply justify-start w-[calc(100%-20px)] mx-[10px] h-[50px] flex-row pl-[4px] pr-[10px] gap-[20px];
+  @apply justify-start w-full h-[50px] flex-row items-center;
+  padding: 0;
+  padding-right: 15px; /* Để chừa lề cho Badge nếu có */
 }
+
+
 
 .nav-item-btn:not(.active) {
   color: var(--text-muted);
@@ -163,7 +159,7 @@
 }
 
 .nav-item-icon-wrapper {
-  @apply flex items-center justify-center transition-all duration-300 w-[24px] h-[24px] flex-shrink-0;
+  @apply flex items-center justify-center transition-all duration-300 w-[50px] h-[50px] flex-shrink-0;
 }
 
 .nav-item-btn:not(.active):hover .nav-item-icon-wrapper {

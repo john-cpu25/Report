@@ -774,7 +774,17 @@ const Dashboard = () => {
 
   const memberStatusList = useMemo(() => {
     const now = new Date();
-    const teamUsers = users.filter(u => (u.team || '').toUpperCase().replace(/\s+/g, '') === activeTeamId);
+    const teamUsers = users.filter(u => {
+      const teamUpper = (u.team || '').toUpperCase();
+      let mappedTeam = 'ALL';
+      if (teamUpper.includes('MODEL')) mappedTeam = 'MODELLING';
+      else if (teamUpper.includes('PT') || teamUpper.includes('REO')) mappedTeam = 'PT&REO';
+      else if (teamUpper.includes('SLAB') || teamUpper.includes('ENGINEER')) mappedTeam = 'ENGINEER';
+      else if (teamUpper.includes('ETABS') || teamUpper.includes('LATERAL')) mappedTeam = 'ETABS';
+      
+      // If admin active team uses the display names, we should match carefully.
+      return mappedTeam === activeTeamId || (u.team || '').toUpperCase().replace(/\s+/g, '') === activeTeamId;
+    });
     
     return teamUsers.map(u => {
       // Find today's tasks
@@ -783,7 +793,12 @@ const Dashboard = () => {
         const d = new Date(task.created_at || task.date_start);
         return format(d, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
       });
-      const activeTask = todaysTasks.find(t => t.status === 0);
+      const isTaskActive = (t) => {
+        const s = Number(t.status);
+        if (!isNaN(s)) return s > 2;
+        return t.status === 'WIP' || !t.status;
+      };
+      const activeTask = todaysTasks.find(t => isTaskActive(t));
       
       // Leave status
       let isOnLeave = false;
@@ -1223,7 +1238,15 @@ const Dashboard = () => {
     const now = new Date();
 
     return teams.map((t) => {
-      const teamUsers = users.filter(u => (u.team || '').toUpperCase().replace(/\s+/g, '') === t.id);
+      const teamUsers = users.filter(u => {
+        const teamUpper = (u.team || '').toUpperCase();
+        let mappedTeam = 'ALL';
+        if (teamUpper.includes('MODEL')) mappedTeam = 'MODELLING';
+        else if (teamUpper.includes('PT') || teamUpper.includes('REO')) mappedTeam = 'PT&REO';
+        else if (teamUpper.includes('SLAB') || teamUpper.includes('ENGINEER')) mappedTeam = 'ENGINEER';
+        else if (teamUpper.includes('ETABS') || teamUpper.includes('LATERAL')) mappedTeam = 'ETABS';
+        return mappedTeam === t.id;
+      });
       const userIds = new Set(teamUsers.map(u => u.id));
 
       const teamTasks = tasks.filter(task => userIds.has(task.user_id));
@@ -1233,7 +1256,13 @@ const Dashboard = () => {
         return format(d, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
       });
 
-      const workingUserIds = new Set(todaysTasks.filter(task => task.status === 0).map(task => task.user_id));
+      const isTaskActive = (task) => {
+        const s = Number(task.status);
+        if (!isNaN(s)) return s > 2;
+        return task.status === 'WIP' || !task.status;
+      };
+
+      const workingUserIds = new Set(todaysTasks.filter(task => isTaskActive(task)).map(task => task.user_id));
 
       const leaveUserIds = new Set();
       leaves.forEach(l => {
@@ -1259,7 +1288,7 @@ const Dashboard = () => {
         teamProjectMap.get(task.project_id) || 'Unknown'
       ))).map(projName => ({
         project: projName,
-        isWorking: todaysTasks.some(t => (teamProjectMap.get(t.project_id) || 'Unknown') === projName && t.status === 0)
+        isWorking: todaysTasks.some(t => (teamProjectMap.get(t.project_id) || 'Unknown') === projName && isTaskActive(t))
       }));
 
       return {

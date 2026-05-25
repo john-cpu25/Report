@@ -369,7 +369,7 @@ export const AppProvider = ({ children }) => {
       const [projRes, userRes, taskRes, leaveRes] = await Promise.all([
         supabase.from('NMK_Project').select('*'),
         supabase.from('NMK_User').select('*'),
-        supabase.from('NMK_Task').select('*').order('created_at', { ascending: false }),
+        supabase.from('NMK_Task').select('*').order('created_at', { ascending: false }).limit(1500),
         supabase.from('NMK_Leave').select('*')
       ]);
       setDashboardProjects(projRes.data || []);
@@ -453,8 +453,11 @@ export const AppProvider = ({ children }) => {
         const existingIndex = newReportData.findIndex(
           (r) => r.project === taskWithProject.project && r.task === taskWithProject.task && r.team === taskWithProject.team
         );
-        if (existingIndex > -1) Object.assign(newReportData[existingIndex], taskWithProject);
-        else newReportData.push(taskWithProject);
+        if (existingIndex > -1) {
+          newReportData[existingIndex] = { ...newReportData[existingIndex], ...taskWithProject };
+        } else {
+          newReportData.push(taskWithProject);
+        }
       });
       dataChanged = true;
     } else {
@@ -474,8 +477,14 @@ export const AppProvider = ({ children }) => {
           (r) => r.project === targetProject && r.task === taskName && r.team === formData.team
         );
         if (existingIndex > -1) {
-          newReportData[existingIndex].days[formData.day] = formData.eta;
-          newReportData[existingIndex].status = formData.status;
+          newReportData[existingIndex] = {
+            ...newReportData[existingIndex],
+            status: formData.status,
+            days: {
+              ...newReportData[existingIndex].days,
+              [formData.day]: formData.eta
+            }
+          };
           dataChanged = true;
 
           // Trigger local notification in bypass mode

@@ -55,7 +55,7 @@ const Sidebar = () => {
   ];
 
   const systemSection = {
-    title: 'SYSTEM',
+    title: '',
     items: [
       { id: 'settings', label: 'Settings', icon: Settings },
       // Only show Admin Panel to Admin
@@ -65,18 +65,20 @@ const Sidebar = () => {
 
   const sidebarVariants = {
     expanded: { width: 260 },
-    collapsed: { width: 80 }
+    collapsed: { width: 100 }
   }
 
   const SidebarContent = () => (
     <div className="nav-sidebar-content">
       <div 
-        className={`nav-sidebar-header ${collapsed ? 'justify-center' : 'justify-start !pl-[14px]'}`}
+        className="nav-sidebar-header"
         onClick={() => setCollapsed(!collapsed)}
         title="Toggle Sidebar"
       >
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3">
-          <img src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} alt="Rincovitch" className="w-8 h-8" />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center w-full">
+          <div className="flex items-center justify-center w-[50px] h-[50px] flex-shrink-0">
+            <img src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} alt="Rincovitch" className="w-8 h-8" />
+          </div>
           {!collapsed && (
             <span className="nav-sidebar-logo-text">RINCOVITCH</span>
           )}
@@ -112,7 +114,7 @@ const Sidebar = () => {
 
       {/* System Section at the bottom */}
       <div className="nav-sidebar-system-section">
-        {!collapsed && (
+        {!collapsed && systemSection.title && (
           <h3 className="nav-sidebar-section-title">
             {systemSection.title}
           </h3>
