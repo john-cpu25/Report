@@ -145,6 +145,7 @@ export default function DrawingsManager() {
           <div className="flex-1 min-w-0 pr-6 h-full" style={{ minWidth: 0 }}>
             <DrawingRegisterView 
               projectId={selectedProj}
+              projectCode={projects.find(p => p.id === selectedProj)?.code || ''}
               isDark={isDark} 
             />
           </div>

@@ -472,18 +472,20 @@ export const setCachedData = (key, data) => {
 };
 
 // ============================================
-// DRAWING REGISTER FUNCTIONS
+// DRAWING REGISTER FUNCTIONS (NMK_DrawingRegister)
 // ============================================
 
 /**
  * Fetch Drawing Register data for a specific project
- * @param {string} projectId 
+ * Data is stored as JSON string in the `attachments` text column.
+ * @param {string} projectId - UUID of the project
+ * @returns {object|null} Parsed register data or null
  */
 export const fetchDrawingRegister = async (projectId) => {
   if (!projectId) return null;
   const { data, error } = await supabase
-    .from('NMK_Drawing_Register')
-    .select('register_data')
+    .from('NMK_DrawingRegister')
+    .select('id, project_id, attachments, created_at, updated_at')
     .eq('project_id', projectId)
     .single();
 
@@ -492,29 +494,135 @@ export const fetchDrawingRegister = async (projectId) => {
     console.error("Error fetching drawing register:", error);
     return null;
   }
-  return data?.register_data || null;
+
+  // Parse the JSON string stored in `attachments`
+  if (data?.attachments) {
+    try {
+      return JSON.parse(data.attachments);
+    } catch (e) {
+      console.error("Error parsing attachments JSON:", e);
+      return null;
+    }
+  }
+  return null;
 };
 
 /**
- * Upsert Drawing Register data for a project
- * @param {string} projectId 
- * @param {object} registerData 
+ * Upsert Drawing Register data for a project.
+ * Serializes registerData to JSON string and stores in `attachments`.
+ * @param {string} projectId - UUID of the project
+ * @param {object} registerData - The full register object to store
  */
 export const upsertDrawingRegister = async (projectId, registerData) => {
   if (!projectId) throw new Error("Missing projectId");
+
+  const attachmentsJson = JSON.stringify(registerData);
+
   const { data, error } = await supabase
-    .from('NMK_Drawing_Register')
+    .from('NMK_DrawingRegister')
     .upsert(
       {
+        id: projectId, // use project_id as the row id (PK)
         project_id: projectId,
-        register_data: registerData,
+        attachments: attachmentsJson,
         updated_at: new Date().toISOString()
       },
-      { onConflict: 'project_id' }
+      { onConflict: 'id' }
     )
     .select()
     .single();
 
   if (error) throw error;
   return data;
+};
+
+// ============================================
+// ISSUE FUNCTIONS (NMK_Issue)
+// Stores links between drawing files (PDF/CAD) and their
+// Google Drive URLs, keyed by project + sheet + revision.
+// ============================================
+
+/**
+ * Fetch all Issue records for a given project.
+ * Used to map download URLs onto the Drawing Register table.
+ * @param {number} projectId - The project_id (bigint)
+ * @returns {Array} Array of issue records
+ */
+export const fetchIssuesByProject = async (projectId) => {
+  if (!projectId) return [];
+  const { data, error } = await supabase
+    .from('NMK_Issue')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Error fetching issues:", error);
+    return [];
+  }
+  return data || [];
+};
+
+/**
+ * Find issue records (pdf and/or dwg) for a specific sheet + revision.
+ * Returns { pdf: record|null, dwg: record|null }
+ */
+export const findIssueUrl = (issueRecords, sheetNumber, revDate, revValue) => {
+  if (!issueRecords || issueRecords.length === 0) return { pdf: null, dwg: null };
+  const matches = issueRecords.filter(record =>
+    record.sheet_number === sheetNumber &&
+    record.rev_date     === revDate &&
+    record.rev_value    === revValue
+  );
+  return {
+    pdf: matches.find(r => r.type === 'pdf') || null,
+    dwg: matches.find(r => r.type === 'dwg') || null,
+  };
+};
+
+/**
+ * Upsert a single Issue record keyed by (project_id, sheet_number, rev_value, type).
+ * Prevents duplicate rows for the same file type on the same sheet+revision.
+ * @param {object} issueData - { project_id, sheet_number, sheet_name, rev_date, rev_value, type, url }
+ */
+export const upsertIssue = async (issueData) => {
+  // First try to find existing record
+  const { data: existing } = await supabase
+    .from('NMK_Issue')
+    .select('id')
+    .eq('project_id',   issueData.project_id)
+    .eq('sheet_number', issueData.sheet_number)
+    .eq('rev_value',    issueData.rev_value)
+    .eq('type',         issueData.type)
+    .maybeSingle();
+
+  if (existing?.id) {
+    // Update existing
+    const { data, error } = await supabase
+      .from('NMK_Issue')
+      .update({
+        url:        issueData.url,
+        rev_date:   issueData.rev_date,
+        sheet_name: issueData.sheet_name,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', existing.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } else {
+    // Insert new
+    const { data, error } = await supabase
+      .from('NMK_Issue')
+      .insert({
+        ...issueData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
 };

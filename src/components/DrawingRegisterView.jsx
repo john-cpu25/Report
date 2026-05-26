@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx';
-import { Search, Upload, Download, FileSpreadsheet, Briefcase, MapPin, User, Hash, Info, FileText, X, Cloud, FolderOpen, ChevronRight, Loader2, Link2, RefreshCw, UploadCloud } from 'lucide-react';
+import { Search, Upload, Download, FileSpreadsheet, Briefcase, MapPin, User, Hash, Info, FileText, X, Cloud, FolderOpen, ChevronRight, Loader2, Link2, RefreshCw, UploadCloud, ArrowDownToLine } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import IssueUploader from './Issues/IssueUploader';
 
-import { fetchDrawingRegister, upsertDrawingRegister } from '../services/supabaseService';
+import { fetchDrawingRegister, upsertDrawingRegister, fetchIssuesByProject, findIssueUrl } from '../services/supabaseService';
 
 // Mock files fallback in case organization Azure Client ID doesn't have Files consent yet
 const MOCK_ONEDRIVE_ITEMS = [
@@ -19,7 +19,7 @@ const MOCK_ONEDRIVE_ITEMS = [
   { id: 'file_006', name: 'DrawingRegister_Final.xlsx', folder: null, file: {}, size: 45000, parentId: 'folder_registers' },
 ];
 
-export default function DrawingRegisterView({ projectId, isDark }) {
+export default function DrawingRegisterView({ projectId, projectCode, isDark }) {
   const { getGraphToken } = useAuth();
   const [portalTarget, setPortalTarget] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -32,6 +32,7 @@ export default function DrawingRegisterView({ projectId, isDark }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeUploadRow, setActiveUploadRow] = useState(null); // { sheetNo, type: 'PDF' | 'CAD' }
   const [bulkUploadResult, setBulkUploadResult] = useState(null); // { matchedCount, unmatchedNames: [] }
+  const [issueRecords, setIssueRecords] = useState([]); // NMK_Issue records for current project
 
   // OneDrive Explorer State
   const [showOneDriveModal, setShowOneDriveModal] = useState(false);
@@ -73,15 +74,22 @@ export default function DrawingRegisterView({ projectId, isDark }) {
     const loadData = async () => {
       if (!projectId) {
         setRegisterData(null);
+        setIssueRecords([]);
         return;
       }
       setIsLoadingData(true);
       try {
-        const data = await fetchDrawingRegister(projectId);
-        setRegisterData(data);
+        // Fetch both Drawing Register and Issue records in parallel
+        const [regData, issues] = await Promise.all([
+          fetchDrawingRegister(projectId),
+          fetchIssuesByProject(projectId)
+        ]);
+        setRegisterData(regData);
+        setIssueRecords(issues);
       } catch (err) {
         console.error("Failed to load drawing register:", err);
         setRegisterData(null);
+        setIssueRecords([]);
       } finally {
         setIsLoadingData(false);
       }
@@ -921,19 +929,64 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
                       </span>
                     </td>
 
-                    {/* Date issue values */}
+                    {/* Date issue values - with NMK_Issue download link mapping */}
                     {registerData.dateColumns.map((date, cIdx) => {
                       const revVal = draw.revisions[date];
+                      // Match against NMK_Issue → returns { pdf, dwg }
+                      const issueLinks = revVal
+                        ? findIssueUrl(issueRecords, draw.sheetNo, date, revVal)
+                        : { pdf: null, dwg: null };
+
                       return (
                         <td key={cIdx} className="px-3 py-3 text-center border-r border-slate-800/20 text-sm">
                           {revVal ? (
-                            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black uppercase tracking-wider ${
-                              isNaN(revVal) 
-                              ? (isDark ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-purple-100 text-purple-700')
-                              : (isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-700')
-                            }`}>
-                              {revVal}
-                            </span>
+                            <div className="flex flex-col items-center gap-0.5">
+                              {/* Rev badge */}
+                              <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black uppercase tracking-wider ${
+                                issueLinks.pdf || issueLinks.dwg
+                                  ? (isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40' : 'bg-blue-100 text-blue-700')
+                                  : isNaN(revVal)
+                                    ? (isDark ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-purple-100 text-purple-700')
+                                    : (isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-700')
+                              }`}>
+                                {revVal}
+                              </span>
+                              {/* Download buttons */}
+                              {(issueLinks.pdf || issueLinks.dwg) && (
+                                <div className="flex gap-0.5 mt-0.5">
+                                  {issueLinks.pdf && (
+                                    <a
+                                      href={issueLinks.pdf.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      title={`Download PDF: ${draw.sheetNo} Rev ${revVal}`}
+                                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                                        isDark
+                                          ? 'bg-red-500/20 text-red-400 hover:bg-red-500/40 border border-red-500/30'
+                                          : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                      }`}
+                                    >
+                                      PDF
+                                    </a>
+                                  )}
+                                  {issueLinks.dwg && (
+                                    <a
+                                      href={issueLinks.dwg.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      title={`Download DWG: ${draw.sheetNo} Rev ${revVal}`}
+                                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                                        isDark
+                                          ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/40 border border-amber-500/30'
+                                          : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                      }`}
+                                    >
+                                      DWG
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <span className={`text-[10px] ${isDark ? 'text-slate-700' : 'text-slate-300'}`}>—</span>
                           )}
@@ -1013,9 +1066,17 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
             </div>
             <div className="p-4 max-h-[70vh] overflow-auto">
               <IssueUploader 
-                projectKey={registerData.projectNo}
+                projectKey={projectCode || registerData?.projectNo || 'UNKNOWN'}
+                projectId={projectId}
+                registerData={registerData}
                 onUploadComplete={(fileData) => {
-                  console.log("Uploaded successfully:", fileData);
+                  console.log('Uploaded successfully:', fileData);
+                  // Refresh issue records to show new download buttons
+                  if (projectId) {
+                    import('../services/supabaseService').then(({ fetchIssuesByProject }) => {
+                      fetchIssuesByProject(projectId).then(setIssueRecords);
+                    });
+                  }
                 }} 
               />
             </div>

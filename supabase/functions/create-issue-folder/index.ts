@@ -9,17 +9,31 @@ const corsHeaders = {
 async function getGoogleAccessToken(clientEmail: string, privateKeyPem: string) {
   const pemHeader = "-----BEGIN PRIVATE KEY-----";
   const pemFooter = "-----END PRIVATE KEY-----";
-  
-  if (!privateKeyPem.includes(pemHeader)) {
-      throw new Error("Invalid Private Key format");
+
+  // Normalize: handle both literal \n (from JSON serialization issues) and real newlines
+  const normalizedKey = privateKeyPem.replace(/\\n/g, "\n").trim();
+
+  if (!normalizedKey.includes(pemHeader)) {
+    throw new Error(`Invalid Private Key format. Key starts with: ${normalizedKey.substring(0, 50)}`);
   }
 
-  const pemContents = privateKeyPem.substring(
-    privateKeyPem.indexOf(pemHeader) + pemHeader.length,
-    privateKeyPem.indexOf(pemFooter)
-  ).replace(/\s/g, "");
-  
-  const binaryDerString = atob(pemContents);
+  const pemContents = normalizedKey
+    .substring(
+      normalizedKey.indexOf(pemHeader) + pemHeader.length,
+      normalizedKey.indexOf(pemFooter)
+    )
+    .replace(/[\r\n\s]/g, "");
+
+  if (!pemContents || pemContents.length < 100) {
+    throw new Error(`PEM content extraction failed. Content length: ${pemContents.length}`);
+  }
+
+  let binaryDerString: string;
+  try {
+    binaryDerString = atob(pemContents);
+  } catch (e) {
+    throw new Error(`Failed to decode base64 PEM. Length=${pemContents.length}, starts=${pemContents.substring(0, 20)}`);
+  }
   const binaryDer = new Uint8Array(binaryDerString.length);
   for (let i = 0; i < binaryDerString.length; i++) {
     binaryDer[i] = binaryDerString.charCodeAt(i);
@@ -35,7 +49,7 @@ async function getGoogleAccessToken(clientEmail: string, privateKeyPem: string) 
 
   const payload = {
     iss: clientEmail,
-    scope: "https://www.googleapis.com/auth/drive.file",
+    scope: "https://www.googleapis.com/auth/drive",  // Full drive access
     aud: "https://oauth2.googleapis.com/token",
     exp: getNumericDate(3600),
     iat: getNumericDate(0),
@@ -62,7 +76,7 @@ async function getGoogleAccessToken(clientEmail: string, privateKeyPem: string) 
 // Helper: Lấy hoặc tạo thư mục trên Drive
 async function getOrCreateFolder(accessToken: string, folderName: string, parentId: string) {
   const query = `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and '${parentId}' in parents and trashed=false`;
-  const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id, name)`, {
+  const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
     headers: { Authorization: `Bearer ${accessToken}` }
   });
   const searchData = await searchRes.json();
@@ -74,7 +88,7 @@ async function getOrCreateFolder(accessToken: string, folderName: string, parent
   }
 
   // Tạo mới
-  const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+  const createRes = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -105,9 +119,18 @@ serve(async (req) => {
     }
 
     const credentialsStr = Deno.env.get("GCP_CREDENTIALS");
-    if (!credentialsStr) throw new Error("GCP_CREDENTIALS not configured");
-    
-    const credentials = JSON.parse(credentialsStr);
+    if (!credentialsStr) throw new Error("GCP_CREDENTIALS secret is not configured on Supabase");
+
+    let credentials: { client_email: string; private_key: string };
+    try {
+      credentials = JSON.parse(credentialsStr);
+    } catch (e) {
+      throw new Error(`GCP_CREDENTIALS is not valid JSON: ${(e as Error).message}`);
+    }
+    if (!credentials.client_email || !credentials.private_key) {
+      throw new Error("GCP_CREDENTIALS missing client_email or private_key");
+    }
+
     const accessToken = await getGoogleAccessToken(credentials.client_email, credentials.private_key);
 
     // 1. Lấy/Tạo thư mục "Project"
