@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [ssoFailed, setSsoFailed] = useState(false);
 
     // Function to sync Microsoft user with Supabase NMK_User table
     const syncUserWithSupabase = async (email) => {
@@ -128,7 +129,8 @@ export const AuthProvider = ({ children }) => {
                 }
             } catch (err) {
                 console.log("Silent login failed, waiting for user interaction:", err.name);
-                // Nếu ssoSilent lỗi (do chưa đăng nhập Windows), vẫn để loading = false để hiện nút Login
+                // Nếu ssoSilent lỗi (do chưa đăng nhập Windows), đánh dấu ssoFailed = true để chặn đăng nhập thủ công
+                setSsoFailed(true);
             } finally {
                 setLoading(false);
             }
@@ -276,6 +278,7 @@ export const AuthProvider = ({ children }) => {
             user, 
             loading, 
             error, 
+            ssoFailed,
             login, 
             logout,
             updateUserProfile,

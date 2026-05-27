@@ -41,7 +41,7 @@ const TechRing = () => (
 );
 
 const Login = () => {
-    const { login, loading, error } = useAuth();
+    const { login, loading, error, ssoFailed } = useAuth();
     const [isSimulatingLogin, setIsSimulatingLogin] = useState(false);
 
     const handleLocalAdmin = (e) => {
@@ -106,15 +106,25 @@ const Login = () => {
                             </div>
                         )}
 
-                        <button
-                            onClick={handleLogin}
-                            disabled={isLoading}
-                            className="relative w-[12.5vw] h-[12.5vw] min-w-[100px] min-h-[100px] max-w-[200px] max-h-[200px] flex items-center justify-center cursor-pointer group/btn focus:outline-none z-10 rounded-full transition-all duration-300 hover:bg-white/5 -translate-y-4 md:-translate-y-6"
-                        >
-                            <div className="w-[80%] h-[80%] text-white group-hover/btn:text-[#4facfe] transition-colors duration-300">
-                                <TechRing />
+                        {ssoFailed ? (
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] p-6 rounded-xl border border-red-500/50 bg-red-500/10 backdrop-blur-md flex flex-col items-center text-center z-20">
+                                <ShieldAlert size={48} className="text-red-400 mb-4" />
+                                <h2 className="text-red-100 text-lg font-bold mb-2">Truy cập bị từ chối</h2>
+                                <p className="text-red-200/80 text-sm">
+                                    Hệ thống yêu cầu thiết bị phải được cài đặt và đăng nhập sẵn tài khoản Outlook (@rincovitch.com.au). Không tìm thấy phiên đăng nhập hợp lệ trên thiết bị này.
+                                </p>
                             </div>
-                        </button>
+                        ) : (
+                            <button
+                                onClick={handleLogin}
+                                disabled={isLoading}
+                                className="relative w-[12.5vw] h-[12.5vw] min-w-[100px] min-h-[100px] max-w-[200px] max-h-[200px] flex items-center justify-center cursor-pointer group/btn focus:outline-none z-10 rounded-full transition-all duration-300 hover:bg-white/5 -translate-y-4 md:-translate-y-6"
+                            >
+                                <div className="w-[80%] h-[80%] text-white group-hover/btn:text-[#4facfe] transition-colors duration-300">
+                                    <TechRing />
+                                </div>
+                            </button>
+                        )}
 
                         {/* Local Admin Bypass Button */}
                         {import.meta.env.DEV && (

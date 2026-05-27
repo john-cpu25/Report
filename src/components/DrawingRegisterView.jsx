@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx';
-import { Search, Upload, Download, FileSpreadsheet, Briefcase, MapPin, User, Hash, Info, FileText, X, Cloud, FolderOpen, ChevronRight, Loader2, Link2, RefreshCw, UploadCloud, ArrowDownToLine } from 'lucide-react';
+import { Search, Upload, Download, FileSpreadsheet, Briefcase, MapPin, User, Hash, Info, FileText, X, Cloud, FolderOpen, ChevronRight, Loader2, Link2, RefreshCw, UploadCloud, ArrowDownToLine, Calendar, Box, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import IssueUploader from './Issues/IssueUploader';
 
@@ -33,6 +33,14 @@ export default function DrawingRegisterView({ projectId, projectCode, isDark }) 
   const [activeUploadRow, setActiveUploadRow] = useState(null); // { sheetNo, type: 'PDF' | 'CAD' }
   const [bulkUploadResult, setBulkUploadResult] = useState(null); // { matchedCount, unmatchedNames: [] }
   const [issueRecords, setIssueRecords] = useState([]); // NMK_Issue records for current project
+
+  // Batch Download states
+  const [filterRevDate, setFilterRevDate] = useState('');
+  const [filterRevValue, setFilterRevValue] = useState('');
+  const [selectedRows, setSelectedRows] = useState(new Set());
+  const [downloadTypes, setDownloadTypes] = useState({ pdf: true, dwg: false });
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
 
   // OneDrive Explorer State
   const [showOneDriveModal, setShowOneDriveModal] = useState(false);
@@ -94,6 +102,9 @@ export default function DrawingRegisterView({ projectId, projectCode, isDark }) 
         setIsLoadingData(false);
       }
       setBulkUploadResult(null);
+      setSelectedRows(new Set());
+      setFilterRevDate('');
+      setFilterRevValue('');
     };
     loadData();
   }, [projectId]);
@@ -522,6 +533,7 @@ export default function DrawingRegisterView({ projectId, projectCode, isDark }) 
           const currRev = (getCellVal(XLSX.utils.encode_cell({ r, c: 2 })) || '').toString().trim();
 
           if (!sheetNo && !sheetName) continue;
+          if (sheetNo.toUpperCase() === 'SHEET NO.' || sheetName.toUpperCase() === 'SHEET NAME') continue;
 
           const revisions = {};
           dateColumns.forEach(d => {
@@ -742,16 +754,202 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
     setShowOneDriveModal(true);
   };
 
-  // Filter drawings by search query
+  // Filter drawings by search query + revision filters
   const filteredDrawings = useMemo(() => {
     if (!registerData || !registerData.drawings) return [];
     return registerData.drawings.filter(d => {
       const sheetNoStr = String(d.sheetNo || '').toLowerCase();
       const sheetNameStr = String(d.sheetName || '').toLowerCase();
+      
+      // Ignore header row that might be imported as data
+      if (sheetNoStr === 'sheet no.' || sheetNameStr === 'sheet name') return false;
+
       const query = searchQuery.toLowerCase();
-      return sheetNoStr.includes(query) || sheetNameStr.includes(query);
+      const matchesSearch = sheetNoStr.includes(query) || sheetNameStr.includes(query);
+      if (!matchesSearch) return false;
+
+      // Rev Date + Rev Value filters
+      if (filterRevDate && filterRevValue) {
+        return d.revisions[filterRevDate] === filterRevValue;
+      }
+      if (filterRevDate) {
+        return !!d.revisions[filterRevDate];
+      }
+      if (filterRevValue) {
+        return Object.values(d.revisions).some(v => v === filterRevValue);
+      }
+      return true;
     });
-  }, [registerData, searchQuery]);
+  }, [registerData, searchQuery, filterRevDate, filterRevValue]);
+
+  const displayedDateColumns = useMemo(() => {
+    if (!registerData?.dateColumns) return [];
+    if (filterRevDate) {
+      return registerData.dateColumns.filter(d => d === filterRevDate);
+    }
+    return registerData.dateColumns;
+  }, [registerData?.dateColumns, filterRevDate]);
+
+
+  // Batch download helpers
+  const isAllFilteredSelected = filteredDrawings.length > 0 && filteredDrawings.every(d => selectedRows.has(d.sheetNo));
+
+  const handleSelectAll = () => {
+    const allSheetNos = filteredDrawings.map(d => d.sheetNo);
+    if (isAllFilteredSelected) {
+      setSelectedRows(prev => {
+        const next = new Set(prev);
+        allSheetNos.forEach(sn => next.delete(sn));
+        return next;
+      });
+    } else {
+      setSelectedRows(prev => {
+        const next = new Set(prev);
+        allSheetNos.forEach(sn => next.add(sn));
+        return next;
+      });
+    }
+  };
+
+  const handleToggleRow = (sheetNo) => {
+    setSelectedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(sheetNo)) next.delete(sheetNo);
+      else next.add(sheetNo);
+      return next;
+    });
+  };
+
+  const resolveRevision = (draw) => {
+    if (filterRevDate && filterRevValue) {
+      return { date: filterRevDate, value: filterRevValue };
+    }
+    if (filterRevDate) {
+      const val = draw.revisions[filterRevDate];
+      if (val) return { date: filterRevDate, value: val };
+    }
+    // Duyệt ngược dateColumns để tìm date chứa currRev
+    const reversedDates = [...(registerData?.dateColumns || [])].reverse();
+    for (const date of reversedDates) {
+      if (draw.revisions[date] === draw.currRev) {
+        return { date, value: draw.currRev };
+      }
+    }
+    // Fallback: lấy date cuối cùng có giá trị
+    for (const date of reversedDates) {
+      if (draw.revisions[date]) {
+        return { date, value: draw.revisions[date] };
+      }
+    }
+    return null;
+  };
+
+  // Convert Google Drive view URL → direct download URL
+  const toDirectDownloadUrl = (url) => {
+    if (!url) return url;
+    // Match /file/d/{fileId}/view or /file/d/{fileId}
+    const match = url.match(/\/file\/d\/([^/]+)/);
+    if (match) {
+      return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+    }
+    // Match ?id={fileId} or &id={fileId}
+    const idMatch = url.match(/[?&]id=([^&]+)/);
+    if (idMatch) {
+      return `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
+    }
+    return url;
+  };
+
+  const handleBatchDownload = async () => {
+    if (selectedRows.size === 0 || isDownloading) return;
+    if (!downloadTypes.pdf && !downloadTypes.dwg) {
+      alert('Vui lòng chọn ít nhất một định dạng (PDF hoặc DWG).');
+      return;
+    }
+    setIsDownloading(true);
+
+    const selectedDrawings = (registerData?.drawings || []).filter(d => selectedRows.has(d.sheetNo));
+    const itemsToDownload = [];
+
+    selectedDrawings.forEach(draw => {
+      const rev = resolveRevision(draw);
+      if (!rev) return;
+      const links = findIssueUrl(issueRecords, draw.sheetNo, rev.date, rev.value);
+      if (downloadTypes.pdf && links.pdf) itemsToDownload.push({ url: links.pdf.url, filename: `${draw.sheetNo}_Rev${rev.value}.pdf` });
+      if (downloadTypes.dwg && links.dwg) itemsToDownload.push({ url: links.dwg.url, filename: `${draw.sheetNo}_Rev${rev.value}.dwg` });
+    });
+
+    if (itemsToDownload.length === 0) {
+      alert('Không tìm thấy URL tải xuống cho các bản vẽ đã chọn.');
+      setIsDownloading(false);
+      return;
+    }
+
+    let directoryHandle = null;
+    try {
+      if (window.showDirectoryPicker) {
+        // Hỏi người dùng chọn thư mục lưu
+        directoryHandle = await window.showDirectoryPicker({
+          id: 'drawing-downloads',
+          mode: 'readwrite',
+          startIn: 'downloads'
+        });
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        setIsDownloading(false);
+        return; // Người dùng hủy chọn thư mục
+      }
+      console.warn("showDirectoryPicker failed or unsupported:", err);
+    }
+
+    setDownloadProgress({ current: 0, total: itemsToDownload.length });
+
+    for (let i = 0; i < itemsToDownload.length; i++) {
+      const item = itemsToDownload[i];
+      const directUrl = toDirectDownloadUrl(item.url);
+      
+      let fetchedSuccessfully = false;
+      
+      // Nếu có thư mục do người dùng chọn, thử tải file bằng fetch() và lưu trực tiếp
+      if (directoryHandle) {
+        try {
+          // Ghi chú: Fetch trực tiếp Google Drive thường bị lỗi CORS.
+          // Ta có thể dùng cors proxy làm phương án dự phòng nhưng dễ bị lỗi dung lượng.
+          // Ở đây thử fetch trực tiếp trước.
+          const res = await fetch(directUrl);
+          if (res.ok) {
+            const blob = await res.blob();
+            const fileHandle = await directoryHandle.getFileHandle(item.filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            fetchedSuccessfully = true;
+          }
+        } catch (e) {
+          console.warn(`Fetch failed for ${item.filename} (likely CORS), falling back to browser download...`, e);
+        }
+      }
+
+      // Fallback: Nếu không dùng được File System API hoặc bị chặn CORS, dùng iframe để trình duyệt tự tải
+      if (!fetchedSuccessfully) {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = directUrl;
+        document.body.appendChild(iframe);
+        setTimeout(() => {
+          try { document.body.removeChild(iframe); } catch(e) {}
+        }, 10000);
+      }
+
+      setDownloadProgress({ current: i + 1, total: itemsToDownload.length });
+      if (i < itemsToDownload.length - 1) {
+        await new Promise(r => setTimeout(r, 600)); // Delay để tránh spam request
+      }
+    }
+
+    setIsDownloading(false);
+  };
 
   if (isLoadingData) {
     return (
@@ -807,61 +1005,107 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
         </div>
       )}
 
-      {/* Toolbar / Search (Portaled to header) */}
+      {/* Toolbar — Enterprise BIM */}
       {portalTarget && createPortal(
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
-          {/* Search (Styled as requested) */}
-          <div className="relative flex items-center flex-1 max-w-sm mr-auto pl-4">
-            <div className={`relative flex items-center w-full rounded-full shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all overflow-hidden h-11 ${
-              isDark ? 'bg-slate-900 border border-slate-700/50' : 'bg-white'
-            }`}>
-              <div className="absolute left-1.5 w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shadow-[0_2px_10px_-2px_rgba(99,102,241,0.6)]">
-                <Search size={16} strokeWidth={2.5} />
-              </div>
-              <input 
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: '48px' }}
-                className={`w-full pr-4 h-full bg-transparent outline-none text-[15px] font-bold placeholder:text-indigo-400/70 ${
-                  isDark ? 'text-white' : 'text-indigo-600'
-                }`}
-              />
+        <div className="dr-toolbar">
+          {/* Search */}
+          <div className="dr-card dr-search">
+            <div className="dr-search-icon">
+              <Search size={13} strokeWidth={2.5} />
             </div>
+            <input 
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="dr-search-input"
+            />
           </div>
 
-          {/* Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wide transition-all border shadow-sm ${
-                isDark 
-                ? 'bg-slate-900 border-indigo-500/30 text-indigo-400 hover:bg-slate-800' 
-                : 'bg-white border-indigo-200 text-indigo-600 hover:bg-indigo-50'
-              }`}
-            >
-              <Upload size={15} strokeWidth={2.5} /> IMPORT EX
+          {/* Filter Group */}
+          <div className="dr-filter-group">
+          {/* DATE Card */}
+          <div className="dr-card dr-filter">
+            <Calendar size={15} strokeWidth={1.8} className="dr-filter-chevron" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span className="dr-filter-label">Date</span>
+              <select value={filterRevDate} onChange={(e) => setFilterRevDate(e.target.value)} className="dr-filter-select">
+                <option value="">All Dates</option>
+                {registerData?.dateColumns?.map((date, i) => (
+                  <option key={i} value={date}>{date}</option>
+                ))}
+              </select>
+            </div>
+            <ChevronDown size={12} strokeWidth={2} className="dr-filter-chevron" />
+          </div>
+
+          {/* REV Card */}
+          <div className="dr-card dr-filter dr-filter--rev">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span className="dr-filter-label">Rev</span>
+              <select value={filterRevValue} onChange={(e) => setFilterRevValue(e.target.value)} className="dr-filter-select">
+                <option value="">All</option>
+                {(() => {
+                  if (!registerData?.drawings) return null;
+                  const uniqueRevs = [...new Set(
+                    registerData.drawings.flatMap(d => Object.values(d.revisions || {}).filter(Boolean))
+                  )].sort();
+                  return uniqueRevs.map((rev, i) => (
+                    <option key={i} value={rev}>{rev}</option>
+                  ));
+                })()}
+              </select>
+            </div>
+            <ChevronDown size={12} strokeWidth={2} className="dr-filter-chevron" />
+          </div>
+
+          {/* PDF Toggle */}
+          <label className={`dr-card dr-toggle ${downloadTypes.pdf ? 'active-pdf' : ''}`}>
+            <input type="checkbox" checked={downloadTypes.pdf} onChange={(e) => setDownloadTypes(prev => ({ ...prev, pdf: e.target.checked }))} className="sr-only" />
+            <svg width="30" height="30" viewBox="0 0 32 32">
+              <rect x="4" y="2" width="24" height="28" rx="3" fill={downloadTypes.pdf ? '#EF4444' : 'var(--text-muted)'} />
+              <line x1="9" y1="7" x2="23" y2="7" stroke="white" strokeWidth="2" opacity="0.5" strokeLinecap="round" />
+              <line x1="9" y1="11" x2="23" y2="11" stroke="white" strokeWidth="2" opacity="0.5" strokeLinecap="round" />
+              <line x1="9" y1="15" x2="18" y2="15" stroke="white" strokeWidth="2" opacity="0.5" strokeLinecap="round" />
+              <rect x="6" y="19" width="20" height="8" rx="1.5" fill="white" />
+              <text x="16" y="25.5" textAnchor="middle" fill={downloadTypes.pdf ? '#EF4444' : 'var(--text-muted)'} fontSize="7" fontWeight="800" fontFamily="Inter, sans-serif">PDF</text>
+            </svg>
+          </label>
+
+          {/* DWG Toggle */}
+          <label className={`dr-card dr-toggle ${downloadTypes.dwg ? 'active-dwg' : ''}`}>
+            <input type="checkbox" checked={downloadTypes.dwg} onChange={(e) => setDownloadTypes(prev => ({ ...prev, dwg: e.target.checked }))} className="sr-only" />
+            <svg width="30" height="30" viewBox="0 0 32 32">
+              <path d="M16 4 L28 28 H22.5 L20 22.5 H12 L9.5 28 H4 Z" fill={downloadTypes.dwg ? '#E2231A' : 'var(--text-muted)'} />
+              <path d="M16 11 L12.5 21.5 H19.5 Z" fill={downloadTypes.dwg ? '#FF6B6B' : 'var(--border)'} />
+            </svg>
+          </label>
+          </div>
+
+          {/* Divider */}
+          <span className="dr-divider"></span>
+
+          {/* Action Buttons */}
+          <div className="dr-actions">
+            <button onClick={() => fileInputRef.current?.click()} className="dr-btn">
+              <Upload size={13} strokeWidth={2} /> Import
             </button>
             
-            <button 
-              onClick={handleExportExcel}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wide transition-all border shadow-sm ${
-                isDark 
-                ? 'bg-slate-900 border-emerald-500/30 text-emerald-400 hover:bg-slate-800' 
-                : 'bg-white border-emerald-200 text-emerald-600 hover:bg-emerald-50'
-              }`}
-            >
-              <Download size={15} strokeWidth={2.5} /> EXPORT EX
+            <button onClick={handleExportExcel} className="dr-btn">
+              <Download size={13} strokeWidth={2} /> Export
             </button>
 
-            <span className="w-px h-5 bg-slate-300 dark:bg-slate-700 mx-1"></span>
+            <button onClick={() => setShowUploaderModal(true)} className="dr-btn dr-btn--primary">
+              <UploadCloud size={14} strokeWidth={2} /> Upload
+            </button>
 
             <button 
-              onClick={() => setShowUploaderModal(true)}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-black uppercase tracking-wide transition-all bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-md shadow-blue-500/20"
+              onClick={handleBatchDownload}
+              disabled={selectedRows.size === 0 || isDownloading}
+              className={`dr-btn ${selectedRows.size === 0 || isDownloading ? 'dr-btn--disabled' : 'dr-btn--success'}`}
             >
-              <UploadCloud size={16} strokeWidth={2.5} /> UPLOAD GG
+              {isDownloading ? <Loader2 size={14} strokeWidth={2} className="animate-spin" /> : <ArrowDownToLine size={14} strokeWidth={2} />}
+              {isDownloading ? `${downloadProgress.current}/${downloadProgress.total}` : `Download${selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}`}
             </button>
 
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
@@ -873,64 +1117,181 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
       )}
 
       {/* Drawing List Spreadsheet */}
-      <div className={`flex-1 overflow-auto border transition-all ${
+      <div className={`flex-1 overflow-auto max-h-[calc(100vh-340px)] border transition-all ${
         isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-white/40'
       } backdrop-blur-sm relative`}>
-        <div className="min-w-full inline-block align-middle">
-          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-340px)]">
-            <table className="min-w-full table-fixed border-collapse">
-              <thead>
-                <tr className={`${isDark ? 'bg-slate-900 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
-                  {/* Sticky headers for first 5 columns */}
-                  <th scope="col" className="w-[120px] sticky left-0 z-30 pl-[20px] pr-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
+        <table className="min-w-full table-fixed border-separate border-spacing-0">
+              <thead className="sticky top-0 z-40 shadow-sm">
+                <tr className={`${isDark ? 'bg-slate-900 text-slate-300' : 'bg-slate-100 text-slate-800'}`}>
+                  {/* Checkbox Select All */}
+                  <th scope="col" className="w-[40px] min-w-[40px] max-w-[40px] sticky left-0 z-40 px-2 py-3 text-center border-b border-r border-slate-800/20"
                       style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9' }}>
+                    <input
+                      type="checkbox"
+                      checked={isAllFilteredSelected}
+                      onChange={handleSelectAll}
+                      className="w-3.5 h-3.5 rounded accent-indigo-500 cursor-pointer"
+                    />
+                  </th>
+                  {/* Sticky headers */}
+                  <th scope="col" className="w-[120px] min-w-[120px] max-w-[120px] sticky left-[40px] z-40 pr-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
+                      style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9', paddingLeft: '20px' }}>
                     Sheet No.
                   </th>
-                  <th scope="col" className="w-[280px] sticky left-[120px] z-30 pl-[20px] pr-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
-                      style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9' }}>
+                  <th scope="col" className="w-[280px] min-w-[280px] max-w-[280px] sticky left-[160px] z-40 pr-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
+                      style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9', paddingLeft: '20px' }}>
                     Sheet Name
                   </th>
-                  <th scope="col" className="w-[85px] sticky left-[400px] z-30 px-4 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
+                  <th scope="col" className="w-[85px] min-w-[85px] max-w-[85px] sticky left-[440px] z-40 px-4 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20"
                       style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9' }}>
                     Curr. Rev.
                   </th>
                   {/* Date issue columns */}
-                  {registerData.dateColumns.map((date, idx) => (
-                    <th key={idx} scope="col" className="w-[110px] px-3 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-r border-slate-800/20">
+                  {displayedDateColumns.map((date, idx) => (
+                    <th key={idx} scope="col" className={`w-[110px] z-30 px-3 py-3 text-center text-xs font-bold uppercase tracking-wider border-b border-r border-slate-800/20 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                       {date}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className={`divide-y ${isDark ? 'divide-slate-800/40' : 'divide-slate-200/40'}`}>
-                {filteredDrawings.map((draw, rIdx) => (
+                {filteredDrawings.map((draw, rIdx) => {
+                  const isSelected = selectedRows.has(draw.sheetNo);
+                  const isOdd = rIdx % 2 === 0;
+                  const stickyBg = isSelected
+                    ? (isDark ? '#1a1a3e' : '#eef2ff')
+                    : isOdd 
+                      ? (isDark ? '#0f172a' : '#f8fafc')
+                      : (isDark ? '#0b0f19' : '#ffffff');
+                  return (
                   <tr 
                     key={rIdx} 
-                    className={`transition-colors duration-150 ${
-                      isDark ? 'hover:bg-slate-800/20' : 'hover:bg-slate-100/40'
+                    className={`h-[60px] transition-colors duration-150 ${
+                      isSelected
+                        ? (isDark ? 'bg-indigo-500/10' : 'bg-indigo-50/60')
+                        : isOdd
+                          ? (isDark ? 'bg-slate-900 hover:bg-slate-800/40' : 'bg-slate-50 hover:bg-slate-100/60')
+                          : (isDark ? 'bg-[#0b0f19] hover:bg-slate-800/20' : 'bg-white hover:bg-slate-50')
                     }`}
                   >
+                    {/* Checkbox */}
+                    <td className="w-[40px] min-w-[40px] max-w-[40px] sticky left-0 z-20 px-2 py-3 text-center border-b border-r border-slate-800/20"
+                        style={{ backgroundColor: stickyBg }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleRow(draw.sheetNo)}
+                        className="w-3.5 h-3.5 rounded accent-indigo-500 cursor-pointer"
+                      />
+                    </td>
                     {/* Sticky columns with matching backgrounds */}
-                    <td className="sticky left-0 z-20 pl-[20px] pr-4 py-3 text-sm text-indigo-500 border-r border-slate-800/20"
-                        style={{ backgroundColor: isDark ? '#0b0f19' : '#ffffff' }}>
+                    <td className="w-[120px] min-w-[120px] max-w-[120px] sticky left-[40px] z-20 pr-4 py-3 text-sm text-indigo-500 border-b border-r border-slate-800/20"
+                        style={{ backgroundColor: stickyBg, paddingLeft: '20px' }}>
                       {draw.sheetNo}
                     </td>
-                    <td className={`sticky left-[120px] z-20 pl-[20px] pr-4 py-3 text-sm border-r border-slate-800/20 truncate ${
+                    <td className={`w-[280px] min-w-[280px] max-w-[280px] sticky left-[160px] z-20 pr-4 py-3 text-sm border-b border-r border-slate-800/20 truncate ${
                       isDark ? 'text-slate-200' : 'text-slate-800'
-                    }`} style={{ backgroundColor: isDark ? '#0b0f19' : '#ffffff' }} title={draw.sheetName}>
+                    }`} style={{ backgroundColor: stickyBg, paddingLeft: '20px' }} title={draw.sheetName}>
                       {draw.sheetName}
                     </td>
-                    <td className="sticky left-[400px] z-20 px-4 py-3 text-center border-r border-slate-800/20"
-                        style={{ backgroundColor: isDark ? '#0b0f19' : '#ffffff' }}>
-                      <span className={`inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                        isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-700'
-                      }`}>
-                        {draw.currRev}
-                      </span>
+                    <td className="w-[85px] min-w-[85px] max-w-[85px] sticky left-[440px] z-20 px-4 py-3 text-center border-b border-r border-slate-800/20"
+                        style={{ backgroundColor: stickyBg }}>
+                      {(() => {
+                        let currRevLinks = { pdf: null, dwg: null };
+                        const reversedDates = [...(registerData?.dateColumns || [])].reverse();
+                        // Find exactly the currRev
+                        for (const date of reversedDates) {
+                          if (draw.revisions[date] === draw.currRev) {
+                            currRevLinks = findIssueUrl(issueRecords, draw.sheetNo, date, draw.currRev);
+                            break;
+                          }
+                        }
+                        // Fallback: just find the latest available rev if currRev not matched exactly
+                        if (!currRevLinks.pdf && !currRevLinks.dwg) {
+                          for (const date of reversedDates) {
+                            if (draw.revisions[date]) {
+                              currRevLinks = findIssueUrl(issueRecords, draw.sheetNo, date, draw.revisions[date]);
+                              if (currRevLinks.pdf || currRevLinks.dwg) break;
+                            }
+                          }
+                        }
+
+                        return (
+                          <div className="flex flex-col items-center gap-0.5">
+                            {(currRevLinks.pdf || currRevLinks.dwg) ? (
+                              <a
+                                href={(currRevLinks.pdf || currRevLinks.dwg).url}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={`View latest drawing: ${draw.sheetNo} Rev ${draw.currRev}`}
+                                className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black uppercase tracking-wider cursor-pointer hover:opacity-80 hover:scale-110 transition-transform shadow-sm ${
+                                  isDark ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50' : 'bg-purple-200 text-purple-800 hover:shadow-md'
+                                }`}
+                              >
+                                {draw.currRev}
+                              </a>
+                            ) : (
+                              <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black uppercase tracking-wider ${
+                                isNaN(draw.currRev)
+                                  ? (isDark ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-purple-100 text-purple-700')
+                                  : (isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-700')
+                              }`}>
+                                {draw.currRev}
+                              </span>
+                            )}
+                            
+                            {/* Download buttons */}
+                            {(currRevLinks.pdf || currRevLinks.dwg) && (
+                              <div className="flex gap-0.5 mt-0.5">
+                                {currRevLinks.pdf && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      const iframe = document.createElement('iframe');
+                                      iframe.style.display = 'none';
+                                      iframe.src = toDirectDownloadUrl(currRevLinks.pdf.url);
+                                      document.body.appendChild(iframe);
+                                      setTimeout(() => { try { document.body.removeChild(iframe); } catch(err) {} }, 10000);
+                                    }}
+                                    title={`Download PDF: ${draw.sheetNo} Rev ${draw.currRev}`}
+                                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                                      isDark 
+                                        ? 'bg-red-500/10 text-red-400 hover:bg-red-500/30 border border-red-500/20' 
+                                        : 'bg-red-50 text-red-600 hover:bg-red-100'
+                                    }`}
+                                  >
+                                    PDF
+                                  </button>
+                                )}
+                                {currRevLinks.dwg && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      const iframe = document.createElement('iframe');
+                                      iframe.style.display = 'none';
+                                      iframe.src = toDirectDownloadUrl(currRevLinks.dwg.url);
+                                      document.body.appendChild(iframe);
+                                      setTimeout(() => { try { document.body.removeChild(iframe); } catch(err) {} }, 10000);
+                                    }}
+                                    title={`Download DWG: ${draw.sheetNo} Rev ${draw.currRev}`}
+                                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                                      isDark 
+                                        ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/30 border border-amber-500/20' 
+                                        : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                                    }`}
+                                  >
+                                    DWG
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     {/* Date issue values - with NMK_Issue download link mapping */}
-                    {registerData.dateColumns.map((date, cIdx) => {
+                    {displayedDateColumns.map((date, cIdx) => {
                       const revVal = draw.revisions[date];
                       // Match against NMK_Issue → returns { pdf, dwg }
                       const issueLinks = revVal
@@ -938,27 +1299,42 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
                         : { pdf: null, dwg: null };
 
                       return (
-                        <td key={cIdx} className="px-3 py-3 text-center border-r border-slate-800/20 text-sm">
+                        <td key={cIdx} className="px-3 py-3 text-center border-b border-r border-slate-800/20 text-sm">
                           {revVal ? (
                             <div className="flex flex-col items-center gap-0.5">
                               {/* Rev badge */}
-                              <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black uppercase tracking-wider ${
-                                issueLinks.pdf || issueLinks.dwg
-                                  ? (isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40' : 'bg-blue-100 text-blue-700')
-                                  : isNaN(revVal)
-                                    ? (isDark ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-purple-100 text-purple-700')
-                                    : (isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-700')
-                              }`}>
-                                {revVal}
-                              </span>
+                              {issueLinks.pdf || issueLinks.dwg ? (
+                                <a
+                                  href={(issueLinks.pdf || issueLinks.dwg).url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={`View ${issueLinks.pdf ? 'PDF' : 'DWG'}: ${draw.sheetNo} Rev ${revVal}`}
+                                  className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black uppercase tracking-wider cursor-pointer hover:opacity-80 hover:scale-110 transition-transform shadow-sm ${
+                                    isDark ? 'bg-slate-700 text-slate-200 border border-slate-600' : 'bg-slate-200 text-slate-800 hover:shadow-md'
+                                  }`}
+                                >
+                                  {revVal}
+                                </a>
+                              ) : (
+                                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black uppercase tracking-wider ${
+                                  isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-700'
+                                }`}>
+                                  {revVal}
+                                </span>
+                              )}
                               {/* Download buttons */}
                               {(issueLinks.pdf || issueLinks.dwg) && (
                                 <div className="flex gap-0.5 mt-0.5">
                                   {issueLinks.pdf && (
-                                    <a
-                                      href={issueLinks.pdf.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        const iframe = document.createElement('iframe');
+                                        iframe.style.display = 'none';
+                                        iframe.src = toDirectDownloadUrl(issueLinks.pdf.url);
+                                        document.body.appendChild(iframe);
+                                        setTimeout(() => { try { document.body.removeChild(iframe); } catch(err) {} }, 10000);
+                                      }}
                                       title={`Download PDF: ${draw.sheetNo} Rev ${revVal}`}
                                       className={`text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                                         isDark
@@ -967,13 +1343,18 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
                                       }`}
                                     >
                                       PDF
-                                    </a>
+                                    </button>
                                   )}
                                   {issueLinks.dwg && (
-                                    <a
-                                      href={issueLinks.dwg.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        const iframe = document.createElement('iframe');
+                                        iframe.style.display = 'none';
+                                        iframe.src = toDirectDownloadUrl(issueLinks.dwg.url);
+                                        document.body.appendChild(iframe);
+                                        setTimeout(() => { try { document.body.removeChild(iframe); } catch(err) {} }, 10000);
+                                      }}
                                       title={`Download DWG: ${draw.sheetNo} Rev ${revVal}`}
                                       className={`text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                                         isDark
@@ -982,7 +1363,7 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
                                       }`}
                                     >
                                       DWG
-                                    </a>
+                                    </button>
                                   )}
                                 </div>
                               )}
@@ -994,11 +1375,10 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
                       );
                     })}
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
-          </div>
-        </div>
       </div>
       
       {/* Footer Info */}
@@ -1008,8 +1388,39 @@ MOCK TECHNICAL DRAWING FILE DATA.`;
         <div className="flex items-center gap-2">
           <Info size={14} className="text-indigo-500" />
           <span>Tổng số bản vẽ: {filteredDrawings.length} / {registerData.drawings.length}</span>
+          {selectedRows.size > 0 && (
+            <span className={`ml-3 px-2 py-0.5 rounded-full text-[10px] font-black ${
+              isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-100 text-indigo-600'
+            }`}>
+              {selectedRows.size} đã chọn
+            </span>
+          )}
         </div>
       </div>
+
+      {/* Download Progress Overlay */}
+      {isDownloading && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className={`relative px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 border ${
+            isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            <Loader2 size={40} className="text-emerald-500 animate-spin" />
+            <div className="text-center">
+              <p className="text-sm font-bold">Đang tải xuống...</p>
+              <p className={`text-2xl font-black mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                {downloadProgress.current} / {downloadProgress.total}
+              </p>
+              <div className={`w-48 h-1.5 rounded-full mt-3 overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                <div 
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                  style={{ width: `${downloadProgress.total > 0 ? (downloadProgress.current / downloadProgress.total) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* OneDrive Explorer Modal Dialog */}
       {showOneDriveModal && (
