@@ -4,27 +4,20 @@ import './index.css'
 import App from './App.jsx'
 
 import { AppProvider } from './context/AppContext.jsx'
-import { PublicClientApplication } from '@azure/msal-browser'
-import { MsalProvider } from '@azure/msal-react'
-import { msalConfig } from './services/authConfig'
 import { AuthProvider } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
 import { ErrorBoundary } from './ErrorBoundary.jsx'
 
-const msalInstance = new PublicClientApplication(msalConfig);
-
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
-      <MsalProvider instance={msalInstance}>
-        <AuthProvider>
-          <NotificationProvider>
-            <AppProvider>
-              <App />
-            </AppProvider>
-          </NotificationProvider>
-        </AuthProvider>
-      </MsalProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <AppProvider>
+            <App />
+          </AppProvider>
+        </NotificationProvider>
+      </AuthProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

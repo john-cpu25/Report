@@ -43,6 +43,7 @@ const TechRing = () => (
 const Login = () => {
     const { login, loading, error } = useAuth();
     const [isSimulatingLogin, setIsSimulatingLogin] = useState(false);
+    const [email, setEmail] = useState('');
 
     const handleLocalAdmin = (e) => {
         e.stopPropagation();
@@ -52,11 +53,11 @@ const Login = () => {
         }, 2000); 
     };
 
-    const handleLogin = () => {
+    const handleLogin = async (e) => {
+        if (e) e.preventDefault();
         setIsSimulatingLogin(true);
-        setTimeout(() => {
-            login();
-        }, 1500);
+        await login(email);
+        setIsSimulatingLogin(false);
     };
 
     const isLoading = loading || isSimulatingLogin;
@@ -106,15 +107,26 @@ const Login = () => {
                             </div>
                         )}
 
-                        <button
-                            onClick={handleLogin}
-                            disabled={isLoading}
-                            className="relative w-[12.5vw] h-[12.5vw] min-w-[100px] min-h-[100px] max-w-[200px] max-h-[200px] flex items-center justify-center cursor-pointer group/btn focus:outline-none z-10 rounded-full transition-all duration-300 hover:bg-white/5 -translate-y-4 md:-translate-y-6"
-                        >
-                            <div className="w-[80%] h-[80%] text-white group-hover/btn:text-[#4facfe] transition-colors duration-300">
-                                <TechRing />
-                            </div>
-                        </button>
+                        <form onSubmit={handleLogin} className="flex flex-col items-center z-10 -translate-y-4 md:-translate-y-6">
+                            <input
+                                type="email"
+                                placeholder="Nhập email của bạn..."
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="mb-6 px-6 py-3 w-72 rounded-full bg-black/40 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:border-[#4facfe] focus:ring-1 focus:ring-[#4facfe] backdrop-blur-sm transition-all duration-300 text-center text-sm tracking-wider"
+                                required
+                            />
+                            
+                            <button
+                                type="submit"
+                                disabled={isLoading || !email}
+                                className="relative w-[12.5vw] h-[12.5vw] min-w-[100px] min-h-[100px] max-w-[150px] max-h-[150px] flex items-center justify-center cursor-pointer group/btn focus:outline-none rounded-full transition-all duration-300 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <div className="w-[80%] h-[80%] text-white group-hover/btn:text-[#4facfe] transition-colors duration-300">
+                                    <TechRing />
+                                </div>
+                            </button>
+                        </form>
 
                         {/* Local Admin Bypass Button */}
                         {import.meta.env.DEV && (

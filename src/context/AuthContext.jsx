@@ -1,12 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useMsal } from '@azure/msal-react';
-import { loginRequest } from '../services/authConfig';
 import { supabase } from '../supabaseClient';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const { instance, accounts } = useMsal();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -104,41 +101,21 @@ export const AuthProvider = ({ children }) => {
             return;
         }
 
-        const silentLogin = async () => {
-            try {
-                // Xử lý các kết quả trả về từ quá trình Redirect
-                await instance.handleRedirectPromise();
-
-                // 1. Kiểm tra xem đã có account nào trong cache chưa
-                if (accounts.length > 0) {
-                    const account = accounts[0];
-                    await handleUserSync(account);
-                } else {
-                    // 2. Nếu chưa có, thử ssoSilent để lấy account từ Windows/Session
-                    const lastEmail = localStorage.getItem('last_login_email');
-                    const silentRequest = {
-                        ...loginRequest,
-                        prompt: "none",
-                        ...(lastEmail ? { loginHint: lastEmail } : {}) // Dùng email cũ để "nhắc" Microsoft
-                    };
-                    const response = await instance.ssoSilent(silentRequest);
-                    if (response.account) {
-                        await handleUserSync(response.account);
-                    }
-                }
-            } catch (err) {
-                console.log("Silent login failed, waiting for user interaction:", err.name);
-                // Nếu ssoSilent lỗi (do chưa đăng nhập Windows), vẫn để loading = false để hiện nút Login
-            } finally {
+        const autoLogin = async () => {
+            const lastEmail = localStorage.getItem('last_login_email');
+            if (lastEmail) {
+                await handleUserSync(lastEmail);
+            } else {
                 setLoading(false);
             }
         };
 
-        silentLogin();
-    }, [accounts, instance]);
+        autoLogin();
+    }, []);
 
-    const handleUserSync = async (account) => {
-        const email = (account.username || account.idTokenClaims?.email || '').toLowerCase();
+    const handleUserSync = async (email) => {
+        setLoading(true);
+        email = (email || '').toLowerCase();
         if (email) {
             let dbUser = await syncUserWithSupabase(email);
 
@@ -154,7 +131,6 @@ export const AuthProvider = ({ children }) => {
                 console.log('[AuthContext] User:', dbUser.name, '| Email:', email, '| Admin:', finalIsAdmin);
                 
                 setUser({
-                    ...account,
                     ...dbUser,
                     isAdmin: finalIsAdmin,
                     isLeader: finalIsLeader
@@ -164,19 +140,20 @@ export const AuthProvider = ({ children }) => {
                 setError(`Email ${email} không có quyền truy cập hệ thống.`);
             }
         }
+        setLoading(false);
     };
 
-    const login = async () => {
-        try {
-            await instance.loginRedirect(loginRequest);
-        } catch (e) {
-            console.error(e);
-            setError('Login failed. Please try again.');
+    const login = async (email) => {
+        setError(null);
+        if (!email || !email.includes('@')) {
+            setError('Vui lòng nhập địa chỉ email hợp lệ.');
+            return;
         }
+        await handleUserSync(email);
     };
 
     const logout = () => {
-        instance.logoutPopup();
+        localStorage.removeItem('last_login_email');
         setUser(null);
     };
 
@@ -210,34 +187,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     const getGraphToken = async () => {
-        try {
-            const activeAccount = instance.getActiveAccount() || accounts[0];
-            if (!activeAccount) {
-                await instance.loginPopup(loginRequest);
-                const updatedAccounts = instance.getAllAccounts();
-                if (updatedAccounts.length === 0) throw new Error("No active MSAL account found.");
-                instance.setActiveAccount(updatedAccounts[0]);
-            }
-            
-            const tokenRequest = {
-                scopes: ["User.Read", "Files.Read", "Files.ReadWrite"],
-                account: instance.getActiveAccount() || accounts[0]
-            };
-            const response = await instance.acquireTokenSilent(tokenRequest);
-            return response.accessToken;
-        } catch (error) {
-            console.warn("Silent token acquisition failed, acquiring token via popup...", error);
-            try {
-                const response = await instance.acquireTokenPopup({
-                    scopes: ["User.Read", "Files.Read", "Files.ReadWrite"],
-                    account: instance.getActiveAccount() || accounts[0]
-                });
-                return response.accessToken;
-            } catch (popupErr) {
-                console.error("Popup token acquisition failed:", popupErr);
-                throw popupErr;
-            }
-        }
+        console.warn("Microsoft Azure has been removed. Graph Token is no longer available.");
+        return null;
     };
 
     return (
