@@ -122,7 +122,7 @@ export const AuthProvider = ({ children }) => {
             if (dbUser) {
                 localStorage.setItem('last_login_email', email);
                 
-                const roleField = dbUser.role || dbUser.Role || dbUser.access_level || dbUser.permission || '';
+                const roleField = dbUser.user_role || dbUser.role || dbUser.Role || dbUser.access_level || dbUser.permission || '';
                 const roleValue = roleField.toString().trim().toLowerCase();
                 
                 const finalIsAdmin = roleValue.includes('admin');
