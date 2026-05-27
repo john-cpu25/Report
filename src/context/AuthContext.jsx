@@ -137,38 +137,10 @@ export const AuthProvider = ({ children }) => {
         silentLogin();
     }, [accounts, instance]);
 
-    // Fallback admin/leader detection when 'role' column doesn't exist in NMK_User
-    const ADMIN_EMAILS = [
-        'nhan.nguyen@rincovitch.com.au',
-    ];
-    const LEADER_EMAILS = [
-        // Add leader emails here
-    ];
-
     const handleUserSync = async (account) => {
         const email = (account.username || account.idTokenClaims?.email || '').toLowerCase();
         if (email) {
             let dbUser = await syncUserWithSupabase(email);
-            const isAdminByEmail = ADMIN_EMAILS.includes(email);
-            const isLeaderByEmail = LEADER_EMAILS.includes(email);
-
-            // AUTO-REGISTRATION FOR ADMINS
-            if (!dbUser && isAdminByEmail) {
-                console.log('[AuthContext] Auto-registering Admin:', email);
-                const { data: newUser, error: regError } = await supabase
-                    .from('NMK_User')
-                    .upsert({ 
-                        email: email,
-                        name: account.name || 'System Admin',
-                        team: 'Management',
-                        location: 'VIETNAM',
-                        role: 'Admin'
-                    }, { onConflict: 'email' })
-                    .select()
-                    .single();
-                
-                if (!regError) dbUser = newUser;
-            }
 
             if (dbUser) {
                 localStorage.setItem('last_login_email', email);
@@ -176,11 +148,8 @@ export const AuthProvider = ({ children }) => {
                 const roleField = dbUser.role || dbUser.Role || dbUser.access_level || dbUser.permission || '';
                 const roleValue = roleField.toString().trim().toLowerCase();
                 
-                const isAdminByRole = roleValue.includes('admin');
-                const isLeaderByRole = roleValue.includes('leader');
-                
-                const finalIsAdmin = isAdminByRole || isAdminByEmail;
-                const finalIsLeader = isLeaderByRole || isLeaderByEmail;
+                const finalIsAdmin = roleValue.includes('admin');
+                const finalIsLeader = roleValue.includes('leader');
                 
                 console.log('[AuthContext] User:', dbUser.name, '| Email:', email, '| Admin:', finalIsAdmin);
                 
