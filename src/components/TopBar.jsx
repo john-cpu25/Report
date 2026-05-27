@@ -406,7 +406,7 @@ const TopBar = () => {
                   {user?.name || user?.displayName || 'Authorized User'}
                 </p>
                 <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-                  {user?.team || user?.role || 'Operation Team'}
+                  {user?.position || user?.role || 'Engineer'}
                 </p>
               </div>
             </button>

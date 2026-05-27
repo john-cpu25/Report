@@ -1,195 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { format, startOfWeek, addDays, parseISO } from 'date-fns';
-import { fetchProjects, fetchTemporaryTasks } from '../services/supabaseService';
+import { fetchProjects } from '../services/supabaseService';
 import projectsData from '../data/projects.json';
 import { useNotifications } from './NotificationContext';
 import { supabase } from '../supabaseClient';
 
-const DEFAULT_WEEKLY_PLANNER_TASKS = [
-  {
-    id: 1779075000001,
-    project: 'DLD',
-    team: 'CIVIL',
-    task: 'LEVEL 5 TO LEVEL 10',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '17:30', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000002,
-    project: 'DLD',
-    team: 'CIVIL',
-    task: 'LEVEL 11 TO LEVEL 17',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '17:30' }
-  },
-  {
-    id: 1779075000003,
-    project: 'MEL02',
-    team: 'CIVIL',
-    task: 'LEVEL 4 (UPDATING)',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000004,
-    project: 'MAC',
-    team: 'CIVIL',
-    task: 'LEVEL 1 TO ROOF:',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '16:30', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000005,
-    project: 'RIVER TERRACE',
-    team: 'CIVIL',
-    task: 'LEVEL 7 - TYPICAL REO',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000006,
-    project: 'RIVER TERRACE',
-    team: 'CIVIL',
-    task: 'LEVEL 17 - TYPICAL REO',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000007,
-    project: 'RIVER TERRACE',
-    team: 'CIVIL',
-    task: 'PT MARKUP',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000008,
-    project: 'CW2',
-    team: 'CIVIL',
-    task: 'LEVEL – MARKUP (MAYBE)',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000009,
-    project: 'CW3',
-    team: 'CIVIL',
-    task: 'LEVEL – MARKUP (MAYBE)',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000010,
-    project: 'MORAY',
-    team: 'CIVIL',
-    task: 'LEVEL – MARKUP (MAYBE)',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000011,
-    project: 'LEEDS',
-    team: 'CIVIL',
-    task: 'L3 TO RF – AB BACK DRAFTING',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000012,
-    project: 'LEEDS',
-    team: 'CIVIL',
-    task: 'L3 TO RF – CD BACK DRAFTING',
-    status: 'WIP',
-    markupDate: null,
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' }
-  },
-  {
-    id: 1779075000013,
-    project: 'FGWB',
-    team: 'CIVIL',
-    task: 'PT MARKUP',
-    status: 'WIP',
-    markupDate: '2026-05-20',
-    markupTime: null,
-    days: { Monday: '', Tuesday: '', Wednesday: '17:30', Thursday: '', Friday: '' }
-  }
-];
 
-const mapDbTasksToPlanner = (dbTasks, dbProjects, dbUsers) => {
-  const projectMap = {};
-  dbProjects.forEach(p => {
-    projectMap[p.id] = (p.key || p.name || 'UNKNOWN').toUpperCase();
-  });
-
-  const userMap = {};
-  dbUsers.forEach(u => {
-    if (u.email) {
-      userMap[u.email.toLowerCase()] = u;
-    }
-  });
-
-  return dbTasks.map(t => {
-    const projectKey = projectMap[t.project_id] || 'UNKNOWN';
-    let team = 'CIVIL';
-    if (t.create_by) {
-      const creatorEmail = t.create_by.toLowerCase();
-      if (userMap[creatorEmail] && userMap[creatorEmail].team) {
-        team = userMap[creatorEmail].team.toUpperCase();
-      }
-    }
-
-    const days = { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' };
-    if (t.time && !t.time.startsWith('0001-01-01')) {
-      const date = new Date(t.time);
-      if (!isNaN(date.getTime())) {
-        // Shift to GMT+7 (Vietnam time) and use UTC getters to ensure browser timezone independence
-        const vnDate = new Date(date.getTime() + 7 * 3600000);
-        const hours = String(vnDate.getUTCHours()).padStart(2, '0');
-        const minutes = String(vnDate.getUTCMinutes()).padStart(2, '0');
-        const timeFormatted = `${hours}:${minutes}`;
-        const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const dayName = daysOfWeek[vnDate.getUTCDay()];
-        if (days.hasOwnProperty(dayName)) {
-          days[dayName] = timeFormatted;
-        }
-      }
-    }
-
-    return {
-      id: t.id,
-      project: projectKey,
-      team,
-      task: t.name || '(no detail)',
-      status: t.status || 'WIP',
-      markupDate: null,
-      markupTime: null,
-      days
-    };
-  });
-};
 
 const AppContext = createContext();
 
@@ -243,6 +59,7 @@ export const AppProvider = ({ children }) => {
   const [dashboardTasks, setDashboardTasks] = useState([]);
   const [dashboardLeave, setDashboardLeave] = useState([]);
   const [isDashboardLoading, setIsDashboardLoading] = useState(false);
+  const [plannerTasks, setPlannerTasks] = useState([]);
   const [projectsCache, setProjectsCache] = useState(null);
   const [adminViewMode, setAdminViewMode] = useState('GLOBAL');
   const [adminActiveTeam, setAdminActiveTeam] = useState('MODELLING');
@@ -305,6 +122,7 @@ export const AppProvider = ({ children }) => {
     };
     fetchSupabaseProjects();
     fetchDashboardData();
+    fetchPlannerData();
     
     // Subscribe to changes
     const channel = supabase
@@ -312,6 +130,7 @@ export const AppProvider = ({ children }) => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Project' }, fetchSupabaseProjects)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task' }, fetchDashboardData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_User' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task_Temporary' }, fetchPlannerData)
       .subscribe();
 
     return () => {
@@ -336,6 +155,19 @@ export const AppProvider = ({ children }) => {
       console.error('Dashboard Fetch Error:', err);
     } finally {
       setIsDashboardLoading(false);
+    }
+  };
+
+  async function fetchPlannerData() {
+    try {
+      const { data, error } = await supabase
+        .from('NMK_Task_Temporary')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      setPlannerTasks(data || []);
+    } catch (err) {
+      console.error('Planner Fetch Error:', err);
     }
   };
 
@@ -419,7 +251,7 @@ const deleteRow = async (id) => { await supabase.from("NMK_Task").delete().eq("i
     );
   }, [selectedDate]);
   const reportData = useMemo(() => {
-    if (!dashboardTasks || dashboardTasks.length === 0) return [];
+    if (!plannerTasks || plannerTasks.length === 0) return [];
     
     // Get start and end of weekDates
     const [d1, m1, y1] = weekDates[0].split('/');
@@ -438,59 +270,48 @@ const deleteRow = async (id) => { await supabase.from("NMK_Task").delete().eq("i
       if (u.id) userMap[u.id] = u;
     });
 
-    const isSameDayFn = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
-
-    const mapped = dashboardTasks.filter(t => {
-      let rStart = t.date_start;
-      let rEnd = t.date_end;
-      
-      if (!rStart || !rEnd || rStart === '-' || rEnd === '-') {
-        const fallback = new Date(t.created_at || Date.now());
-        return fallback >= weekStart && fallback <= weekEnd;
+    // Filter NMK_Task_Temporary tasks that fall within the selected week
+    const mapped = plannerTasks.filter(t => {
+      // Use the task's time field as the primary date indicator
+      const taskTime = t.time ? new Date(t.time) : null;
+      if (taskTime && !isNaN(taskTime.getTime())) {
+        return taskTime >= weekStart && taskTime <= weekEnd;
       }
-      
-      const startD = new Date(rStart);
-      const endD = new Date(rEnd);
-      if (isNaN(startD.getTime()) || isNaN(endD.getTime())) return false;
-      
-      return startD <= weekEnd && endD >= weekStart;
+      // Fallback to created_at
+      const created = new Date(t.created_at || Date.now());
+      return created >= weekStart && created <= weekEnd;
     }).map(t => {
       const projectKey = projectMap[t.project_id] || 'UNKNOWN';
       let team = 'CIVIL';
-      if (t.create_by) {
-        const creator = userMap[t.create_by] || userMap[String(t.create_by).toLowerCase()];
+      if (t.created_by) {
+        const creator = userMap[t.created_by] || userMap[String(t.created_by).toLowerCase()];
         if (creator && creator.team) team = creator.team.toUpperCase();
       }
 
-      let rStart = t.date_start;
-      let rEnd = t.date_end;
-      if (!rStart || !rEnd || rStart === '-' || rEnd === '-') {
-        rStart = t.created_at;
-        rEnd = t.created_at;
-      }
-      const startD = new Date(rStart);
-      const endD = new Date(rEnd);
-
       const days = { Monday: '', Tuesday: '', Wednesday: '', Thursday: '', Friday: '' };
       
-      weekDates.forEach((dateStr, idx) => {
-        const [d, m, y] = dateStr.split('/');
-        const colDate = new Date(y, m - 1, d, 12, 0, 0); // Noon for safe comparison
-        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-        
-        startD.setHours(0,0,0,0);
-        endD.setHours(23,59,59,999);
-        
-        if (colDate >= startD && colDate <= endD) {
-          days[dayNames[idx]] = '100%';
+      // Determine which day(s) this task falls on from the time field
+      if (t.time) {
+        const taskDate = new Date(t.time);
+        if (!isNaN(taskDate.getTime())) {
+          // Shift to GMT+7 (Vietnam time)
+          const vnDate = new Date(taskDate.getTime() + 7 * 3600000);
+          const hours = String(vnDate.getUTCHours()).padStart(2, '0');
+          const minutes = String(vnDate.getUTCMinutes()).padStart(2, '0');
+          const timeFormatted = `${hours}:${minutes}`;
+          const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const dayName = daysOfWeek[vnDate.getUTCDay()];
+          if (days.hasOwnProperty(dayName)) {
+            days[dayName] = timeFormatted !== '00:00' ? timeFormatted : '100%';
+          }
         }
-      });
+      }
 
       return {
         id: t.id,
         project: projectKey,
         team,
-        task: t.name || '(no detail)',
+        task: t.text || t.name || '(no detail)',
         status: t.status || 'WIP',
         markupDate: null,
         markupTime: null,
@@ -499,7 +320,7 @@ const deleteRow = async (id) => { await supabase.from("NMK_Task").delete().eq("i
     });
     
     return mapped;
-  }, [dashboardTasks, dashboardProjects, dashboardUsers, weekDates]);
+  }, [plannerTasks, dashboardProjects, dashboardUsers, weekDates]);
 
 
   const dashboardStats = useMemo(() => {

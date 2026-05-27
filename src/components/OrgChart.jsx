@@ -748,6 +748,22 @@ const OrgChart = () => {
           }
         }
         setHoveredMergeNodeId(null)
+      } else if (hasMovedRef.current) {
+        // Auto-save offset to database when card position changes
+        const movedNode = nodes.find(n => n.id === draggedNodeId)
+        if (movedNode) {
+          const offsetStr = JSON.stringify(movedNode.offset || { x: 0, y: 0 })
+          supabase.from('NMK_User')
+            .update({ offset_xy: offsetStr })
+            .eq('id', draggedNodeId)
+            .then(({ error }) => {
+              if (error) {
+                console.error('Auto-save offset error:', error)
+              } else {
+                console.log(`[OrgChart] Auto-saved offset for ${movedNode.name}:`, offsetStr)
+              }
+            })
+        }
       }
       
       setDraggedNodeId(null)

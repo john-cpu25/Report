@@ -53,90 +53,6 @@ const Preloader = ({ onLoadingComplete }) => {
       exit={{ opacity: 0, scale: 1.05 }}
       className="fixed inset-0 z-[9999] bg-[#020617] flex flex-col items-center justify-center overflow-hidden font-sans"
     >
-      {/* CSS Injection for Organic Gooey Liquid Dot Animation */}
-      <style>{`
-        .gooey-container {
-          position: relative;
-          width: 140px;
-          height: 140px;
-          animation: gooey-rotate 4s ease-in-out infinite;
-          filter: url("#gooey");
-        }
-
-        @keyframes gooey-rotate {
-          0% {
-            transform: rotate(360deg);
-          }
-          50% {
-            transform: rotate(360deg);
-          }
-          100% {
-            transform: rotate(0deg);
-          }
-        }
-
-        .gooey-liquid {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: linear-gradient(
-            90deg,
-            #06b6d4 0%,
-            #6366f1 50%,
-            #a855f7 100%
-          );
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-        }
-
-        .gooey-liquid:nth-child(1) {
-          top: 0;
-          animation: gooey-animate1 4s ease-in-out infinite;
-        }
-
-        .gooey-liquid:nth-child(2) {
-          left: 0;
-          animation: gooey-animate2 4s ease-in-out infinite;
-        }
-
-        .gooey-liquid:nth-child(3) {
-          left: 100%;
-          animation: gooey-animate3 4s ease-in-out infinite;
-        }
-
-        .gooey-liquid:nth-child(4) {
-          top: 100%;
-          animation: gooey-animate4 4s ease-in-out infinite;
-        }
-
-        @keyframes gooey-animate1 {
-          0% { top: 0; }
-          50% { top: 100%; }
-          100% { top: 100%; }
-        }
-
-        @keyframes gooey-animate2 {
-          0% { left: 0; }
-          50% { left: 100%; }
-          100% { left: 100%; }
-        }
-
-        @keyframes gooey-animate3 {
-          0% { left: 100%; }
-          50% { left: 0; }
-          100% { left: 0; }
-        }
-
-        @keyframes gooey-animate4 {
-          0% { top: 100%; }
-          50% { top: 0; }
-          100% { top: 0; }
-        }
-      `}</style>
-
       {/* 1. Background MP4 Video (100% BRIGHTNESS, 0% OVERLAYS - Pure Raw Video) */}
       <video 
         ref={videoRef}
@@ -189,44 +105,15 @@ const Preloader = ({ onLoadingComplete }) => {
               RINCOVITCH
             </motion.h2>
             
-            {/* 🟢 KHUNG XANH ĐÃ ĐƯỢC CHUYỂN LÊN VỊ TRÍ KHUNG CAM (Hiển thị chữ LOADING : % ) */}
+            {/* Loading percentage text */}
             <div className="h-6 flex items-center justify-center mt-3">
               <span className="text-[10px] font-mono font-black text-white tracking-[0.25em] uppercase text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
                 LOADING : {Math.min(Math.round(progress), 100)}%
               </span>
             </div>
-
-            {/* 🔴 GOOEY LIQUID DRIPPING DOT LOADER (Trung tâm màn hình dưới chữ LOADING) */}
-            <div className="relative w-44 h-44 mt-4 flex items-center justify-center overflow-visible">
-              <div className="gooey-container">
-                <div className="gooey-liquid" />
-                <div className="gooey-liquid" />
-                <div className="gooey-liquid" />
-                <div className="gooey-liquid" />
-              </div>
-            </div>
           </div>
         </div>
       </div>
-
-      {/* SVG Gooey Filter definitions (Hidden completely) */}
-      <svg className="absolute w-0 h-0 pointer-events-none z-[-1]">
-        <defs>
-          <filter id="gooey">
-            <feGaussianBlur stdDeviation="7" in="SourceGraphic" result="blur" />
-            <feColorMatrix 
-              in="blur"
-              mode="matrix" 
-              values="1 0 0 0 0  
-                      0 1 0 0 0  
-                      0 0 1 0 0  
-                      0 0 0 20 -10" 
-              result="gooey"
-            />
-            <feComposite in="SourceGraphic" in2="gooey" operator="atop" />
-          </filter>
-        </defs>
-      </svg>
     </motion.div>
   )
 }
