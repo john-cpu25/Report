@@ -1,13 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import loginVideo from '../assets/Video_login_.mp4';
-import { ShieldAlert, Loader2, Mail, ArrowRight } from 'lucide-react';
+import { ShieldAlert, Loader2, Mail, ArrowRight, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../supabaseClient';
 
 const Login = () => {
     const { login, loading, error } = useAuth();
     const [isSimulatingLogin, setIsSimulatingLogin] = useState(false);
     const [email, setEmail] = useState('');
+    const [usersList, setUsersList] = useState([]);
+    const [isFetchingUsers, setIsFetchingUsers] = useState(true);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('NMK_User')
+                    .select('email, name')
+                    .order('name');
+                    
+                if (!error && data) {
+                    const validUsers = data.filter(u => u.email && u.email.trim() !== '');
+                    const uniqueEmails = [];
+                    const uniqueUsers = [];
+                    for (const u of validUsers) {
+                        const lowerEmail = u.email.toLowerCase();
+                        if (!uniqueEmails.includes(lowerEmail)) {
+                            uniqueEmails.push(lowerEmail);
+                            uniqueUsers.push(u);
+                        }
+                    }
+                    setUsersList(uniqueUsers);
+                }
+            } catch (err) {
+                console.error("Error fetching users:", err);
+            } finally {
+                setIsFetchingUsers(false);
+            }
+        };
+        fetchUsers();
+    }, []);
 
     const handleLocalAdmin = (e) => {
         e.stopPropagation();
@@ -26,7 +59,7 @@ const Login = () => {
         setIsSimulatingLogin(false);
     };
 
-    const isLoading = loading || isSimulatingLogin;
+    const isLoading = loading || isSimulatingLogin || isFetchingUsers;
 
     return (
         <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-black px-4 font-sans">
@@ -75,7 +108,7 @@ const Login = () => {
                         <div className="flex flex-col items-center z-10 w-full bg-black/40 p-8 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
                             <h2 className="text-2xl font-bold text-white mb-2 tracking-wider">WELCOME</h2>
                             <p className="text-slate-300 text-sm mb-8 text-center">
-                                Enter your Rincovitch email to view the dashboard
+                                Select your Rincovitch email to view the dashboard
                             </p>
 
                             <form onSubmit={handleLogin} className="w-full flex flex-col gap-4">
@@ -83,15 +116,24 @@ const Login = () => {
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <Mail size={18} className="text-slate-400" />
                                     </div>
-                                    <input
-                                        type="email"
-                                        autoComplete="email"
-                                        placeholder="Enter your email..."
+                                    <select
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/20 rounded-full py-3 pl-12 pr-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
+                                        className="w-full bg-white/5 border border-white/20 rounded-full py-3 pl-12 pr-10 text-white appearance-none focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all cursor-pointer"
                                         required
-                                    />
+                                    >
+                                        <option value="" disabled className="text-slate-500 bg-slate-900">
+                                            Select your email...
+                                        </option>
+                                        {usersList.map(u => (
+                                            <option key={u.email} value={u.email} className="text-white bg-slate-900">
+                                                {u.name} ({u.email})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                        <ChevronDown size={18} className="text-slate-400" />
+                                    </div>
                                 </div>
 
                                 <button
