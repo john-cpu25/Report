@@ -55,7 +55,16 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (authLoading) return null;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+        <p className="mt-4 text-slate-400 text-sm tracking-[0.2em] uppercase font-semibold animate-pulse">
+          Authenticating...
+        </p>
+      </div>
+    );
+  }
 
   if (!user) {
     return <Login />;
