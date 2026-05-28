@@ -208,17 +208,10 @@ export const AuthProvider = ({ children }) => {
                     return;
                 }
 
-                // ── Auto-redirect: tự động lấy session Edge mà KHÔNG hiện UI Azure ──
-                // prompt:'none' = Azure sẽ dùng session có sẵn trên browser, 
-                // nếu user đã login Edge → redirect về với token, user ko thấy gì
-                // Dùng sessionStorage flag để tránh vòng lặp vô hạn
-                console.log('[AuthContext] Auto-redirect với prompt:none — lấy session Edge tự động...');
-                sessionStorage.setItem('msal_auto_redirect_tried', 'true');
-                await msalInstance.loginRedirect({
-                    ...loginRequest,
-                    prompt: 'none'  // KHÔNG hiện UI Azure — chỉ dùng session có sẵn
-                });
-                return; // Page sẽ redirect
+                // If all silent attempts fail, simply stop loading and show Login page
+                console.log('[AuthContext] All silent SSO attempts failed. Showing Login UI.');
+                setLoading(false);
+                return;
 
             } catch (err) {
                 console.warn('[AuthContext] MSAL init/silent failed:', err);
