@@ -40,10 +40,18 @@ const TechRing = () => (
     </svg>
 );
 
+const MicrosoftLogo = () => (
+    <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+        <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+        <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+        <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+    </svg>
+);
+
 const Login = () => {
     const { login, loading, error } = useAuth();
     const [isSimulatingLogin, setIsSimulatingLogin] = useState(false);
-    const [email, setEmail] = useState('');
 
     const handleLocalAdmin = (e) => {
         e.stopPropagation();
@@ -53,10 +61,9 @@ const Login = () => {
         }, 2000); 
     };
 
-    const handleLogin = async (e) => {
-        if (e) e.preventDefault();
+    const handleLogin = async () => {
         setIsSimulatingLogin(true);
-        await login(email);
+        await login();
         setIsSimulatingLogin(false);
     };
 
@@ -102,31 +109,35 @@ const Login = () => {
                         className="relative z-10 flex flex-col items-center justify-center"
                     >
                         {error && (
-                            <div className="absolute -top-24 w-[300px] p-3 rounded-lg border border-red-500/50 bg-red-500/20 text-red-100 text-xs font-semibold tracking-wide text-center z-20 backdrop-blur-md">
+                            <div className="absolute -top-24 w-[340px] p-3 rounded-lg border border-red-500/50 bg-red-500/20 text-red-100 text-xs font-semibold tracking-wide text-center z-20 backdrop-blur-md">
                                 {error}
                             </div>
                         )}
 
-                        <form onSubmit={handleLogin} className="flex flex-col items-center z-10 -translate-y-4 md:-translate-y-6">
-                            <input
-                                type="email"
-                                placeholder="Nhập email của bạn..."
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="mb-6 px-6 py-3 w-72 rounded-full bg-black/40 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:border-[#4facfe] focus:ring-1 focus:ring-[#4facfe] backdrop-blur-sm transition-all duration-300 text-center text-sm tracking-wider"
-                                required
-                            />
-                            
+                        <div className="flex flex-col items-center z-10 -translate-y-4 md:-translate-y-6">
+                            {/* TechRing login button */}
                             <button
-                                type="submit"
-                                disabled={isLoading || !email}
-                                className="relative w-[12.5vw] h-[12.5vw] min-w-[100px] min-h-[100px] max-w-[150px] max-h-[150px] flex items-center justify-center cursor-pointer group/btn focus:outline-none rounded-full transition-all duration-300 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                type="button"
+                                onClick={handleLogin}
+                                disabled={isLoading}
+                                className="relative w-[12.5vw] h-[12.5vw] min-w-[100px] min-h-[100px] max-w-[150px] max-h-[150px] flex items-center justify-center cursor-pointer group/btn focus:outline-none rounded-full transition-all duration-300 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed mb-6"
                             >
                                 <div className="w-[80%] h-[80%] text-white group-hover/btn:text-[#4facfe] transition-colors duration-300">
                                     <TechRing />
                                 </div>
                             </button>
-                        </form>
+
+                            {/* Microsoft Sign-in label */}
+                            <button
+                                type="button"
+                                onClick={handleLogin}
+                                disabled={isLoading}
+                                className="flex items-center gap-3 px-8 py-3 rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-white/40 backdrop-blur-md transition-all duration-300 text-sm font-bold tracking-wider uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <MicrosoftLogo />
+                                <span>Sign in with Microsoft</span>
+                            </button>
+                        </div>
 
                         {/* Local Admin Bypass Button */}
                         {import.meta.env.DEV && (

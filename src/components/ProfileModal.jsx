@@ -3,14 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Camera, MapPin, Briefcase, Mail, 
   MessageSquare, Building2, Users2, 
-  Phone, Video, ChevronDown, ShieldCheck, Share2, ExternalLink
+  Phone, Video, ChevronDown, ShieldCheck, Share2, ExternalLink, LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import AvatarWithFrame from './AvatarWithFrame';
 
 export default function ProfileModal({ isOpen, onClose }) {
-  const { user, updateUserProfile } = useAuth();
+  const { user, updateUserProfile, logout } = useAuth();
   const { theme, dashboardUsers, dashboardTasks } = useApp();
   
   const [activeTab, setActiveTab] = useState('OVERVIEW');
@@ -136,6 +136,13 @@ export default function ProfileModal({ isOpen, onClose }) {
                   My Profile
                 </button>
               )}
+              <button 
+                onClick={async () => { onClose(); await logout(); }}
+                className="profile-icon-btn text-rose-400 hover:text-rose-300 hover:bg-rose-500/10" 
+                title="Sign Out"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
               <button className="profile-icon-btn">
                 <Share2 className="w-5 h-5" />
               </button>
