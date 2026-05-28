@@ -49,7 +49,7 @@ export const msalConfig = {
  * https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-permissions-and-consent#openid-connect-scopes
  */
 export const loginRequest = {
-    scopes: ["User.Read"],
+    scopes: ["openid", "profile", "email"],
     domainHint: "rincovitch.com.au" // Ưu tiên tài khoản công ty
 };
 
