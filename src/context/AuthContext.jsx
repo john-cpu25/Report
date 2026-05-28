@@ -132,7 +132,7 @@ export const AuthProvider = ({ children }) => {
             return;
         }
 
-        // ── MSAL Silent SSO: try to reuse existing Microsoft session ──
+        // ── MSAL Auto SSO: tự detect Microsoft session → đăng nhập tự động ──
         const tryMsalSilent = async () => {
             try {
                 // Đợi MSAL khởi tạo xong (MSAL v5 bắt buộc)
@@ -143,6 +143,7 @@ export const AuthProvider = ({ children }) => {
                 
                 // Nếu có kết quả từ redirect → đăng nhập luôn
                 if (redirectResult) {
+                    sessionStorage.removeItem('msal_auto_redirect_tried');
                     const email = redirectResult.account?.username 
                                || redirectResult.idTokenClaims?.preferred_username
                                || redirectResult.idTokenClaims?.email;
@@ -153,9 +154,18 @@ export const AuthProvider = ({ children }) => {
                     }
                 }
 
+                // Nếu redirect về nhưng không có kết quả (prompt:'none' thất bại)
+                // → xóa flag và hiện trang login
+                if (sessionStorage.getItem('msal_auto_redirect_tried')) {
+                    sessionStorage.removeItem('msal_auto_redirect_tried');
+                    console.log('[AuthContext] Auto-redirect đã thử nhưng thất bại → hiện trang Login');
+                    setLoading(false);
+                    return;
+                }
+
                 const accounts = msalInstance.getAllAccounts();
                 if (accounts.length > 0) {
-                    // Có MSAL session → thử silent token
+                    // Có MSAL account trong cache → thử silent token
                     try {
                         const silentResult = await msalInstance.acquireTokenSilent({
                             ...loginRequest,
@@ -163,24 +173,56 @@ export const AuthProvider = ({ children }) => {
                         });
                         const email = silentResult.account?.username || silentResult.idTokenClaims?.preferred_username;
                         if (email) {
-                            console.log('[AuthContext] MSAL silent SSO → email:', email);
+                            console.log('[AuthContext] MSAL silent token → email:', email);
                             await handleUserSync(email);
                             return;
                         }
                     } catch (silentErr) {
-                        console.warn('[AuthContext] Silent token failed, will show login:', silentErr.message);
+                        console.warn('[AuthContext] Silent token failed:', silentErr.message);
                     }
                 }
 
-                // Không có MSAL session — thử localStorage fallback
+                // ── SSO Silent: auto-detect Microsoft session trên Edge/browser ──
+                try {
+                    console.log('[AuthContext] Trying ssoSilent() — detecting Edge/browser Microsoft session...');
+                    const ssoResult = await msalInstance.ssoSilent({
+                        ...loginRequest,
+                    });
+                    const email = ssoResult.account?.username 
+                               || ssoResult.idTokenClaims?.preferred_username
+                               || ssoResult.idTokenClaims?.email;
+                    if (email) {
+                        console.log('[AuthContext] ✅ ssoSilent thành công → email:', email);
+                        await handleUserSync(email);
+                        return;
+                    }
+                } catch (ssoErr) {
+                    console.warn('[AuthContext] ssoSilent failed:', ssoErr.errorCode || ssoErr.message);
+                }
+
+                // Fallback: localStorage email
                 const lastEmail = localStorage.getItem('last_login_email');
                 if (lastEmail) {
                     console.log('[AuthContext] Fallback: localStorage email →', lastEmail);
                     await handleUserSync(lastEmail);
                     return;
                 }
+
+                // ── Auto-redirect: tự động lấy session Edge mà KHÔNG hiện UI Azure ──
+                // prompt:'none' = Azure sẽ dùng session có sẵn trên browser, 
+                // nếu user đã login Edge → redirect về với token, user ko thấy gì
+                // Dùng sessionStorage flag để tránh vòng lặp vô hạn
+                console.log('[AuthContext] Auto-redirect với prompt:none — lấy session Edge tự động...');
+                sessionStorage.setItem('msal_auto_redirect_tried', 'true');
+                await msalInstance.loginRedirect({
+                    ...loginRequest,
+                    prompt: 'none'  // KHÔNG hiện UI Azure — chỉ dùng session có sẵn
+                });
+                return; // Page sẽ redirect
+
             } catch (err) {
                 console.warn('[AuthContext] MSAL init/silent failed:', err);
+                sessionStorage.removeItem('msal_auto_redirect_tried');
                 // Fallback to localStorage
                 const lastEmail = localStorage.getItem('last_login_email');
                 if (lastEmail) {
