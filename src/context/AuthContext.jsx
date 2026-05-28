@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
-import { msalInstance, msalInitPromise } from '../services/msalInstance';
-import { loginRequest } from '../services/authConfig';
 
 const AuthContext = createContext();
 
@@ -10,7 +8,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Function to sync Microsoft user with Supabase NMK_User table
+    // Function to sync user with Supabase NMK_User table
     const syncUserWithSupabase = async (email) => {
         try {
             const { data, error } = await supabase
@@ -33,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleUserSync = useCallback(async (email) => {
         setLoading(true);
-        email = (email || '').toLowerCase();
+        email = (email || '').toLowerCase().trim();
         if (email) {
             let dbUser = await syncUserWithSupabase(email);
 
@@ -54,11 +52,14 @@ export const AuthProvider = ({ children }) => {
                     isLeader: finalIsLeader
                 });
                 setError(null);
+                setLoading(false);
+                return true;
             } else {
                 setError(`Email ${email} không có quyền truy cập hệ thống.`);
             }
         }
         setLoading(false);
+        return false;
     }, []);
 
     useEffect(() => {
@@ -132,146 +133,26 @@ export const AuthProvider = ({ children }) => {
             return;
         }
 
-        // ── MSAL Auto SSO: tự detect Microsoft session → đăng nhập tự động ──
-        const tryMsalSilent = async () => {
-            try {
-                // Đợi MSAL khởi tạo xong (MSAL v5 bắt buộc)
-                await msalInitPromise;
-                
-                // Handle redirect promise (nếu user vừa được redirect về)
-                const redirectResult = await msalInstance.handleRedirectPromise();
-                
-                // Nếu có kết quả từ redirect → đăng nhập luôn
-                if (redirectResult) {
-                    sessionStorage.removeItem('msal_auto_redirect_tried');
-                    const email = redirectResult.account?.username 
-                               || redirectResult.idTokenClaims?.preferred_username
-                               || redirectResult.idTokenClaims?.email;
-                    if (email) {
-                        console.log('[AuthContext] MSAL redirect → email:', email);
-                        await handleUserSync(email);
-                        return;
-                    }
-                }
+        // Fallback: localStorage email
+        const lastEmail = localStorage.getItem('last_login_email');
+        if (lastEmail) {
+            console.log('[AuthContext] Fallback: localStorage email →', lastEmail);
+            handleUserSync(lastEmail);
+            return;
+        }
 
-                // Nếu redirect về nhưng không có kết quả (prompt:'none' thất bại)
-                // → xóa flag và hiện trang login
-                if (sessionStorage.getItem('msal_auto_redirect_tried')) {
-                    sessionStorage.removeItem('msal_auto_redirect_tried');
-                    console.log('[AuthContext] Auto-redirect đã thử nhưng thất bại → hiện trang Login');
-                    setLoading(false);
-                    return;
-                }
-
-                const accounts = msalInstance.getAllAccounts();
-                if (accounts.length > 0) {
-                    // Có MSAL account trong cache → thử silent token
-                    try {
-                        const silentResult = await msalInstance.acquireTokenSilent({
-                            ...loginRequest,
-                            account: accounts[0]
-                        });
-                        const email = silentResult.account?.username || silentResult.idTokenClaims?.preferred_username;
-                        if (email) {
-                            console.log('[AuthContext] MSAL silent token → email:', email);
-                            await handleUserSync(email);
-                            return;
-                        }
-                    } catch (silentErr) {
-                        console.warn('[AuthContext] Silent token failed:', silentErr.message);
-                    }
-                }
-
-                // ── SSO Silent: auto-detect Microsoft session trên Edge/browser ──
-                try {
-                    console.log('[AuthContext] Trying ssoSilent() — detecting Edge/browser Microsoft session...');
-                    const ssoResult = await msalInstance.ssoSilent({
-                        ...loginRequest,
-                    });
-                    const email = ssoResult.account?.username 
-                               || ssoResult.idTokenClaims?.preferred_username
-                               || ssoResult.idTokenClaims?.email;
-                    if (email) {
-                        console.log('[AuthContext] ✅ ssoSilent thành công → email:', email);
-                        await handleUserSync(email);
-                        return;
-                    }
-                } catch (ssoErr) {
-                    console.warn('[AuthContext] ssoSilent failed:', ssoErr.errorCode || ssoErr.message);
-                }
-
-                // Fallback: localStorage email
-                const lastEmail = localStorage.getItem('last_login_email');
-                if (lastEmail) {
-                    console.log('[AuthContext] Fallback: localStorage email →', lastEmail);
-                    await handleUserSync(lastEmail);
-                    return;
-                }
-
-                // If all silent attempts fail, simply stop loading and show Login page
-                console.log('[AuthContext] All silent SSO attempts failed. Showing Login UI.');
-                setLoading(false);
-                return;
-
-            } catch (err) {
-                console.warn('[AuthContext] MSAL init/silent failed:', err);
-                sessionStorage.removeItem('msal_auto_redirect_tried');
-                // Fallback to localStorage
-                const lastEmail = localStorage.getItem('last_login_email');
-                if (lastEmail) {
-                    await handleUserSync(lastEmail);
-                    return;
-                }
-            }
-            setLoading(false);
-        };
-
-        tryMsalSilent();
+        setLoading(false);
     }, [handleUserSync]);
 
-    // ── LOGIN: Microsoft redirect → extract email → sync with DB ──
-    const login = async () => {
+    // ── LOGIN: Simple email input ──
+    const login = async (email) => {
         setError(null);
-        setLoading(true);
-        try {
-            // Đợi MSAL khởi tạo xong
-            await msalInitPromise;
-            
-            // Dùng redirect trực tiếp — không cần popup, không bị chặn
-            await msalInstance.loginRedirect({
-                ...loginRequest,
-                prompt: 'select_account'
-            });
-            // Page sẽ redirect sang Microsoft login, không cần xử lý tiếp
-        } catch (err) {
-            console.error('[AuthContext] MSAL login error:', err);
-            
-            if (err.errorCode === 'user_cancelled' || err.errorMessage?.includes('cancelled')) {
-                setError('Bạn đã hủy đăng nhập.');
-            } else {
-                const detail = err.errorMessage || err.message || 'Unknown error';
-                setError(`Đăng nhập thất bại: ${detail}`);
-            }
-            setLoading(false);
-        }
+        return await handleUserSync(email);
     };
 
-    // ── LOGOUT: Clear MSAL + localStorage ──
+    // ── LOGOUT: Clear localStorage ──
     const logout = async () => {
-        try {
-            localStorage.removeItem('last_login_email');
-            
-            await msalInitPromise;
-            const accounts = msalInstance.getAllAccounts();
-            if (accounts.length > 0) {
-                await msalInstance.logoutPopup({
-                    account: accounts[0],
-                    mainWindowRedirectUri: window.location.origin
-                });
-            }
-        } catch (err) {
-            console.warn('[AuthContext] MSAL logout error:', err);
-        }
+        localStorage.removeItem('last_login_email');
         setUser(null);
     };
 
@@ -305,20 +186,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const getGraphToken = async () => {
-        try {
-            await msalInitPromise;
-            const accounts = msalInstance.getAllAccounts();
-            if (accounts.length === 0) return null;
-            
-            const result = await msalInstance.acquireTokenSilent({
-                scopes: ["User.Read"],
-                account: accounts[0]
-            });
-            return result.accessToken;
-        } catch (err) {
-            console.warn('[AuthContext] getGraphToken failed:', err);
-            return null;
-        }
+        return null;
     };
 
     return (
