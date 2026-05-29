@@ -396,45 +396,49 @@ export default function ProfileModal({ isOpen, onClose }) {
               {activeTab === 'SECURITY' && (
                 <div className="profile-tab-pane">
                   <div className="profile-section-header">
-                    <h3 className="profile-section-title text-[14px] uppercase tracking-wider font-semibold">Change Password</h3>
+                    <h3 className="profile-section-title uppercase tracking-wider font-semibold" style={{ fontSize: '14px' }}>Change Password</h3>
                   </div>
                   <form onSubmit={handleChangePassword} className="flex flex-col mt-4 max-w-sm">
-                    <div className="mb-[14px]">
-                      <label className="block text-[14px] font-bold text-slate-600 dark:text-slate-300 mb-[14px] uppercase tracking-wide">Current Password</label>
+                    <div style={{ marginBottom: '14px' }}>
+                      <label className="block font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide" style={{ fontSize: '14px', marginBottom: '14px' }}>Current Password</label>
                       <input 
                         type="password" 
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white text-[14px]"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white"
+                        style={{ fontSize: '14px' }}
                         value={oldPassword}
                         onChange={e => setOldPassword(e.target.value)}
                         required
                       />
                     </div>
-                    <div className="mb-[14px]">
-                      <label className="block text-[14px] font-bold text-slate-600 dark:text-slate-300 mb-[14px] uppercase tracking-wide">New Password</label>
+                    <div style={{ marginBottom: '14px' }}>
+                      <label className="block font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide" style={{ fontSize: '14px', marginBottom: '14px' }}>New Password</label>
                       <input 
                         type="password" 
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white text-[14px]"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white"
+                        style={{ fontSize: '14px' }}
                         value={newPassword}
                         onChange={e => setNewPassword(e.target.value)}
                         required
                       />
                     </div>
-                    <div className="mb-[14px]">
-                      <label className="block text-[14px] font-bold text-slate-600 dark:text-slate-300 mb-[14px] uppercase tracking-wide">Confirm Password</label>
+                    <div style={{ marginBottom: '14px' }}>
+                      <label className="block font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide" style={{ fontSize: '14px', marginBottom: '14px' }}>Confirm Password</label>
                       <input 
                         type="password" 
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white text-[14px]"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white"
+                        style={{ fontSize: '14px' }}
                         value={confirmPassword}
                         onChange={e => setConfirmPassword(e.target.value)}
                         required
                       />
                     </div>
-                    {pwdMessage && <p className={`text-[14px] mb-[14px] ${pwdMessage.includes('thành công') ? 'text-emerald-500' : 'text-rose-500'}`}>{pwdMessage}</p>}
+                    {pwdMessage && <p className={pwdMessage.includes('thành công') ? 'text-emerald-500' : 'text-rose-500'} style={{ fontSize: '14px', marginBottom: '14px' }}>{pwdMessage}</p>}
                     <div>
                       <button 
                         type="submit" 
                         disabled={isChangingPwd}
-                        className="px-[20px] py-[8px] bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 text-[14px] leading-none h-[36px] flex items-center justify-center"
+                        className="bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 leading-none flex items-center justify-center"
+                        style={{ padding: '8px 20px', fontSize: '14px', height: '36px' }}
                       >
                         {isChangingPwd ? 'Updating...' : 'Change Password'}
                       </button>
