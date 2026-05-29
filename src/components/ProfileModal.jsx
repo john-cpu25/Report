@@ -444,9 +444,6 @@ export default function ProfileModal({ isOpen, onClose }) {
               )}
             </div>
           </div>
-
-          {/* Bottom Gradient Border Effect */}
-          <div className="profile-bottom-border"></div>
         </motion.div>
       </div>
     </AnimatePresence>
