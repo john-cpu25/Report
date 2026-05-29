@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import loginVideo from '../assets/Video_login_.mp4';
-import { ShieldAlert, Loader2, Mail, ArrowRight } from 'lucide-react';
+import { ShieldAlert, Loader2, Mail, ArrowRight, Lock, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
     const { login, loading, error } = useAuth();
     const [isSimulatingLogin, setIsSimulatingLogin] = useState(false);
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleLocalAdmin = (e) => {
         e.stopPropagation();
@@ -19,10 +21,10 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        if (!email.trim()) return;
+        if (!email.trim() || !password.trim()) return;
         
         setIsSimulatingLogin(true);
-        await login(email);
+        await login(email, password);
         setIsSimulatingLogin(false);
     };
 
@@ -74,8 +76,10 @@ const Login = () => {
 
                         <div className="flex flex-col items-center z-10 w-full bg-black/40 p-8 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
                             <h2 className="text-2xl font-bold text-white mb-2 tracking-wider">WELCOME</h2>
-                            <p className="text-slate-300 text-sm mb-8 text-center">
-                                Enter your Rincovitch email to view the dashboard
+                            <p className="text-slate-300 text-sm mb-6 text-center">
+                                Đăng nhập bằng Email & Mật khẩu
+                                <br/>
+                                <span className="text-[11px] text-slate-400 italic">(Nếu là lần đầu đăng nhập, mật khẩu bạn nhập sẽ trở thành mật khẩu chính thức)</span>
                             </p>
 
                             <form onSubmit={handleLogin} className="w-full flex flex-col gap-4">
@@ -86,7 +90,7 @@ const Login = () => {
                                     <input
                                         type="email"
                                         autoComplete="email"
-                                        placeholder="Enter your email..."
+                                        placeholder="Email..."
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="w-full bg-white/5 border border-white/20 rounded-full py-3 pl-12 pr-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
@@ -94,12 +98,44 @@ const Login = () => {
                                     />
                                 </div>
 
+                                <div className="relative w-full">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <Lock size={18} className="text-slate-400" />
+                                    </div>
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        autoComplete="current-password"
+                                        placeholder="Mật khẩu..."
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/20 rounded-full py-3 pl-12 pr-12 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
+                                        required
+                                    />
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-white transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+
+                                <div className="w-full flex justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => alert("Vui lòng liên hệ Admin của hệ thống để được cấp lại mật khẩu.")}
+                                        className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+                                    >
+                                        Quên mật khẩu?
+                                    </button>
+                                </div>
+
                                 <button
                                     type="submit"
-                                    disabled={isLoading || !email.trim()}
+                                    disabled={isLoading || !email.trim() || !password.trim()}
                                     className="w-full mt-2 flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold tracking-wider uppercase disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                 >
-                                    <span>Access Dashboard</span>
+                                    <span>Đăng nhập</span>
                                     <ArrowRight size={18} />
                                 </button>
                             </form>
@@ -107,14 +143,37 @@ const Login = () => {
 
                         {/* Local Admin Bypass Button */}
                         {import.meta.env.DEV && (
-                            <button
-                                onClick={handleLocalAdmin}
-                                disabled={isLoading}
-                                className="absolute -bottom-24 group/admin flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-orange-500/40 bg-orange-500/10 text-orange-400 hover:text-white hover:border-orange-500/80 hover:bg-orange-500/30 text-xs font-bold tracking-wider uppercase transition-all duration-300 z-20 backdrop-blur-md"
-                            >
-                                <ShieldAlert size={14} className="group-hover/admin:rotate-12 transition-transform duration-300" />
-                                <span>Local Admin Bypass</span>
-                            </button>
+                            <div className="absolute -bottom-24 flex flex-col gap-2 z-20">
+                                <button
+                                    onClick={handleLocalAdmin}
+                                    disabled={isLoading}
+                                    className="group/admin flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-orange-500/40 bg-orange-500/10 text-orange-400 hover:text-white hover:border-orange-500/80 hover:bg-orange-500/30 text-xs font-bold tracking-wider uppercase transition-all duration-300 backdrop-blur-md"
+                                >
+                                    <ShieldAlert size={14} className="group-hover/admin:rotate-12 transition-transform duration-300" />
+                                    <span>Local Admin Bypass</span>
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const { supabase } = await import('../supabaseClient');
+                                        const { hashPassword } = await import('../context/AuthContext');
+                                        const { data: users } = await supabase.from('NMK_User').select('*');
+                                        let output = "";
+                                        for (let u of users) {
+                                            if (!u.password) {
+                                                const pwd = Math.random().toString(36).slice(-8);
+                                                const h = await hashPassword(pwd);
+                                                await supabase.from('NMK_User').update({ password: h }).eq('id', u.id);
+                                                output += `${u.email}: ${pwd}\n`;
+                                            }
+                                        }
+                                        if (output) alert("Passwords generated:\n" + output);
+                                        else alert("All users already have passwords.");
+                                    }}
+                                    className="flex items-center justify-center px-4 py-2 rounded-full border border-blue-500/40 bg-blue-500/10 text-blue-400 hover:text-white hover:bg-blue-500/30 text-xs font-bold tracking-wider uppercase transition-all duration-300 backdrop-blur-md"
+                                >
+                                    Init Passwords (DEV)
+                                </button>
+                            </div>
                         )}
                     </motion.div>
                 )}

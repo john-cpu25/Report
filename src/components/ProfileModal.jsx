@@ -3,20 +3,48 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Camera, MapPin, Briefcase, Mail, 
   MessageSquare, Building2, Users2, 
-  Phone, Video, ChevronDown, ShieldCheck, Share2, ExternalLink
+  Phone, Video, ChevronDown, ShieldCheck, Share2, ExternalLink, LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import AvatarWithFrame from './AvatarWithFrame';
 
 export default function ProfileModal({ isOpen, onClose }) {
-  const { user, updateUserProfile } = useAuth();
+  const { user, updateUserProfile, logout, changePassword } = useAuth();
   const { theme, dashboardUsers, dashboardTasks } = useApp();
   
   const [activeTab, setActiveTab] = useState('OVERVIEW');
   const [isUploading, setIsUploading] = useState(false);
   const [viewedUser, setViewedUser] = useState(null);
   const fileInputRef = useRef(null);
+
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwdMessage, setPwdMessage] = useState('');
+  const [isChangingPwd, setIsChangingPwd] = useState(false);
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setPwdMessage('Mật khẩu xác nhận không khớp');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPwdMessage('Mật khẩu phải từ 6 ký tự trở lên');
+      return;
+    }
+    setIsChangingPwd(true);
+    setPwdMessage('');
+    const res = await changePassword(oldPassword, newPassword);
+    setPwdMessage(res.message);
+    setIsChangingPwd(false);
+    if (res.success) {
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -43,11 +71,11 @@ export default function ProfileModal({ isOpen, onClose }) {
     const taskRelations = [];
 
     dashboardTasks.forEach(task => {
-      if (task.user_id === currentUser.id && task.created_by && task.created_by !== currentUser.id) {
-        relatedUserIds.add(task.created_by);
-        taskRelations.push({ userId: task.created_by, type: 'received' });
+      if (task.user_id === currentUser.id && task.create_by && task.create_by !== currentUser.id) {
+        relatedUserIds.add(task.create_by);
+        taskRelations.push({ userId: task.create_by, type: 'received' });
       }
-      if (task.created_by === currentUser.id && task.user_id && task.user_id !== currentUser.id) {
+      if (task.create_by === currentUser.id && task.user_id && task.user_id !== currentUser.id) {
         relatedUserIds.add(task.user_id);
         taskRelations.push({ userId: task.user_id, type: 'assigned' });
       }
@@ -102,6 +130,9 @@ export default function ProfileModal({ isOpen, onClose }) {
   };
 
   const tabs = ['OVERVIEW', 'CONTACT', 'ORGANISATION', 'LINKEDIN'];
+  if (!viewedUser) {
+    tabs.push('SECURITY');
+  }
 
   return (
     <AnimatePresence>
@@ -137,9 +168,14 @@ export default function ProfileModal({ isOpen, onClose }) {
                 </button>
               )}
 
-              <button className="profile-icon-btn">
-                <Share2 className="w-5 h-5" />
+              <button 
+                onClick={async () => { onClose(); await logout(); }}
+                className="profile-icon-btn text-rose-400 hover:text-rose-300 hover:bg-rose-500/10" 
+                title="Sign Out"
+              >
+                <LogOut className="w-5 h-5" />
               </button>
+
               <button onClick={onClose} className="profile-icon-btn">
                 <X className="w-5 h-5" />
               </button>
@@ -359,6 +395,54 @@ export default function ProfileModal({ isOpen, onClose }) {
                 <div className="profile-tab-pane" style={{ textAlign: 'center', opacity: 0.6, padding: '48px' }}>
                   <Briefcase size={48} className="mx-auto mb-4" style={{ color: '#94a3b8' }} />
                   <p style={{ color: '#64748b' }}>LinkedIn integration is currently under development.</p>
+                </div>
+              )}
+
+              {activeTab === 'SECURITY' && (
+                <div className="profile-tab-pane">
+                  <div className="profile-section-header">
+                    <h3 className="profile-section-title">Đổi mật khẩu</h3>
+                  </div>
+                  <form onSubmit={handleChangePassword} className="space-y-4 max-w-sm mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mật khẩu cũ</label>
+                      <input 
+                        type="password" 
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white"
+                        value={oldPassword}
+                        onChange={e => setOldPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mật khẩu mới</label>
+                      <input 
+                        type="password" 
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white"
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Xác nhận mật khẩu</label>
+                      <input 
+                        type="password" 
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white"
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    {pwdMessage && <p className={`text-sm ${pwdMessage.includes('thành công') ? 'text-emerald-500' : 'text-rose-500'}`}>{pwdMessage}</p>}
+                    <button 
+                      type="submit" 
+                      disabled={isChangingPwd}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {isChangingPwd ? 'Đang cập nhật...' : 'Đổi mật khẩu'}
+                    </button>
+                  </form>
                 </div>
               )}
             </div>

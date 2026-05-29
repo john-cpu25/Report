@@ -283,8 +283,8 @@ const deleteRow = async (id) => { await supabase.from("NMK_Task").delete().eq("i
     }).map(t => {
       const projectKey = projectMap[t.project_id] || 'UNKNOWN';
       let team = 'CIVIL';
-      if (t.created_by) {
-        const creator = userMap[t.created_by] || userMap[String(t.created_by).toLowerCase()];
+      if (t.create_by) {
+        const creator = userMap[t.create_by] || userMap[String(t.create_by).toLowerCase()];
         if (creator && creator.team) team = creator.team.toUpperCase();
       }
 
