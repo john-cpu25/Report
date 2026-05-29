@@ -398,9 +398,9 @@ export default function ProfileModal({ isOpen, onClose }) {
                   <div className="profile-section-header">
                     <h3 className="profile-section-title text-[14px] uppercase tracking-wider font-semibold">Change Password</h3>
                   </div>
-                  <form onSubmit={handleChangePassword} className="space-y-4 max-w-sm mt-4">
-                    <div>
-                      <label className="block text-[14px] font-medium text-slate-700 dark:text-slate-300 mb-1">Current Password</label>
+                  <form onSubmit={handleChangePassword} className="flex flex-col mt-4 max-w-sm">
+                    <div className="mb-[14px]">
+                      <label className="block text-[14px] font-bold text-slate-600 dark:text-slate-300 mb-[14px] uppercase tracking-wide">Current Password</label>
                       <input 
                         type="password" 
                         className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white text-[14px]"
@@ -409,8 +409,8 @@ export default function ProfileModal({ isOpen, onClose }) {
                         required
                       />
                     </div>
-                    <div>
-                      <label className="block text-[14px] font-medium text-slate-700 dark:text-slate-300 mb-1">New Password</label>
+                    <div className="mb-[14px]">
+                      <label className="block text-[14px] font-bold text-slate-600 dark:text-slate-300 mb-[14px] uppercase tracking-wide">New Password</label>
                       <input 
                         type="password" 
                         className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white text-[14px]"
@@ -419,8 +419,8 @@ export default function ProfileModal({ isOpen, onClose }) {
                         required
                       />
                     </div>
-                    <div>
-                      <label className="block text-[14px] font-medium text-slate-700 dark:text-slate-300 mb-1">Confirm Password</label>
+                    <div className="mb-[14px]">
+                      <label className="block text-[14px] font-bold text-slate-600 dark:text-slate-300 mb-[14px] uppercase tracking-wide">Confirm Password</label>
                       <input 
                         type="password" 
                         className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-white text-[14px]"
@@ -429,14 +429,16 @@ export default function ProfileModal({ isOpen, onClose }) {
                         required
                       />
                     </div>
-                    {pwdMessage && <p className={`text-[14px] ${pwdMessage.includes('thành công') ? 'text-emerald-500' : 'text-rose-500'}`}>{pwdMessage}</p>}
-                    <button 
-                      type="submit" 
-                      disabled={isChangingPwd}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 text-[14px]"
-                    >
-                      {isChangingPwd ? 'Updating...' : 'Change Password'}
-                    </button>
+                    {pwdMessage && <p className={`text-[14px] mb-[14px] ${pwdMessage.includes('thành công') ? 'text-emerald-500' : 'text-rose-500'}`}>{pwdMessage}</p>}
+                    <div>
+                      <button 
+                        type="submit" 
+                        disabled={isChangingPwd}
+                        className="px-[20px] py-[8px] bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 text-[14px] leading-none h-[36px] flex items-center justify-center"
+                      >
+                        {isChangingPwd ? 'Updating...' : 'Change Password'}
+                      </button>
+                    </div>
                   </form>
                 </div>
               )}
