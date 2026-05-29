@@ -160,11 +160,11 @@ function measure(node) {
   }
 }
 
-// Pass 2: assign x, y positions
+// Pass 2: assign x, y positions (base positions only, no offset)
 function layoutPos(node, left, top) {
   const kids = getKids(node)
-  node._x = left + node._px + (node.offset?.x || 0)
-  node._y = top + (node.offset?.y || 0)
+  node._x = left + node._px
+  node._y = top
 
   if (kids.length === 0) return
 
@@ -205,8 +205,12 @@ function collectAll(node, nodes, edges) {
       const ky = kid._y + CARD_H / 2
       const kx = kid._x
       const kc = getColor(kid.team).accent
+      // Determine curve direction: right if child is to the right, left if child is to the left
+      const childCenterX = kx + CARD_W / 2
+      const dx = childCenterX >= pcx ? 1 : -1
+      const connectX = dx > 0 ? kx : kx + CARD_W  // connect to left edge if child is left, right edge if child is right
       edges.push({
-        d: `M${pcx},${pby} L${pcx},${ky - R} Q${pcx},${ky} ${pcx + R},${ky} L${kx},${ky}`,
+        d: `M${pcx},${pby} L${pcx},${ky - R} Q${pcx},${ky} ${pcx + dx * R},${ky} L${connectX},${ky}`,
         color: kc
       })
     })
@@ -418,7 +422,7 @@ const OrgChart = () => {
   // Drag and drop card state
   const [draggedNodeId, setDraggedNodeId] = useState(null)
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 })
-  const [dragStartOffset, setDragStartOffset] = useState({ x: 0, y: 0 })
+  const [dragStartOffset, setDragStartOffset] = useState({}) // Stores map of nodeId -> {x,y}
 
   // Alignment, Grid Snapping & Branch Merging States
   const [snapToGrid, setSnapToGrid] = useState(true)
@@ -461,9 +465,9 @@ const OrgChart = () => {
               try {
                 return JSON.parse(item.offset_xy)
               } catch(e) {
-                return { x: 0, y: 0 }
+                return null
               }
-            })() : { x: 0, y: 0 }
+            })() : null  // null = use auto-layout (new node)
           }
           nodesMap[item.id] = node
           if (item.full_name) nameToNodeMap[item.full_name.trim()] = node
@@ -506,13 +510,30 @@ const OrgChart = () => {
     }
     const tree = deepClone(orgData)
     
-    // Arrange multiple roots horizontally
+    // Step 1: Auto-layout (base positions without offsets)
     let currentX = 0
     tree.forEach(root => { 
       measure(root)
       layoutPos(root, currentX, 0) 
-      currentX += root._sw + H_SEP * 2 // Add extra spacing between independent trees
+      currentX += root._sw + H_SEP * 2
     })
+    
+    // Step 2: Apply absolute positioning (offset relative to root)
+    const rootNode = tree[0]
+    if (rootNode) {
+      const rootBaseX = rootNode._x
+      const rootBaseY = rootNode._y
+      const applyAbsolute = (node) => {
+        if (node.offset !== null && node.offset !== undefined) {
+          // Node has stored absolute position → use it
+          node._x = rootBaseX + (node.offset.x || 0)
+          node._y = rootBaseY + (node.offset.y || 0)
+        }
+        // else: keep auto-calculated position (new node)
+        getKids(node).forEach(kid => applyAbsolute(kid))
+      }
+      tree.forEach(root => applyAbsolute(root))
+    }
     
     const nodes = [], edges = []
     tree.forEach(root => collectAll(root, nodes, edges))
@@ -548,7 +569,17 @@ const OrgChart = () => {
   const handleDragStart = useCallback((node, e) => {
     setDraggedNodeId(node.id)
     setDragStartPos({ x: e.clientX, y: e.clientY })
-    setDragStartOffset({ x: node.offset?.x || 0, y: node.offset?.y || 0 })
+    
+    const offsets = {}
+    const collectOffsets = (n) => {
+      offsets[n.id] = { x: n.offset?.x || 0, y: n.offset?.y || 0 }
+      if (n.children) {
+        n.children.forEach(collectOffsets)
+      }
+    }
+    collectOffsets(node)
+    setDragStartOffset(offsets)
+    
     hasMovedRef.current = false
   }, [])
 
@@ -578,8 +609,11 @@ const OrgChart = () => {
       const dx = clientDx / zoom
       const dy = clientDy / zoom
       
-      let newOffsetX = Math.round(dragStartOffset.x + dx)
-      let newOffsetY = Math.round(dragStartOffset.y + dy)
+      const startOffsetX = dragStartOffset[draggedNodeId]?.x || 0
+      const startOffsetY = dragStartOffset[draggedNodeId]?.y || 0
+      
+      let newOffsetX = Math.round(startOffsetX + dx)
+      let newOffsetY = Math.round(startOffsetY + dy)
       
       // 1. Grid Snapping
       if (snapToGrid) {
@@ -593,13 +627,7 @@ const OrgChart = () => {
       let finalOffsetY = newOffsetY
       let guidelines = []
 
-      // Snap offset to center (0,0)
-      if (Math.abs(finalOffsetX) < threshold) {
-        finalOffsetX = 0
-      }
-      if (Math.abs(finalOffsetY) < threshold) {
-        finalOffsetY = 0
-      }
+      // (Snap to 0,0 removed — offset is now absolute position relative to root)
 
       const info = findNodeInfo(orgData, draggedNodeId)
       if (info) {
@@ -696,21 +724,33 @@ const OrgChart = () => {
         setHoveredMergeNodeId(targetMergeId)
       }
 
+      const actualDx = finalOffsetX - startOffsetX
+      const actualDy = finalOffsetY - startOffsetY
+
       setOrgData(prevData => {
-        const updateOffset = (items) => items.map(item => {
-          if (item.id === draggedNodeId) {
-            return {
+        const updateOffset = (items, isMovingDescendant = false) => items.map(item => {
+          const isDraggedNode = item.id === draggedNodeId
+          const isMoving = isDraggedNode || isMovingDescendant
+          
+          let nextItem = item
+          if (isMoving) {
+            const initialOffset = dragStartOffset[item.id] || { x: item.offset?.x || 0, y: item.offset?.y || 0 }
+            nextItem = {
               ...item,
-              offset: { x: finalOffsetX, y: finalOffsetY }
+              offset: { 
+                x: initialOffset.x + actualDx, 
+                y: initialOffset.y + actualDy 
+              }
             }
           }
-          if (item.children && item.children.length > 0) {
+          
+          if (nextItem.children && nextItem.children.length > 0) {
             return {
-              ...item,
-              children: updateOffset(item.children)
+              ...nextItem,
+              children: updateOffset(nextItem.children, isMoving)
             }
           }
-          return item
+          return nextItem
         })
         return updateOffset(prevData)
       })
@@ -752,17 +792,22 @@ const OrgChart = () => {
         // Auto-save offset to database when card position changes
         const movedNode = nodes.find(n => n.id === draggedNodeId)
         if (movedNode) {
-          const offsetStr = JSON.stringify(movedNode.offset || { x: 0, y: 0 })
-          supabase.from('NMK_User')
-            .update({ offset_xy: offsetStr })
-            .eq('id', draggedNodeId)
-            .then(({ error }) => {
-              if (error) {
-                console.error('Auto-save offset error:', error)
-              } else {
-                console.log(`[OrgChart] Auto-saved offset for ${movedNode.name}:`, offsetStr)
-              }
-            })
+          // Find all affected nodes (dragged node + all descendants)
+          const affectedNodes = nodes.filter(n => n.id === draggedNodeId || isDescendant(movedNode, n.id))
+          
+          affectedNodes.forEach(nodeToSave => {
+            const offsetStr = JSON.stringify(nodeToSave.offset || { x: 0, y: 0 })
+            supabase.from('NMK_User')
+              .update({ offset_xy: offsetStr })
+              .eq('id', nodeToSave.id)
+              .then(({ error }) => {
+                if (error) {
+                  console.error(`Auto-save offset error for ${nodeToSave.name}:`, error)
+                } else {
+                  console.log(`[OrgChart] Auto-saved offset for ${nodeToSave.name}:`, offsetStr)
+                }
+              })
+          })
         }
       }
       
@@ -1022,9 +1067,9 @@ const OrgChart = () => {
             try {
               return JSON.parse(item.offset_xy)
             } catch(e) {
-              return { x: 0, y: 0 }
+              return null
             }
-          })() : { x: 0, y: 0 }
+          })() : null
         }
         nodesMap[item.id] = node
         if (item.full_name) nameToNodeMap[item.full_name.trim()] = node
@@ -1072,6 +1117,8 @@ const OrgChart = () => {
     const dob = fd.get('dob')
     const level = parseInt(fd.get('level')) || 0
     const team = fd.get('team')
+    const offsetX = parseInt(fd.get('offset_x')) || 0
+    const offsetY = parseInt(fd.get('offset_y')) || 0
 
     // Update node details first
     let updatedData = findAndReplace(orgData, editingNode.id, {
@@ -1081,7 +1128,8 @@ const OrgChart = () => {
       layout,
       dob,
       level,
-      team
+      team,
+      offset: { x: offsetX, y: offsetY }
     })
 
     // If manager_id changed, restructure the tree (gộp nhánh)
@@ -1118,6 +1166,19 @@ const OrgChart = () => {
     setOrgData(updatedData)
     setEditingNode(null)
     setHasPendingChanges(true)
+
+    // Auto-save offset to Supabase immediately
+    const offsetStr = JSON.stringify({ x: offsetX, y: offsetY })
+    supabase.from('NMK_User')
+      .update({ offset_xy: offsetStr })
+      .eq('id', editingNode.id)
+      .then(({ error }) => {
+        if (error) {
+          console.error('[Edit] Auto-save offset error:', error)
+        } else {
+          console.log(`[Edit] Auto-saved offset for ${editingNode.name}:`, offsetStr)
+        }
+      })
   }
 
   const handleAdd = (e) => {
@@ -1136,7 +1197,7 @@ const OrgChart = () => {
       level: parseInt(fd.get('level')) || 0,
       team: fd.get('team') || 'General', 
       children: [],
-      offset: { x: 0, y: 0 }
+      offset: null  // null = auto-layout will position this new node
     }
 
     setOrgData(prev => findAndAdd(prev, targetManagerId, newNode))
@@ -1351,11 +1412,11 @@ const OrgChart = () => {
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
               <tbody>
                 {[
+                  { label: 'Name', value: selectedNode.name || '—' },
+                  { label: 'Job Title', value: selectedNode.position || '—' },
                   { label: 'Email', value: selectedNode.email || '—' },
-                  { label: 'Ngày sinh', value: selectedNode.dob ? new Date(selectedNode.dob).toLocaleDateString('vi-VN') : '—' },
-                  { label: 'Con giáp', value: getZodiac(selectedNode.dob).name },
-                  { label: 'Team', value: selectedNode.team },
-                  { label: 'ID', value: selectedNode.id },
+                  { label: 'Department', value: selectedNode.team || '—' },
+                  { label: 'Location', value: selectedNode.location || '—' },
                 ].map((row, i) => (
                   <tr key={i}>
                     <td className="org-modal-label">{row.label}</td>
@@ -1364,33 +1425,6 @@ const OrgChart = () => {
                 ))}
               </tbody>
             </table>
-
-            {/* Team badge */}
-            <div style={{ marginTop: 20, padding: '14px 16px', borderRadius: 12, background: `${getColor(selectedNode.team).accent}08`, border: `1px solid ${getColor(selectedNode.team).accent}20` }}>
-              <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 8 }}>Department</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: getColor(selectedNode.team).accent }} />
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{selectedNode.team || 'General'}</span>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            {isAdmin && (
-              <div style={{ marginTop: 20, display: 'flex', gap: 8 }}>
-                <button onClick={() => { setEditingNode(selectedNode); setSelectedNode(null) }} style={{
-                  flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(99,102,241,0.3)',
-                  background: 'rgba(99,102,241,0.1)', color: '#818CF8', fontWeight: 800, fontSize: 11,
-                  textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                }}><Edit3 size={13} /> Edit</button>
-                <button onClick={() => { setAddingToNode(selectedNode); setSelectedNode(null) }} style={{
-                  flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(16,185,129,0.3)',
-                  background: 'rgba(16,185,129,0.1)', color: '#34D399', fontWeight: 800, fontSize: 11,
-                  textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                }}><Plus size={13} /> Add Sub</button>
-              </div>
-            )}
           </div>
         </div>
         </div>
@@ -1429,25 +1463,14 @@ const OrgChart = () => {
                 <p style={{ fontSize: 10, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '2px 0 0' }}>Update organization</p>
               </div>
             </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle(isDark)}>Name</label>
-              <input name="name" defaultValue={editingNode?.name || ''} required style={inputStyle(isDark)} />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle(isDark)}>Email</label>
-              <input type="email" name="email" defaultValue={editingNode?.email || ''} placeholder="example@rincovitch.com.au" style={inputStyle(isDark)} />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle(isDark)}>Position</label>
-              <input name="position" defaultValue={editingNode?.position || ''} required style={inputStyle(isDark)} />
-            </div>
+            {/* Hidden fields to preserve existing values */}
+            <input type="hidden" name="name" value={editingNode?.name || addingToNode?.name || ''} />
+            <input type="hidden" name="email" value={editingNode?.email || ''} />
+            <input type="hidden" name="position" value={editingNode?.position || ''} />
+            <input type="hidden" name="dob" value={editingNode?.dob || ''} />
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle(isDark)}>Level</label>
               <input type="number" name="level" defaultValue={editingNode?.level ?? (addingToNode ? (addingToNode.level || 0) + 1 : 0)} required style={inputStyle(isDark)} />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle(isDark)}>Ngày sinh (DOB)</label>
-              <input type="date" name="dob" defaultValue={editingNode?.dob || ''} style={inputStyle(isDark)} />
             </div>
 
             {/* Direct Manager (Branch Merge) select */}
@@ -1498,6 +1521,19 @@ const OrgChart = () => {
                 <option value="vertical">Vertical (Xếp dọc)</option>
               </select>
             </div>
+
+            {editingNode && (
+              <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle(isDark)}>Offset X (px)</label>
+                  <input type="number" name="offset_x" defaultValue={editingNode?.offset?.x ?? 0} style={inputStyle(isDark)} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle(isDark)}>Offset Y (px)</label>
+                  <input type="number" name="offset_y" defaultValue={editingNode?.offset?.y ?? 0} style={inputStyle(isDark)} />
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 10 }}>
               <button type="button" onClick={() => { setEditingNode(null); setAddingToNode(null) }} style={{ flex: 1, padding: '10px', background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 10, color: isDark ? '#94A3B8' : '#475569', fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>Cancel</button>
               <button type="submit" style={{ flex: 2, padding: '10px', background: '#6366F1', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Save size={14} /> Confirm</button>

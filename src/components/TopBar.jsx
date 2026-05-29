@@ -101,7 +101,7 @@ const TopBar = () => {
           <div className="flex items-center gap-6">
              {activeTab !== 'dashboard' && (
                <h1 className="nav-topbar-title">
-                 {activeTab === 'projects' ? 'PROJECT' : activeTab === 'report' ? 'PLANNER' : activeTab.replace('-', ' ').toUpperCase()}
+                 {activeTab === 'projects' ? 'PROJECT' : activeTab === 'report' ? 'PLANNER' : activeTab === 'workflows' ? 'LIBRARY' : activeTab.replace('-', ' ').toUpperCase()}
                </h1>
              )}
 
