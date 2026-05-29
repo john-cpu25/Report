@@ -1,0 +1,15 @@
+// Tạm thời cất nút Sign Out ở đây
+/*
+import { LogOut } from 'lucide-react';
+
+// Trong useAuth():
+// const { logout } = useAuth();
+
+<button 
+  onClick={async () => { onClose(); await logout(); }}
+  className="profile-icon-btn text-rose-400 hover:text-rose-300 hover:bg-rose-500/10" 
+  title="Sign Out"
+>
+  <LogOut className="w-5 h-5" />
+</button>
+*/
