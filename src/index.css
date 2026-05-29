@@ -32,6 +32,8 @@
 @import "./UI/PartUi/Pages/09_issues.css";
 @import "./UI/PartUi/Pages/10_library.css";
 @import "./UI/PartUi/Pages/profile.css";
+@import "./UI/PartUi/Pages/11_settings.css";
+@import "./UI/PartUi/Pages/12_admin.css";
 
 :root {
   --primary: #4F46E5;

@@ -1,0 +1,184 @@
+/* =========================================================================
+   SETTINGS PAGE — Apple Human Interface Guidelines
+   ========================================================================= */
+
+/* Page container */
+.settings-page {
+  width: 100%;
+  max-width: 680px;
+  margin: 0;
+  padding: 10px 24px 80px 10px;
+}
+
+/* Page title */
+.settings-title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-contrast);
+  margin-bottom: 32px;
+}
+
+/* Section wrapper */
+.settings-section {
+  margin-bottom: 32px;
+}
+
+/* Section label */
+.settings-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 0 16px;
+  margin-bottom: 8px;
+}
+
+/* Grouped card container (like iOS Settings groups) */
+.settings-group {
+  background-color: var(--bg-surface);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+/* Individual theme card */
+.settings-theme-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  position: relative;
+}
+.settings-theme-card:hover {
+  background-color: rgba(0,0,0,0.02);
+}
+.settings-theme-card + .settings-theme-card {
+  border-top: 1px solid var(--border);
+}
+
+/* Theme preview thumbnail */
+.settings-theme-preview {
+  width: 72px;
+  height: 48px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.settings-theme-preview-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.3;
+}
+
+/* Theme text */
+.settings-theme-name {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-contrast);
+  letter-spacing: -0.01em;
+}
+.settings-theme-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Checkmark */
+.settings-checkmark {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: #0071e3;
+  width: 22px;
+  height: 22px;
+}
+
+/* Background environment cards */
+.settings-bg-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+.settings-bg-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  text-align: center;
+  position: relative;
+}
+.settings-bg-card:hover {
+  background-color: rgba(0,0,0,0.02);
+}
+.settings-bg-card:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+
+/* Background icon container */
+.settings-bg-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-header);
+  transition: transform 0.2s ease;
+}
+.settings-bg-card:hover .settings-bg-icon {
+  transform: scale(1.05);
+}
+
+/* Background label */
+.settings-bg-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-contrast);
+  letter-spacing: -0.01em;
+}
+.settings-bg-active {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0071e3;
+  margin-top: -2px;
+}
+
+/* Footer / Version info */
+.settings-footer {
+  text-align: center;
+  padding: 24px 0;
+}
+.settings-footer-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.settings-footer-version {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-contrast);
+  letter-spacing: -0.01em;
+}
+
+/* Dark mode overrides */
+.settings-theme-card:hover {
+  background-color: rgba(255,255,255,0.02);
+}
+@media (prefers-color-scheme: light) {
+  .settings-theme-card:hover {
+    background-color: rgba(0,0,0,0.02);
+  }
+}

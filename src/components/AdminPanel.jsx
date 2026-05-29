@@ -1,12 +1,14 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { ShieldCheck, History, Info, Package, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 
 const AdminPanel = () => {
+  const [expandedVersion, setExpandedVersion] = useState('v5.0.0');
+
   const versionHistory = [
     {
       version: 'v5.0.0',
-      date: '2026-05-17',
+      date: 'May 17, 2026',
       title: 'Architecture Overhaul & Deep Optimization',
       changes: [
         'Decoupled monolithic PersonalSpace.jsx: reduced code size by 63% (from 1814 to 675 lines).',
@@ -15,26 +17,26 @@ const AdminPanel = () => {
         'Implemented Data Normalization Adapter in dataProcessor.js to trim and uppercase raw data.',
         'Deleted obsolete legacy CSVProcessor.jsx and PerformanceReview.jsx modules, trimming 190KB off bundle size.',
         'Applied tactile Neumorphic (3D soft UI) design templates to the Annual Leave dashboard.',
-        'Redesigned the Projects Bookshelf: introduced dynamic book sizes, 3D linen cloth textures, gold foil stripes, embossed spine ribs, satin bookmark ribbons, alternating elegant typography, and a rich dark mahogany wood shelf.',
-        'Created an immersive 3D Open Book view for project details, featuring leather textures, paper stack depth shadows, curved middle creases, vintage drop-caps, archival stamps, and handwritten signatures.'
+        'Redesigned the Projects Bookshelf with dynamic book sizes, 3D textures, gold foil stripes, and elegant typography.',
+        'Created an immersive 3D Open Book view with leather textures, paper shadows, and handwritten signatures.'
       ],
       type: 'major'
     },
     {
       version: 'v4.9.0',
-      date: '2026-05-17',
+      date: 'May 17, 2026',
       title: 'Personal Workspace & Data Visibility',
       changes: [
         'Implemented Dynamic Data Access: Restricted users to view only their personal data.',
         'Enforced Self-Data Filtering on the Personal Workspace module.',
-        'Added Team shielding logic: Leaders/Users only see their own team\'s active status on the Dashboard.',
+        'Added Team shielding logic: Leaders/Users only see their own team\'s active status.',
         'Updated Dashboard UI to clearly show BUSY, FREE, and LEAVE with aligned tabular numbers.'
       ],
       type: 'major'
     },
     {
       version: 'v4.8.5',
-      date: '2026-05-16',
+      date: 'May 16, 2026',
       title: 'Neumorphic Design & Dashboard Polish',
       changes: [
         'Implemented global tactile UI templates with Theme-Aware Shadows.',
@@ -44,7 +46,7 @@ const AdminPanel = () => {
     },
     {
       version: 'v4.7.0',
-      date: '2026-05-11',
+      date: 'May 11, 2026',
       title: 'System Modularization & Performance Optimization',
       changes: [
         'Modularized CSVProcessor into sub-components (StatCards, FilterBar, UnifiedTable, DataUploader).',
@@ -57,7 +59,7 @@ const AdminPanel = () => {
     },
     {
       version: 'v4.6.1',
-      date: '2026-05-10',
+      date: 'May 10, 2026',
       title: 'Workflow Expansion & Refinement',
       changes: [
         'Added detailed Issue Process and Specialty Knowledge workflows.',
@@ -68,113 +70,91 @@ const AdminPanel = () => {
     }
   ];
 
+  const envItems = [
+    { label: 'OS', value: 'Windows x64' },
+    { label: 'Engine', value: 'Vite v8.0.10' },
+    { label: 'Runtime', value: 'React v19.2.5' },
+    { label: 'Database', value: 'Supabase v2.105.3' }
+  ];
+
+  const toggleVersion = (version) => {
+    setExpandedVersion(expandedVersion === version ? null : version);
+  };
+
   return (
-    <div className="space-y-[10px] animate-in fade-in duration-700">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between sys-gap">
-        <div>
-          <h2 className="text-[30px] font-black text-[var(--text-contrast)] uppercase italic tracking-tighter flex items-center sys-gap">
-            <ShieldCheck size={32} className="text-indigo-500" />
-            Admin <span className="text-indigo-400">Panel</span>
-          </h2>
-          <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] mt-2 flex items-center gap-2">
-            <Zap size={12} className="text-amber-500 animate-pulse" />
-            System Control & Version Intelligence
-          </p>
+    <div className="admin-page">
+
+      {/* Current Build */}
+      <div className="admin-build-card">
+        <div className="admin-build-header">Current Build</div>
+        <div className="admin-build-version">v5.0.0</div>
+        <div className="admin-build-date">May 17, 2026</div>
+        <div className="admin-build-status">
+          <div className="admin-build-status-dot" />
+          Production Ready
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 sys-gap">
-        {/* Version Info Card */}
-        <div className="lg:col-span-1 space-y-6">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="ocd-card bg-indigo-500/5 border-indigo-500/10 shadow-2xl relative overflow-hidden group"
-          >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Package size={80} />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-xs font-black text-indigo-400 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
-                <Info size={14} /> Current Build
-              </h3>
-              <div className="space-y-[10px]">
-                <div>
-                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Version</p>
-                  <p className="text-3xl font-black text-[var(--text-contrast)] tracking-tighter mt-1">v5.0.0</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Release Date</p>
-                  <p className="text-lg font-bold text-[var(--text-main)] mt-1">May 17, 2026</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Status</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
-                    <span className="text-[11px] font-black text-emerald-400 uppercase tracking-widest">Production Ready</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <div className="ocd-card space-y-[10px]">
-            <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">System Environment</h3>
-            <div className="space-y-3">
-              {[
-                { label: 'OS', value: 'Windows x64' },
-                { label: 'Engine', value: 'Vite v8.0.10' },
-                { label: 'Runtime', value: 'React v19.2.5' },
-                { label: 'Database', value: 'Supabase v2.105.3' }
-              ].map(item => (
-                <div key={item.label} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
-                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">{item.label}</span>
-                  <span className="text-[11px] font-black text-indigo-400 uppercase">{item.value}</span>
-                </div>
-              ))}
-            </div>
+      {/* System Environment */}
+      <p className="admin-env-label">System Environment</p>
+      <div className="admin-env-group">
+        {envItems.map(item => (
+          <div key={item.label} className="admin-env-row">
+            <span className="admin-env-key">{item.label}</span>
+            <span className="admin-env-value">{item.value}</span>
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Update History */}
-        <div className="lg:col-span-2">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="ocd-card shadow-xl"
-          >
-            <div className="flex items-center sys-gap mb-[10px]">
-              <History size={20} className="text-indigo-400" />
-              <h3 className="text-[11px] font-black text-[var(--text-contrast)] uppercase tracking-[0.3em]">Deployment History</h3>
+      {/* Deployment History */}
+      <p className="admin-history-label">Deployment History</p>
+      <div className="admin-history-group">
+        {versionHistory.map((item) => (
+          <div key={item.version} className="admin-version-entry">
+            <div 
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+              onClick={() => toggleVersion(item.version)}
+            >
+              <div>
+                <div className="admin-version-header">
+                  <span className="admin-version-tag">{item.version}</span>
+                  <span className="admin-version-title">— {item.title}</span>
+                </div>
+                <div className="admin-version-date">{item.date}</div>
+              </div>
+              <motion.div
+                animate={{ rotate: expandedVersion === item.version ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                style={{ color: 'var(--text-muted)', flexShrink: 0 }}
+              >
+                <ChevronDown size={18} />
+              </motion.div>
             </div>
-
-            <div className="space-y-[10px]">
-              {versionHistory.map((item, idx) => (
-                <div key={item.version} className="relative pl-8 border-l-2 border-white/5">
-                  <div className={`absolute top-0 -left-[9px] w-4 h-4 rounded-full border-4 border-[var(--bg-card)] shadow-lg ${item.type === 'major' ? 'bg-indigo-500' : 'bg-slate-700'}`} />
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
-                    <div>
-                      <h4 className="text-lg font-black text-[var(--text-contrast)] tracking-tight">{item.version} — {item.title}</h4>
-                      <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{item.date}</p>
-                    </div>
-                    <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-[8px] border ${item.type === 'major' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-slate-500/10 text-slate-400 border-white/10'}`}>
-                      {item.type.toUpperCase()} RELEASE
+            
+            <AnimatePresence>
+              {expandedVersion === item.version && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: 'easeInOut' }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0 4px' }}>
+                    <span className={`admin-version-badge ${item.type}`}>
+                      {item.type === 'major' ? 'Major Release' : 'Minor Release'}
                     </span>
                   </div>
-                  <ul className="space-y-2">
+                  <ul className="admin-change-list">
                     {item.changes.map((change, cIdx) => (
-                      <li key={cIdx} className="text-[12px] text-[var(--text-muted)] flex items-start gap-2 leading-relaxed font-medium">
-                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500/40 shrink-0" />
-                        {change}
-                      </li>
+                      <li key={cIdx} className="admin-change-item">{change}</li>
                     ))}
                   </ul>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
       </div>
     </div>
   );
