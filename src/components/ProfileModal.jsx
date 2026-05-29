@@ -98,7 +98,7 @@ export default function ProfileModal({ isOpen, onClose }) {
     }).filter(u => u.full_name || u.email || u.name);
   }, [dashboardTasks, dashboardUsers, currentUser]);
 
-  // Lấy danh sách thành viên trong team (ORGANISATION)
+  // Lấy danh sách thành viên trong team (ORGANIZATION)
   const teamMembers = useMemo(() => {
     if (!dashboardUsers || !currentUser) return [];
     return dashboardUsers.filter(u => u.team === team && u.id !== currentUser.id);
@@ -129,7 +129,7 @@ export default function ProfileModal({ isOpen, onClose }) {
     }
   };
 
-  const tabs = ['OVERVIEW', 'CONTACT', 'ORGANISATION'];
+  const tabs = ['OVERVIEW', 'CONTACT', 'ORGANIZATION'];
   if (!viewedUser) {
     tabs.push('SECURITY');
   }
@@ -191,8 +191,10 @@ export default function ProfileModal({ isOpen, onClose }) {
                     <div className="profile-avatar-inner">
                       <AvatarWithFrame 
                         user={currentUser} 
-                        sizeClass="w-[84px] h-[84px]" 
+                        sizeClass="w-full h-full" 
                         frameClass="w-[108px] h-[108px]" 
+                        borderClass="border-0"
+                        roundedClass="rounded-none"
                       />
                     </div>
                   </div>
@@ -361,7 +363,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                 </div>
               )}
 
-              {activeTab === 'ORGANISATION' && (
+              {activeTab === 'ORGANIZATION' && (
                 <div className="profile-tab-pane">
                   <div className="profile-section-header">
                     <h3 className="profile-section-title">Team Members ({team})</h3>

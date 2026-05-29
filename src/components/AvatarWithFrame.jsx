@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function AvatarWithFrame({ user, sizeClass = 'w-10 h-10', borderClass = 'border border-indigo-500/20' }) {
+export default function AvatarWithFrame({ user, sizeClass = 'w-10 h-10', borderClass = 'border border-indigo-500/20', roundedClass = 'rounded-[8px]' }) {
   const frame = user?.avatarFrame || 'none';
   const profileImage = user?.image || null;
 
@@ -50,7 +50,7 @@ export default function AvatarWithFrame({ user, sizeClass = 'w-10 h-10', borderC
       `}</style>
 
       {/* 1. Base Avatar Mask */}
-      <div className={`w-full h-full rounded-[8px] overflow-hidden ${borderClass} bg-slate-950 flex items-center justify-center`}>
+      <div className={`w-full h-full ${roundedClass} overflow-hidden ${borderClass} bg-slate-950 flex items-center justify-center`}>
         {renderAvatarContent()}
       </div>
 

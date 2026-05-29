@@ -50,10 +50,10 @@
 }
 
 .profile-avatar-inner {
-  @apply w-full h-full bg-white rounded-[2rem] overflow-hidden border-2 border-white;
+  @apply w-full h-full bg-slate-100 rounded-[2rem] overflow-hidden;
 }
 .profile-card.profile-dark .profile-avatar-inner { 
-  @apply bg-[#121212] border-[#121212];
+  @apply bg-[#121212];
 }
 
 .profile-shield-badge {
