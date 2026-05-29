@@ -129,7 +129,7 @@ export default function ProfileModal({ isOpen, onClose }) {
     }
   };
 
-  const tabs = ['OVERVIEW', 'CONTACT', 'ORGANISATION', 'LINKEDIN'];
+  const tabs = ['OVERVIEW', 'CONTACT', 'ORGANISATION'];
   if (!viewedUser) {
     tabs.push('SECURITY');
   }
@@ -391,12 +391,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                 </div>
               )}
 
-              {activeTab === 'LINKEDIN' && (
-                <div className="profile-tab-pane" style={{ textAlign: 'center', opacity: 0.6, padding: '48px' }}>
-                  <Briefcase size={48} className="mx-auto mb-4" style={{ color: '#94a3b8' }} />
-                  <p style={{ color: '#64748b' }}>LinkedIn integration is currently under development.</p>
-                </div>
-              )}
+              {/* LINKEDIN Tab removed */}
 
               {activeTab === 'SECURITY' && (
                 <div className="profile-tab-pane">
