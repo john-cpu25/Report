@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://fabuhzarlzstcsaerfut.supabase.co';
-const supabaseKey = 'sb_publishable_gmnEl52U7VAkWW_3lZLTFw_hJ9BgLLm';
+const supabaseUrl = 'https://slswxupqnjxnqpfkknqu.supabase.co';
+const supabaseKey = 'sb_publishable_-6l8WMlZCW3dMlUshBQzNw_9Lbd7JMC';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function inspect() {
