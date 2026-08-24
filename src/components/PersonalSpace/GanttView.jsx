@@ -58,7 +58,7 @@ const GanttView = ({
                   if (selectedTimeMetric === 't2') rEnd = task.date_complete;
                   if (selectedTimeMetric === 't3') rEnd = task.date_checked;
                   if (selectedTimeMetric === 't4') { rStart = task.date_started; rEnd = task.date_checked; }
-                  if (selectedTimeMetric === 't5') { rStart = task.created_at; rEnd = task.date_checked; }
+                  if (selectedTimeMetric === 't5') { rStart = task.date_complete; rEnd = task.date_checked; }
                   
                   let startDate = rStart && rStart !== '-' ? new Date(rStart) : null;
                   let endDate = rEnd && rEnd !== '-' ? new Date(rEnd) : null;

@@ -7,7 +7,7 @@ const CALCULATION_LOGIC = {
   T2: { label: 'ACTUAL COMPLETION', formula: 'date_start → date_complete', color: 'text-sky-500', bg: 'bg-sky-500/10' },
   T3: { label: 'FULL CYCLE', formula: 'date_start → date_checked', color: 'text-violet-500', bg: 'bg-violet-500/10' },
   T4: { label: 'PURE PROCESSING', formula: 'date_started → date_checked', color: 'text-amber-500', bg: 'bg-amber-500/10' },
-  T5: { label: 'SYSTEM LEAD TIME', formula: 'created_at → date_checked', color: 'text-rose-500', bg: 'bg-rose-500/10' }
+  T5: { label: 'LEADER CHECK TIME', formula: 'date_complete → date_checked', color: 'text-rose-500', bg: 'bg-rose-500/10' }
 };
 
 const HeaderWithTooltip = ({ id, color, stickyOffset, row2Offset, isRow2, rowSpan }) => {

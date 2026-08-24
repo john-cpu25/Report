@@ -471,7 +471,7 @@ const PersonalSpace = () => {
                     { id: 't2', label: 'T2', color: 'sky', tooltip: 'T2: DATE_START → DATE_COMPLETE (Actual Complete)' },
                     { id: 't3', label: 'T3', color: 'indigo', tooltip: 'T3: DATE_START → DATE_CHECKED (Up to Checked)' },
                     { id: 't4', label: 'T4', color: 'orange', tooltip: 'T4: DATE_STARTED → DATE_CHECKED (Processing Time)' },
-                    { id: 't5', label: 'T5', color: 'rose', tooltip: 'T5: CREATED_AT → DATE_CHECKED (Complete Lifecycle)' }
+                    { id: 't5', label: 'T5', color: 'rose', tooltip: 'T5: DATE_COMPLETE → DATE_CHECKED (Leader Check Time)' }
                   ].map((m) => {
                     const isActive = selectedTimeMetric === m.id;
 

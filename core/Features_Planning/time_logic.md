@@ -10,7 +10,7 @@ Tài liệu này quy định cách tính toán các chỉ số thời gian (KPI)
 | **TIME 2** | Actual Completion | `date_start` -> `date_complete` | Thời gian thực tế từ khi bắt đầu kế hoạch đến khi xong. |
 | **TIME 3** | Full Cycle | `date_start` -> `date_checked` | Tổng thời gian từ kế hoạch đến khi được kiểm tra (Deliver). |
 | **TIME 4** | Pure Processing | `date_started` -> `date_checked` | Thời gian thực tế thực hiện (từ lúc bắt đầu làm đến lúc xong). |
-| **TIME 5** | System Lead Time | `created_at` -> `date_checked` | Tổng thời gian tồn tại trong hệ thống. |
+| **TIME 5** | Leader Check Time | `date_complete` -> `date_checked` | Thời gian Leader check (từ khi User hoàn thành đến khi Leader kiểm tra). Chỉ áp dụng khi `is_onlychecked = TRUE`. |
 
 ## 2. Quy tắc Tính Working Hours
 

@@ -76,7 +76,7 @@ export const usePersonalSpaceEngine = (params) => {
         if (selectedTimeMetric === 't2') rEnd = task.date_complete;
         if (selectedTimeMetric === 't3') rEnd = task.date_checked;
         if (selectedTimeMetric === 't4') { rStart = task.date_started; rEnd = task.date_checked; }
-        if (selectedTimeMetric === 't5') { rStart = task.created_at; rEnd = task.date_checked; }
+        if (selectedTimeMetric === 't5') { rStart = task.date_complete; rEnd = task.date_checked; }
         
         let start = rStart && rStart !== '-' ? new Date(rStart) : null;
         let end = rEnd && rEnd !== '-' ? new Date(rEnd) : null;
@@ -135,7 +135,7 @@ export const usePersonalSpaceEngine = (params) => {
       if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
       if (selectedTimeMetric === 't3') rangeEnd = t.date_checked;
       if (selectedTimeMetric === 't4') { rangeStart = t.date_started; rangeEnd = t.date_checked; }
-      if (selectedTimeMetric === 't5') { rangeStart = t.created_at; rangeEnd = t.date_checked; }
+      if (selectedTimeMetric === 't5') { rangeStart = t.date_complete; rangeEnd = t.date_checked; }
 
       const weekStart = weekDates[0];
       const weekEnd = addDays(weekDates[4], 1); 
@@ -168,7 +168,7 @@ export const usePersonalSpaceEngine = (params) => {
       if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
       if (selectedTimeMetric === 't3') rangeEnd = t.date_checked;
       if (selectedTimeMetric === 't4') { rangeStart = t.date_started; rangeEnd = t.date_checked; }
-      if (selectedTimeMetric === 't5') { rangeStart = t.created_at; rangeEnd = t.date_checked; }
+      if (selectedTimeMetric === 't5') { rangeStart = t.date_complete; rangeEnd = t.date_checked; }
 
       const breakdown = calculateDailyWorkingMinutes(rangeStart, rangeEnd);
       
@@ -254,7 +254,7 @@ export const usePersonalSpaceEngine = (params) => {
       if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
       if (selectedTimeMetric === 't3') rangeEnd = t.date_checked;
       if (selectedTimeMetric === 't4') { rangeStart = t.date_started; rangeEnd = t.date_checked; }
-      if (selectedTimeMetric === 't5') { rangeStart = t.created_at; rangeEnd = t.date_checked; }
+      if (selectedTimeMetric === 't5') { rangeStart = t.date_complete; rangeEnd = t.date_checked; }
       
       const weekStart = weekDates[0];
       const weekEnd = addDays(weekDates[4], 1);
@@ -286,7 +286,7 @@ export const usePersonalSpaceEngine = (params) => {
       if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
       if (selectedTimeMetric === 't3') rangeEnd = t.date_checked;
       if (selectedTimeMetric === 't4') { rangeStart = t.date_started; rangeEnd = t.date_checked; }
-      if (selectedTimeMetric === 't5') { rangeStart = t.created_at; rangeEnd = t.date_checked; }
+      if (selectedTimeMetric === 't5') { rangeStart = t.date_complete; rangeEnd = t.date_checked; }
 
       const breakdown = calculateDailyWorkingMinutes(rangeStart, rangeEnd);
       

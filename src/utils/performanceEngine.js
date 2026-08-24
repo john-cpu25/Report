@@ -81,7 +81,7 @@ export const calculateTaskMetrics = (task) => {
     t2: calculateWorkingMinutes(dStart, dComplete),      // Actual Completion
     t3: calculateWorkingMinutes(dStart, dChecked),       // Full Cycle (Client Delivery)
     t4: calculateWorkingMinutes(dStarted, dChecked),     // Pure Processing
-    t5: calculateWorkingMinutes(dCreated, dChecked),     // System Lead Time
+    t5: calculateWorkingMinutes(dComplete, dChecked),     // Leader Check Time
   };
 
   // Efficiency Calculation (Standard: T1 / T4)
