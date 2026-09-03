@@ -65,12 +65,12 @@ function App() {
     const headers = ['PROJECT', 'TASK DETAILS', 'STATUS', ...DAYS_OF_WEEK.map((d, i) => `${d.toUpperCase()} (${weekDates[i]})`)]
     const rows = reportData.map(r => [r.project, r.task, r.status, r.days.Monday || '-', r.days.Tuesday || '-', r.days.Wednesday || '-', r.days.Thursday || '-', r.days.Friday || '-'])
     const wb = XLSX.utils.book_new()
-    const titleRow = [['RINCOVITCH WEEKLY REPORT - ' + weekDates[0] + ' to ' + weekDates[4]]]
+    const titleRow = [['APEX SOUTHERN CROSS ENGINEERING WEEKLY REPORT - ' + weekDates[0] + ' to ' + weekDates[4]]]
     const ws = XLSX.utils.aoa_to_sheet([...titleRow, [], headers, ...rows])
     ws['!cols'] = [{ wch: 20 }, { wch: 50 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }]
     ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }]
     XLSX.utils.book_append_sheet(wb, ws, 'Weekly Report')
-    const fileName = `Rincovitch_Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
+    const fileName = `Apex_Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
     XLSX.writeFile(wb, fileName)
   }
 
@@ -137,7 +137,7 @@ function App() {
             </main>
 
             <footer className="px-8 py-6 border-t border-white/5 text-center text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em]">
-              &copy; 2026 Rincovitch - Weekly Report Intelligence - Vietnam
+              &copy; 2026 APEX Southern Cross Engineering - Weekly Report Intelligence - Vietnam
             </footer>
           </motion.div>
         </div>

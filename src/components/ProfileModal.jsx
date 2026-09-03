@@ -59,9 +59,9 @@ export default function ProfileModal({ isOpen, onClose }) {
   const fullName = currentUser?.full_name || currentUser?.displayName || currentUser?.name || 'User Profile';
   const position = currentUser?.position || 'BIM Manager';
   const team = currentUser?.team || 'MODELLING';
-  const email = currentUser?.email || 'nhan.nguyen@rincovitch.com.au';
+  const email = currentUser?.email || 'johnny.nguyen@apexscengineering.com';
   const location = currentUser?.location || 'Vietnam';
-  const company = 'Rincovitch Consultants Pty Ltd.';
+  const company = 'APEX Southern Cross Engineering';
 
   // Lấy danh sách những người liên quan (CONTACTS)
   const contacts = useMemo(() => {

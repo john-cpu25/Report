@@ -76,11 +76,18 @@ const Sidebar = () => {
         title="Toggle Sidebar"
       >
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center w-full">
-          <div className="flex items-center justify-center w-[50px] h-[50px] flex-shrink-0">
-            <img src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} alt="Rincovitch" className="w-8 h-8" />
+          <div className="flex items-center justify-center w-10 h-10 flex-shrink-0">
+            <img 
+              src={`${import.meta.env.BASE_URL}apex-icon.png?v=2`} 
+              alt="APEX Southern Cross Engineering" 
+              className="w-10 h-10 object-contain drop-shadow-[0_2px_8px_rgba(30,58,138,0.35)] transition-transform duration-200 hover:scale-105" 
+            />
           </div>
           {!collapsed && (
-            <span className="nav-sidebar-logo-text">RINCOVITCH</span>
+            <div className="flex flex-col overflow-hidden justify-center" style={{ marginLeft: '10px' }}>
+              <span className="nav-sidebar-logo-text text-[15px] font-black leading-tight tracking-wider text-[var(--text-main)]">APEX</span>
+              <span className="text-[9px] font-bold tracking-widest text-[var(--text-muted)] whitespace-nowrap uppercase mt-0.5">Southern Cross</span>
+            </div>
           )}
         </motion.div>
       </div>

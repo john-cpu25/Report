@@ -1,11 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import RincovitchLogo from './RincovitchLogo'
+import { SkipForward } from 'lucide-react'
 
 const Preloader = ({ onLoadingComplete }) => {
   const [progress, setProgress] = useState(0)
   const videoRef = useRef(null)
   const [hasStarted, setHasStarted] = useState(false)
+
+  // Skip handler
+  const handleSkip = () => {
+    setProgress(100)
+    if (videoRef.current) {
+      try { videoRef.current.pause() } catch (e) {}
+    }
+    onLoadingComplete()
+  }
+
+  // Keyboard shortcut to skip (Escape or Space)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.code === 'Space') {
+        e.preventDefault()
+        handleSkip()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onLoadingComplete])
 
   // 1. Time Update Listener on background video to sync progress
   const handleTimeUpdate = () => {
@@ -23,7 +44,7 @@ const Preloader = ({ onLoadingComplete }) => {
   // 2. Video ended handler to finalize preloader transit
   const handleEnded = () => {
     setProgress(100)
-    setTimeout(onLoadingComplete, 600)
+    setTimeout(onLoadingComplete, 400)
   }
 
   // 3. Robust Fallback Timer: if video fails to load or play, auto-trigger load progress
@@ -37,7 +58,7 @@ const Preloader = ({ onLoadingComplete }) => {
           if (currentProg >= 100) {
             setProgress(100)
             clearInterval(interval)
-            setTimeout(onLoadingComplete, 800)
+            setTimeout(onLoadingComplete, 600)
           } else {
             setProgress(currentProg)
           }
@@ -53,7 +74,20 @@ const Preloader = ({ onLoadingComplete }) => {
       exit={{ opacity: 0, scale: 1.05 }}
       className="fixed inset-0 z-[9999] bg-[#020617] flex flex-col items-center justify-center overflow-hidden font-sans"
     >
-      {/* 1. Background MP4 Video (100% BRIGHTNESS, 0% OVERLAYS - Pure Raw Video) */}
+      {/* Skip Button Top Right */}
+      <motion.button
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.3 }}
+        onClick={handleSkip}
+        className="absolute top-6 right-6 z-50 flex items-center gap-2 px-5 py-2.5 rounded-full bg-black/60 hover:bg-black/90 border border-white/25 hover:border-white/50 text-white text-xs font-bold tracking-widest uppercase backdrop-blur-md transition-all duration-200 cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.6)] hover:scale-105 active:scale-95"
+        title="Bỏ qua video giới thiệu (Phím Esc hoặc Space)"
+      >
+        <span>Bỏ qua / Skip</span>
+        <SkipForward size={14} className="text-white fill-white" />
+      </motion.button>
+
+      {/* 1. Background MP4 Video */}
       <video 
         ref={videoRef}
         src={`${import.meta.env.BASE_URL}building.mp4`}
@@ -66,7 +100,7 @@ const Preloader = ({ onLoadingComplete }) => {
         className="absolute inset-0 w-full h-full object-cover opacity-100 pointer-events-none z-0 scale-[1.06]"
       />
 
-      {/* 2. Super Subtle HUD Blueprint grid paper overlay (Very light: opacity-10) */}
+      {/* 2. Super Subtle HUD Blueprint grid paper overlay */}
       <div 
         className="absolute inset-0 pointer-events-none opacity-10 z-10"
         style={{
@@ -79,35 +113,38 @@ const Preloader = ({ onLoadingComplete }) => {
       />
 
       {/* 3. Center Preloader Focus Container */}
-      <div className="relative flex flex-col items-center z-20">
-        <div className="relative flex flex-col items-center max-w-lg w-full">
-          {/* Logo Container (Raw floating without backing box) */}
+      <div className="relative flex flex-col items-center z-20 px-4">
+        <div className="relative flex flex-col items-center max-w-2xl w-full">
+          {/* New APEX Logo Banner (Pure Transparent, No Extra Box) */}
           <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ 
-              scale: [1, 1.04, 1],
-              filter: ["brightness(1) drop-shadow(0 0 10px rgba(99,102,241,0.25))", "brightness(1.25) drop-shadow(0 0 20px rgba(99,102,241,0.5))", "brightness(1) drop-shadow(0 0 10px rgba(99,102,241,0.25))"]
+              opacity: 1,
+              scale: [1, 1.02, 1],
+              filter: [
+                "drop-shadow(0 8px 24px rgba(0,0,0,0.85))",
+                "drop-shadow(0 12px 32px rgba(59,130,246,0.35))",
+                "drop-shadow(0 8px 24px rgba(0,0,0,0.85))"
+              ]
             }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="z-10"
+            transition={{ 
+              opacity: { duration: 0.8 },
+              scale: { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
+              filter: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
+            }}
+            className="z-10 flex justify-center w-full"
           >
-            <RincovitchLogo size={75} />
+            <img 
+              src={`${import.meta.env.BASE_URL}apex-logo.png?v=3`} 
+              alt="APEX Southern Cross Engineering" 
+              className="h-32 sm:h-40 md:h-52 w-auto max-w-[85vw] object-contain"
+            />
           </motion.div>
 
-          {/* Typography and interactive load status bar */}
-          <div className="mt-8 flex flex-col items-center z-10 w-full animate-fadeIn">
-            <motion.h2 
-              initial={{ letterSpacing: "0.08em", opacity: 0 }}
-              animate={{ letterSpacing: "0.14em", opacity: 1 }}
-              transition={{ duration: 1.2 }}
-              style={{ fontFamily: "'Cinzel', 'Playfair Display', 'Times New Roman', serif", fontWeight: 400 }}
-              className="text-3xl text-white tracking-[0.14em] drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] text-center uppercase"
-            >
-              RINCOVITCH
-            </motion.h2>
-            
-            {/* Loading percentage text */}
-            <div className="h-6 flex items-center justify-center mt-3">
-              <span className="text-[10px] font-mono font-black text-white tracking-[0.25em] uppercase text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+          {/* Loading status bar only (no redundant text) */}
+          <div className="flex flex-col items-center z-10 w-full mt-6">
+            <div className="h-6 flex items-center justify-center">
+              <span className="text-[11px] font-mono font-bold text-white tracking-[0.25em] uppercase text-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                 LOADING : {Math.min(Math.round(progress), 100)}%
               </span>
             </div>

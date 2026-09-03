@@ -697,7 +697,7 @@ export default function DrawingRegisterView({ projectId, projectCode, isDark }) 
       URL.revokeObjectURL(url);
     } else {
       const content = `==================================================
-RINCOVITCH DRAWING CONTROL SYSTEM
+APEX SOUTHERN CROSS ENGINEERING DRAWING CONTROL SYSTEM
 ==================================================
 PROJECT NO:      ${registerData.projectNo}
 PROJECT NAME:    ${registerData.projectName}

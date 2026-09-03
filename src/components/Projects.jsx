@@ -415,7 +415,7 @@ const Projects = () => {
                 <div className="flex flex-col justify-between book-page-left relative select-text z-20 border-b md:border-b-0 md:border-r page-divider">
                   {/* Left Page Header */}
                   <div className="border-b pb-2 flex justify-between items-center text-[8px] font-black tracking-[0.25em] uppercase page-header">
-                    <span>Rincovitch BIM Registry</span>
+                    <span>APEX BIM Registry</span>
                     <span>Vol. 2026</span>
                   </div>
 
@@ -430,9 +430,9 @@ const Projects = () => {
                       }}
                     >
                       <img 
-                        src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} 
-                        className="w-8 h-8 object-contain select-none" 
-                        alt="Rincovitch Logo" 
+                        src={`${import.meta.env.BASE_URL}apex-icon.png`} 
+                        className="w-10 h-10 object-contain select-none" 
+                        alt="APEX Logo" 
                       />
                       <div 
                         className="absolute inset-[2px] rounded-full border border-dashed opacity-50"

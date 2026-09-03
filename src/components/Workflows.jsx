@@ -438,7 +438,7 @@ const Workflows = () => {
       <div className="flex flex-col justify-between h-full">
         {/* Left Page Header */}
         <div className="border-b lib-border-divider pb-2 flex justify-between items-center text-[9px] font-black lib-text-muted tracking-[0.25em] uppercase shrink-0">
-          <span>Rincovitch Standard Log</span>
+          <span>APEX Standard Log</span>
           <span>{selectedWorkflow.title}</span>
         </div>
 
@@ -454,9 +454,9 @@ const Workflows = () => {
                 }}
               >
                 <img 
-                  src={`${import.meta.env.BASE_URL}rincovitch-logo.svg`} 
-                  className="w-8 h-8 object-contain select-none" 
-                  alt="Rincovitch Logo" 
+                  src={`${import.meta.env.BASE_URL}apex-icon.png`} 
+                  className="w-10 h-10 object-contain select-none" 
+                  alt="APEX Logo" 
                 />
                 <div className="absolute inset-[3px] rounded-full border border-dashed opacity-40" style={{ borderColor: leftData.stampColor }} />
               </div>
@@ -1005,7 +1005,7 @@ const Workflows = () => {
               <div className="pt-3 border-t border-dashed lib-border-divider flex justify-between items-end">
                 <div>
                   <p className="text-[8px] lib-text-muted font-bold uppercase tracking-wider leading-none mb-1">Standardized by</p>
-                  <p className="text-[12px] lib-text-desc italic font-serif leading-none" style={{ fontFamily: 'Georgia, serif' }}>Rincovitch Engineering</p>
+                  <p className="text-[12px] lib-text-desc italic font-serif leading-none" style={{ fontFamily: 'Georgia, serif' }}>APEX Southern Cross Engineering</p>
                 </div>
                 <div className="text-right">
                   <p className="text-[8px] lib-text-muted font-bold uppercase tracking-wider leading-none mb-1">Status</p>

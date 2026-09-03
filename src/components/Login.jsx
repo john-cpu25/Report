@@ -75,7 +75,12 @@ const Login = () => {
                         )}
 
                         <div className="flex flex-col items-center z-10 w-full bg-black/40 p-8 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
-                            <h2 className="text-2xl font-bold text-white mb-2 tracking-wider">WELCOME</h2>
+                            <img 
+                                src={`${import.meta.env.BASE_URL}apex-logo.png`} 
+                                alt="APEX Southern Cross Engineering" 
+                                className="h-16 w-auto object-contain mb-3 drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
+                            />
+                            <h2 className="text-xl font-bold text-white mb-1 tracking-wider text-center uppercase">APEX SOUTHERN CROSS</h2>
                             <p className="text-slate-300 text-sm mb-6 text-center">
                                 Đăng nhập bằng Email & Mật khẩu
                                 <br/>
