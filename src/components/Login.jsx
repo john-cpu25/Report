@@ -143,16 +143,16 @@ const Login = () => {
                 className="relative z-10 w-full max-w-[400px] mx-4"
             >
                 <div
-                    className="relative rounded-2xl"
+                    className="relative"
                     style={{
                         padding: '20px',
-                        background: 'rgba(6,15,38,0.82)',
+                        borderRadius: '10px',
+                        background: 'rgba(255,255,255,0.95)',
                         backdropFilter: 'blur(24px)',
-                        border: '1px solid rgba(26,111,255,0.25)',
+                        border: '1px solid rgba(0,0,0,0.08)',
                         boxShadow: `
-                            0 0 0 1px rgba(0,200,255,0.06),
-                            0 24px 64px rgba(0,0,0,0.5),
-                            0 0 80px rgba(26,111,255,0.08)
+                            0 24px 64px rgba(0,0,0,0.15),
+                            0 8px 24px rgba(0,0,0,0.08)
                         `,
                     }}
                 >
@@ -168,75 +168,25 @@ const Login = () => {
 
                     {/* ══════ LOGO SECTION ══════ */}
                     <div className="flex flex-col items-center mb-6">
-                        {/* Outer glow */}
-                        <div className="relative">
-                            <div
-                                className="absolute inset-0 rounded-2xl"
-                                style={{
-                                    background: 'radial-gradient(circle, #1a6fff 0%, transparent 70%)',
-                                    opacity: 0.5,
-                                    filter: 'blur(20px)',
-                                    transform: 'scale(2.2)',
-                                }}
-                            />
-                            {/* Logo image container */}
-                            <div
-                                className="relative overflow-hidden"
-                                style={{
-                                    width: '72px',
-                                    height: '72px',
-                                    borderRadius: '16px',
-                                    border: '1.5px solid rgba(26,111,255,0.4)',
-                                    boxShadow: `
-                                        0 0 24px rgba(26,111,255,0.35),
-                                        inset 0 1px 0 rgba(255,255,255,0.08)
-                                    `,
-                                }}
-                            >
-                                <img
-                                    src={`${import.meta.env.BASE_URL}apex-icon.png`}
-                                    alt="APEX Southern Cross Engineering"
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                        </div>
-                        {/* Text under logo */}
-                        <span
-                            className="mt-2.5"
-                            style={{
-                                fontFamily: "'Inter', sans-serif",
-                                fontSize: '11px',
-                                letterSpacing: '0.3em',
-                                color: '#1a6fff',
-                                fontWeight: 600,
-                            }}
-                        >
-                            APEX
-                        </span>
-                        <span
-                            style={{
-                                fontFamily: "'Inter', sans-serif",
-                                fontSize: '9px',
-                                letterSpacing: '0.2em',
-                                color: '#64748b',
-                                fontWeight: 400,
-                            }}
-                        >
-                            ENGINEERING
-                        </span>
+                        <img
+                            src={`${import.meta.env.BASE_URL}apex-logo.png`}
+                            alt="APEX Southern Cross Engineering"
+                            className="w-auto object-contain"
+                            style={{ height: '80px' }}
+                        />
                     </div>
 
                     {/* ══════ DIVIDER ══════ */}
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(26,111,255,0.3))' }} />
-                        <div className="w-1 h-1 rounded-full" style={{ background: '#1a6fff', opacity: 0.6 }} />
-                        <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(26,111,255,0.3))' }} />
+                        <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #e2e8f0)' }} />
+                        <div className="w-1 h-1 rounded-full" style={{ background: '#1a6fff', opacity: 0.5 }} />
+                        <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, #e2e8f0)' }} />
                     </div>
 
                     {/* ══════ HEADINGS ══════ */}
                     <div className="text-center mb-6">
                         <h1
-                            className="text-white uppercase font-bold mb-1"
+                            className="text-gray-900 uppercase font-bold mb-1"
                             style={{
                                 fontFamily: "'Rajdhani', sans-serif",
                                 fontSize: '24px',
@@ -245,7 +195,7 @@ const Login = () => {
                         >
                             APEX SOUTHERN CROSS
                         </h1>
-                        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: '#94a3b8' }}>
+                        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: '#64748b' }}>
                             Đăng nhập bằng Email & Mật khẩu
                         </p>
                         <p
@@ -254,7 +204,7 @@ const Login = () => {
                                 fontFamily: "'Inter', sans-serif",
                                 fontSize: '11px',
                                 fontStyle: 'italic',
-                                color: '#475569',
+                                color: '#94a3b8',
                             }}
                         >
                             (Nếu là lần đầu đăng nhập, mật khẩu bạn nhập sẽ trở thành mật khẩu chính thức)
@@ -269,7 +219,7 @@ const Login = () => {
                                 <Mail
                                     size={18}
                                     style={{
-                                        color: emailFocused ? '#00c8ff' : '#4a5568',
+                                        color: emailFocused ? '#1a6fff' : '#94a3b8',
                                         transition: 'color 0.25s',
                                     }}
                                 />
@@ -283,19 +233,19 @@ const Login = () => {
                                 onFocus={() => setEmailFocused(true)}
                                 onBlur={() => setEmailFocused(false)}
                                 required
-                                className="w-full pr-4 text-white placeholder-[#4a5568] outline-none"
+                                className="w-full pr-4 text-gray-900 placeholder-[#94a3b8] outline-none"
                                 style={{
                                     height: '48px',
                                     borderRadius: '5px',
                                     paddingLeft: '38px',
-                                    background: 'rgba(4,9,26,0.6)',
+                                    background: '#f8fafc',
                                     fontFamily: "'Inter', sans-serif",
                                     fontSize: '14px',
                                     border: emailFocused
-                                        ? '1.5px solid rgba(0,200,255,0.6)'
-                                        : '1.5px solid rgba(26,111,255,0.25)',
+                                        ? '1.5px solid #1a6fff'
+                                        : '1.5px solid #e2e8f0',
                                     boxShadow: emailFocused
-                                        ? '0 0 0 3px rgba(26,111,255,0.15), 0 0 20px rgba(0,200,255,0.08)'
+                                        ? '0 0 0 3px rgba(26,111,255,0.12)'
                                         : 'none',
                                     transition: 'border 0.25s, box-shadow 0.25s',
                                 }}
@@ -308,7 +258,7 @@ const Login = () => {
                                 <Lock
                                     size={18}
                                     style={{
-                                        color: passFocused ? '#00c8ff' : '#4a5568',
+                                        color: passFocused ? '#1a6fff' : '#94a3b8',
                                         transition: 'color 0.25s',
                                     }}
                                 />
@@ -322,19 +272,19 @@ const Login = () => {
                                 onFocus={() => setPassFocused(true)}
                                 onBlur={() => setPassFocused(false)}
                                 required
-                                className="w-full pr-12 text-white placeholder-[#4a5568] outline-none"
+                                className="w-full pr-12 text-gray-900 placeholder-[#94a3b8] outline-none"
                                 style={{
                                     height: '48px',
                                     borderRadius: '5px',
                                     paddingLeft: '38px',
-                                    background: 'rgba(4,9,26,0.6)',
+                                    background: '#f8fafc',
                                     fontFamily: "'Inter', sans-serif",
                                     fontSize: '14px',
                                     border: passFocused
-                                        ? '1.5px solid rgba(0,200,255,0.6)'
-                                        : '1.5px solid rgba(26,111,255,0.25)',
+                                        ? '1.5px solid #1a6fff'
+                                        : '1.5px solid #e2e8f0',
                                     boxShadow: passFocused
-                                        ? '0 0 0 3px rgba(26,111,255,0.15), 0 0 20px rgba(0,200,255,0.08)'
+                                        ? '0 0 0 3px rgba(26,111,255,0.12)'
                                         : 'none',
                                     transition: 'border 0.25s, box-shadow 0.25s',
                                 }}
@@ -345,9 +295,9 @@ const Login = () => {
                                 className="absolute inset-y-0 right-0 pr-4 flex items-center group"
                             >
                                 {showPass ? (
-                                    <EyeOff size={18} className="text-[#4a5568] group-hover:text-[#00c8ff] transition-colors" />
+                                    <EyeOff size={18} className="text-[#94a3b8] group-hover:text-[#1a6fff] transition-colors" />
                                 ) : (
-                                    <Eye size={18} className="text-[#4a5568] group-hover:text-[#00c8ff] transition-colors" />
+                                    <Eye size={18} className="text-[#94a3b8] group-hover:text-[#1a6fff] transition-colors" />
                                 )}
                             </button>
                         </div>
@@ -357,7 +307,7 @@ const Login = () => {
                             <button
                                 type="button"
                                 onClick={() => alert("Vui lòng liên hệ Admin của hệ thống để được cấp lại mật khẩu.")}
-                                className="hover:text-white transition-colors"
+                                className="hover:text-[#0a4fd6] transition-colors"
                                 style={{
                                     fontFamily: "'Inter', sans-serif",
                                     fontSize: '12px',
