@@ -146,7 +146,7 @@ const AdminPanel = () => {
   const copyMessageTemplate = () => {
     if (!targetUser) return;
     const name = targetUser.full_name || targetUser.name || 'bạn';
-    const text = `Xin chào ${name},\n\nMật khẩu đăng nhập hệ thống Weekly Report của bạn đã được quản trị viên đặt lại:\n- Tài khoản: ${targetUser.email}\n- Mật khẩu mới: ${newPassword}\n\nVui lòng truy cập https://john-cpu25.github.io/Report/ để đăng nhập và có thể tự đổi mật khẩu cá nhân tại phần Cài đặt.`;
+    const text = `Xin chào ${name},\n\nMật khẩu đăng nhập hệ thống Weekly Report của bạn đã được quản trị viên đặt lại:\n- Tài khoản: ${targetUser.email}\n- Mật khẩu mới: ${newPassword}\n\nVui lòng truy cập https://report.apexscengineering.com/ để đăng nhập và có thể tự đổi mật khẩu cá nhân tại phần Cài đặt.`;
     navigator.clipboard.writeText(text);
     setCopiedTemplate(true);
     setTimeout(() => setCopiedTemplate(false), 2500);
