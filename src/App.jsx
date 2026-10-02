@@ -26,12 +26,15 @@ import AdminPanel from './components/AdminPanel'
 import PersonalSpace from './components/PersonalSpace'
 import DrawingsManager from './components/DrawingsManager'
 import ProfileModal from './components/ProfileModal'
+import SeasonalEffects from './components/SeasonalEffects'
 
 function App() {
   const {
     activeTab, setActiveTab,
     theme, setTheme,
     background, setBackground,
+    seasonalEffect, setSeasonalEffect,
+    seasonalIntensity, setSeasonalIntensity,
     sidebarCollapsed, setSidebarCollapsed,
     mobileSidebarOpen, setMobileSidebarOpen,
     isSidebarOpen, setIsSidebarOpen,
@@ -104,6 +107,9 @@ function App() {
           {background === 'MINIMAL' && (
             <div className={`fixed inset-0 z-[-1] ${theme === 'GALAXY' ? 'bg-slate-950' : 'bg-slate-50'}`} />
           )}
+
+          {/* Festive Seasonal Effects (Snow, Peach Blossoms, Hearts, Fireworks) */}
+          <SeasonalEffects effect={seasonalEffect} intensity={seasonalIntensity} />
 
           <Sidebar />
           <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />

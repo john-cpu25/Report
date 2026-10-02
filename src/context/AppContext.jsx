@@ -31,6 +31,14 @@ export const AppProvider = ({ children }) => {
     return localStorage.getItem('appBackground') || (theme === 'GALAXY' ? 'GALAXY' : 'BAMBOO');
   });
 
+  // Seasonal & Event Effects (Noel snow, Tet blossoms, Valentine hearts, Fireworks)
+  const [seasonalEffect, setSeasonalEffect] = useState(() => {
+    return localStorage.getItem('appSeasonalEffect') || 'AUTO';
+  });
+  const [seasonalIntensity, setSeasonalIntensity] = useState(() => {
+    return localStorage.getItem('appSeasonalIntensity') || 'MEDIUM';
+  });
+
   // Data States
   
   const [customProjects, setCustomProjects] = useState([]);
@@ -85,6 +93,14 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('appBackground', background);
   }, [background]);
+
+  useEffect(() => {
+    localStorage.setItem('appSeasonalEffect', seasonalEffect);
+  }, [seasonalEffect]);
+
+  useEffect(() => {
+    localStorage.setItem('appSeasonalIntensity', seasonalIntensity);
+  }, [seasonalIntensity]);
 
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
@@ -385,6 +401,8 @@ const deleteRow = async (id) => { await supabase.from("NMK_Task").delete().eq("i
     mobileSidebarOpen, setMobileSidebarOpen,
     theme, setTheme,
     background, setBackground,
+    seasonalEffect, setSeasonalEffect,
+    seasonalIntensity, setSeasonalIntensity,
     reportData,
     customProjects, setCustomProjects,
     supabaseProjects, setSupabaseProjects,
