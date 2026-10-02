@@ -46,7 +46,7 @@ const AdminPanel = () => {
     setLoadingUsers(true);
     try {
       const { data, error } = await supabase
-        .from('NMK_User')
+        .from('APEX_User')
         .select('id, name, full_name, email, team, position, user_role, password, color, image')
         .order('name', { ascending: true });
 
@@ -124,7 +124,7 @@ const AdminPanel = () => {
     try {
       const hashed = await hashPassword(newPassword.trim());
       const { error } = await supabase
-        .from('NMK_User')
+        .from('APEX_User')
         .update({ password: hashed })
         .eq('id', targetUser.id);
 

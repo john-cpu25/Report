@@ -388,13 +388,14 @@ const Login = () => {
                             onClick={async () => {
                                 const { supabase } = await import('../supabaseClient');
                                 const { hashPassword } = await import('../context/AuthContext');
-                                const { data: users } = await supabase.from('NMK_User').select('*');
+                                const { data: users } = await supabase.from('APEX_User').select('*');
                                 let output = "";
                                 for (let u of users) {
                                     if (!u.password) {
                                         const pwd = Math.random().toString(36).slice(-8);
                                         const h = await hashPassword(pwd);
-                                        await supabase.from('NMK_User').update({ password: h }).eq('id', u.id);
+                                        await supabase.from('APEX_User').update({ password: h }).eq('id', u.id);
+                                        await supabase.from('NMK_User').update({ password: h }).ilike('email', u.email);
                                         output += `${u.email}: ${pwd}\n`;
                                     }
                                 }

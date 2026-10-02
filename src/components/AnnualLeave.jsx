@@ -65,7 +65,7 @@ const AnnualLeave = () => {
       try {
         // 1. Fetch Vietnam Users
         const { data: userData, error: userError } = await supabase
-          .from('NMK_User')
+          .from('APEX_User')
           .select('id, name, email, team, location')
           .ilike('location', 'VIETNAM')
           .order('name');

@@ -15,21 +15,29 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Function to sync user with Supabase NMK_User table
+    // Function to sync user with Supabase APEX_User table
     const syncUserWithSupabase = async (email) => {
         try {
-            const { data, error } = await supabase
+            const { data: apexUser, error: apexErr } = await supabase
+                .from('APEX_User')
+                .select('*')
+                .ilike('email', email)
+                .maybeSingle();
+
+            if (apexUser) return apexUser;
+
+            const { data: nmkUser, error } = await supabase
                 .from('NMK_User')
                 .select('*')
-                .eq('email', email)
-                .single();
+                .ilike('email', email)
+                .maybeSingle();
 
             if (error) {
                 console.error('Error fetching user from Supabase:', error);
                 return null;
             }
 
-            return data;
+            return nmkUser;
         } catch (err) {
             console.error('Unexpected error during Supabase sync:', err);
             return null;
@@ -171,16 +179,8 @@ export const AuthProvider = ({ children }) => {
             // Kiểm tra mật khẩu
             if (!dbUser.password) {
                 // Người dùng chưa có mật khẩu -> Lấy mật khẩu vừa nhập làm mật khẩu chính thức (đã mã hóa)
-                const { error: updateError } = await supabase
-                    .from('NMK_User')
-                    .update({ password: hashedPassword })
-                    .eq('email', email);
-                    
-                if (updateError) {
-                    setError('Lỗi khi tạo mật khẩu mới. Bạn đã tạo cột "password" trong bảng NMK_User trên Supabase chưa?');
-                    setLoading(false);
-                    return false;
-                }
+                await supabase.from('APEX_User').update({ password: hashedPassword }).ilike('email', email);
+                await supabase.from('NMK_User').update({ password: hashedPassword }).ilike('email', email);
             } else if (dbUser.password !== hashedPassword && dbUser.password !== password) {
                 // Cho phép pass qua nếu DB đang lưu plain-text (chưa kịp đổi)
                 setError('Sai mật khẩu. Vui lòng thử lại.');
@@ -188,7 +188,8 @@ export const AuthProvider = ({ children }) => {
                 return false;
             } else if (dbUser.password === password) {
                 // Tự động nâng cấp mật khẩu lên dạng mã hóa nếu họ nhập đúng plain-text
-                await supabase.from('NMK_User').update({ password: hashedPassword }).eq('email', email);
+                await supabase.from('APEX_User').update({ password: hashedPassword }).ilike('email', email);
+                await supabase.from('NMK_User').update({ password: hashedPassword }).ilike('email', email);
             }
 
             // Nếu đúng mật khẩu, dùng handleUserSync để hoàn tất việc set user và role
@@ -219,20 +220,17 @@ export const AuthProvider = ({ children }) => {
             return { success: false, message: 'Mật khẩu cũ không chính xác' };
         }
 
-        const { error } = await supabase
-            .from('NMK_User')
-            .update({ password: hashedNew })
-            .eq('email', user.email);
+        await supabase.from('APEX_User').update({ password: hashedNew }).ilike('email', user.email);
+        await supabase.from('NMK_User').update({ password: hashedNew }).ilike('email', user.email);
 
-        if (error) return { success: false, message: 'Lỗi khi cập nhật mật khẩu' };
         return { success: true, message: 'Đổi mật khẩu thành công' };
     };
 
     const adminResetUserPassword = async (targetEmail, randomPassword) => {
         if (!user?.isAdmin) return { success: false, message: 'Không có quyền Admin' };
         const hashedPassword = await hashPassword(randomPassword);
-        const { error } = await supabase.from('NMK_User').update({ password: hashedPassword }).eq('email', targetEmail);
-        if (error) return { success: false, message: error.message };
+        await supabase.from('APEX_User').update({ password: hashedPassword }).ilike('email', targetEmail);
+        await supabase.from('NMK_User').update({ password: hashedPassword }).ilike('email', targetEmail);
         return { success: true, message: 'Reset thành công' };
     };
 
@@ -246,22 +244,16 @@ export const AuthProvider = ({ children }) => {
         if (isAdminMode) {
             localStorage.setItem('bypass_user_profile', JSON.stringify(newUser));
         } else if (user?.email) {
-            const { error } = await supabase
-                .from('NMK_User')
-                .update({
-                    name: newUser.name,
-                    full_name: newUser.full_name || newUser.name,
-                    image: newUser.image, // base64 compressed
-                    location: newUser.location || 'VietNam',
-                    team: newUser.team || 'Management',
-                    position: newUser.position || 'Engineer'
-                })
-                .eq('email', user.email);
-
-            if (error) {
-                console.error('[AuthContext] Error updating profile in Supabase:', error);
-                throw error;
-            }
+            const profilePayload = {
+                name: newUser.name,
+                full_name: newUser.full_name || newUser.name,
+                image: newUser.image, // base64 compressed
+                location: newUser.location || 'VietNam',
+                team: newUser.team || 'Management',
+                position: newUser.position || 'Engineer'
+            };
+            await supabase.from('APEX_User').update(profilePayload).ilike('email', user.email);
+            await supabase.from('NMK_User').update(profilePayload).ilike('email', user.email);
         }
     };
 

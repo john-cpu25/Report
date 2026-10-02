@@ -176,8 +176,8 @@ export const updateUserOrgNode = async (userId, updates) => {
 
 export const fetchUsers = async (vietnamOnly = false) => {
   let query = supabase
-    .from('NMK_User')
-    .select('id, name, email, team, location')
+    .from('APEX_User')
+    .select('id, name, full_name, email, team, location')
     .order('name');
     
   if (vietnamOnly) {

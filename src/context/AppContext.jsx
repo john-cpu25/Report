@@ -129,6 +129,7 @@ export const AppProvider = ({ children }) => {
       .channel('schema-db-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Project' }, fetchSupabaseProjects)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'APEX_User' }, fetchDashboardData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_User' }, fetchDashboardData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task_Temporary' }, fetchPlannerData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'APEX_Leave_Span' }, fetchDashboardData)
@@ -147,7 +148,7 @@ export const AppProvider = ({ children }) => {
       const [projRes, apexProjRes, userRes, taskRes, leaveRes, apexSpanRes, apexLeaveRes] = await Promise.all([
         supabase.from('NMK_Project').select('*'),
         supabase.from('APEX_Project').select('*'),
-        supabase.from('NMK_User').select('*'),
+        supabase.from('APEX_User').select('*'),
         supabase.from('NMK_Task').select('*').order('created_at', { ascending: false }).limit(1500),
         supabase.from('NMK_Leave').select('*'),
         supabase.from('APEX_Leave_Span').select('*'),
