@@ -281,28 +281,52 @@ const WeeklyReport = ({ exportExcel }) => {
                                   </div>
                                 </td>
                               </tr>
-                              {!isCollapsed&&tasks.map((row,index)=>(
-                                <motion.tr key={row.id} initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}} className="hover:bg-[var(--bg-header)] transition-all border-b border-[var(--border)]" style={{backgroundColor:index%2===0?'var(--row-odd)':'var(--row-even)'}}>
+                              {!isCollapsed&&tasks.map((row,index)=>{
+                                const isOnlyChecked = Boolean(row.is_onlychecked || (row.color && String(row.color).toUpperCase() === '#EAB308'));
+                                const rowStyle = isOnlyChecked ? { backgroundColor: 'rgba(234, 179, 8, 0.18)' } : { backgroundColor: index%2===0?'var(--row-odd)':'var(--row-even)' };
+                                return (
+                                <motion.tr key={row.id} initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}} className="hover:bg-[var(--bg-header)] transition-all border-b border-[var(--border)]" style={rowStyle}>
                                   <td className="py-[10px] border-r border-b border-[var(--border)]" style={{ paddingLeft: '32px', paddingRight: '32px' }}><span style={{color:projectColorMap[(row.project||'').toUpperCase()]||'#818cf8'}} className="text-[14px] font-medium uppercase tracking-tighter">{row.project}</span></td>
-                                  <td className="py-[10px] border-r border-b border-[var(--border)]" style={{ paddingLeft: '32px', paddingRight: '32px' }}><div className="text-[14px] font-normal text-[var(--text-main)] tracking-tight uppercase leading-relaxed">{row.task}</div></td>
+                                  <td className="py-[10px] border-r border-b border-[var(--border)]" style={{ paddingLeft: '32px', paddingRight: '32px' }}>
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-[14px] font-normal text-[var(--text-main)] tracking-tight uppercase leading-relaxed">{row.task}</div>
+                                      {isOnlyChecked && (
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/40 shrink-0">
+                                          CHECK ONLY
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
                                   <td className="p-[10px] text-center border-r border-b border-[var(--border)]">{(row.markupDate||row.markupTime)?(<div className="flex flex-col"><span className="text-[12px] font-normal text-[var(--text-muted)]">{row.markupDate||''}</span><span className="text-[12px] font-normal text-[var(--text-muted)] opacity-70">{row.markupTime||''}</span></div>):(<span className="text-[12px] font-normal text-[var(--text-muted)] opacity-50">—</span>)}</td>
                                   <td className="p-[10px] text-center border-r border-b border-[var(--border)]"><span className={`badge-status ${getStatusBadge(row.status)}`}>{row.status}</span></td>
                                   {DAYS_OF_WEEK.map(d=>(<td key={d} className="p-[5px] text-center border-r border-b border-[var(--border)]"><span className={`day-value-badge ${row.days[d] ? 'has-value' : ''}`}>{row.days[d]||'—'}</span></td>))}
                                 </motion.tr>
-                              ))}
+                              );})}
                             </React.Fragment>
                           );
                         })
                       ):(
-                        filteredReportData.map((row,i)=>(
-                          <motion.tr key={row.id} initial={{opacity:0,x:10}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-10}} className="hover:bg-[var(--bg-header)] transition-all border-b border-[var(--border)]" style={{backgroundColor:i%2===0?'var(--row-odd)':'var(--row-even)'}}>
+                        filteredReportData.map((row,i)=>{
+                          const isOnlyChecked = Boolean(row.is_onlychecked || (row.color && String(row.color).toUpperCase() === '#EAB308'));
+                          const rowStyle = isOnlyChecked ? { backgroundColor: 'rgba(234, 179, 8, 0.18)' } : { backgroundColor: i%2===0?'var(--row-odd)':'var(--row-even)' };
+                          return (
+                          <motion.tr key={row.id} initial={{opacity:0,x:10}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-10}} className="hover:bg-[var(--bg-header)] transition-all border-b border-[var(--border)]" style={rowStyle}>
                             <td className="py-3 border-r border-b border-[var(--border)]" style={{ paddingLeft: '32px', paddingRight: '32px' }}><span style={{color:projectColorMap[(row.project||'').toUpperCase()]||'#818cf8'}} className="text-[14px] font-medium tracking-tight uppercase">{row.project}</span></td>
-                            <td className="py-3 border-r border-b border-[var(--border)]" style={{ paddingLeft: '32px', paddingRight: '32px' }}><div className="text-[14px] font-normal text-[var(--text-main)] tracking-tight leading-relaxed">{row.task}</div></td>
+                            <td className="py-3 border-r border-b border-[var(--border)]" style={{ paddingLeft: '32px', paddingRight: '32px' }}>
+                              <div className="flex items-center gap-2">
+                                <div className="text-[14px] font-normal text-[var(--text-main)] tracking-tight leading-relaxed">{row.task}</div>
+                                {isOnlyChecked && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/40 shrink-0">
+                                    CHECK ONLY
+                                  </span>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-3 py-3 text-center border-r border-b border-[var(--border)]">{(row.markupDate||row.markupTime)?(<div className="flex flex-col"><span className="text-[12px] font-normal text-[var(--text-muted)]">{row.markupDate||''}</span><span className="text-[12px] font-normal text-[var(--text-muted)] opacity-70">{row.markupTime||''}</span></div>):(<span className="text-[12px] font-normal text-[var(--text-muted)] opacity-50">—</span>)}</td>
                             <td className="px-3 py-3 text-center border-r border-b border-[var(--border)]"><span className={`badge-status ${getStatusBadge(row.status)}`}>{row.status}</span></td>
                             {DAYS_OF_WEEK.map(d=>(<td key={d} className="px-2 py-2 text-center border-r border-b border-[var(--border)]"><span className={`day-value-badge ${row.days[d] ? 'has-value' : ''}`}>{row.days[d]||'—'}</span></td>))}
                           </motion.tr>
-                        ))
+                        );})
                       )}
                     </AnimatePresence>
                     {filteredReportData.length===0&&(

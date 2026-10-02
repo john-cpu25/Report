@@ -131,6 +131,9 @@ export const AppProvider = ({ children }) => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task' }, fetchDashboardData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_User' }, fetchDashboardData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task_Temporary' }, fetchPlannerData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'APEX_Leave_Span' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'APEX_Leave' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'APEX_TimeSheet' }, fetchDashboardData)
       .subscribe();
 
     return () => {
@@ -141,16 +144,48 @@ export const AppProvider = ({ children }) => {
   async function fetchDashboardData() {
     setIsDashboardLoading(true);
     try {
-      const [projRes, userRes, taskRes, leaveRes] = await Promise.all([
+      const [projRes, apexProjRes, userRes, taskRes, leaveRes, apexSpanRes, apexLeaveRes] = await Promise.all([
         supabase.from('NMK_Project').select('*'),
+        supabase.from('APEX_Project').select('*'),
         supabase.from('NMK_User').select('*'),
         supabase.from('NMK_Task').select('*').order('created_at', { ascending: false }).limit(1500),
-        supabase.from('NMK_Leave').select('*')
+        supabase.from('NMK_Leave').select('*'),
+        supabase.from('APEX_Leave_Span').select('*'),
+        supabase.from('APEX_Leave').select('*')
       ]);
-      setDashboardProjects(projRes.data || []);
-      setDashboardUsers(userRes.data || []);
+      const projects = (apexProjRes.data && apexProjRes.data.length > 0)
+        ? apexProjRes.data
+        : (projRes.data || []);
+      setDashboardProjects(projects);
+      setDashboardUsers((userRes.data || []).filter(u => {
+        const loc = (u.location || '').toString().toLowerCase();
+        return !loc.includes('aus') && !loc.includes('australia');
+      }));
       setDashboardTasks(taskRes.data || []);
-      setDashboardLeave(leaveRes.data || []);
+
+      // Build leave list combining NMK_Leave and APEX_Leave_Span
+      const apexLeaveList = [];
+      if (apexSpanRes.data && apexLeaveRes.data) {
+        const leaveById = {};
+        apexLeaveRes.data.forEach(l => { leaveById[l.id] = l; });
+        
+        apexSpanRes.data.forEach(span => {
+          const l = leaveById[span.leave_id];
+          if (l && l.status !== 'rejected') {
+            apexLeaveList.push({
+              _isApexSpan: true,
+              user_id: l.user_id,
+              create_by: l.user_id,
+              start_at: span.start_at,
+              end_at: span.end_at,
+              status: l.status,
+              reason: l.reason
+            });
+          }
+        });
+      }
+
+      setDashboardLeave([...(leaveRes.data || []), ...apexLeaveList]);
     } catch (err) {
       console.error('Dashboard Fetch Error:', err);
     } finally {
@@ -315,7 +350,9 @@ const deleteRow = async (id) => { await supabase.from("NMK_Task").delete().eq("i
         status: t.status || 'WIP',
         markupDate: null,
         markupTime: null,
-        days
+        days,
+        color: t.color,
+        is_onlychecked: Boolean(t.is_onlychecked || (t.color && String(t.color).toUpperCase() === '#EAB308'))
       };
     });
     

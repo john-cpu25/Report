@@ -43,10 +43,10 @@ const Sidebar = () => {
       title: '',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'personal', label: 'Personal', icon: UserIcon },
         { id: 'projects', label: 'Projects', icon: FolderKanban },
         { id: 'report', label: 'Planner', icon: CalendarClock },
         { id: 'organization', label: 'Organization', icon: Network },
-        { id: 'personal', label: 'Personal', icon: UserIcon },
         { id: 'leave', label: 'Annual Leave', icon: Battery },
         { id: 'issues', label: 'Issues', icon: AlertCircle },
         { id: 'workflows', label: 'Library', icon: WorkflowIcon },

@@ -118,27 +118,32 @@ export const usePersonalSpaceEngine = (params) => {
       const today = new Date();
       const currentMonday = startOfWeek(today, { weekStartsOn: 1 });
       const targetMonday = addDays(currentMonday, weekOffset * 7);
-      const weekDates = [0, 1, 2, 3, 4].map(i => addDays(targetMonday, i));
+      const weekDates = [0, 1, 2, 3, 4, 5, 6].map(i => addDays(targetMonday, i));
       const weekNum = getISOWeek(targetMonday);
-      return { weekNumber: weekNum, monday: targetMonday, weekDates, teams: [], totalPerDay: [0,0,0,0,0], tasksPerDay: [0,0,0,0,0], grandTotalHours: 0, grandTotalTasks: 0 };
+      return { weekNumber: weekNum, monday: targetMonday, weekDates, teams: [], totalPerDay: [0,0,0,0,0,0,0], tasksPerDay: [0,0,0,0,0,0,0], grandTotalHours: 0, grandTotalTasks: 0 };
     }
 
     const today = new Date();
     const currentMonday = startOfWeek(today, { weekStartsOn: 1 });
     const targetMonday = addDays(currentMonday, weekOffset * 7);
-    const weekDates = [0, 1, 2, 3, 4].map(i => addDays(targetMonday, i));
+    const weekDates = [0, 1, 2, 3, 4, 5, 6].map(i => addDays(targetMonday, i));
     const weekNum = getISOWeek(targetMonday);
 
     const weekTasks = strictlyFilteredData.filter(t => {
       let rangeStart = t.date_start;
       let rangeEnd = t.date_end;
-      if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
-      if (selectedTimeMetric === 't3') rangeEnd = t.date_checked;
-      if (selectedTimeMetric === 't4') { rangeStart = t.date_started; rangeEnd = t.date_checked; }
-      if (selectedTimeMetric === 't5') { rangeStart = t.date_complete; rangeEnd = t.date_checked; }
+      if (selectedTimeMetric === 't2') {
+        rangeEnd = t.date_checked || t.date_complete || t.date_end;
+      } else if (selectedTimeMetric === 't4') {
+        rangeStart = t.date_started || t.date_start;
+        rangeEnd = t.date_checked || t.date_complete || t.date_end;
+      } else if (selectedTimeMetric === 't5') {
+        rangeStart = t.date_complete || t.date_start;
+        rangeEnd = t.date_checked || t.date_complete || t.date_end;
+      }
 
       const weekStart = weekDates[0];
-      const weekEnd = addDays(weekDates[4], 1); 
+      const weekEnd = addDays(weekDates[6], 1); 
 
       if (!rangeStart || !rangeEnd || rangeStart === '-' || rangeEnd === '-') {
         const fallbackDate = t.dateObj || new Date(t.created_at || Date.now());
@@ -158,73 +163,91 @@ export const usePersonalSpaceEngine = (params) => {
 
     const teamMap = {};
     weekTasks.forEach(t => {
-      const team = t.team || 'Unknown';
-      const user = t.userName || 'Unknown';
-      const project = t.project || 'Unassigned';
+      const team = (t.team || 'Unknown').toString().trim();
+      const project = (t.project || 'Unassigned').toString().trim();
+      const taskName = (t.taskName || t.name || t.task || '(no detail)').toString().trim();
+      const user = (t.userName || 'Unknown').toString().trim();
       
       let rangeStart = t.date_start;
       let rangeEnd = t.date_end;
-
-      if (selectedTimeMetric === 't2') rangeEnd = t.date_complete;
-      if (selectedTimeMetric === 't3') rangeEnd = t.date_checked;
-      if (selectedTimeMetric === 't4') { rangeStart = t.date_started; rangeEnd = t.date_checked; }
-      if (selectedTimeMetric === 't5') { rangeStart = t.date_complete; rangeEnd = t.date_checked; }
+      if (selectedTimeMetric === 't2') {
+        rangeEnd = t.date_checked || t.date_complete || t.date_end;
+      } else if (selectedTimeMetric === 't4') {
+        rangeStart = t.date_started || t.date_start;
+        rangeEnd = t.date_checked || t.date_complete || t.date_end;
+      } else if (selectedTimeMetric === 't5') {
+        rangeStart = t.date_complete || t.date_start;
+        rangeEnd = t.date_checked || t.date_complete || t.date_end;
+      }
 
       const breakdown = calculateDailyWorkingMinutes(rangeStart, rangeEnd);
       
       if (!teamMap[team]) teamMap[team] = {};
-      if (!teamMap[team][user]) teamMap[team][user] = {};
-      if (!teamMap[team][user][project]) {
-        teamMap[team][user][project] = { hours: [0, 0, 0, 0, 0], tasks: [0, 0, 0, 0, 0] };
+      if (!teamMap[team][project]) teamMap[team][project] = {};
+      
+      const itemKey = `${taskName}|||${user}`;
+      if (!teamMap[team][project][itemKey]) {
+        teamMap[team][project][itemKey] = {
+          taskName,
+          userName: user,
+          hours: [0, 0, 0, 0, 0, 0, 0],
+          tasks: [0, 0, 0, 0, 0, 0, 0]
+        };
       }
 
       Object.entries(breakdown).forEach(([dateStr, mins]) => {
         const d = new Date(dateStr);
         const dayIndex = weekDates.findIndex(wd => isSameDay(d, wd));
         if (dayIndex !== -1) {
-          teamMap[team][user][project].hours[dayIndex] += (mins / 60);
+          teamMap[team][project][itemKey].hours[dayIndex] += (mins / 60);
         }
       });
       
       const primaryDate = t.dateObj || new Date(rangeStart);
       const primaryIdx = weekDates.findIndex(wd => isSameDay(primaryDate, wd));
       if (primaryIdx !== -1) {
-        teamMap[team][user][project].tasks[primaryIdx] += 1;
+        teamMap[team][project][itemKey].tasks[primaryIdx] += 1;
       }
     });
 
     const teams = Object.entries(teamMap)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([teamName, users]) => {
-        const teamUsers = Object.entries(users)
+      .map(([teamName, projects]) => {
+        const teamProjects = Object.entries(projects)
           .sort(([a], [b]) => a.localeCompare(b))
-          .map(([userName, projects]) => ({
-            name: userName,
-            projects: Object.entries(projects)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([projectName, data]) => ({
-                name: projectName,
+          .map(([projectName, taskItems]) => {
+            const projectTasks = Object.values(taskItems)
+              .sort((a, b) => a.userName.localeCompare(b.userName) || a.taskName.localeCompare(b.taskName))
+              .map(data => ({
+                taskName: data.taskName,
+                userName: data.userName,
                 hours: data.hours,
                 tasks: data.tasks,
                 totalHours: data.hours.reduce((a, b) => a + b, 0),
                 totalTasks: data.tasks.reduce((a, b) => a + b, 0)
-              }))
-          }));
-        
+              }));
+
+            return {
+              name: projectName,
+              tasks: projectTasks,
+              totalRows: projectTasks.length
+            };
+          });
+
         return {
           name: teamName,
-          users: teamUsers,
-          totalRows: teamUsers.reduce((acc, u) => acc + u.projects.length, 0)
+          projects: teamProjects,
+          totalRows: teamProjects.reduce((acc, p) => acc + p.totalRows, 0)
         };
       });
 
-    const totalPerDay = [0, 0, 0, 0, 0];
-    const tasksPerDay = [0, 0, 0, 0, 0];
+    const totalPerDay = [0, 0, 0, 0, 0, 0, 0];
+    const tasksPerDay = [0, 0, 0, 0, 0, 0, 0];
     teams.forEach(team => {
-      team.users.forEach(user => {
-        user.projects.forEach(project => {
-          project.hours.forEach((val, i) => { totalPerDay[i] += val; });
-          project.tasks.forEach((val, i) => { tasksPerDay[i] += val; });
+      team.projects.forEach(project => {
+        project.tasks.forEach(task => {
+          task.hours.forEach((val, i) => { totalPerDay[i] += val; });
+          task.tasks.forEach((val, i) => { tasksPerDay[i] += val; });
         });
       });
     });

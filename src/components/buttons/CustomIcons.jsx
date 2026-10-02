@@ -97,3 +97,45 @@ export const NeuralBrainIcon = ({ size = 26 }) => (
     <circle cx="78" cy="75" r="5" fill="none" stroke="currentColor" strokeWidth="4" />
   </svg>
 );
+
+export const TimesheetIcon = ({ size = 26 }) => (
+  <svg viewBox="0 0 100 100" className="shrink-0" style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px` }} fill="none">
+    <rect width="100" height="100" rx="15" fill="currentColor" fillOpacity="0.05" />
+    <rect x="12" y="16" width="76" height="72" rx="8" fill="none" stroke="currentColor" strokeWidth="6" />
+    <path d="M12 36 h76" fill="none" stroke="currentColor" strokeWidth="6" />
+    <rect x="26" y="8" width="8" height="16" rx="4" fill="currentColor" />
+    <rect x="66" y="8" width="8" height="16" rx="4" fill="currentColor" />
+    <circle cx="50" cy="62" r="18" fill="none" stroke="currentColor" strokeWidth="5" />
+  </svg>
+);
+
+export const TotalTimesheetIcon = ({ size = 26 }) => (
+  <svg viewBox="0 0 100 100" className="shrink-0" style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px` }} fill="none">
+    <rect width="100" height="100" rx="15" fill="currentColor" fillOpacity="0.05" />
+    <rect x="12" y="16" width="76" height="72" rx="8" fill="none" stroke="currentColor" strokeWidth="6" />
+    <path d="M12 36 h76" fill="none" stroke="currentColor" strokeWidth="6" />
+    <rect x="26" y="8" width="8" height="16" rx="4" fill="currentColor" />
+    <rect x="66" y="8" width="8" height="16" rx="4" fill="currentColor" />
+    {/* Table columns & rows */}
+    <path d="M38 36 v52 M64 36 v52" fill="none" stroke="currentColor" strokeWidth="4" />
+    <path d="M12 58 h76 M12 74 h76" fill="none" stroke="currentColor" strokeWidth="4" />
+    {/* Mini Sigma symbol in corner */}
+    <path d="M74 24 h10 l-6 4 l6 4 h-10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export const PerformanceTimesheetIcon = ({ size = 26 }) => (
+  <svg viewBox="0 0 100 100" className="shrink-0" style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px` }} fill="none">
+    <rect width="100" height="100" rx="15" fill="currentColor" fillOpacity="0.05" />
+    <rect x="12" y="16" width="76" height="72" rx="8" fill="none" stroke="currentColor" strokeWidth="6" />
+    <path d="M12 36 h76" fill="none" stroke="currentColor" strokeWidth="6" />
+    <rect x="26" y="8" width="8" height="16" rx="4" fill="currentColor" />
+    <rect x="66" y="8" width="8" height="16" rx="4" fill="currentColor" />
+    {/* Performance speedometer gauge inside */}
+    <path d="M28 72 a24 24 0 1 1 44 0" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+    <line x1="50" y1="62" x2="64" y2="48" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+    <circle cx="50" cy="62" r="5" fill="currentColor" />
+  </svg>
+);
+
+

@@ -7,8 +7,8 @@ Tài liệu chi tiết về toàn bộ danh sách tài khoản nhân sự, phân
 ## 1. THÔNG TIN KẾT NỐI DATABASE (SUPABASE)
 
 - **Database Host:** Supabase Cloud
-- **Project URL:** `https://ejyirnfxuezipogweybo.supabase.co`
-- **Anon Public Key:** `sb_publishable_r1DKG_nf_nyivQgbe6D7YA_zow13__G`
+- **Project URL:** `https://wluhkzkfknpbunxagvjw.supabase.co`
+- **Anon Public Key:** `sb_publishable_iQ89mBYJqfyHwSnaPgM6wA_iRzhdRD9`
 - **Bảng dữ liệu người dùng:** `NMK_User`
 
 ### Cấu trúc Schema bảng `NMK_User`:

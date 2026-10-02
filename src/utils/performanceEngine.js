@@ -1,5 +1,5 @@
 
-import { format, differenceInMinutes, isWeekend, addMinutes, startOfDay } from 'date-fns';
+import { format, differenceInMinutes, isWeekend, addMinutes, startOfDay, isSameDay } from 'date-fns';
 
 /**
  * Performance Engine v1.0
@@ -61,13 +61,28 @@ export const calculateWorkingMinutes = (start, end) => {
 
 /**
  * Standard Metric Suite (T1-T5)
+ * T1 => PLAN TIME (Kế hoạch: date_start -> date_end)
+ * T2 & T3 => USER TIME (Gộp T2 & T3: date_start -> date_complete / date_checked)
+ * T4 => ONLY CHECK (Có điều kiện is_onlychecked: Tổng Manager->Leader trừ thời gian User làm qua parent_id)
+ * T5 => REVIEW (Thời gian nghiệm thu/review: date_complete -> date_checked)
  */
-export const calculateTaskMetrics = (task) => {
+export const calculateTaskMetrics = (task, context = null) => {
+  if (!task) return { t1: 0, t2: 0, t3: 0, t4: 0, t5: 0, efficiency: 0, score: 0 };
+
   const {
-    date_start, date_end, date_complete, date_checked, date_started, created_at
+    id, date_start, date_end, date_complete, date_checked, date_started, created_at,
+    is_onlychecked, parent_id, color
   } = task;
 
-  const parse = (d) => d ? new Date(d) : null;
+  const parse = (d) => {
+    if (!d || d === '0001-01-01 00:00:00+00' || (typeof d === 'string' && d.startsWith('0001-01-01'))) return null;
+    try {
+      const dt = new Date(d);
+      return isNaN(dt.getTime()) ? null : dt;
+    } catch {
+      return null;
+    }
+  };
   
   const dStart = parse(date_start);
   const dEnd = parse(date_end);
@@ -76,16 +91,81 @@ export const calculateTaskMetrics = (task) => {
   const dStarted = parse(date_started);
   const dCreated = parse(created_at);
 
+  // Điểm hoàn thành thực tế: Ưu tiên date_checked, nếu chưa có thì lấy date_complete
+  const dActualEnd = dChecked || dComplete;
+
+  // 1. T1: Target Duration (Kế hoạch: date_start -> date_end)
+  const t1 = calculateWorkingMinutes(dStart, dEnd);
+
+  // 2. T2: Gộp T2 và T3 cũ thành 1 (Actual Cycle: date_start -> date_checked/complete)
+  const t2 = calculateWorkingMinutes(dStart, dActualEnd);
+
+  // Xác định task có phải là Task Cha Only Check (Manager giao cho Leader) hay không
+  // 1. Task con (có parent_id) KHÔNG BAO GIỜ là only check
+  const isChildTask = Boolean(parent_id || (task.name && task.name.includes('_')));
+  
+  // 2. Task cha được tính là Only Check khi:
+  // - Có cờ is_onlychecked = true hoặc màu vàng #EAB308
+  // - Hoặc có task con trong childrenByParentId được giao cho member
+  const hasChildren = Boolean(context?.childrenByParentId?.has(id));
+  const isParentOnlyCheck = !isChildTask && (
+    is_onlychecked === true || 
+    is_onlychecked === 'true' || 
+    is_onlychecked === 'TRUE' || 
+    (color && String(color).toUpperCase() === '#EAB308') ||
+    (context?.parentHasOnlyCheckChild?.has(id))
+  );
+
+  const isOnlyChecked = isParentOnlyCheck;
+
+  // 3. T4: ONLY CHECK
+  let t4 = 0;
+
+  if (isOnlyChecked) {
+    // Công thức nghiệp vụ: User time của Leader - User time của member lớn nhất (max)
+    const leaderUserTime = calculateWorkingMinutes(dStart, dActualEnd);
+    let maxMemberUserTime = 0;
+
+    // Tìm các task con của task cha này để tìm User time lớn nhất của member
+    if (context && context.childrenByParentId && id) {
+      const children = context.childrenByParentId.get(id) || [];
+      children.forEach(c => {
+        const cStart = parse(c.date_start) || parse(c.date_started);
+        const cEnd = parse(c.date_complete) || parse(c.date_checked);
+        const memberTime = calculateWorkingMinutes(cStart, cEnd);
+        if (memberTime > maxMemberUserTime) {
+          maxMemberUserTime = memberTime;
+        }
+      });
+    }
+
+    if (leaderUserTime > 0 && maxMemberUserTime > 0) {
+      t4 = Math.max(0, leaderUserTime - maxMemberUserTime);
+    } else if (leaderUserTime > 0) {
+      t4 = leaderUserTime;
+    } else {
+      t4 = calculateWorkingMinutes(dComplete || dStarted, dChecked || dComplete);
+    }
+  } else {
+    // Task thông thường hoặc Task con do Member làm -> ONLY CHECK = 0 (hiển thị '-')
+    t4 = 0;
+  }
+
+  // USER TIME (t2):
+  // Nếu là task cha (isOnlyChecked = true) thì Leader không làm trực tiếp -> t2 = 0
+  // Nếu là task con / task thường của User -> t2 là thời gian thực tế làm
   const metrics = {
-    t1: calculateWorkingMinutes(dStart, dEnd),           // Target Duration
-    t2: calculateWorkingMinutes(dStart, dComplete),      // Actual Completion
-    t3: calculateWorkingMinutes(dStart, dChecked),       // Full Cycle (Client Delivery)
-    t4: calculateWorkingMinutes(dStarted, dChecked),     // Pure Processing
-    t5: calculateWorkingMinutes(dComplete, dChecked),     // Leader Check Time
+    t1,
+    t2,
+    t3: t2,
+    t4,
+    t5: calculateWorkingMinutes(dComplete, dChecked), // REVIEW
+    isOnlyChecked
   };
 
-  // Efficiency Calculation (Standard: T1 / T4)
-  metrics.efficiency = metrics.t4 > 0 ? (metrics.t1 / metrics.t4) : 0;
+  // Efficiency Calculation (Standard: T1 / Actual Work Time)
+  const actualWorkMinutes = isOnlyChecked ? metrics.t4 : metrics.t2;
+  metrics.efficiency = actualWorkMinutes > 0 ? (metrics.t1 / actualWorkMinutes) : 0;
   
   // Normalized Score (0-100)
   metrics.score = Math.min(100, Math.max(0, metrics.efficiency * 100));
@@ -117,7 +197,9 @@ export const calculateDailyWorkingMinutes = (start, end) => {
 
   let current = new Date(dStart);
   while (current < dEnd) {
-    if (!isWeekend(current)) {
+    const isWeekendDay = isWeekend(current);
+    const isExplicitWeekend = isSameDay(current, dStart) || isSameDay(current, dEnd);
+    if (!isWeekendDay || isExplicitWeekend) {
       const day = startOfDay(current);
       const dateKey = format(day, 'yyyy-MM-dd');
       let dayMinutes = 0;

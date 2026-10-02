@@ -1,5 +1,4 @@
-import React from 'react';
-import { ListIcon, GanttIcon, DailyIcon, ProjectIcon, DeepAnalysisIcon, PerformanceIcon, NeuralBrainIcon } from './CustomIcons';
+import { ListIcon, GanttIcon, DailyIcon, ProjectIcon, PerformanceIcon, TimesheetIcon, TotalTimesheetIcon, PerformanceTimesheetIcon } from './CustomIcons';
 import PillSwitcher from './PillSwitcher';
 
 const NeumorphicPersonalSwitcher = ({ viewMode, setViewMode }) => {
@@ -7,10 +6,11 @@ const NeumorphicPersonalSwitcher = ({ viewMode, setViewMode }) => {
     { id: 'list', label: 'LIST', icon: <ListIcon />, color: 'text-orange-500' },
     { id: 'daily', label: 'DAILY', icon: <DailyIcon />, color: 'text-orange-500' },
     { id: 'project', label: 'PROJECT', icon: <ProjectIcon />, color: 'text-emerald-500' },
-    { id: 'gantt', label: 'GANTT', icon: <GanttIcon />, color: 'text-indigo-500' },
-    { id: 'deep-analysis', label: 'DEEP ANALYSIS', icon: <DeepAnalysisIcon />, color: 'text-indigo-500' },
     { id: 'performance', label: 'PERFORMANCE', icon: <PerformanceIcon />, color: 'text-indigo-500' },
-    { id: 'neural-brain', label: 'NEURAL BRAIN', icon: <NeuralBrainIcon />, color: 'text-purple-500' }
+    { id: 'timesheet', label: 'TIME SHEET', icon: <TimesheetIcon />, color: 'text-cyan-500' },
+    { id: 'total_timesheet', label: 'TOTAL TIME SHEET', icon: <TotalTimesheetIcon />, color: 'text-teal-500' },
+    { id: 'performance_timesheet', label: 'PERFORMANCE TIME SHEET', icon: <PerformanceTimesheetIcon />, color: 'text-violet-500' },
+    { id: 'gantt', label: 'GANTT', icon: <GanttIcon />, color: 'text-indigo-500' }
   ];
 
   return (

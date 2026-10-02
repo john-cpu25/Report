@@ -1,23 +1,26 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import UnifiedTable from './CSVProcessor/UnifiedTable';
 import { User, Target, TrendingUp, Calendar, CalendarDays, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { fetchPersonalSpaceData, fetchUsers } from '../services/supabaseService';
+import { fetchPersonalSpaceData, fetchUsers, updateApexTaskReview } from '../services/supabaseService';
+import { fetchApexTimesheetData, getCachedApexTimesheetData, subscribeApexTimesheetData } from '../services/apexTimesheetCache';
 import { processTaskData } from '../utils/dataProcessor';
 import { format, startOfWeek, endOfWeek, getISOWeek } from 'date-fns';
 import { usePersonalSpaceEngine } from '../utils/PersonalSpaceEngine';
 import TimesheetView from './PersonalSpace/TimesheetView';
+import ApexTimesheetView from './PersonalSpace/ApexTimesheetView';
+import TotalTimesheetView from './PersonalSpace/TotalTimesheetView';
+import PerformanceTimesheetView from './PersonalSpace/PerformanceTimesheetView';
 import ProjectView from './PersonalSpace/ProjectView';
 import GanttView from './PersonalSpace/GanttView';
-import DeepAnalysisView from './PersonalSpace/DeepAnalysisView';
-import NeuralBrain from './NeuralBrain';
+import PerformanceView from './PersonalSpace/PerformanceView';
 import NeumorphicPersonalSwitcher from './buttons/NeumorphicPersonalSwitcher';
 import NeumorphicSearch from './buttons/NeumorphicSearch';
 import NeumorphicDropdown from './buttons/NeumorphicDropdown';
 
-import { Filter, ChevronRight, ChevronLeft, ArrowUpDown } from 'lucide-react';
+import { Filter, ChevronRight, ChevronLeft, ArrowUpDown, ChevronDown, Download } from 'lucide-react';
 import { differenceInDays, startOfDay, addDays, isSameDay, isWithinInterval, eachMonthOfInterval, subDays } from 'date-fns';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import {
@@ -52,6 +55,12 @@ ChartJS.register(
   Filler
 );
 
+const TIME_METRICS = [
+  { value: 't2', label: 'USER TIME', color: 'text-sky-500 dark:text-sky-400', bg: 'bg-sky-500/10 border-sky-500/30', dot: 'bg-sky-500 dark:bg-sky-400' },
+  { value: 't1', label: 'PLAN TIME', color: 'text-emerald-500 dark:text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30', dot: 'bg-emerald-500 dark:bg-emerald-400' },
+  { value: 't5', label: 'REVIEW', color: 'text-rose-500 dark:text-rose-400', bg: 'bg-rose-500/10 border-rose-500/30', dot: 'bg-rose-500 dark:bg-rose-400' }
+];
+
 const PersonalSpace = () => {
   const { 
     analystUserMap, 
@@ -63,6 +72,8 @@ const PersonalSpace = () => {
     sortConfig, 
     handleSort,
     dashboardProjects,
+    dashboardUsers,
+    dashboardLeave,
     theme
   } = useApp();
 
@@ -98,7 +109,7 @@ const PersonalSpace = () => {
   };
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'daily' | 'project' | 'team' | 'gantt' | 'deep-analysis' | 'performance'
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'daily' | 'project' | 'timesheet' | 'gantt' | 'performance'
   const [manualData, setManualData] = useState(() => {
     const saved = localStorage.getItem('personal_manual_data');
     return saved ? JSON.parse(saved) : {};
@@ -120,7 +131,8 @@ const PersonalSpace = () => {
   }, [currentDate]);
 
   const [localMaps, setLocalMaps] = useState({ userMap: {}, teamMap: {} });
-  const [selectedTimeMetric, setSelectedTimeMetric] = useState('t4'); // Default to T4 (Processing Time)
+  const [selectedTimeMetric, setSelectedTimeMetric] = useState('t2'); // Default to T2 (USER TIME)
+  const projectViewRef = useRef(null);
   
   // Optimization: Date Filtering
   const [timeRange, setTimeRange] = useState('week'); // 'day' | 'week' | 'month' | 'year'
@@ -133,7 +145,59 @@ const PersonalSpace = () => {
     search: ''
   });
 
-  // Local Filter States
+  const [apexTimesheetCache, setApexTimesheetCache] = useState(() => getCachedApexTimesheetData());
+
+  useEffect(() => {
+    const unsub = subscribeApexTimesheetData(data => {
+      setApexTimesheetCache(data);
+    });
+    return () => unsub();
+  }, []);
+
+  const timesheetWeeklyStats = useMemo(() => {
+    const records = apexTimesheetCache?.timesheetRecords || [];
+    const projs = apexTimesheetCache?.apexProjects || [];
+    const projMap = {};
+    projs.forEach(p => { if (p.id) projMap[p.id] = (p.key || p.name || '').trim().toUpperCase(); });
+
+    const currentWk = getISOWeek(currentDate);
+    const currentYr = currentDate.getFullYear();
+    const isAustralia = (u) => {
+      const loc = (u?.location || '').toString().toLowerCase();
+      return loc.includes('aus') || loc.includes('australia');
+    };
+    const userMap = {};
+    (localMaps.rawUsers || []).forEach(u => { if (u.id) userMap[u.id] = u; });
+    (apexTimesheetCache?.apexUsers || []).forEach(u => { if (u.id && !userMap[u.id]) userMap[u.id] = u; });
+
+    let total = 0;
+    let count = 0;
+    records.forEach(r => {
+      if (Number(r.week) === currentWk && (Number(r.year) === currentYr || !r.year)) {
+        const uObj = userMap[r.user_id];
+        if (isAustralia(uObj)) return;
+        const pKey = projMap[r.project_id] || '';
+        // Ở tab TOTAL TIME SHEET thì không cộng dồn APEX vào ô TOTAL
+        if (viewMode === 'total_timesheet' && pKey === 'APEX') return;
+
+        // Apply filters
+        const userName = (uObj?.name || uObj?.full_name || '').toString().trim();
+        const userTeam = (uObj?.team || localMaps.userTeamByName?.[userName.toLowerCase()] || '').toString().trim().toUpperCase();
+
+        if (localFilters.team && userTeam.toLowerCase() !== localFilters.team.trim().toLowerCase()) return;
+        if (localFilters.project && pKey.toLowerCase() !== localFilters.project.trim().toLowerCase()) return;
+        if (localFilters.user && userName.toLowerCase() !== localFilters.user.trim().toLowerCase()) return;
+
+        const rowHours = (Number(r.mon) || 0) + (Number(r.tue) || 0) + (Number(r.wed) || 0) +
+                         (Number(r.thu) || 0) + (Number(r.fri) || 0) + (Number(r.sat) || 0) + (Number(r.sun) || 0);
+        if (rowHours > 0) {
+          total += rowHours;
+          count++;
+        }
+      }
+    });
+    return { totalHours: total, count };
+  }, [apexTimesheetCache, currentDate, localMaps, localFilters]);
 
   const loadData = async (force = false) => {
     if (!user) return;
@@ -145,21 +209,34 @@ const PersonalSpace = () => {
       setIsLoading(true);
     }
     try {
-      // 1. Always fetch ALL users for complete name/team mapping
-      const usersList = await fetchUsers();
+      // 1. Fetch Vietnam users for mapping, tasks, and timesheet data in parallel
+      const [usersList, rawTasks] = await Promise.all([
+        fetchUsers(true),
+        fetchPersonalSpaceData(user, 50000),
+        fetchApexTimesheetData(force)
+      ]);
+
       const uMap = {};
       const tMap = {};
+      const userTeamByName = {};
       usersList.forEach(u => {
-        uMap[u.id] = u.name;
-        uMap[u.id?.toLowerCase()] = u.name;
-        uMap[u.email?.toLowerCase()] = u.name;
-        tMap[u.id] = u.team;
-        tMap[u.id?.toLowerCase()] = u.team;
+        if (u.id) {
+          uMap[u.id] = u.name;
+          uMap[u.id.toLowerCase()] = u.name;
+          tMap[u.id] = u.team;
+          tMap[u.id.toLowerCase()] = u.team;
+        }
+        if (u.email) {
+          uMap[u.email.toLowerCase()] = u.name;
+          tMap[u.email.toLowerCase()] = u.team;
+        }
+        if (u.name && u.team) {
+          userTeamByName[u.name.toLowerCase().trim()] = u.team.toUpperCase().trim();
+        }
       });
-      setLocalMaps({ userMap: uMap, teamMap: tMap });
+      setLocalMaps({ userMap: uMap, teamMap: tMap, userTeamByName, rawUsers: usersList });
 
-      // 2. Fetch tasks - Admin gets ALL data (no team filter applied in supabaseService)
-      const rawTasks = await fetchPersonalSpaceData(user, 50000);
+      // 2. Process tasks - Admin gets ALL data
       const processed = processTaskData(rawTasks, uMap, tMap);
       setAnalystTasks(processed);
     } catch (err) {
@@ -169,13 +246,34 @@ const PersonalSpace = () => {
     }
   };
 
+  const handleUpdateReview = async (taskId, newReview) => {
+    try {
+      setAnalystTasks(prev => (prev || []).map(t => t.id === taskId ? { ...t, reviewTime: newReview, time5Str: newReview } : t));
+      await updateApexTaskReview(taskId, newReview);
+    } catch (err) {
+      console.error('Lỗi khi cập nhật Review time:', err);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, [user]);
 
-  // Ensure daily view only uses weekly range
   useEffect(() => {
-    if (viewMode === 'daily' && timeRange !== 'week') {
+    // Completely disable page-level scrolling so wheeling outside table never scrolls the page
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, []);
+
+  // Ensure daily, timesheet, total_timesheet & performance_timesheet views only use weekly range
+  useEffect(() => {
+    if ((viewMode === 'daily' || viewMode === 'timesheet' || viewMode === 'total_timesheet' || viewMode === 'performance_timesheet') && timeRange !== 'week') {
       setTimeRange('week');
     }
   }, [viewMode]);
@@ -198,14 +296,84 @@ const PersonalSpace = () => {
   // Dynamic Options for Filters
   const filterOptions = useMemo(() => {
     const data = rbacBaseTasks;
-    const projects = [...new Set(data.map(t => t.project))].sort();
-    const users = [...new Set(data.map(t => t.userName))].sort();
-    // Include teams from both tasks AND the full user/team map so teams always appear
+    const selectedTeam = (localFilters.team || '').trim().toLowerCase();
+    const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
+    // 1. Teams: All distinct valid teams
     const taskTeams = data.map(t => t.team);
     const mapTeams = Object.values(localMaps.teamMap || {});
-    const teams = [...new Set([...taskTeams, ...mapTeams])].sort().filter(Boolean);
+    const rawUserTeams = (localMaps.rawUsers || []).map(u => u.team);
+    const teams = [...new Set([...taskTeams, ...mapTeams, ...rawUserTeams])]
+      .filter(t => t && typeof t === 'string' && t.trim() !== '' && t !== 'UNASSIGNED TEAM' && t !== 'null' && !isUUID(t))
+      .map(t => t.trim().toUpperCase())
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+
+    // 2. Filter tasks based on selected Team
+    const teamTasks = selectedTeam 
+      ? data.filter(t => {
+          const tTeam = (t.team || '').toString().trim().toLowerCase();
+          const fallbackTeam = (localMaps.userTeamByName?.[(t.userName || '').toLowerCase().trim()] || '').toLowerCase();
+          return tTeam === selectedTeam || fallbackTeam === selectedTeam;
+        })
+      : data;
+
+    // 3. Projects:
+    // Show projects from tasks as well as APEX projects (from dashboardProjects)
+    const taskProjects = teamTasks.map(t => t.project);
+    const dbProjects = (dashboardProjects || []).map(p => (p.key || p.name || '').trim().toUpperCase());
+    const projects = [...new Set([...taskProjects, ...dbProjects])]
+      .filter(p => p && p !== 'UNASSIGNED' && p.trim() !== '')
+      .map(p => p.trim())
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+
+    // 4. Users:
+    // If team is selected: ONLY show users belonging to this team! (Exclude Australia)
+    let candidateUsers = [];
+    const isAustralia = (u) => {
+      const loc = (u?.location || '').toString().toLowerCase();
+      return loc.includes('aus') || loc.includes('australia');
+    };
+    const allKnownUsers = [
+      ...(localMaps.rawUsers || []),
+      ...(dashboardUsers || [])
+    ].filter(u => !isAustralia(u));
+    if (selectedTeam) {
+      const fromUsers = allKnownUsers
+        .filter(u => (u.team || '').toString().trim().toLowerCase() === selectedTeam)
+        .map(u => u.name);
+
+      const fromTasks = teamTasks.map(t => t.userName);
+
+      candidateUsers = [...fromUsers, ...fromTasks];
+    } else {
+      const fromUsers = allKnownUsers.map(u => u.name);
+      const fromTasks = data.map(t => t.userName);
+      candidateUsers = [...fromUsers, ...fromTasks];
+    }
+
+    const users = [...new Set(candidateUsers)]
+      .filter(u => u && typeof u === 'string' && u.trim() !== '' && u !== 'UNKNOWN' && !isUUID(u.trim()))
+      .map(u => u.trim())
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+
     return { projects, users, teams };
-  }, [rbacBaseTasks, localMaps.teamMap]);
+  }, [rbacBaseTasks, localMaps.teamMap, localMaps.rawUsers, localMaps.userTeamByName, localFilters.team, dashboardProjects, dashboardUsers]);
+
+  // Auto-reset user or project if no longer valid under current team
+  useEffect(() => {
+    if (localFilters.user && filterOptions.users.length > 0 && !filterOptions.users.includes(localFilters.user)) {
+      setLocalFilters(prev => ({ ...prev, user: '' }));
+    }
+  }, [filterOptions.users, localFilters.user]);
+
+  useEffect(() => {
+    if (localFilters.project && filterOptions.projects.length > 0 && !filterOptions.projects.includes(localFilters.project)) {
+      setLocalFilters(prev => ({ ...prev, project: '' }));
+    }
+  }, [filterOptions.projects, localFilters.project]);
 
   const filteredData = useMemo(() => {
     const tasks = rbacBaseTasks;
@@ -213,13 +381,13 @@ const PersonalSpace = () => {
     
     const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
     const endOfCurrentWeek = endOfWeek(currentDate, { weekStartsOn: 1 });
-    const startOfCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const endOfCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    const startOfCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1, 0, 0, 0);
+    const endOfCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
     const filtered = tasks.filter(t => {
       // 1. Date Range Filter
       let dateMatch = true;
-      if (t.dateObj && viewMode !== 'project' && viewMode !== 'daily' && viewMode !== 'gantt') {
+      if (t.dateObj && viewMode !== 'daily' && viewMode !== 'gantt' && viewMode !== 'timesheet') {
         if (timeRange === 'day') {
           dateMatch = isSameDay(t.dateObj, currentDate);
         } else if (timeRange === 'week') {
@@ -234,8 +402,10 @@ const PersonalSpace = () => {
       if (!dateMatch) return false;
 
       // 2. Team Filter
-      const matchTeam = !localFilters.team || 
-        (t.team && t.team.toString().trim().toLowerCase() === localFilters.team.trim().toLowerCase());
+      const selTeam = localFilters.team?.trim().toLowerCase();
+      const matchTeam = !selTeam || 
+        (t.team && t.team.toString().trim().toLowerCase() === selTeam) ||
+        (localMaps.userTeamByName?.[(t.userName || '').toLowerCase().trim()]?.toLowerCase() === selTeam);
       
       // 3. User Filter
       const matchUser = !localFilters.user || 
@@ -309,9 +479,9 @@ const PersonalSpace = () => {
   }
 
   return (
-    <div className="tab-personal w-full flex flex-col gap-[10px] animate-in fade-in duration-700 pb-[10px]">
+    <div className="tab-personal w-full h-full flex flex-col gap-[6px] animate-in fade-in duration-700 overflow-hidden">
       {/* Sticky Header + Filter Wrapper */}
-      <div className="sticky top-[64px] z-[40] w-full flex flex-col gap-[10px] pb-[10px] pt-[10px]" style={{ background: 'var(--bg-main, #0f172a)' }}>
+      <div className="shrink-0 z-[40] w-full flex flex-col gap-[6px] pb-1 pt-0" style={{ background: 'var(--bg-main, #0f172a)' }}>
       {/* Header */}
       <div className="personal-header-card">
 
@@ -336,7 +506,15 @@ const PersonalSpace = () => {
           {user?.isAdmin && (
             <NeumorphicDropdown
               value={localFilters.team}
-              onChange={e => setLocalFilters(prev => ({ ...prev, team: e.target.value }))}
+              onChange={e => {
+                const newTeam = e.target.value;
+                setLocalFilters(prev => ({
+                  ...prev,
+                  team: newTeam,
+                  user: '',
+                  project: ''
+                }));
+              }}
               options={filterOptions.teams}
               defaultLabel="TEAMS"
               className="min-w-[140px] shrink-0"
@@ -389,7 +567,7 @@ const PersonalSpace = () => {
           )}
 
             {/* Time Segmented Control (New Design) */}
-            {['list', 'daily', 'project', 'gantt', 'performance', 'neural-brain'].includes(viewMode) && (
+            {['list', 'daily', 'project', 'timesheet', 'gantt', 'performance'].includes(viewMode) && (
               <div className={`flex items-center gap-1 p-[3px] backdrop-blur-md rounded-xl shadow-inner relative shrink-0 ${
                 isDark 
                   ? 'bg-slate-950/80 border border-slate-800' 
@@ -442,51 +620,66 @@ const PersonalSpace = () => {
 
       {/* Content Area */}
       {/* Timesheet Summary & Navigation Header (Visible for Daily, Project, and Gantt) */}
-      <div className="px-[10px] flex flex-col gap-[10px]">
+      <div className="px-[10px] flex-1 min-h-0 flex flex-col gap-[6px] overflow-hidden">
       {/* --- CONTENT AREA: STATS & TIME NAVIGATION --- */}
-      {viewMode !== 'deep-analysis' && (
-        <div className="personal-stats-bar relative z-[38]">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between stats-summary-bar gap-4">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
-                <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Total Hours:</span>
-                <span className="text-[14px] font-black stat-val-hours">
-                  {((viewMode === 'daily' || viewMode === 'list' || viewMode === 'neural-brain') ? timesheetData?.grandTotalHours : projectTimesheetData?.grandTotalHours || 0).toFixed(2)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
-                <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Tasks:</span>
-                <span className="text-[14px] font-black stat-val-tasks">
-                  {(viewMode === 'daily' || viewMode === 'list' || viewMode === 'neural-brain') ? timesheetData?.grandTotalTasks : projectTimesheetData?.grandTotalTasks || 0}
-                </span>
-              </div>
+      <div className="personal-stats-bar relative z-[38] shrink-0">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between stats-summary-bar gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
+              <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Total Hours:</span>
+              <span className="text-[14px] font-black stat-val-hours">
+                {['timesheet', 'total_timesheet', 'performance_timesheet'].includes(viewMode)
+                  ? (timesheetWeeklyStats.totalHours || 0).toFixed(1)
+                  : ((viewMode === 'daily' || viewMode === 'list') ? timesheetData?.grandTotalHours : projectTimesheetData?.grandTotalHours || 0).toFixed(2)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
+              <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Tasks:</span>
+              <span className="text-[14px] font-black stat-val-tasks">
+                {['timesheet', 'total_timesheet', 'performance_timesheet'].includes(viewMode)
+                  ? timesheetWeeklyStats.count
+                  : ((viewMode === 'daily' || viewMode === 'list') ? timesheetData?.grandTotalTasks : projectTimesheetData?.grandTotalTasks || 0)}
+              </span>
+            </div>
 
               <div className="w-[1px] h-8 bg-[var(--border)] mx-2 hidden xl:block" />
 
-              {/* Time Metric Selector */}
-              {['daily', 'project'].includes(viewMode) && (
-                <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-inner">
-                  {[
-                    { id: 't1', label: 'T1', color: 'emerald', tooltip: 'T1: DATE_START → DATE_END (Planned)' },
-                    { id: 't2', label: 'T2', color: 'sky', tooltip: 'T2: DATE_START → DATE_COMPLETE (Actual Complete)' },
-                    { id: 't3', label: 'T3', color: 'indigo', tooltip: 'T3: DATE_START → DATE_CHECKED (Up to Checked)' },
-                    { id: 't4', label: 'T4', color: 'orange', tooltip: 'T4: DATE_STARTED → DATE_CHECKED (Processing Time)' },
-                    { id: 't5', label: 'T5', color: 'rose', tooltip: 'T5: DATE_COMPLETE → DATE_CHECKED (Leader Check Time)' }
-                  ].map((m) => {
-                    const isActive = selectedTimeMetric === m.id;
-
-                    return (
-                      <div key={m.id} className="relative group/time">
-                        <button
-                          onClick={() => setSelectedTimeMetric(m.id)}
-                          className={`px-3 py-1.5 text-[14px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 metric-${m.id} ${isActive ? 'active shadow-md' : ''}`}
-                        >
+              {/* Drop List for Time Metric (Available for Daily, Project, and Timesheet views) */}
+              {['daily', 'project', 'timesheet'].includes(viewMode) && (() => {
+                const currentMetric = TIME_METRICS.find(m => m.value === selectedTimeMetric) || TIME_METRICS[0];
+                return (
+                  <div className="relative inline-flex items-center group">
+                    <select
+                      value={selectedTimeMetric}
+                      onChange={(e) => setSelectedTimeMetric(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-pointer"
+                      title="Select Time Metric"
+                    >
+                      {TIME_METRICS.map(m => (
+                        <option key={m.value} value={m.value} className="bg-[var(--bg-card)] text-[var(--text-main)] py-1 font-bold">
                           {m.label}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+                        </option>
+                      ))}
+                    </select>
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${currentMetric.bg} ${currentMetric.color} text-[13px] font-black tracking-wider uppercase shadow-sm transition-all duration-300 group-hover:scale-[1.02] cursor-pointer`}>
+                      <span className={`w-2 h-2 rounded-full ${currentMetric.dot} animate-pulse`} />
+                      <span>{currentMetric.label}</span>
+                      <ChevronDown size={14} className="opacity-70 ml-0.5 transition-transform duration-200 group-hover:translate-y-0.5" />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Export Excel Button (Available for Project View) */}
+              {viewMode === 'project' && (
+                <button
+                  onClick={() => projectViewRef.current?.exportCSV()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-black rounded-xl shadow-sm transition-all duration-200 hover:scale-[1.02] cursor-pointer"
+                  title="Export this table to Excel (.csv)"
+                >
+                  <Download size={14} />
+                  <span>EXPORT EXCEL</span>
+                </button>
               )}
             </div>
 
@@ -599,7 +792,6 @@ const PersonalSpace = () => {
             </div>
           </div>
         </div>
-      )}
 
       {viewMode === 'list' && (
         <div className="personal-table-wrapper">
@@ -612,13 +804,24 @@ const PersonalSpace = () => {
               handleSort={handleSort}
               columnOptions={filterOptions}
               stickyOffset="0px"
+              onUpdateReview={handleUpdateReview}
             />
           </div>
         </div>
       )}
 
       {viewMode === 'project' && (
-        <ProjectView projectTimesheetData={projectTimesheetData} getProjectColor={getProjectColor} />
+        <ProjectView 
+          ref={projectViewRef}
+          filteredData={filteredData}
+          analystTasks={analystTasks}
+          dashboardProjects={dashboardProjects}
+          getProjectColor={getProjectColor}
+          selectedTimeMetric={selectedTimeMetric}
+          timeRange={timeRange}
+          currentDate={currentDate}
+          searchQuery={localFilters.search || ''}
+        />
       )}
 
       {viewMode === 'gantt' && (
@@ -641,73 +844,74 @@ const PersonalSpace = () => {
         <TimesheetView timesheetData={timesheetData} getProjectColor={getProjectColor} />
       )}
 
-      {viewMode === 'deep-analysis' && (
-        <div className="max-h-[calc(100vh-335px)] overflow-y-auto custom-scrollbar pr-1">
-          <DeepAnalysisView deepAnalysisData={deepAnalysisData} selectedTimeMetric={selectedTimeMetric} />
-        </div>
+      {viewMode === 'timesheet' && (
+        <ApexTimesheetView 
+          currentDate={currentDate}
+          getProjectColor={getProjectColor}
+          selectedTimeMetric={selectedTimeMetric}
+          rawUsers={localMaps.rawUsers}
+          userTeamByName={localMaps.userTeamByName}
+          dashboardProjects={dashboardProjects}
+          dashboardUsers={dashboardUsers}
+          selectedTeam={localFilters.team}
+          selectedProject={localFilters.project}
+          selectedUser={localFilters.user}
+          searchQuery={localFilters.search || ''}
+        />
+      )}
+
+      {viewMode === 'total_timesheet' && (
+        <TotalTimesheetView 
+          currentDate={currentDate}
+          getProjectColor={getProjectColor}
+          selectedTimeMetric={selectedTimeMetric}
+          rawUsers={localMaps.rawUsers}
+          userTeamByName={localMaps.userTeamByName}
+          dashboardProjects={dashboardProjects}
+          dashboardUsers={dashboardUsers}
+          selectedTeam={localFilters.team}
+          selectedProject={localFilters.project}
+          selectedUser={localFilters.user}
+          searchQuery={localFilters.search || ''}
+        />
       )}
 
       {viewMode === 'performance' && (
-        <div className="personal-table-wrapper">
-          <div className="max-h-[calc(100vh-335px)] overflow-y-auto overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse min-w-[1000px]">
-              <thead>
-                <tr className="th-primary border-b border-[var(--border)]">
-                  <th className="pr-6 text-left" style={{ paddingLeft: '12px' }}>Full Name</th>
-                  <th className="px-4 text-center">Project Time</th>
-                  <th className="px-4 text-center">Check Time</th>
-                  <th className="px-4 text-center bg-indigo-500/5">OT Time</th>
-                  <th className="px-4 text-center bg-orange-500/5">Leave (D)</th>
-                  <th className="px-4 text-center">Free Time</th>
-                  <th className="px-4 text-center text-emerald-500">Efficiency</th>
-                  <th className="px-4 text-right pr-4">Performance (%)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {efficiencyData?.map((s, i) => (
-                  <tr key={i} className="text-[14px] group hover:bg-[var(--bg-header)] transition-colors">
-                    <td className="pr-6 py-4" style={{ paddingLeft: '12px' }}>
-                      <div className="text-[var(--text-contrast)] uppercase tracking-tight">{s.name}</div>
-                    </td>
-                    <td className="px-4 py-4 text-center font-mono font-bold text-sky-400">{s.projectTime.toFixed(1)}h</td>
-                    <td className="px-4 py-4 text-center font-mono font-bold text-amber-500">{s.checkTime.toFixed(1)}h</td>
-                    <td className="px-4 py-4 text-center bg-indigo-500/5">
-                      <input 
-                        type="number" 
-                        value={s.otTime || ''}
-                        onChange={(e) => setManualData(prev => ({ ...prev, [s.name]: { ...prev[s.name], ot: parseFloat(e.target.value) || 0 } }))}
-                        className="w-12 bg-transparent border-none text-center font-bold text-indigo-400 outline-none p-0 h-auto text-[14px]"
-                        placeholder="0"
-                      />
-                    </td>
-                    <td className="px-4 py-4 text-center bg-orange-500/5 font-mono font-bold text-orange-400">
-                      {s.leaveDays}d
-                    </td>
-                    <td className="px-4 py-4 text-center font-mono font-bold text-[var(--text-main)]">
-                      {s.freeTime.toFixed(1)}h
-                    </td>
-                    <td className="px-4 py-4 text-center font-mono font-black text-emerald-500">{s.efficiency.toFixed(0)}%</td>
-                    <td className="px-4 py-4 text-right pr-4 min-w-[140px]">
-                      <div className="font-mono font-black text-red-500 mb-1">{s.performance.toFixed(1)}%</div>
-                      <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div className="h-full bg-red-500" style={{ width: `${Math.min(s.performance, 100)}%` }} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="flex-1 min-h-0 h-full overflow-hidden">
+          <PerformanceView 
+            filteredData={filteredData}
+            dashboardProjects={dashboardProjects}
+            dashboardUsers={dashboardUsers}
+            dashboardLeave={dashboardLeave}
+            getProjectColor={getProjectColor}
+            selectedTimeMetric={selectedTimeMetric}
+            currentDate={currentDate}
+            selectedTeam={localFilters.team}
+            rawUsers={localMaps.rawUsers}
+            userTeamByName={localMaps.userTeamByName}
+          />
         </div>
       )}
 
-      {viewMode === 'neural-brain' && (
-        <NeuralBrain 
-          filteredTasks={filteredData} 
-          timeRange={timeRange} 
-          setTimeRange={setTimeRange} 
-        />
+      {viewMode === 'performance_timesheet' && (
+        <div className="flex-1 min-h-0 h-full overflow-hidden">
+          <PerformanceTimesheetView 
+            dashboardProjects={dashboardProjects}
+            dashboardUsers={dashboardUsers}
+            dashboardLeave={dashboardLeave}
+            getProjectColor={getProjectColor}
+            selectedTimeMetric={selectedTimeMetric}
+            currentDate={currentDate}
+            selectedTeam={localFilters.team}
+            selectedProject={localFilters.project}
+            selectedUser={localFilters.user}
+            searchQuery={localFilters.search || ''}
+            rawUsers={localMaps.rawUsers}
+            userTeamByName={localMaps.userTeamByName}
+          />
+        </div>
       )}
+
       </div>
     </div>
   );

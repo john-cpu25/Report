@@ -23,69 +23,84 @@ export const fetchTasks = async (options = {}) => {
   return data || [];
 };
 
+export const updateApexTaskReview = async (taskId, reviewTime) => {
+  if (!taskId) return;
+  const { data, error } = await supabase
+    .from('APEX_Task')
+    .update({ review_comment: reviewTime })
+    .eq('id', taskId);
+  if (error) {
+    console.error('Lỗi cập nhật review_comment trên APEX_Task:', error);
+    throw error;
+  }
+  return data;
+};
+
 export const fetchPersonalSpaceData = async (userObj, limit = 50000) => {
   if (!userObj) return [];
-  const { id, name, email, username, isAdmin, isLeader, team } = userObj;
-  
-  let filterStr = null;
 
-  if (!isAdmin) {
-    if (team) {
-      // Team members see their entire team's tasks
-      // First, find all users in this team to get their identifiers
-      const teamSlug = team.split(' ')[0]; // Use first word for broader matching if needed
-      const { data: teamUsers } = await supabase
-        .from('NMK_User')
-        .select('id, name, email')
-        .ilike('team', `%${teamSlug}%`);
+  // 1. Lấy thông tin phụ trợ từ APEX_Project và APEX_User để mapping tên
+  let projectsMap = {};
+  let usersMap = {};
+  let userTeamMap = {};
+  try {
+    const [pRes, uRes] = await Promise.all([
+      supabase.from('APEX_Project').select('id, name, key, color'),
+      supabase.from('APEX_User').select('id, name, email, team')
+    ]);
 
-      const teamIdentifiers = [];
-      teamUsers?.forEach(u => {
-        if (u.id) teamIdentifiers.push(u.id);
-        if (u.name) teamIdentifiers.push(u.name);
-        if (u.email) teamIdentifiers.push(u.email);
+    if (pRes.data) {
+      pRes.data.forEach(p => {
+        const projectKey = (p.key && p.key.trim()) || (p.name && p.name.trim()) || 'UNASSIGNED';
+        projectsMap[p.id] = projectKey;
+        if (p.key) projectsMap[p.key.trim().toUpperCase()] = projectKey;
+        if (p.name) projectsMap[p.name.trim().toUpperCase()] = projectKey;
       });
-
-      if (teamIdentifiers.length > 0) {
-        // Filter by any of the team member identifiers in user_id or create_by
-        filterStr = teamIdentifiers.map(val => `user_id.eq."${val}",create_by.eq."${val}"`).join(',');
-      } else {
-        // Fallback to own tasks if team lookup fails
-        const identifiers = [id, name, email, username].filter(Boolean);
-        filterStr = identifiers.map(val => `user_id.eq."${val}",create_by.eq."${val}"`).join(',');
-      }
-    } else {
-      // Default: User without team sees only their own tasks
-      const identifiers = [id, name, email, username].filter(Boolean);
-      if (identifiers.length === 0) return [];
-      filterStr = identifiers.map(val => `user_id.eq."${val}",create_by.eq."${val}"`).join(',');
     }
+
+    if (uRes.data) {
+      uRes.data.forEach(u => {
+        if (u.id) {
+          usersMap[u.id] = u.name;
+          usersMap[u.id.toLowerCase()] = u.name;
+          userTeamMap[u.id] = u.team;
+          userTeamMap[u.id.toLowerCase()] = u.team;
+        }
+        if (u.email) {
+          usersMap[u.email.toLowerCase()] = u.name;
+          userTeamMap[u.email.toLowerCase()] = u.team;
+        }
+        if (u.name) {
+          userTeamMap[u.name.toLowerCase().trim()] = u.team;
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Cảnh báo khi tải metadata APEX:', err);
   }
 
-  let allData = [];
+  // 2. Tải dữ liệu từ bảng APEX_Task theo từng chunk
+  let allApexTasks = [];
   let from = 0;
-  let chunkSize = 1000;
+  const chunkSize = 1000;
   let hasMore = true;
 
   while (hasMore) {
-    let query = supabase
-      .from('NMK_Task')
+    const { data, error } = await supabase
+      .from('APEX_Task')
       .select('*')
       .order('created_at', { ascending: false })
       .range(from, from + chunkSize - 1);
-      
-    if (filterStr) {
-      query = query.or(filterStr);
+
+    if (error) {
+      console.error('Lỗi khi fetch APEX_Task:', error.message);
+      break;
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
-    
     if (data && data.length > 0) {
-      allData = [...allData, ...data];
+      allApexTasks = [...allApexTasks, ...data];
       from += chunkSize;
-      // If we got fewer rows than requested, we've hit the end of the table
-      if (data.length < chunkSize || allData.length >= limit) {
+      if (data.length < chunkSize || allApexTasks.length >= limit) {
         hasMore = false;
       }
     } else {
@@ -93,7 +108,52 @@ export const fetchPersonalSpaceData = async (userObj, limit = 50000) => {
     }
   }
 
-  return allData.slice(0, limit);
+  // Nếu đã có dữ liệu APEX_Task, map các trường cho view Personal
+  if (allApexTasks.length > 0) {
+    return allApexTasks.slice(0, limit).map(row => {
+      const parts = (row.name || '').toString().split(':');
+      // Lấy project_id từ task, tra qua bảng APEX_Project để lấy project key thay cho project name
+      const mappedProject = (row.project_id && projectsMap[row.project_id])
+        ? projectsMap[row.project_id]
+        : (projectsMap[(parts[0] || '').toString().trim().toUpperCase()] || (parts[0] || '').toString().trim() || 'UNASSIGNED');
+      const mappedUser = usersMap[row.assigned_to_id] || usersMap[row.assigned_to_id?.toLowerCase()] || (row.assigned_to_id ? row.assigned_to_id : 'UNKNOWN');
+      const mappedCreator = usersMap[row.create_by_id] || (row.create_by ? (usersMap[row.create_by.toLowerCase()] || row.create_by.split('@')[0]) : 'UNKNOWN');
+      const mappedTeam = userTeamMap[row.assigned_to_id] || userTeamMap[mappedUser?.toLowerCase()] || 'UNASSIGNED';
+
+      return {
+        ...row,
+        project: mappedProject,
+        _isApex: true,
+        _projectName: mappedProject,
+        _userName: mappedUser,
+        _creatorName: mappedCreator,
+        _team: mappedTeam
+      };
+    });
+  }
+
+  // Fallback nếu APEX_Task rỗng: lấy từ NMK_Task
+  const { data: fallbackData } = await supabase
+    .from('NMK_Task')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (fallbackData) {
+    return fallbackData.map(row => {
+      const parts = (row.name || '').toString().split(':');
+      const mappedProject = (row.project_id && projectsMap[row.project_id])
+        ? projectsMap[row.project_id]
+        : (projectsMap[(parts[0] || '').toString().trim().toUpperCase()] || (parts[0] || '').toString().trim() || 'UNASSIGNED');
+      return {
+        ...row,
+        project: mappedProject,
+        _projectName: mappedProject
+      };
+    });
+  }
+
+  return [];
 };
 
 export const fetchOrgChartData = async () => {
@@ -145,6 +205,16 @@ export const fetchLeaveEntries = async (userName = null) => {
 };
 
 export const fetchProjects = async () => {
+  try {
+    const { data: apexData } = await supabase
+      .from('APEX_Project')
+      .select('id, name, key, color')
+      .order('key');
+    if (apexData && apexData.length > 0) return apexData;
+  } catch (e) {
+    console.warn('Fallback to NMK_Project:', e);
+  }
+
   const { data, error } = await supabase
     .from('NMK_Project')
     .select('id, name, key')
