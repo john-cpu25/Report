@@ -33,16 +33,16 @@ const TimesheetView = ({ timesheetData, getProjectColor }) => {
           </colgroup>
           <thead>
             <tr className="bg-[var(--bg-card)]">
-              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Team</th>
-              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Project</th>
-              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Task Name</th>
-              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>User</th>
+              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)] text-[var(--text-main)] dark:text-white" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Team</th>
+              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)] text-[var(--text-main)] dark:text-white" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Project</th>
+              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)] text-[var(--text-main)] dark:text-white" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Task Name</th>
+              <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)] text-[var(--text-main)] dark:text-white" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>User</th>
               {timesheetData.weekDates.map((date, i) => {
                 const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
                 const isToday = isSameDay(date, new Date());
                 const isWeekendDay = i >= 5;
-                const dateColor = isToday ? 'text-emerald-500' : (isWeekendDay ? 'text-rose-500/80 dark:text-rose-400/80' : 'text-black dark:text-slate-200');
-                const labelColor = isToday ? 'text-emerald-500' : (isWeekendDay ? 'text-rose-500 dark:text-rose-400' : 'text-black dark:text-slate-100');
+                const dateColor = isToday ? 'text-emerald-500' : (isWeekendDay ? 'text-rose-500/80 dark:text-rose-400/80' : 'text-[var(--text-muted)] dark:text-slate-300');
+                const labelColor = isToday ? 'text-emerald-500' : (isWeekendDay ? 'text-rose-500 dark:text-rose-400' : 'text-[var(--text-main)] dark:text-white');
                 return (
                   <th 
                     key={i} 

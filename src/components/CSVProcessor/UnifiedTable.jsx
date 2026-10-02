@@ -188,55 +188,55 @@ const UnifiedTable = (props) => {
     <div className="bg-[var(--bg-card)] border border-[var(--border)] shadow-md rounded-2xl m-[20px] min-w-[calc(100%-40px)] w-fit overflow-hidden">
       <table className="w-full text-left border-separate border-spacing-0" style={{ minWidth: '1400px' }}>
         <thead>
-          <tr className="th-primary">
+          <tr className="th-primary text-[var(--text-main)] dark:text-white">
             {/* 1. PROJECT */}
-            <th rowSpan={2} className="py-[4px] text-left border-r border-b border-[var(--border)] sticky left-0 z-30 min-w-[140px] backdrop-blur-md bg-[var(--bg-card)]" style={{ top: stickyOffset, paddingLeft: '20px', paddingRight: '16px' }}>
+            <th rowSpan={2} className="py-[4px] text-left border-r border-b border-[var(--border)] sticky left-0 z-30 min-w-[140px] backdrop-blur-md bg-[var(--bg-card)] text-[var(--text-main)] dark:text-white" style={{ top: stickyOffset, paddingLeft: '20px', paddingRight: '16px' }}>
               <div className="flex items-center h-full cursor-pointer hover:text-[var(--text-main)] transition-colors" onClick={() => handleSort('project')}>
                 <span>PROJECT {renderSortIcon('project')}</span>
               </div>
             </th>
 
             {/* 2. TASK NAME */}
-            <th rowSpan={2} className="py-[4px] text-left border-r border-b border-[var(--border)] sticky left-[160px] z-30 min-w-[160px] backdrop-blur-md bg-[var(--bg-card)]" style={{ top: stickyOffset, paddingLeft: '16px', paddingRight: '16px' }}>
+            <th rowSpan={2} className="py-[4px] text-left border-r border-b border-[var(--border)] sticky left-[160px] z-30 min-w-[160px] backdrop-blur-md bg-[var(--bg-card)] text-[var(--text-main)] dark:text-white" style={{ top: stickyOffset, paddingLeft: '16px', paddingRight: '16px' }}>
               <div className="flex items-center h-full cursor-pointer hover:text-[var(--text-main)] transition-colors" onClick={() => handleSort('taskName')}>
                 <span>TASK NAME {renderSortIcon('taskName')}</span>
               </div>
             </th>
 
             {/* 3. MANAGER / LEADER (4 cột) */}
-            <th colSpan={4} className="px-[12px] py-[6px] text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>MANAGER / LEADER</th>
+            <th colSpan={4} className="px-[12px] py-[6px] text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)] text-[var(--text-main)] dark:text-white" style={{ top: stickyOffset }}>MANAGER / LEADER</th>
 
             {/* 4. USER (4 cột: USER, STARTED, COMPLETED, CHECKED - Đã bỏ ACCEPTED) */}
-            <th colSpan={4} className="px-[12px] py-[6px] text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }}>USER</th>
+            <th colSpan={4} className="px-[12px] py-[6px] text-center border-r border-b border-[var(--border)] sticky z-20 bg-[var(--bg-card)] text-[var(--text-main)] dark:text-white" style={{ top: stickyOffset }}>USER</th>
 
             {/* 5. AREA */}
-            <th rowSpan={2} className="px-[12px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[80px] sticky z-20 bg-[var(--bg-card)]" style={{ top: stickyOffset }} onClick={() => handleSort('area')}>
+            <th rowSpan={2} className="px-[12px] py-[4px] text-center border-r border-b border-[var(--border)] min-w-[80px] sticky z-20 bg-[var(--bg-card)] text-[var(--text-main)] dark:text-white cursor-pointer hover:text-indigo-400 transition-colors" style={{ top: stickyOffset }} onClick={() => handleSort('area')}>
               AREA {renderSortIcon('area')}
             </th>
 
             {/* 6. PLAN TIME (Lấy từ hours_planned) */}
-            <HeaderWithTooltip id="T1" label="PLAN TIME" color="text-black dark:text-white font-black" stickyOffset={stickyOffset} rowSpan={2} />
+            <HeaderWithTooltip id="T1" label="PLAN TIME" color="text-[var(--text-main)] dark:text-white font-black" stickyOffset={stickyOffset} rowSpan={2} />
 
             {/* 7. USER TIME (Lấy từ hours_complete) */}
-            <HeaderWithTooltip id="T2" label="USER TIME" color="text-black dark:text-white font-black" stickyOffset={stickyOffset} rowSpan={2} />
+            <HeaderWithTooltip id="T2" label="USER TIME" color="text-[var(--text-main)] dark:text-white font-black" stickyOffset={stickyOffset} rowSpan={2} />
 
             {/* 8. REVIEW (Nhập được thời gian) */}
             <HeaderWithTooltip id="T5" label="REVIEW" color="text-rose-500 font-black" stickyOffset={stickyOffset} rowSpan={2} />
           </tr>
 
           {/* Sub-headers Hàng 2 */}
-          <tr className="th-secondary">
+          <tr className="th-secondary text-[var(--text-muted)] dark:text-slate-200">
             {/* MANAGER / LEADER sub-headers */}
-            <th className="py-[6px] text-left border-r border-b border-[var(--border)] min-w-[150px] whitespace-nowrap sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset, paddingLeft: '16px', paddingRight: '12px' }} onClick={() => handleSort('createdBy')}>CREATE BY</th>
-            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('createdAt')}>CREATE</th>
-            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStart')}>START</th>
-            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateEnd')}>END</th>
+            <th className="py-[6px] text-left border-r border-b border-[var(--border)] min-w-[150px] whitespace-nowrap sticky z-20 bg-[var(--bg-card)] text-[var(--text-muted)] dark:text-slate-200" style={{ top: row2Offset, paddingLeft: '16px', paddingRight: '12px' }} onClick={() => handleSort('createdBy')}>CREATE BY</th>
+            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)] text-[var(--text-muted)] dark:text-slate-200" style={{ top: row2Offset }} onClick={() => handleSort('createdAt')}>CREATE</th>
+            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)] text-[var(--text-muted)] dark:text-slate-200" style={{ top: row2Offset }} onClick={() => handleSort('dateStart')}>START</th>
+            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)] text-[var(--text-muted)] dark:text-slate-200" style={{ top: row2Offset }} onClick={() => handleSort('dateEnd')}>END</th>
 
             {/* USER sub-headers (Đã bỏ ACCEPTED) */}
-            <th className="py-[6px] text-left border-r border-b border-[var(--border)] min-w-[150px] whitespace-nowrap sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset, paddingLeft: '16px', paddingRight: '12px' }} onClick={() => handleSort('userName')}>USER</th>
-            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateStarted')}>STARTED</th>
-            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateComplete')}>COMPLETED</th>
-            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)]" style={{ top: row2Offset }} onClick={() => handleSort('dateChecked')}>CHECKED</th>
+            <th className="py-[6px] text-left border-r border-b border-[var(--border)] min-w-[150px] whitespace-nowrap sticky z-20 bg-[var(--bg-card)] text-[var(--text-muted)] dark:text-slate-200" style={{ top: row2Offset, paddingLeft: '16px', paddingRight: '12px' }} onClick={() => handleSort('userName')}>USER</th>
+            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)] text-[var(--text-muted)] dark:text-slate-200" style={{ top: row2Offset }} onClick={() => handleSort('dateStarted')}>STARTED</th>
+            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)] text-[var(--text-muted)] dark:text-slate-200" style={{ top: row2Offset }} onClick={() => handleSort('dateComplete')}>COMPLETED</th>
+            <th className="px-[10px] py-[6px] text-center border-r border-b border-[var(--border)] min-w-[100px] sticky z-20 bg-[var(--bg-card)] text-[var(--text-muted)] dark:text-slate-200" style={{ top: row2Offset }} onClick={() => handleSort('dateChecked')}>CHECKED</th>
           </tr>
         </thead>
 

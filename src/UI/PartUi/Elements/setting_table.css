@@ -8,7 +8,7 @@
   font-weight: 900; /* Extra Black */
   text-transform: uppercase;
   letter-spacing: 0.1em; /* tracking-widest */
-  color: #000000; /* text-black */
+  color: var(--text-main, #0f172a);
   height: 48px;
   background-color: var(--bg-card);
 }
@@ -19,7 +19,20 @@
   font-weight: 900; /* Extra Black */
   text-transform: uppercase;
   letter-spacing: 0.1em; /* tracking-widest */
-  color: #000000; /* text-black */
+  color: var(--text-muted, #52525b);
   height: 36px;
   background-color: var(--bg-card);
+}
+
+/* Dark mode and Galaxy theme overrides */
+.dark .th-primary,
+body.theme-galaxy .th-primary,
+body.theme-dark .th-primary {
+  color: #F8FAFC !important;
+}
+
+.dark .th-secondary,
+body.theme-galaxy .th-secondary,
+body.theme-dark .th-secondary {
+  color: #CBD5E1 !important;
 }

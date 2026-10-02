@@ -19,12 +19,12 @@ const GanttView = ({
         <div className="w-full min-w-[900px]">
           {/* Gantt Header: Dates */}
           <div className="flex border-b border-[var(--border)] bg-white/5 sticky z-[45] backdrop-blur-md" style={{ top: '0px' }}>
-            <div className="th-primary flex items-center w-[200px] md:w-[250px] border-r border-[var(--border)] px-[12px] shrink-0 sticky left-0 z-30">Project</div>
+            <div className="th-primary flex items-center w-[200px] md:w-[250px] border-r border-[var(--border)] px-[12px] shrink-0 sticky left-0 z-30 text-[var(--text-main)] dark:text-white">Project</div>
             <div className="flex-1 flex min-w-0">
               {ganttTimeline.map((date, i) => {
                 const isToday = isSameDay(date, new Date());
-                const dateColor = isToday ? 'text-emerald-500' : 'text-black';
-                const labelColor = isToday ? 'text-emerald-500' : 'text-black';
+                const dateColor = isToday ? 'text-emerald-500' : 'text-[var(--text-muted)] dark:text-slate-300';
+                const labelColor = isToday ? 'text-emerald-500' : 'text-[var(--text-main)] dark:text-white';
                 return (
                   <div key={i} className={`flex-1 min-w-[50px] border-r border-[var(--border)] py-[12px] px-0 text-center flex flex-col items-center justify-center ${isToday ? 'bg-indigo-500/10' : 'bg-[var(--bg-card)]'}`}>
                     <div className={`text-[14px] font-black uppercase tracking-wider ${labelColor}`}>

@@ -73,7 +73,13 @@ export const AppProvider = ({ children }) => {
   // Effects for Persistance
   useEffect(() => {
     localStorage.setItem('appTheme', theme);
-    document.body.className = `theme-${theme.toLowerCase()}`;
+    const isDark = theme === 'GALAXY' || theme === 'DARK';
+    document.body.className = `theme-${theme.toLowerCase()}${isDark ? ' dark' : ''}`;
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [theme]);
 
   useEffect(() => {

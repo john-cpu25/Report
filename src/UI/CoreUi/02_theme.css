@@ -1,22 +1,29 @@
-/* SaaS Deep Dark Mode (Premium Galaxy) */
-body.theme-galaxy {
+/* SaaS Deep Dark Mode (Premium Galaxy / Dark) */
+body.theme-galaxy,
+body.theme-dark,
+.dark body,
+.dark {
   --bg-main: #0B0F19;
   --bg-card: #111827;
   --bg-surface: #1F2937;
   --text-main: #F8FAFC;
+  --text-contrast: #FFFFFF;
   --text-muted: #94A3B8;
-  --text-dim: #475569;
-  --border: rgba(255, 255, 255, 0.04);
+  --text-dim: #64748B;
+  --border: rgba(255, 255, 255, 0.08);
   --glass-bg: rgba(17, 24, 39, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.04);
 }
 
 /* SaaS Minimal Light Mode (Premium News) */
-body.theme-news {
+body.theme-news,
+body.theme-light,
+:root {
   --bg-main: #FAFAFA;
   --bg-card: #FFFFFF;
   --bg-surface: #F4F4F5;
   --text-main: #09090B;
+  --text-contrast: #09090B;
   --text-muted: #52525B;
   --text-dim: #A1A1AA;
   --border: rgba(0, 0, 0, 0.06);
