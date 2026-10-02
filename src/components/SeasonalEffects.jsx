@@ -240,58 +240,178 @@ const SeasonalEffects = ({ effect = 'AUTO', intensity = 'MEDIUM' }) => {
     };
 
     // ─────────────────────────────────────────────────────────────
-    // 4. FIREWORKS PARTICLES (CELEBRATION)
+    // 4. FIREWORKS PARTICLES (CELEBRATION / PHÁO HOA RỰC RỠ)
     // ─────────────────────────────────────────────────────────────
     const initFireworks = () => {
+      let rockets = [];
       let sparks = [];
-      const colors = ['#f43f5e', '#38bdf8', '#4ade80', '#fbbf24', '#c084fc', '#f472b6'];
+      let flashes = [];
 
-      const createBurst = (bx, by) => {
-        const count = Math.floor(35 * countMultiplier);
-        const burstColor = colors[Math.floor(Math.random() * colors.length)];
+      const colorPalettes = [
+        ['#fbbf24', '#f59e0b', '#fef08a', '#ffffff'], // Gold & champagne
+        ['#ef4444', '#f43f5e', '#fda4af', '#facc15'], // Ruby red & gold
+        ['#06b6d4', '#38bdf8', '#67e8f9', '#ffffff'], // Cyan electric
+        ['#10b981', '#34d399', '#a7f3d0', '#facc15'], // Emerald & jade
+        ['#8b5cf6', '#c084fc', '#f472b6', '#ffffff'], // Royal purple & magenta
+        ['#f97316', '#fb923c', '#fde047', '#ffffff']  // Sunset orange
+      ];
+
+      const createBurst = (x, y, palette) => {
+        const colors = palette || colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
+        const count = Math.floor((45 + Math.random() * 25) * countMultiplier);
+
+        // Flash circle at burst center
+        flashes.push({ x, y, radius: 8, maxRadius: 32, alpha: 0.7, color: colors[0] });
+
         for (let i = 0; i < count; i++) {
           const angle = Math.random() * Math.PI * 2;
-          const speed = Math.random() * 4 + 1.5;
+          const speed = Math.random() * 5.2 + 1.8;
+          const color = colors[Math.floor(Math.random() * colors.length)];
           sparks.push({
-            x: bx,
-            y: by,
+            x,
+            y,
+            lastX: x,
+            lastY: y,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
+            friction: 0.965,
+            gravity: 0.075,
             alpha: 1,
-            decay: Math.random() * 0.02 + 0.015,
-            color: burstColor,
-            size: Math.random() * 2 + 1.2
+            decay: Math.random() * 0.018 + 0.012,
+            color,
+            lineWidth: Math.random() * 2 + 1,
+            shimmer: Math.random() > 0.4
           });
         }
       };
 
-      let timer = 0;
+      const launchRocket = () => {
+        const startX = Math.random() * (width * 0.75) + width * 0.125;
+        const targetY = Math.random() * (height * 0.4) + height * 0.12;
+        const palette = colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
+        const speed = Math.random() * 3 + 10;
+        const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.25;
+
+        rockets.push({
+          x: startX,
+          y: height,
+          lastX: startX,
+          lastY: height,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          targetY,
+          palette,
+          color: palette[0]
+        });
+      };
+
+      // Launch immediate fireworks bursts so user doesn't wait
+      createBurst(width * 0.35, height * 0.28);
+      createBurst(width * 0.65, height * 0.22);
+      launchRocket();
+
+      let frameTimer = 0;
+      const launchInterval = intensity === 'HIGH' ? 26 : intensity === 'LOW' ? 65 : 42;
 
       return () => {
-        // Soft trail fade
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
-        ctx.fillRect(0, 0, width, height);
+        // Transparent clearRect keeps all page backgrounds completely intact without darkening
+        ctx.clearRect(0, 0, width, height);
 
-        timer++;
-        if (timer % 50 === 0) {
-          createBurst(Math.random() * (width * 0.8) + width * 0.1, Math.random() * (height * 0.5) + height * 0.1);
+        frameTimer++;
+        if (frameTimer % launchInterval === 0) {
+          launchRocket();
+          if (intensity === 'HIGH' && Math.random() > 0.4) {
+            launchRocket();
+          }
         }
 
+        // Render & Update Flashes
+        flashes = flashes.filter(f => f.alpha > 0.05);
+        flashes.forEach(f => {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+          ctx.fillStyle = f.color;
+          ctx.globalAlpha = f.alpha * 0.25;
+          ctx.shadowBlur = 18;
+          ctx.shadowColor = f.color;
+          ctx.fill();
+          ctx.restore();
+
+          f.radius += (f.maxRadius - f.radius) * 0.3;
+          f.alpha -= 0.1;
+        });
+
+        // Render & Update Rockets
+        rockets = rockets.filter(r => r.y > r.targetY && r.vy < 0);
+        rockets.forEach(r => {
+          r.lastX = r.x;
+          r.lastY = r.y;
+          r.x += r.vx;
+          r.y += r.vy;
+          r.vy += 0.06; // Gravity deceleration
+
+          // Draw ascending rocket line
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(r.lastX, r.lastY);
+          ctx.lineTo(r.x, r.y);
+          ctx.strokeStyle = r.color;
+          ctx.lineWidth = 2.5;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = r.color;
+          ctx.stroke();
+          ctx.restore();
+
+          // Spark trail behind ascending rocket
+          if (Math.random() > 0.35) {
+            sparks.push({
+              x: r.x + (Math.random() - 0.5) * 3,
+              y: r.y + (Math.random() - 0.5) * 3,
+              lastX: r.x,
+              lastY: r.y,
+              vx: (Math.random() - 0.5) * 0.8,
+              vy: Math.random() * 1.5 + 0.5,
+              friction: 0.98,
+              gravity: 0.05,
+              alpha: 0.7,
+              decay: 0.045,
+              color: '#fef08a',
+              lineWidth: 1.2,
+              shimmer: false
+            });
+          }
+
+          // Trigger explosion when rocket reaches target height or slows down
+          if (r.y <= r.targetY || r.vy >= -1) {
+            createBurst(r.x, r.y, r.palette);
+          }
+        });
+
+        // Render & Update Burst Sparks
         sparks = sparks.filter(s => s.alpha > 0.02);
         sparks.forEach(s => {
+          s.lastX = s.x;
+          s.lastY = s.y;
+          s.vx *= s.friction;
+          s.vy *= s.friction;
+          s.vy += s.gravity;
           s.x += s.vx;
           s.y += s.vy;
-          s.vy += 0.04; // gravity
           s.alpha -= s.decay;
+
+          const currentAlpha = s.shimmer && Math.random() > 0.35 ? s.alpha * 0.45 : s.alpha;
 
           ctx.save();
           ctx.beginPath();
-          ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-          ctx.fillStyle = s.color;
-          ctx.globalAlpha = Math.max(0, s.alpha);
-          ctx.shadowBlur = 6;
+          ctx.moveTo(s.lastX, s.lastY);
+          ctx.lineTo(s.x, s.y);
+          ctx.strokeStyle = s.color;
+          ctx.lineWidth = s.lineWidth;
+          ctx.globalAlpha = Math.max(0, currentAlpha);
+          ctx.shadowBlur = 8;
           ctx.shadowColor = s.color;
-          ctx.fill();
+          ctx.stroke();
           ctx.restore();
         });
       };
