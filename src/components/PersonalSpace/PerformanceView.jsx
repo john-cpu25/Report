@@ -95,7 +95,9 @@ const CANONICAL_STAFF_NAMES = {
   'DŨNG': 'Dũng Đỗ',
   'DUNG': 'Dũng Đỗ',
   'QUÂN': 'Quân Nguyễn',
-  'QUAN': 'Quân Nguyễn'
+  'QUAN': 'Quân Nguyễn',
+  'KAMALA TRAN': 'Kamala Tran',
+  'KAMALA': 'Kamala Tran'
 };
 
 const getCanonicalStaffName = (rawName) => {
@@ -110,51 +112,55 @@ const getCanonicalStaffName = (rawName) => {
 const getStaffDisplayName = (rawName) => getCanonicalStaffName(rawName);
 
 // Master list of all registered active staff across APEX teams with full names
+// Master list of all registered active staff across APEX teams with full names
 const KNOWN_APEX_USERS = [
   // MODELLING
-  { name: 'Nhân Nguyễn', team: 'MODELLING', isLeader: true },
-  { name: 'Quân Nguyễn', team: 'MODELLING' },
+  { name: 'Nhân Nguyễn', team: 'MODELLING', isLeader: true, isAdmin: true },
   { name: 'Nguyên Lý', team: 'MODELLING', isLeader: true },
+  { name: 'Khánh Nguyễn', team: 'MODELLING', isLeader: true },
+  { name: 'Quân Nguyễn', team: 'MODELLING' },
   { name: 'Khiêm Nguyễn', team: 'MODELLING' },
-  { name: 'Tâm Phan', team: 'MODELLING' },
-  { name: 'Khánh Nguyễn', team: 'MODELLING' },
   { name: 'Khang Trinh', team: 'MODELLING' },
+  { name: 'Tâm Phan', team: 'MODELLING' },
 
   // PT&REO
-  { name: 'Hoàng Phạm', team: 'PT&REO' },
-  { name: 'Tiến Trần', team: 'PT&REO' },
-  { name: 'Cường Phạm', team: 'PT&REO' },
+  { name: 'Hoàng Phạm', team: 'PT&REO', isLeader: true },
+  { name: 'Tiến Trần', team: 'PT&REO', isLeader: true },
+  { name: 'Cường Phạm', team: 'PT&REO', isLeader: true },
   { name: 'Ánh Nguyễn', team: 'PT&REO' },
-  { name: 'Trung Nguyễn', team: 'PT&REO' },
   { name: 'Nam Le', team: 'PT&REO' },
   { name: 'Loc Pham', team: 'PT&REO' },
+  { name: 'Trung Nguyễn', team: 'PT&REO' },
 
   // ENGINEER
-  { name: 'Bảo Phạm', team: 'ENGINEER' },
-  { name: 'Đức Phạm', team: 'ENGINEER' },
-  { name: 'Trung Thế Nguyễn', team: 'ENGINEER' },
+  { name: 'Đức Phạm', team: 'ENGINEER', isLeader: true },
+  { name: 'Nhân Phạm', team: 'ENGINEER', isLeader: true },
+  { name: 'Kỳ Phan', team: 'ENGINEER' },
   { name: 'Dũng Đỗ', team: 'ENGINEER' },
   { name: 'Ngân Trần', team: 'ENGINEER' },
-  { name: 'Kỳ Phan', team: 'ENGINEER' },
-  { name: 'Nhân Phạm', team: 'ENGINEER' },
+  { name: 'Bảo Phạm', team: 'ENGINEER' },
+  { name: 'Trung Thế Nguyễn', team: 'ENGINEER' },
 
   // ETABS
-  { name: 'Sơn Lâm', team: 'ETABS' },
+  { name: 'Sơn Lâm', team: 'ETABS', isLeader: true },
   { name: 'Linh Huynh', team: 'ETABS' }
 ];
 
 const DEFAULT_ADMIN_MANAGERS = [];
-const DEFAULT_ADMINS = ['NHÂN NGUYỄN', 'NHAN NGUYEN', 'VŨ', 'VU', 'VU DO', 'VU DO NGUYEN', 'JASON LE', 'JASON'];
+const DEFAULT_ADMINS = ['NHÂN NGUYỄN', 'NHAN NGUYEN', 'VŨ ĐỖ', 'VU DO', 'VU DO NGUYEN', 'VŨ', 'VU'];
 const DEFAULT_LEADERS = [
+  // MODELLING
   'NGUYÊN LÝ', 'NGUYEN LY',
   'KHÁNH NGUYỄN', 'KHANH NGUYEN',
-  'CƯỜNG PHẠM', 'CUONG PHAM',
+  // PT&REO
   'HOÀNG PHẠM', 'HOANG PHAM',
   'TIẾN TRẦN', 'TIEN TRAN',
-  'SƠN LÂM', 'SON LAM',
-  'BẢO PHẠM', 'BAO PHAM',
-  'TRUNG THẾ NGUYỄN', 'TRUNG THE NGUYEN', 'TRUNGTHENGUYEN',
-  'ĐỨC PHẠM', 'DUC PHAM'
+  'CƯỜNG PHẠM', 'CUONG PHAM',
+  // ENGINEER
+  'ĐỨC PHẠM', 'DUC PHAM',
+  'NHÂN PHẠM', 'NHAN PHAM', 'NHÂN P.', 'NHAN P.', 'NHÂN P', 'NHAN P',
+  // ETABS
+  'SƠN LÂM', 'SON LAM'
 ];
 
 const getStaffRole = (name, allUsers = []) => {
@@ -163,19 +169,7 @@ const getStaffRole = (name, allUsers = []) => {
   const norm = canonical.toUpperCase().trim();
   const rawNorm = (name || '').toUpperCase().trim();
 
-  // 1. STRICT PRIORITY EXCLUSION: Nhân Phạm (NHÂN P., Engineer) is strictly a team member (USER), NEVER Admin, Manager or Leader!
-  if (
-    norm === 'NHÂN PHẠM' || norm === 'NHAN PHAM' ||
-    norm.includes('NHÂN PHẠM') || norm.includes('NHAN PHAM') ||
-    rawNorm === 'NHÂN P.' || rawNorm === 'NHÂN P' ||
-    rawNorm === 'NHAN P.' || rawNorm === 'NHAN P' ||
-    rawNorm.startsWith('NHÂN PH') || rawNorm.startsWith('NHAN PH') ||
-    rawNorm === 'NHANPHAM' || rawNorm === 'NHÂNPHẠM'
-  ) {
-    return 'USER';
-  }
-
-  // 2. Nhân Nguyễn: Cố định MÀU VÀNG HOÀNG KIM (ADMIN)
+  // 1. Nhân Nguyễn: Admin (BIM Manager)
   if (
     norm === 'NHÂN NGUYỄN' || norm === 'NHAN NGUYEN' ||
     rawNorm === 'NHÂN NGUYỄN' || rawNorm === 'NHAN NGUYEN' ||
@@ -184,7 +178,23 @@ const getStaffRole = (name, allUsers = []) => {
     return 'ADMIN';
   }
 
-  // Find user in allUsers to inspect DB roles and positions
+  // 2. Vũ Đỗ: Admin (Manager)
+  if (
+    norm === 'VŨ ĐỖ' || norm === 'VU DO' ||
+    rawNorm === 'VŨ ĐỖ' || rawNorm === 'VU DO' || rawNorm === 'VU DO NGUYEN' ||
+    rawNorm === 'VŨ' || rawNorm === 'VU'
+  ) {
+    return 'ADMIN';
+  }
+
+  // 3. Leaders theo danh sách chuẩn hoá chính xác
+  if (
+    DEFAULT_LEADERS.some(l => norm === l || norm === l.replace(/\s+/g, '') || rawNorm === l || rawNorm === l.replace(/\s+/g, ''))
+  ) {
+    return 'LEADER';
+  }
+
+  // 4. Find user in allUsers to inspect DB roles and positions
   let dbUser = null;
   if (Array.isArray(allUsers) && allUsers.length > 0) {
     dbUser = allUsers.find(u => {
@@ -195,31 +205,13 @@ const getStaffRole = (name, allUsers = []) => {
 
   const dbRole = (dbUser?.user_role || dbUser?.role || '').toLowerCase();
   const dbPos = (dbUser?.position || '').toLowerCase();
-  const dbTeam = (dbUser?.team || '').toLowerCase();
   const isDbAdmin = dbRole === 'admin' || dbRole === 'adminapp';
-  const isDbManager = dbPos.includes('manager') || dbRole.includes('manager') || dbTeam === 'manager';
 
-  // 3. ADMIN & MANAGER (Phủ màu Ruby lấp lánh - cho các quản lý khác nếu có)
-  if (
-    DEFAULT_ADMIN_MANAGERS.some(m => norm === m || norm === m.replace(/\s+/g, '') || rawNorm === m) ||
-    (isDbAdmin && isDbManager && norm !== 'NHÂN NGUYỄN' && norm !== 'NHAN NGUYEN')
-  ) {
-    return 'MANAGER';
-  }
-
-  // 4. ADMIN (Phủ màu Vàng Hoàng Kim)
-  if (
-    DEFAULT_ADMINS.some(a => norm === a || norm === a.replace(/\s+/g, '') || rawNorm === a || rawNorm === a.replace(/\s+/g, '')) ||
-    isDbAdmin
-  ) {
+  if (isDbAdmin) {
     return 'ADMIN';
   }
 
-  // 5. LEADER (Phủ màu Bạch Kim Lấp Lánh)
-  if (
-    DEFAULT_LEADERS.some(l => norm === l || norm === l.replace(/\s+/g, '') || rawNorm === l || rawNorm === l.replace(/\s+/g, '')) ||
-    dbRole.includes('leader') || dbPos.includes('leader')
-  ) {
+  if (dbRole.includes('leader') || dbPos.includes('leader')) {
     return 'LEADER';
   }
 
@@ -480,7 +472,8 @@ const PerformanceView = ({
     const selTeamNorm = (selectedTeam || '').trim().toLowerCase();
     const allUsersList = [...(rawUsers || []), ...(dashboardUsers || [])].filter(u => {
       const n = (u?.name || u?.full_name || '').toLowerCase();
-      return n !== 'admin' && !n.includes('admin');
+      const em = (u?.email || '').toLowerCase();
+      return n !== 'admin' && !n.includes('admin') && !n.includes('jason') && !em.includes('jason');
     });
 
     const staffSet = new Set();
@@ -489,10 +482,17 @@ const PerformanceView = ({
     const addStaff = (staffName) => {
       if (!staffName) return;
       const cleanUpper = staffName.trim().toUpperCase();
-      if (cleanUpper === 'UNKNOWN' || cleanUpper === 'ADMIN' || cleanUpper.includes('ADMIN')) return;
-      if (!staffSet.has(staffName)) {
-        staffSet.add(staffName);
-        staffOrdered.push(staffName);
+      if (
+        cleanUpper === 'UNKNOWN' ||
+        cleanUpper === 'ADMIN' ||
+        cleanUpper.includes('ADMIN') ||
+        cleanUpper === 'JASON LE' ||
+        cleanUpper === 'JASON' ||
+        cleanUpper.includes('JASON')
+      ) return;
+      if (!staffSet.has(cleanUpper)) {
+        staffSet.add(cleanUpper);
+        staffOrdered.push(getCanonicalStaffName(staffName));
       }
     };
 
@@ -583,15 +583,10 @@ const PerformanceView = ({
         ? ((workTime + freeTime + overTime) / weekCapacity) * 100
         : 0;
 
-      // 2. RATE (Hệ số hoàn thành công việc) => Tạm thời để trống
-      const customRateRaw = customRates[staffName];
-      const hasCustomRate = customRateRaw !== undefined && customRateRaw !== '' && !isNaN(Number(customRateRaw));
-      const rateVal = hasCustomRate ? Number(customRateRaw) : null;
-      const rateMultiplier = rateVal !== null ? rateVal : 1.0;
-
-      // 3. EFFICIENCY (KPI công việc) = (Project time + overtime) * RATE / 40h
-      const productionTime = workTime + overTime;
-      const efficiency = ((productionTime * rateMultiplier) / 40) * 100;
+      // 2. EFFICIENCY = ( WORK TIME + OVER TIME ) / PLAN TIME
+      const efficiency = targetTotalHours > 0
+        ? ((workTime + overTime) / targetTotalHours) * 100
+        : 0;
 
       return {
         staff: staffName,
@@ -606,7 +601,7 @@ const PerformanceView = ({
         leaveHours,
         overTime,
         utilizationRate,
-        rateVal,
+        rateVal: null,
         efficiency
       };
     });
@@ -641,10 +636,17 @@ const PerformanceView = ({
       return a.staff.localeCompare(b.staff);
     });
 
-    // Filter rows (never show admin)
+    // Filter rows (never show admin, jason le)
     const filteredRows = rows.filter(r => {
       const u = r.staff.trim().toUpperCase();
-      return u !== 'ADMIN' && !u.includes('ADMIN') && u !== 'UNKNOWN';
+      return (
+        u !== 'ADMIN' &&
+        !u.includes('ADMIN') &&
+        u !== 'UNKNOWN' &&
+        u !== 'JASON LE' &&
+        u !== 'JASON' &&
+        !u.includes('JASON')
+      );
     });
 
     // Grand totals
@@ -657,17 +659,15 @@ const PerformanceView = ({
       freeTime: acc.freeTime + curr.freeTime,
       leaveHours: acc.leaveHours + curr.leaveHours,
       overTime: acc.overTime + curr.overTime,
-      totalAttendanceHours: acc.totalAttendanceHours + (curr.workTime + curr.freeTime + curr.overTime + curr.leaveHours),
-      productionWithRate: acc.productionWithRate + ((curr.workTime + curr.overTime) * (curr.rateVal !== null ? curr.rateVal : 1.0))
-    }), { weekCapacity: 0, targetTotalHours: 0, workTime: 0, projectTime: 0, learningTime: 0, freeTime: 0, leaveHours: 0, overTime: 0, totalAttendanceHours: 0, productionWithRate: 0 });
+      totalAttendanceHours: acc.totalAttendanceHours + (curr.workTime + curr.freeTime + curr.overTime + curr.leaveHours)
+    }), { weekCapacity: 0, targetTotalHours: 0, workTime: 0, projectTime: 0, learningTime: 0, freeTime: 0, leaveHours: 0, overTime: 0, totalAttendanceHours: 0 });
 
     const totalUtilizationRate = totals.weekCapacity > 0
       ? ((totals.workTime + totals.freeTime + totals.overTime) / totals.weekCapacity) * 100
       : 0;
 
-    const totalStandardCapacity = 40 * filteredRows.length;
-    const totalEfficiency = totalStandardCapacity > 0
-      ? (totals.productionWithRate / totalStandardCapacity) * 100
+    const totalEfficiency = totals.targetTotalHours > 0
+      ? ((totals.workTime + totals.overTime) / totals.targetTotalHours) * 100
       : 0;
 
     return { rows: filteredRows, totals, totalUtilizationRate, totalEfficiency };
@@ -693,8 +693,8 @@ const PerformanceView = ({
     lines.push('');
 
     // Table 1 Header
-    lines.push('PROJECT TIME,,,TEAM CAPACITY,,,,WORK TIME,FREE TIME,LEAVE,OVER TIME,UTILIZATION RATE,RATE,EFFICIENCY');
-    lines.push('PROJECT,HOURS,,STAFF,WEEK,%,TOTAL,HOURS,HOURS,HOURS,HOURS,%,FACTOR,%');
+    lines.push('PROJECT TIME,,,TEAM CAPACITY,,,,WORK TIME,FREE TIME,LEAVE,OVER TIME,UTILIZATION RATE,EFFICIENCY');
+    lines.push('PROJECT,HOURS,,STAFF,WEEK,%,TOTAL,HOURS,HOURS,HOURS,HOURS,%,%');
 
     const maxRows = Math.max(projectTimeData.rows.length, teamPerformanceData.rows.length);
     for (let i = 0; i < maxRows; i++) {
@@ -703,14 +703,14 @@ const PerformanceView = ({
 
       const pCol = p ? `"${p.key}",${p.hours.toFixed(2)}` : ',';
       const tCol = t 
-        ? `,"${t.staff}",${t.weekCapacity.toFixed(1)},${t.targetPercent}%,${t.targetTotalHours.toFixed(1)},${t.workTime.toFixed(1)},${t.freeTime.toFixed(1)},${t.leaveHours > 0 ? t.leaveHours.toFixed(1) : ''},${t.overTime > 0 ? t.overTime.toFixed(1) : ''},${t.utilizationRate.toFixed(1)}%,${t.rateVal !== null ? t.rateVal.toFixed(2) : ''},${t.efficiency.toFixed(1)}%`
+        ? `,"${t.staff}",${t.weekCapacity.toFixed(1)},${t.targetPercent}%,${t.targetTotalHours.toFixed(1)},${t.workTime.toFixed(1)},${t.freeTime.toFixed(1)},${t.leaveHours > 0 ? t.leaveHours.toFixed(1) : ''},${t.overTime > 0 ? t.overTime.toFixed(1) : ''},${t.utilizationRate.toFixed(1)}%,${t.efficiency.toFixed(1)}%`
         : ',,,,,,,,,,';
 
       lines.push(`${pCol},${tCol}`);
     }
 
     // Totals line
-    lines.push(`TOTAL,${projectTimeData.totalHours.toFixed(2)},,TOTAL,${teamPerformanceData.totals.weekCapacity.toFixed(1)},-,${teamPerformanceData.totals.targetTotalHours.toFixed(1)},${teamPerformanceData.totals.workTime.toFixed(1)},${teamPerformanceData.totals.freeTime.toFixed(1)},${teamPerformanceData.totals.leaveHours.toFixed(1)},${teamPerformanceData.totals.overTime.toFixed(1)},${teamPerformanceData.totalUtilizationRate.toFixed(1)}%,-,${teamPerformanceData.totalEfficiency.toFixed(1)}%`);
+    lines.push(`TOTAL,${projectTimeData.totalHours.toFixed(2)},,TOTAL,${teamPerformanceData.totals.weekCapacity.toFixed(1)},-,${teamPerformanceData.totals.targetTotalHours.toFixed(1)},${teamPerformanceData.totals.workTime.toFixed(1)},${teamPerformanceData.totals.freeTime.toFixed(1)},${teamPerformanceData.totals.leaveHours.toFixed(1)},${teamPerformanceData.totals.overTime.toFixed(1)},${teamPerformanceData.totalUtilizationRate.toFixed(1)}%,${teamPerformanceData.totalEfficiency.toFixed(1)}%`);
 
     // Leave Table
     if (leaveTableData.length > 0) {
@@ -890,11 +890,6 @@ const PerformanceView = ({
                       <div className="absolute inset-0 bg-purple-500/15 pointer-events-none" />
                       <span className="relative z-10">UTILIZATION RATE</span>
                     </th>
-                    {/* RATE */}
-                    <th className="sticky top-0 z-20 h-[48px] text-center text-[14px] font-black uppercase tracking-widest border-r border-b border-[var(--border)] bg-[var(--bg-card)] text-amber-700 dark:text-amber-400 align-middle relative overflow-hidden">
-                      <div className="absolute inset-0 bg-amber-500/15 pointer-events-none" />
-                      <span className="relative z-10">RATE</span>
-                    </th>
                     {/* EFFICIENCY */}
                     <th className="sticky top-0 z-20 h-[48px] text-center text-[14px] font-black uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-card)] text-emerald-700 dark:text-emerald-400 align-middle relative overflow-hidden">
                       <div className="absolute inset-0 bg-emerald-500/15 pointer-events-none" />
@@ -946,40 +941,6 @@ const PerformanceView = ({
                     <th className="sticky top-[48px] z-20 h-[36px] px-[10px] text-center border-r border-b border-[var(--border)] text-[12px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 bg-[var(--bg-card)] align-middle">HOURS</th>
                     <th className="sticky top-[48px] z-20 h-[36px] px-[10px] text-center border-r border-b border-[var(--border)] text-[12px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400 bg-[var(--bg-card)] align-middle">HOURS</th>
                     <th className="sticky top-[48px] z-20 h-[36px] px-[10px] text-center border-r border-b border-[var(--border)] text-[12px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400 bg-[var(--bg-card)] align-middle">%</th>
-                    <th className="sticky top-[48px] z-20 h-[36px] px-[10px] text-center border-r border-b border-[var(--border)] text-[12px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 bg-[var(--bg-card)] align-middle">
-                      <div className="inline-flex items-center justify-center gap-1">
-                        <span>FACTOR</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsEditingTargets(prev => !prev);
-                            setEditingRateStaff(null);
-                          }}
-                          title={isEditingTargets ? "Hoàn tất chỉnh sửa Rate" : "Chỉnh sửa Rate"}
-                          className={`p-1 rounded cursor-pointer transition-colors ${
-                            isEditingTargets 
-                              ? 'text-amber-600 bg-amber-100 dark:bg-amber-900/50' 
-                              : 'text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800'
-                          }`}
-                        >
-                          {isEditingTargets ? <Check size={12} className="stroke-[2.5]" /> : <Edit2 size={11} />}
-                        </button>
-                        {Object.keys(customRates).length > 0 && isEditingTargets && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (window.confirm('Đặt lại tất cả RATE về mặc định (1.0)?')) {
-                                setCustomRates({});
-                              }
-                            }}
-                            title="Đặt lại tất cả RATE về mặc định"
-                            className="p-1 rounded text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer"
-                          >
-                            <RotateCcw size={11} />
-                          </button>
-                        )}
-                      </div>
-                    </th>
                     <th className="sticky top-[48px] z-20 h-[36px] text-center border-b border-[var(--border)] text-[12px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 bg-[var(--bg-card)] align-middle" style={{ paddingRight: '20px', paddingLeft: '10px' }}>%</th>
                   </tr>
                 </thead>
@@ -1197,91 +1158,6 @@ const PerformanceView = ({
                           </span>
                         </td>
 
-                        {/* 10. RATE (Hệ số hoàn thành công việc) */}
-                        <td 
-                          className="px-[10px] sys-py align-middle text-center font-mono border-r border-b border-[var(--border)] group cursor-pointer select-none"
-                          title="Click để điều chỉnh RATE (mặc định 1.0)"
-                          onClick={() => {
-                            if (!isEditingTargets && editingRateStaff !== row.staff) {
-                              setEditingRateStaff(row.staff);
-                              setTempRateValue(customRates[row.staff] !== undefined ? String(customRates[row.staff]) : '');
-                            }
-                          }}
-                        >
-                          {(isEditingTargets || editingRateStaff === row.staff) ? (
-                            <div className="inline-flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
-                              <input 
-                                type="number"
-                                min="0"
-                                max="2"
-                                step="0.05"
-                                autoFocus={editingRateStaff === row.staff}
-                                value={editingRateStaff === row.staff ? tempRateValue : (customRates[row.staff] ?? '')}
-                                placeholder="1.0"
-                                onChange={(e) => {
-                                  if (editingRateStaff === row.staff) {
-                                    setTempRateValue(e.target.value);
-                                  } else {
-                                    const val = e.target.value === '' ? '' : parseFloat(e.target.value);
-                                    if (val === '') {
-                                      setCustomRates(prev => {
-                                        const next = { ...prev };
-                                        delete next[row.staff];
-                                        return next;
-                                      });
-                                    } else {
-                                      setCustomRates(prev => ({ ...prev, [row.staff]: val }));
-                                    }
-                                  }
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    if (editingRateStaff === row.staff) {
-                                      if (tempRateValue === '' || isNaN(Number(tempRateValue))) {
-                                        setCustomRates(prev => {
-                                          const next = { ...prev };
-                                          delete next[row.staff];
-                                          return next;
-                                        });
-                                      } else {
-                                        setCustomRates(prev => ({ ...prev, [row.staff]: parseFloat(tempRateValue) }));
-                                      }
-                                      setEditingRateStaff(null);
-                                    }
-                                  } else if (e.key === 'Escape') {
-                                    setEditingRateStaff(null);
-                                  }
-                                }}
-                                onBlur={() => {
-                                  if (editingRateStaff === row.staff) {
-                                    if (tempRateValue === '' || isNaN(Number(tempRateValue))) {
-                                      setCustomRates(prev => {
-                                        const next = { ...prev };
-                                        delete next[row.staff];
-                                        return next;
-                                      });
-                                    } else {
-                                      setCustomRates(prev => ({ ...prev, [row.staff]: parseFloat(tempRateValue) }));
-                                    }
-                                    setEditingRateStaff(null);
-                                  }
-                                }}
-                                className="w-14 text-center text-xs font-mono font-bold bg-[var(--bg-surface)] border border-amber-400 rounded py-0.5 outline-none text-amber-600 shadow-sm"
-                              />
-                            </div>
-                          ) : (
-                            <div className="inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded group-hover:bg-slate-200/50 dark:group-hover:bg-slate-700/50 transition-colors">
-                              {row.rateVal !== null ? (
-                                <span className="font-bold text-amber-600 dark:text-amber-400 font-mono">
-                                  {row.rateVal.toFixed(2)}
-                                </span>
-                              ) : (
-                                <span className="text-[var(--text-muted)] opacity-40 font-bold">-</span>
-                              )}
-                              <Edit2 size={10} className="text-slate-400 opacity-0 group-hover:opacity-60 transition-opacity" />
-                            </div>
-                          )}
-                        </td>
 
                         {/* 11. EFFICIENCY (%) */}
                         <td className="sys-py align-middle text-center font-mono font-bold border-b border-[var(--border)]" style={{ paddingRight: '20px', paddingLeft: '10px' }}>
@@ -1332,9 +1208,6 @@ const PerformanceView = ({
                     </td>
                     <td className="px-[10px] sys-py align-middle text-center font-mono text-purple-600 dark:text-purple-400 border-r border-[var(--border)] text-[14px] bg-purple-500/10 font-bold">
                       {teamPerformanceData.totalUtilizationRate.toFixed(1)}%
-                    </td>
-                    <td className="px-[10px] sys-py align-middle text-center font-mono text-[var(--text-muted)] border-r border-[var(--border)] font-bold text-[14px]">
-                      -
                     </td>
                     <td className="sys-py align-middle text-center font-mono text-emerald-600 dark:text-emerald-400 text-[14px] bg-emerald-500/10" style={{ paddingRight: '20px', paddingLeft: '10px' }}>
                       {teamPerformanceData.totalEfficiency.toFixed(1)}%

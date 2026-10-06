@@ -112,7 +112,9 @@ const CANONICAL_STAFF_NAMES = {
   'VU DO': 'Vũ Đỗ',
   'VU DO NGUYEN': 'Vũ Đỗ',
   'VŨ ĐỖ': 'Vũ Đỗ',
-  'JASON LE': 'Jason Le'
+  'JASON LE': 'Jason Le',
+  'KAMALA TRAN': 'Kamala Tran',
+  'KAMALA': 'Kamala Tran'
 };
 
 const getCanonicalName = (name) => {
@@ -415,7 +417,7 @@ const PersonalSpace = () => {
     }
 
     const users = [...new Set(candidateUsers.map(u => getCanonicalName(u)))]
-      .filter(u => u && typeof u === 'string' && u.trim() !== '' && u !== 'UNKNOWN' && !isUUID(u.trim()))
+      .filter(u => u && typeof u === 'string' && u.trim() !== '' && u !== 'UNKNOWN' && !isUUID(u.trim()) && !u.toUpperCase().includes('JASON'))
       .map(u => u.trim())
       .filter((v, i, a) => a.indexOf(v) === i)
       .sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'base' }));
@@ -957,6 +959,8 @@ const PersonalSpace = () => {
       {viewMode === 'performance_timesheet' && (
         <div className="flex-1 min-h-0 h-full overflow-hidden">
           <PerformanceTimesheetView 
+            filteredData={filteredData}
+            analystTasks={analystTasks}
             dashboardProjects={dashboardProjects}
             dashboardUsers={dashboardUsers}
             dashboardLeave={dashboardLeave}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Trash2, Plus, Clock, Award, Info, AlertCircle, Users, User, LayoutGrid, List, Landmark, TrendingUp, ChevronDown } from 'lucide-react';
+import { Calendar, Trash2, Plus, Clock, Award, Info, AlertCircle, Users, User, LayoutGrid, List, Landmark, TrendingUp, ChevronDown, CalendarDays } from 'lucide-react';
 import { format, differenceInYears, parseISO, startOfYear, endOfYear, isWithinInterval, differenceInMinutes } from 'date-fns';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -11,12 +11,21 @@ import {
   BarElement, 
   Title, 
   Tooltip, 
-  Legend,
-  PointElement,
-  LineElement
+  Legend, 
+  PointElement, 
+  LineElement 
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import NeumorphicDropdown from './buttons/NeumorphicDropdown';
+import NeumorphicSearch from './buttons/NeumorphicSearch';
+import OvertimeLeaveView from './AnnualLeave/OvertimeLeaveView';
+import LeaveScheduleView from './AnnualLeave/LeaveScheduleView';
+import ThreeDLeaveChart from './AnnualLeave/ThreeDLeaveChart';
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 ChartJS.register(
   CategoryScale, 
@@ -48,12 +57,31 @@ const AnnualLeave = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('ADMIN');
   const [selectedTeam, setSelectedTeam] = useState('ALL');
-  const [viewMode, setViewMode] = useState('personal'); // 'personal' | 'team'
+  const [viewMode, setViewMode] = useState('personal'); // 'personal' | 'team' | 'overtime'
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  // Persistent OT Conversions
+  const [otConversions, setOtConversions] = useState(() => {
+    try {
+      const saved = localStorage.getItem('apex_ot_conversions');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('apex_ot_conversions', JSON.stringify(otConversions));
+    } catch (e) {}
+  }, [otConversions]);
 
   // Settings & Data State (indexed by selectedUser)
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState(10); // default October
+  const [searchQuery, setSearchQuery] = useState('');
+  const [scheduleSubView, setScheduleSubView] = useState('daily');
   const [leaveEntries, setLeaveEntries] = useState([]);
 
   const [allLeaveEntries, setAllLeaveEntries] = useState([]);
@@ -167,8 +195,12 @@ const AnnualLeave = () => {
     if (selectedYear === 'ALL') {
       base = 15 * Math.max(1, seniority);
     }
-    return base;
-  }, [seniority, selectedYear]);
+    const targetUser = users.find(u => (u.name || u.email) === (selectedUser === 'ADMIN' ? 'ADMIN' : selectedUser));
+    const targetOtDays = targetUser ? otConversions
+      .filter(c => c.userId === targetUser.id && c.conversionType === 'allowance')
+      .reduce((sum, c) => sum + (Number(c.leaveDays) || 0), 0) : 0;
+    return base + targetOtDays;
+  }, [seniority, selectedYear, users, selectedUser, otConversions]);
 
   const usedDays = useMemo(() => {
     const currentYear = parseInt(selectedYear);
@@ -274,22 +306,29 @@ const AnnualLeave = () => {
         console.log(`  Breakdown:`, uLog.join(' | '));
       }
 
+      const uOtDays = otConversions
+        .filter(c => c.userId === u.id && c.conversionType === 'allowance')
+        .reduce((sum, c) => sum + (Number(c.leaveDays) || 0), 0);
+      const effectiveAllowance = uAllowance + uOtDays;
+
       return {
         id: u.id,
         name: uName,
         team: u.team || '-',
         startDate: uStart,
         seniority: uSeniority,
-        allowance: uAllowance,
+        allowance: effectiveAllowance,
+        baseAllowance: uAllowance,
+        otLeaveDays: uOtDays,
         used: uUsed,
-        remaining: Math.max(0, uAllowance - uUsed)
+        remaining: Math.max(0, effectiveAllowance - uUsed)
       };
     }).sort((a, b) => {
       if (a.team < b.team) return -1;
       if (a.team > b.team) return 1;
       return b.used - a.used;
     });
-  }, [filteredUsersByTeam, allLeaveEntries]);
+  }, [filteredUsersByTeam, allLeaveEntries, otConversions]);
 
   useEffect(() => {
     if (summaryData.length > 0) {
@@ -299,9 +338,9 @@ const AnnualLeave = () => {
   }, [summaryData]);
 
   return (
-    <div className="tab-leave w-full space-y-[10px] pb-12">
+    <div className="tab-leave w-full h-full flex flex-col min-h-0 overflow-hidden">
       {/* Control Header (Neumorphic Action Bar) */}
-      <div className="leave-header-bar flex flex-wrap items-center justify-between gap-8">
+      <div className="leave-header-bar flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-8">
           <div className="flex gap-4">
             <button 
@@ -313,17 +352,53 @@ const AnnualLeave = () => {
             </button>
             <button 
               onClick={() => setViewMode('team')}
-              title="Team Summary"
+              title="Team Summary (Hạn mức nghỉ phép)"
               className={`neu-button w-[46px] h-[46px] rounded-2xl flex items-center justify-center p-0 ${viewMode === 'team' ? 'active text-indigo-500' : ''}`}
             >
               <LayoutGrid size={20} />
             </button>
+            <button 
+              onClick={() => setViewMode('schedule')}
+              title="Leave Schedule (Lịch nghỉ chi tiết & Ma trận 12 tháng)"
+              className={`neu-button w-[46px] h-[46px] rounded-2xl flex items-center justify-center p-0 ${viewMode === 'schedule' ? 'active text-emerald-500' : ''}`}
+            >
+              <CalendarDays size={20} />
+            </button>
+            <button 
+              onClick={() => setViewMode('overtime')}
+              title="Overtime - Quy đổi thành ngày nghỉ bù"
+              className={`neu-button w-[46px] h-[46px] rounded-2xl flex items-center justify-center p-0 ${viewMode === 'overtime' ? 'active text-amber-500' : ''}`}
+            >
+              <Clock size={20} />
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Neumorphic Search Bar (from Personal) */}
+          <div className="w-[180px] sm:w-[220px]">
+            <NeumorphicSearch 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search ..."
+            />
+          </div>
+
+          {/* Month Dropdown (when in schedule view & daily mode) */}
+          {viewMode === 'schedule' && scheduleSubView === 'daily' && (
+            <NeumorphicDropdown
+              className="min-w-[140px]"
+              value={selectedMonth.toString()}
+              onChange={e => setSelectedMonth(Number(e.target.value))}
+              options={MONTH_NAMES.map((name, i) => ({
+                value: (i + 1).toString(),
+                label: name.toUpperCase()
+              }))}
+            />
+          )}
+
           <NeumorphicDropdown
-            className="min-w-[160px]"
+            className="min-w-[120px]"
             value={selectedYear}
             onChange={e => setSelectedYear(e.target.value)}
             options={[
@@ -335,7 +410,7 @@ const AnnualLeave = () => {
           />
 
           <NeumorphicDropdown
-            className="min-w-[160px]"
+            className="min-w-[140px]"
             value={isAdmin ? selectedTeam : currentUser?.team}
             onChange={e => { if (isAdmin) setSelectedTeam(e.target.value); }}
             disabled={!isAdmin}
@@ -355,143 +430,43 @@ const AnnualLeave = () => {
         </div>
       </div>
 
-      {viewMode === 'personal' ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-[10px] m-[10px]">
-          {/* Orange Zone: Individual + Analytics */}
-          <div className="zone-card zone-orange">
-            <div className="zone-accent" />
+      {viewMode === 'personal' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="leave-chart-card flex-1 min-h-0 flex flex-col p-4">
             
-            <div className="flex flex-col gap-[15px]">
-
-
-              <div className="flex flex-col lg:flex-row gap-[20px] items-stretch">
-                {/* Right: Analytics Chart */}
-                <div className="flex-grow leave-chart-card">
-                  <div className="h-[350px]">
-                    <Bar 
-                      data={{
-                        labels: summaryData.map(u => u.name),
-                        datasets: [
-                          {
-                            label: 'Used',
-                            data: summaryData.map(u => u.used),
-                            backgroundColor: 'rgba(99, 102, 241, 0.3)',
-                            borderColor: '#6366f1',
-                            borderWidth: 1,
-                            borderRadius: 4,
-                            maxBarThickness: 40,
-                          },
-                          {
-                            label: 'Remaining',
-                            data: summaryData.map(u => u.remaining),
-                            backgroundColor: summaryData.map(u => 
-                              u.seniority >= 1 ? 'rgba(249, 115, 22, 0.15)' : 'rgba(16, 185, 129, 0.15)'
-                            ),
-                            borderColor: summaryData.map(u => 
-                              u.seniority >= 1 ? 'rgba(249, 115, 22, 0.4)' : 'rgba(16, 185, 129, 0.4)'
-                            ),
-                            borderWidth: 1,
-                            borderRadius: 4,
-                            maxBarThickness: 40,
-                          }
-                        ]
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          x: { stacked: true, grid: { display: false }, ticks: { color: '#94A3B8', font: { size: 9, weight: 'bold' } } },
-                          y: { stacked: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94A3B8', font: { size: 10 } } }
-                        },
-                        plugins: {
-                          legend: { position: 'bottom', labels: { color: '#CBD5E1', font: { size: 9, weight: 'bold' } } }
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
+            {/* Chart Sub-header: 100% English */}
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--border)]">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-[var(--text-contrast)]">
+                  ANNUAL LEAVE CHART
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-[4px] bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                  {summaryData.length} MEMBERS
+                </span>
               </div>
             </div>
-          </div>
 
-          {/* Green Zone: Reserves + History */}
-          <div className="zone-card zone-green mt-[10px]">
-            <div className="zone-accent" />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-[15px]">
-              {/* History Column */}
-              <div className="lg:col-span-12">
-                <div className="leave-history-card">
-                  <div className="px-[20px] py-[15px] border-b border-[var(--border)] bg-indigo-500/5 flex justify-between items-center">
-                    <div className="flex items-center sys-gap">
-                      <List className="text-indigo-400 animate-pulse" size={14} />
-                      <h3 className="text-[14px] font-black text-[var(--text-contrast)] uppercase">Leave History {selectedYear === 'ALL' ? '' : selectedYear}</h3>
-                    </div>
-                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest neu-inset px-[12px] py-[4px] rounded-full">
-                      {currentYearEntries.length} Records Detected
-                    </span>
-                  </div>
-                  
-                  <div className="flex-grow max-h-[350px] overflow-y-auto custom-scrollbar">
-                    {currentYearEntries.length === 0 ? (
-                      <div className="p-[40px] text-center text-[var(--text-muted)] text-[11px] font-bold uppercase italic">No leave records synchronized for this period.</div>
-                    ) : (
-                      <table className="leave-table">
-                        <thead className="sticky top-0 z-10 backdrop-blur-md">
-                          <tr>
-                            <th>Event Date</th>
-                            <th className="text-center">Amount</th>
-                            <th className="text-right">Reason / Description</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/[0.02]">
-                          {currentYearEntries.map((entry, i) => {
-                            let segments = [];
-                            try { segments = typeof entry.leave_list === 'string' ? JSON.parse(entry.leave_list) : (entry.leave_list || []); } catch (e) {}
-                            const totalDays = segments.reduce((sum, seg) => {
-                              const h = Math.abs(differenceInMinutes(parseISO(seg.LeaveEnd || seg.End), parseISO(seg.LeaveStart || seg.Start))) / 60;
-                              return sum + (h >= 8 ? 1 : h >= 3 ? 0.5 : h / 9);
-                            }, 0);
-
-                            return (
-                              <tr key={entry.id} style={{ backgroundColor: i % 2 === 0 ? 'var(--row-odd)' : 'var(--row-even)' }}>
-                                <td className="text-[12px] font-bold text-[var(--text-main)] uppercase">
-                                  {segments.length > 0 ? format(parseISO(segments[0].LeaveStart || segments[0].Start), 'EEEE, MMM dd, yyyy') : '-'}
-                                </td>
-                                <td className="text-center">
-                                  <span className="badge-done">
-                                    {totalDays.toFixed(1)} Days
-                                  </span>
-                                </td>
-                                <td className="text-right text-[12px] text-[var(--text-muted)] font-bold truncate max-w-[300px]">
-                                  {entry.leave_reason || '—'}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                </div>
-              </div>
+            <div className="flex-1 min-h-0 w-full h-full">
+              <ThreeDLeaveChart summaryData={summaryData} />
             </div>
           </div>
         </motion.div>
-      ) : (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="leave-table-wrapper">
-            <table className="leave-table">
+      )}
+
+      {viewMode === 'team' && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="leave-table-wrapper flex-1 min-h-0 overflow-auto">
+            <table className="leave-table min-w-full">
               <thead>
                 <tr>
-                  <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Team</th>
-                  <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)]" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>USER</th>
-                  <th className="th-primary sticky z-[35] text-center border-b border-r border-[var(--border)]" style={{ top: '0px' }}>Start</th>
-                  <th className="th-primary sticky z-[35] text-center border-b border-r border-[var(--border)]" style={{ top: '0px' }}>Seniority</th>
-                  <th className="th-primary sticky z-[35] text-center border-b border-r border-[var(--border)]" style={{ top: '0px' }}>Allowance</th>
-                  <th className="th-primary sticky z-[35] text-center border-b border-r border-[var(--border)]" style={{ top: '0px' }}>Used</th>
-                  <th className="th-primary sticky z-[35] text-center border-b border-r border-[var(--border)]" style={{ top: '0px' }}>Remaining</th>
-                  <th className="th-primary sticky z-[35] text-right border-b border-[var(--border)]" style={{ top: '0px', paddingRight: '16px' }}>Status</th>
+                  <th className="th-primary sticky top-0 z-[35] text-left border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ paddingLeft: '12px', paddingRight: '12px' }}>Team</th>
+                  <th className="th-primary sticky top-0 z-[35] text-left border-b border-r border-[var(--border)] bg-[var(--bg-card)]" style={{ paddingLeft: '12px', paddingRight: '12px' }}>USER</th>
+                  <th className="th-primary sticky top-0 z-[35] text-center border-b border-r border-[var(--border)] bg-[var(--bg-card)]">Start</th>
+                  <th className="th-primary sticky top-0 z-[35] text-center border-b border-r border-[var(--border)] bg-[var(--bg-card)]">Seniority</th>
+                  <th className="th-primary sticky top-0 z-[35] text-center border-b border-r border-[var(--border)] bg-[var(--bg-card)]">Allowance</th>
+                  <th className="th-primary sticky top-0 z-[35] text-center border-b border-r border-[var(--border)] bg-[var(--bg-card)]">Used</th>
+                  <th className="th-primary sticky top-0 z-[35] text-center border-b border-r border-[var(--border)] bg-[var(--bg-card)]">Remaining</th>
+                  <th className="th-primary sticky top-0 z-[35] text-right border-b border-[var(--border)] bg-[var(--bg-card)]" style={{ paddingRight: '16px' }}>Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
@@ -530,7 +505,14 @@ const AnnualLeave = () => {
                       </td>
                       <td className="text-center text-[14px] font-normal text-[var(--text-muted)]">{u.seniority} Yrs</td>
                       <td className="text-center">
-                        <span className="text-[14px] font-normal text-accent">{u.allowance}</span>
+                        <span className="text-[14px] font-normal text-accent">
+                          {u.allowance}
+                          {u.otLeaveDays > 0 && (
+                            <span className="ml-1 text-[11px] font-bold text-amber-500" title={`Đã cộng ${u.otLeaveDays.toFixed(1)} ngày quy đổi từ Overtime`}>
+                              (+{u.otLeaveDays.toFixed(1)} OT)
+                            </span>
+                          )}
+                        </span>
                       </td>
                       <td className="text-center">
                         <span className="text-[14px] font-normal text-done">{u.used}</span>
@@ -553,6 +535,49 @@ const AnnualLeave = () => {
             </table>
           </div>
         </motion.div>
+      )}
+
+      {viewMode === 'schedule' && (
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <LeaveScheduleView
+            users={users}
+            filteredUsersByTeam={filteredUsersByTeam}
+            selectedTeam={selectedTeam}
+            selectedYear={selectedYear}
+            allLeaveEntries={allLeaveEntries}
+            searchQuery={searchQuery}
+            currentMonth={selectedMonth}
+            setCurrentMonth={setSelectedMonth}
+            subView={scheduleSubView}
+            setSubView={setScheduleSubView}
+          />
+        </div>
+      )}
+
+      {viewMode === 'overtime' && (
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <OvertimeLeaveView
+            users={users}
+            filteredUsersByTeam={filteredUsersByTeam}
+            selectedTeam={selectedTeam}
+            selectedYear={selectedYear}
+            isAdmin={isAdmin}
+            currentUser={currentUser}
+            allLeaveEntries={allLeaveEntries}
+            otConversions={otConversions}
+            setOtConversions={setOtConversions}
+            searchQuery={searchQuery}
+            onConversionSuccess={() => {
+              supabase
+                .from('NMK_Leave')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .then(({ data }) => {
+                  if (data) setAllLeaveEntries(data);
+                });
+            }}
+          />
+        </div>
       )}
     </div>
   );

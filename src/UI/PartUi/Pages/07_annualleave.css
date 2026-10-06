@@ -91,20 +91,37 @@
 /* ── Tables ──
    AnnualLeave.jsx:467, 534
    ------------------------------------------------------- */
+.tab-leave {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 10px;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
 .tab-leave .leave-table {
   width: 100%;
+  min-width: 850px;
   text-align: left;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .tab-leave .leave-table th {
-  background: rgba(99, 102, 241, 0.05);
+  background: var(--bg-card);
+  position: sticky;
+  top: 0;
+  z-index: 30;
   font-size: 14px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   color: var(--text-muted);
-  border: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
   padding: 12px 20px;
 }
 
@@ -145,18 +162,19 @@
   border-radius: 12px;
   padding: 0 1.5rem;
   height: 66px;
-  margin: 10px;
+  margin: 0;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border);
 }
 
 .leave-chart-card {
-  background: rgba(var(--bg-card-rgb), 0.5);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
-  margin: 10px 10px 0 10px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .leave-stats-card {
@@ -176,7 +194,8 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border);
   height: 100%;
-  margin: 10px 10px 0 10px;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .leave-overview-card {
@@ -192,10 +211,12 @@
 .leave-table-wrapper {
   background: var(--bg-card);
   border-radius: 12px;
-  overflow: hidden;
+  overflow: auto;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border);
-  margin: 10px 10px 0 10px;
+  margin: 0;
+  height: 100%;
+  max-height: 100%;
 }
 
 /* ── Progress Bar ── */

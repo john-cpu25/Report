@@ -1,0 +1,2539 @@
+{
+  "yearlyMatrix": {
+    "2025": {
+      "NHÂN.NGUYEN": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 1,
+        "total": 1
+      },
+      "NGUYÊN": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 1.5,
+        "T11": 0,
+        "T12": 1,
+        "total": 2.5
+      },
+      "KHIÊM": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 1,
+        "T11": 0.5,
+        "T12": 3,
+        "total": 4.5
+      },
+      "QUANG": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 2,
+        "total": 2
+      },
+      "QUÂN": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 1,
+        "total": 1
+      },
+      "KHÁNH": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 2.5,
+        "total": 2.5
+      },
+      "CƯỜNG": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 1,
+        "T11": 0,
+        "T12": 2,
+        "total": 3
+      },
+      "ÁNH": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 3.5,
+        "T10": 1.5,
+        "T11": 1,
+        "T12": 1,
+        "total": 7
+      },
+      "NHÂN.KHƯU": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 2.5,
+        "T10": 2,
+        "T11": 0,
+        "T12": 4,
+        "total": 8.5
+      },
+      "ĐĂNG": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 1,
+        "T10": 2,
+        "T11": 0,
+        "T12": 2,
+        "total": 5
+      },
+      "HOÀNG": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 1,
+        "T10": 1,
+        "T11": 0,
+        "T12": 1,
+        "total": 3
+      },
+      "TRUNG": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 1.5,
+        "T10": 5,
+        "T11": 0.5,
+        "T12": 1,
+        "total": 8
+      },
+      "TIẾN": {
+        "T1": 0,
+        "T2": 0,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 3,
+        "total": 3
+      }
+    },
+    "2026": {
+      "NHÂN.NGUYEN": {
+        "T1": 1,
+        "T2": 3,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 4
+      },
+      "NGUYÊN": {
+        "T1": 1.5,
+        "T2": 5,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0.5,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 7
+      },
+      "KHIÊM": {
+        "T1": 1,
+        "T2": 3,
+        "T3": 0,
+        "T4": 0,
+        "T5": 2.5,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 6.5
+      },
+      "QUANG": {
+        "T1": 1,
+        "T2": 4,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0.5,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 5.5
+      },
+      "QUÂN": {
+        "T1": 0,
+        "T2": 5,
+        "T3": 0.5,
+        "T4": 3.5,
+        "T5": 0.5,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 9.5
+      },
+      "KHÁNH": {
+        "T1": 0,
+        "T2": 3,
+        "T3": 0,
+        "T4": 2,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 5
+      },
+      "CƯỜNG": {
+        "T1": 1,
+        "T2": 3,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 4
+      },
+      "ÁNH": {
+        "T1": 2,
+        "T2": 2,
+        "T3": 1,
+        "T4": 2,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 7
+      },
+      "NHÂN.KHƯU": {
+        "T1": 0,
+        "T2": 1,
+        "T3": 4,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 5
+      },
+      "ĐĂNG": {
+        "T1": 0,
+        "T2": 6,
+        "T3": 0,
+        "T4": 2,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 8
+      },
+      "HOÀNG": {
+        "T1": 2,
+        "T2": 5,
+        "T3": 1,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 8
+      },
+      "TRUNG": {
+        "T1": 0,
+        "T2": 3,
+        "T3": 1,
+        "T4": 2,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 6
+      },
+      "TIẾN": {
+        "T1": 0,
+        "T2": 4,
+        "T3": 0,
+        "T4": 0,
+        "T5": 0,
+        "T6": 0,
+        "T7": 0,
+        "T8": 0,
+        "T9": 0,
+        "T10": 0,
+        "T11": 0,
+        "T12": 0,
+        "total": 4
+      }
+    }
+  },
+  "dailyLeaves": [
+    {
+      "user": "MAI",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "MAI",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 5,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 21,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 20,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 3,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 4,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 5,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 18,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 3,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 4,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 22,
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 19,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 22,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 18,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 17,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 20,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 8,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 14,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 17,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 20,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 1,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 20,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 27,
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 10,
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 17,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 10,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 9,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 14,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 15,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 16,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 17,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 11,
+      "dayRaw": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 11,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 11,
+      "dayRaw": 24,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.NGUYEN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.NGUYEN",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.NGUYEN",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.NGUYEN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 2
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T10",
+      "daysTaken": 1.5
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 4,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 5,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 3
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 3
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T10",
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T11",
+      "daysTaken": 0.5
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 3
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 3,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 2
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 4
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 2
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 5
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 18,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 2
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 6
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T10",
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 2
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 7
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T9",
+      "daysTaken": 3.5
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T10",
+      "daysTaken": 1.5
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T11",
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 23,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 24,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 4
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 8
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T9",
+      "daysTaken": 2.5
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T10",
+      "daysTaken": 2
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 4
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 2
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 9
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T9",
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T10",
+      "daysTaken": 2
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 2
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 10
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T9",
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T10",
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 11
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T9",
+      "daysTaken": 1.5
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T10",
+      "daysTaken": 5
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T11",
+      "daysTaken": 0.5
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 45992,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 2.5
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 12
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 2.5
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 23,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 24,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 3
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 12,
+      "daysTaken": 13
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 12,
+      "dayRaw": "T12",
+      "daysTaken": 3
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 15,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 46027,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 6,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 2
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 30,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 3
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 46027,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 4
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 5
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 16,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 6
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 16,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 7
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 8
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 9
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 15,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 1,
+      "dayRaw": 16,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 10
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 11
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 1,
+      "daysTaken": 12
+    },
+    {
+      "user": "NHÂN.NGUYEN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "11[24]",
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.NGUYEN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "12[25]",
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.NGUYEN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "13[26]",
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": 5,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": 6,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "9[22/12]",
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "23[7]",
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "24[8]",
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "23[7]",
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "24[8]",
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "25[9]",
+      "daysTaken": 1
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": 6,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "23[7]",
+      "daysTaken": 1
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "24[8]",
+      "daysTaken": 1
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "25[9]",
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "9[22/12]",
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "10[23]",
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "11[24]",
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "12[25]",
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "13[26]",
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "23[7]",
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "24[8]",
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "25[9]",
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "23[7]",
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "24[8]",
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "9[22/12]",
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "9[22/12]",
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "10[23]",
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "11[24]",
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "12[25]",
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "13[26]",
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "23[7]",
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "9[22/12]",
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "10[23]",
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "11[24]",
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "12[25]",
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "13[26]",
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "11[24]",
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "12[25]",
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "13[26]",
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "11[24]",
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "12[25]",
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "13[26]",
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": 46055,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "11[24]",
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "12[25]",
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 2,
+      "dayRaw": "13[26]",
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 3,
+      "dayRaw": 26,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 3,
+      "dayRaw": 16,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 3,
+      "dayRaw": 46083,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 3,
+      "dayRaw": 17,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 3,
+      "dayRaw": 26,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 3,
+      "dayRaw": 46111,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 3,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 3,
+      "dayRaw": 20,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 3,
+      "dayRaw": 19,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 8,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 21,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 4,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 5,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 46146,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 5,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 8,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUANG",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 11,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 11,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 25,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 26,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 27,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 11,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 14,
+      "daysTaken": 1
+    },
+    {
+      "user": "ĐĂNG",
+      "team": "MODELLING",
+      "month": 5,
+      "dayRaw": 19,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 16,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 8,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 16,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 22,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 23,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 12,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 17,
+      "daysTaken": 1
+    },
+    {
+      "user": "NAM LÊ",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 16,
+      "daysTaken": 1
+    },
+    {
+      "user": "NAM LÊ",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 18,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 4,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 6,
+      "dayRaw": 5,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 7,
+      "dayRaw": 3,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.KHƯU",
+      "team": "MODELLING",
+      "month": 7,
+      "dayRaw": 15,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 7,
+      "dayRaw": 9,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 7,
+      "dayRaw": 10,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 7,
+      "dayRaw": 20,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 7,
+      "dayRaw": 22,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 7,
+      "dayRaw": 20,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHANG",
+      "team": "MODELLING",
+      "month": 8,
+      "dayRaw": 6,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHANG",
+      "team": "MODELLING",
+      "month": 8,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 8,
+      "dayRaw": 4,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 8,
+      "dayRaw": 27,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 8,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "NAM LÊ",
+      "team": "MODELLING",
+      "month": 8,
+      "dayRaw": 5,
+      "daysTaken": 1
+    },
+    {
+      "user": "TÂM PHAN",
+      "team": "MODELLING",
+      "month": 8,
+      "dayRaw": 19,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.NGUYEN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.NGUYEN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "NHÂN.NGUYEN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHIÊM",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHANG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHANG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHANG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "QUÂN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "CƯỜNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 24,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 3,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 4,
+      "daysTaken": 1
+    },
+    {
+      "user": "TÂM PHAN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "TÂM PHAN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "TÂM PHAN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "TÂM PHAN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 3,
+      "daysTaken": 1
+    },
+    {
+      "user": "TÂM PHAN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 4,
+      "daysTaken": 1
+    },
+    {
+      "user": "TÂM PHAN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 14,
+      "daysTaken": 1
+    },
+    {
+      "user": "TÂM PHAN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 15,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 21,
+      "daysTaken": 1
+    },
+    {
+      "user": "LỘC PHẠM",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "LỘC PHẠM",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "LỘC PHẠM",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "NAM LÊ",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "NAM LÊ",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "NAM LÊ",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "NAM LÊ",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 3,
+      "daysTaken": 1
+    },
+    {
+      "user": "NAM LÊ",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 4,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 25,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHÁNH",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 31,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 46266,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 2,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 3,
+      "daysTaken": 1
+    },
+    {
+      "user": "TIẾN",
+      "team": "MODELLING",
+      "month": 9,
+      "dayRaw": 4,
+      "daysTaken": 1
+    },
+    {
+      "user": "NGUYÊN",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 46296,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHANG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHANG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 29,
+      "daysTaken": 1
+    },
+    {
+      "user": "KHANG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 30,
+      "daysTaken": 1
+    },
+    {
+      "user": "ÁNH",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 5,
+      "daysTaken": 1
+    },
+    {
+      "user": "TÂM PHAN",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "HOÀNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 5,
+      "daysTaken": 1
+    },
+    {
+      "user": "TRUNG",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 28,
+      "daysTaken": 1
+    },
+    {
+      "user": "LỘC PHẠM",
+      "team": "MODELLING",
+      "month": 10,
+      "dayRaw": 7,
+      "daysTaken": 1
+    }
+  ]
+}
