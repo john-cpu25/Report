@@ -4,6 +4,7 @@ import { ChevronRight, ChevronDown, RefreshCw, ArrowUpDown } from 'lucide-react'
 import { supabase } from '../../supabaseClient';
 import { calculateDailyWorkingMinutes } from '../../utils/performanceEngine';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
+import { getCanonicalName, isSameUser } from '../../utils/userUtils';
 
 const TEAM_COLUMNS = [
   {
@@ -217,8 +218,9 @@ const TotalTimesheetView = forwardRef(({
         // Bỏ location bên Úc (Australia)
         if (userLoc.includes('aus') || userLoc.includes('australia')) return;
 
-        const userName = (userObj?.name || userObj?.full_name || record.user_id || 'Unknown').toString().trim();
-        const userTeam = (userObj?.team || userTeamByName[userName] || 'APEX').toString().trim().toUpperCase();
+        const rawUserName = (userObj?.name || userObj?.full_name || record.user_id || 'Unknown').toString().trim();
+        const userName = getCanonicalName(rawUserName);
+        const userTeam = (userObj?.team || userTeamByName[rawUserName] || userTeamByName[userName] || 'APEX').toString().trim().toUpperCase();
         const projectKey = (projObj?.key || projObj?.name || 'UNASSIGNED').toString().trim().toUpperCase();
         const projectFullName = projObj?.name || projectKey;
         const taskTypeName = (timeSheetTypeMap[record.kind] || 'GENERAL').toString().trim().toUpperCase();
@@ -241,9 +243,7 @@ const TotalTimesheetView = forwardRef(({
 
         // 3. User filter
         if (selectedUser) {
-          const selU = selectedUser.trim().toLowerCase();
-          const uNorm = userName.toLowerCase();
-          if (uNorm !== selU && !uNorm.includes(selU) && !selU.includes(uNorm)) return;
+          if (!isSameUser(rawUserName, selectedUser) && !isSameUser(userName, selectedUser)) return;
         }
 
         const pEntry = getProjectEntry(projectKey);
@@ -302,14 +302,13 @@ const TotalTimesheetView = forwardRef(({
         const userLoc = (userObj?.location || '').toString().toLowerCase();
         if (userLoc.includes('aus') || userLoc.includes('australia')) return;
 
-        const userName = (userObj?.name || userObj?.full_name || 'Unknown').toString().trim();
-        const userTeam = (userObj?.team || userTeamByName[userName] || t.team || 'APEX').toString().trim().toUpperCase();
+        const rawUserName = (userObj?.name || userObj?.full_name || 'Unknown').toString().trim();
+        const userName = getCanonicalName(rawUserName);
+        const userTeam = (userObj?.team || userTeamByName[rawUserName] || userTeamByName[userName] || t.team || 'APEX').toString().trim().toUpperCase();
 
         if (selectedTeam && userTeam.toLowerCase() !== selectedTeam.trim().toLowerCase()) return;
         if (selectedUser) {
-          const selU = selectedUser.trim().toLowerCase();
-          const uNorm = userName.toLowerCase();
-          if (uNorm !== selU && !uNorm.includes(selU) && !selU.includes(uNorm)) return;
+          if (!isSameUser(rawUserName, selectedUser) && !isSameUser(userName, selectedUser)) return;
         }
         if (selectedProject) {
           const selP = selectedProject.trim().toLowerCase();

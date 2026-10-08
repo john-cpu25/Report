@@ -61,68 +61,7 @@ const TIME_METRICS = [
   { value: 't5', label: 'REVIEW', color: 'text-rose-500 dark:text-rose-400', bg: 'bg-rose-500/10 border-rose-500/30', dot: 'bg-rose-500 dark:bg-rose-400' }
 ];
 
-const CANONICAL_STAFF_NAMES = {
-  'TAM PHAN': 'Tâm Phan',
-  'TÂM PHAN': 'Tâm Phan',
-  'LINH HUYNH': 'Linh Huynh',
-  'TRUNG THE NGUYEN': 'Trung Thế Nguyễn',
-  'TRUNGTHENGUYEN': 'Trung Thế Nguyễn',
-  'TRUNG THẾ NGUYỄN': 'Trung Thế Nguyễn',
-  'KY PHAN': 'Kỳ Phan',
-  'KỲ PHAN': 'Kỳ Phan',
-  'NHAN NGUYEN': 'Nhân Nguyễn',
-  'NHÂN NGUYỄN': 'Nhân Nguyễn',
-  'JOHNNY': 'Nhân Nguyễn',
-  'NGAN TRAN': 'Ngân Trần',
-  'NGÂN TRẦN': 'Ngân Trần',
-  'KHIEM NGUYEN': 'Khiêm Nguyễn',
-  'KHIÊM NGUYỄN': 'Khiêm Nguyễn',
-  'CUONG PHAM': 'Cường Phạm',
-  'CƯỜNG PHẠM': 'Cường Phạm',
-  'LOC PHAM': 'Loc Pham',
-  'LỘC PHẠM': 'Loc Pham',
-  'NAM LE': 'Nam Le',
-  'NAM LÊ': 'Nam Le',
-  'KHANG TRINH': 'Khang Trinh',
-  'TRUNG NGUYEN': 'Trung Nguyễn',
-  'TRUNG NGUYỄN': 'Trung Nguyễn',
-  'HOANG PHAM': 'Hoàng Phạm',
-  'HOÀNG PHẠM': 'Hoàng Phạm',
-  'NHAN PHAM': 'Nhân Phạm',
-  'NHÂN PHẠM': 'Nhân Phạm',
-  'DUC PHAM': 'Đức Phạm',
-  'ĐỨC PHẠM': 'Đức Phạm',
-  'TIEN TRAN': 'Tiến Trần',
-  'TIẾN TRẦN': 'Tiến Trần',
-  'KHANH NGUYEN': 'Khánh Nguyễn',
-  'KHÁNH NGUYỄN': 'Khánh Nguyễn',
-  'NGUYEN LY': 'Nguyên Lý',
-  'NGUYÊN LÝ': 'Nguyên Lý',
-  'NEIL': 'Nguyên Lý',
-  'QUAN NGUYEN': 'Quân Nguyễn',
-  'QUÂN NGUYỄN': 'Quân Nguyễn',
-  'ANH NGUYEN': 'Ánh Nguyễn',
-  'ÁNH NGUYỄN': 'Ánh Nguyễn',
-  'SON LAM': 'Sơn Lâm',
-  'SƠN LÂM': 'Sơn Lâm',
-  'BAO PHAM': 'Bảo Phạm',
-  'BẢO PHẠM': 'Bảo Phạm',
-  'DUNG DO': 'Dũng Đỗ',
-  'DŨNG ĐỖ': 'Dũng Đỗ',
-  'VU DO': 'Vũ Đỗ',
-  'VU DO NGUYEN': 'Vũ Đỗ',
-  'VŨ ĐỖ': 'Vũ Đỗ',
-  'JASON LE': 'Jason Le',
-  'KAMALA TRAN': 'Kamala Tran',
-  'KAMALA': 'Kamala Tran'
-};
-
-const getCanonicalName = (name) => {
-  if (!name || typeof name !== 'string') return '';
-  const trimmed = name.trim();
-  const upper = trimmed.toUpperCase();
-  return CANONICAL_STAFF_NAMES[upper] || trimmed;
-};
+import { CANONICAL_STAFF_NAMES, getCanonicalName, isSameUser } from '../utils/userUtils';
 
 const PersonalSpace = () => {
   const { 
@@ -249,7 +188,7 @@ const PersonalSpace = () => {
 
         if (localFilters.team && userTeam.toLowerCase() !== localFilters.team.trim().toLowerCase()) return;
         if (localFilters.project && pKey.toLowerCase() !== localFilters.project.trim().toLowerCase()) return;
-        if (localFilters.user && userName.toLowerCase() !== localFilters.user.trim().toLowerCase()) return;
+        if (localFilters.user && !isSameUser(userName, localFilters.user)) return;
 
         const rowHours = (Number(r.mon) || 0) + (Number(r.tue) || 0) + (Number(r.wed) || 0) +
                          (Number(r.thu) || 0) + (Number(r.fri) || 0) + (Number(r.sat) || 0) + (Number(r.sun) || 0);
@@ -471,8 +410,7 @@ const PersonalSpace = () => {
         (localMaps.userTeamByName?.[(t.userName || '').toLowerCase().trim()]?.toLowerCase() === selTeam);
       
       // 3. User Filter
-      const matchUser = !localFilters.user || 
-        (t.userName && t.userName.toString().trim().toLowerCase() === localFilters.user.trim().toLowerCase());
+      const matchUser = !localFilters.user || isSameUser(t.userName, localFilters.user) || isSameUser(t.user, localFilters.user);
       
       // 4. Project Filter
       const matchProject = !localFilters.project || 

@@ -3,6 +3,7 @@ import { format, isSameDay, addDays, startOfWeek, getISOWeek } from 'date-fns';
 import { CalendarDays, RefreshCw } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
+import { getCanonicalName, isSameUser } from '../../utils/userUtils';
 
 const formatHoursAndMinutes = (hoursDecimal) => {
   if (!hoursDecimal || hoursDecimal <= 0) return '';
@@ -139,8 +140,9 @@ const ApexTimesheetView = ({
       // Bỏ location bên Úc (Australia)
       if (userLoc.includes('aus') || userLoc.includes('australia')) return;
 
-      const userName = (userObj?.name || userObj?.full_name || record.user_id || 'Unknown').toString().trim();
-      const teamName = (userObj?.team || userTeamByName[userName] || 'APEX').toString().trim().toUpperCase();
+      const rawUserName = (userObj?.name || userObj?.full_name || record.user_id || 'Unknown').toString().trim();
+      const userName = getCanonicalName(rawUserName);
+      const teamName = (userObj?.team || userTeamByName[rawUserName] || userTeamByName[userName] || 'APEX').toString().trim().toUpperCase();
       // CHỈ LẤY PROJECT CODE (key hoặc code, nếu không có mới fallback về name)
       const projectCode = (projObj?.key || projObj?.code || projObj?.name || 'UNASSIGNED').toString().trim().toUpperCase();
       const projectFullName = projObj?.name || projectCode;
@@ -164,15 +166,14 @@ const ApexTimesheetView = ({
 
       // 3. User / Member filter
       if (selectedUser) {
-        const selU = selectedUser.trim().toLowerCase();
-        const uNorm = userName.toLowerCase();
-        if (uNorm !== selU && !uNorm.includes(selU) && !selU.includes(uNorm)) return;
+        if (!isSameUser(rawUserName, selectedUser) && !isSameUser(userName, selectedUser)) return;
       }
 
       // 4. Search text filter
       if (searchQuery) {
         const q = searchQuery.trim().toLowerCase();
         const matchSearch = userName.toLowerCase().includes(q) ||
+                            rawUserName.toLowerCase().includes(q) ||
                             projectCode.toLowerCase().includes(q) ||
                             projectFullName.toLowerCase().includes(q) ||
                             taskType.toLowerCase().includes(q) ||
