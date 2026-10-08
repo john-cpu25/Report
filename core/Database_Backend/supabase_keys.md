@@ -7,9 +7,9 @@ Tài liệu này lưu trữ lịch sử các thông tin kết nối Supabase và
 ## 🔑 Khóa Đang Hoạt Động (Active)
 *Đang sử dụng chính thức trong [supabaseClient.js](file:///c:/Users/Johnny%20Nguyen/OneDrive%20-%20APEX%20SOUTHERN%20CROSS%20ENGINEERING/CSharp/REPORT/Report/src/supabaseClient.js) & [ACCOUNTS.md](file:///c:/Users/Johnny%20Nguyen/OneDrive%20-%20APEX%20SOUTHERN%20CROSS%20ENGINEERING/CSharp/REPORT/Report/ACCOUNTS.md)*
 
-- **Supabase URL**: `https://wluhkzkfknpbunxagvjw.supabase.co`
-- **Supabase Anon Key**: `sb_publishable_iQ89mBYJqfyHwSnaPgM6wA_iRzhdRD9`
-- **Trạng thái**: Hoạt động bình thường (Đã nạp toàn bộ dữ liệu người dùng, dự án, task, thông báo, thư viện).
+- **Supabase URL**: `https://cvecpplwoduujrvoduku.supabase.co`
+- **Supabase Anon Key**: `sb_publishable_lxGJVSk8ESGalxlV9svi8g_lwPPYayD`
+- **Trạng thái**: Hoạt động bình thường (Đã cấu hình tải dữ liệu giới hạn 3 tháng gần nhất).
 
 ---
 
@@ -23,6 +23,10 @@ Tài liệu này lưu trữ lịch sử các thông tin kết nối Supabase và
 ---
 
 ## 🗄️ Lịch Sử Khóa Cũ (Backup)
+
+### Đợt 4 (Tháng 09/2026 - 10/2026)
+- **Supabase URL**: `https://wluhkzkfknpbunxagvjw.supabase.co`
+- **Supabase Anon Key**: `sb_publishable_iQ89mBYJqfyHwSnaPgM6wA_iRzhdRD9`
 
 ### Đợt 3 (Giai đoạn tháng 07/2026 - 24/09/2026)
 - **Supabase URL**: `https://ejyirnfxuezipogweybo.supabase.co`

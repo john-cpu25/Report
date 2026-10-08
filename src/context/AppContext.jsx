@@ -4,6 +4,7 @@ import { fetchProjects } from '../services/supabaseService';
 import projectsData from '../data/projects.json';
 import { useNotifications } from './NotificationContext';
 import { supabase } from '../supabaseClient';
+import { getThreeMonthsAgoISO } from '../utils/timeUtils';
 
 
 
@@ -23,17 +24,32 @@ export const AppProvider = ({ children }) => {
   });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Theme States
+  // Theme States - Giao diện mặc định khi vào web luôn là News Mode + Bamboo Zen
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('appTheme') || 'GALAXY';
+    const saved = localStorage.getItem('appTheme');
+    if (!saved || saved === 'GALAXY') {
+      localStorage.setItem('appTheme', 'NEWS');
+      return 'NEWS';
+    }
+    return saved;
   });
   const [background, setBackground] = useState(() => {
-    return localStorage.getItem('appBackground') || (theme === 'GALAXY' ? 'GALAXY' : 'BAMBOO');
+    const saved = localStorage.getItem('appBackground');
+    if (!saved || saved === 'GALAXY') {
+      localStorage.setItem('appBackground', 'BAMBOO');
+      return 'BAMBOO';
+    }
+    return saved;
   });
 
-  // Seasonal & Event Effects (Noel snow, Tet blossoms, Valentine hearts, Fireworks)
+  // Seasonal & Event Effects - Mặc định luôn là Tết Cổ Truyền (hoa đào & hoa mai bay), Cường độ Vừa
   const [seasonalEffect, setSeasonalEffect] = useState(() => {
-    return localStorage.getItem('appSeasonalEffect') || 'AUTO';
+    const saved = localStorage.getItem('appSeasonalEffect');
+    if (!saved || saved === 'AUTO') {
+      localStorage.setItem('appSeasonalEffect', 'TET');
+      return 'TET';
+    }
+    return saved;
   });
   const [seasonalIntensity, setSeasonalIntensity] = useState(() => {
     return localStorage.getItem('appSeasonalIntensity') || 'MEDIUM';
@@ -150,7 +166,9 @@ export const AppProvider = ({ children }) => {
     const channel = supabase
       .channel('schema-db-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Project' }, fetchSupabaseProjects)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'APEX_Project' }, fetchSupabaseProjects)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'APEX_Task' }, fetchDashboardData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'APEX_User' }, fetchDashboardData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_User' }, fetchDashboardData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'NMK_Task_Temporary' }, fetchPlannerData)
@@ -167,14 +185,16 @@ export const AppProvider = ({ children }) => {
   async function fetchDashboardData() {
     setIsDashboardLoading(true);
     try {
-      const [projRes, apexProjRes, userRes, taskRes, leaveRes, apexSpanRes, apexLeaveRes] = await Promise.all([
+      const threeMonthsAgoIso = getThreeMonthsAgoISO(3);
+      const [projRes, apexProjRes, userRes, taskRes, apexTaskRes, leaveRes, apexSpanRes, apexLeaveRes] = await Promise.all([
         supabase.from('NMK_Project').select('*'),
         supabase.from('APEX_Project').select('*'),
         supabase.from('APEX_User').select('*'),
-        supabase.from('NMK_Task').select('*').order('created_at', { ascending: false }).limit(1500),
-        supabase.from('NMK_Leave').select('*'),
-        supabase.from('APEX_Leave_Span').select('*'),
-        supabase.from('APEX_Leave').select('*')
+        supabase.from('NMK_Task').select('*').gte('created_at', threeMonthsAgoIso).order('created_at', { ascending: false }).limit(2000),
+        supabase.from('APEX_Task').select('*').gte('created_at', threeMonthsAgoIso).order('created_at', { ascending: false }).limit(2000),
+        supabase.from('NMK_Leave').select('*').gte('created_at', threeMonthsAgoIso),
+        supabase.from('APEX_Leave_Span').select('*').gte('start_at', threeMonthsAgoIso),
+        supabase.from('APEX_Leave').select('*').gte('created_at', threeMonthsAgoIso)
       ]);
       const projects = (apexProjRes.data && apexProjRes.data.length > 0)
         ? apexProjRes.data
@@ -184,7 +204,17 @@ export const AppProvider = ({ children }) => {
         const loc = (u.location || '').toString().toLowerCase();
         return !loc.includes('aus') && !loc.includes('australia');
       }));
-      setDashboardTasks(taskRes.data || []);
+
+      // Ưu tiên APEX_Task nếu có, map sang chuẩn dashboard
+      const rawTasks = (apexTaskRes.data && apexTaskRes.data.length > 0)
+        ? apexTaskRes.data.map(t => ({
+            ...t,
+            user_id: t.assigned_to_id || t.user_id,
+            create_by: t.create_by_id || t.create_by,
+            date: t.created_at
+          }))
+        : (taskRes.data || []);
+      setDashboardTasks(rawTasks);
 
       // Build leave list combining NMK_Leave and APEX_Leave_Span
       const apexLeaveList = [];

@@ -62,3 +62,27 @@ export function getDurationHours(ms) {
   if (!ms || ms <= 0) return 0;
   return ms / (1000 * 60 * 60);
 }
+
+/**
+ * Lấy mốc thời gian 3 tháng trước (mặc định 3 tháng / 90 ngày)
+ */
+export function getThreeMonthsAgoDate(months = 3) {
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  return d;
+}
+
+export function getThreeMonthsAgoISO(months = 3) {
+  return getThreeMonthsAgoDate(months).toISOString();
+}
+
+/**
+ * Lấy năm và tuần ISO cho mốc thời gian
+ */
+export function getISOWeekAndYear(date = new Date()) {
+  const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  target.setUTCDate(target.getUTCDate() + 4 - (target.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((target - yearStart) / 86400000) + 1) / 7);
+  return { year: target.getUTCFullYear(), week: weekNo };
+}

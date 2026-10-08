@@ -1,5 +1,5 @@
-
-import { supabase } from '../supabaseClient';
+import { supabase } from '../supabaseClient.js';
+import { getThreeMonthsAgoISO } from '../utils/timeUtils.js';
 
 /**
  * Supabase Service v1.0
@@ -8,13 +8,31 @@ import { supabase } from '../supabaseClient';
 
 export const fetchTasks = async (options = {}) => {
   const { startDate, endDate, limit = 2000 } = options;
+  const effectiveStartDate = startDate || getThreeMonthsAgoISO(3);
   
+  // Ưu tiên tải từ APEX_Task (giới hạn 3 tháng)
+  try {
+    let apexQuery = supabase
+      .from('APEX_Task')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (effectiveStartDate) apexQuery = apexQuery.gte('created_at', effectiveStartDate);
+    if (endDate) apexQuery = apexQuery.lte('created_at', endDate);
+    if (limit) apexQuery = apexQuery.limit(limit);
+
+    const { data: apexData, error: apexErr } = await apexQuery;
+    if (!apexErr && apexData && apexData.length > 0) return apexData;
+  } catch (e) {
+    console.warn('Fallback to NMK_Task in fetchTasks:', e);
+  }
+
   let query = supabase
     .from('NMK_Task')
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (startDate) query = query.gte('created_at', startDate);
+  if (effectiveStartDate) query = query.gte('created_at', effectiveStartDate);
   if (endDate) query = query.lte('created_at', endDate);
   if (limit) query = query.limit(limit);
 
@@ -38,6 +56,8 @@ export const updateApexTaskReview = async (taskId, reviewTime) => {
 
 export const fetchPersonalSpaceData = async (userObj, limit = 50000) => {
   if (!userObj) return [];
+
+  const threeMonthsAgoIso = getThreeMonthsAgoISO(3);
 
   // 1. Lấy thông tin phụ trợ từ APEX_Project và APEX_User để mapping tên
   let projectsMap = {};
@@ -79,7 +99,7 @@ export const fetchPersonalSpaceData = async (userObj, limit = 50000) => {
     console.warn('Cảnh báo khi tải metadata APEX:', err);
   }
 
-  // 2. Tải dữ liệu từ bảng APEX_Task theo từng chunk
+  // 2. Tải dữ liệu từ bảng APEX_Task theo từng chunk (giới hạn 3 tháng gần nhất)
   let allApexTasks = [];
   let from = 0;
   const chunkSize = 1000;
@@ -89,6 +109,7 @@ export const fetchPersonalSpaceData = async (userObj, limit = 50000) => {
     const { data, error } = await supabase
       .from('APEX_Task')
       .select('*')
+      .gte('created_at', threeMonthsAgoIso)
       .order('created_at', { ascending: false })
       .range(from, from + chunkSize - 1);
 
@@ -132,10 +153,11 @@ export const fetchPersonalSpaceData = async (userObj, limit = 50000) => {
     });
   }
 
-  // Fallback nếu APEX_Task rỗng: lấy từ NMK_Task
+  // Fallback nếu APEX_Task rỗng: lấy từ NMK_Task (giới hạn 3 tháng)
   const { data: fallbackData } = await supabase
     .from('NMK_Task')
     .select('*')
+    .gte('created_at', threeMonthsAgoIso)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -157,13 +179,29 @@ export const fetchPersonalSpaceData = async (userObj, limit = 50000) => {
 };
 
 export const fetchOrgChartData = async () => {
-  const { data, error } = await supabase
-    .from('NMK_User')
-    .select('id, email, full_name, position, is_assistant, level, manager_id, team_name, location, layout, offset_xy')
+  try {
+    const { data, error } = await supabase
+      .from('NMK_User')
+      .select('id, email, full_name, position, is_assistant, level, manager_id, team_name, location, layout, offset_xy')
+      .order('level');
+      
+    if (!error && data && data.length > 0) return data;
+  } catch (e) {
+    console.warn('Fallback to APEX_User for OrgChart:', e);
+  }
+
+  // Fallback to APEX_User
+  const { data: apexUsers, error: apexErr } = await supabase
+    .from('APEX_User')
+    .select('id, email, full_name, name, position, level, manager_id, team, location, layout')
     .order('level');
-    
-  if (error) throw error;
-  return data || [];
+
+  if (apexErr) throw apexErr;
+  return (apexUsers || []).map(u => ({
+    ...u,
+    full_name: u.full_name || u.name,
+    team_name: u.team
+  }));
 };
 
 export const updateUserOrgNode = async (userId, updates) => {
@@ -171,7 +209,10 @@ export const updateUserOrgNode = async (userId, updates) => {
     .from('NMK_User')
     .update(updates)
     .eq('id', userId);
-  if (error) throw error;
+  if (error) {
+    // Also try updating APEX_User if layout or position changed
+    await supabase.from('APEX_User').update(updates).eq('id', userId);
+  }
 };
 
 export const fetchUsers = async (vietnamOnly = false) => {
@@ -190,9 +231,11 @@ export const fetchUsers = async (vietnamOnly = false) => {
 };
 
 export const fetchLeaveEntries = async (userName = null) => {
+  const threeMonthsAgoIso = getThreeMonthsAgoISO(3);
   let query = supabase
     .from('NMK_Leave')
     .select('*')
+    .gte('created_at', threeMonthsAgoIso)
     .order('date', { ascending: false });
 
   if (userName) {
@@ -200,8 +243,37 @@ export const fetchLeaveEntries = async (userName = null) => {
   }
 
   const { data, error } = await query;
-  if (error) throw error;
-  return data || [];
+  if (!error && data && data.length > 0) return data;
+
+  // Fallback to APEX_Leave and APEX_Leave_Span (3 months)
+  try {
+    const [leaveRes, spanRes] = await Promise.all([
+      supabase.from('APEX_Leave').select('*').gte('created_at', threeMonthsAgoIso),
+      supabase.from('APEX_Leave_Span').select('*').gte('start_at', threeMonthsAgoIso)
+    ]);
+    if (leaveRes.data && spanRes.data) {
+      const leaveMap = {};
+      leaveRes.data.forEach(l => { leaveMap[l.id] = l; });
+      return spanRes.data.map(span => {
+        const parent = leaveMap[span.leave_id] || {};
+        return {
+          id: span.id,
+          create_by: parent.user_id,
+          user_id: parent.user_id,
+          start_at: span.start_at,
+          end_at: span.end_at,
+          date: span.start_at ? span.start_at.split('T')[0] : null,
+          status: parent.status,
+          reason: parent.reason,
+          kind: parent.kind
+        };
+      });
+    }
+  } catch (e) {
+    console.warn('Fallback to APEX_Leave error:', e);
+  }
+
+  return [];
 };
 
 export const fetchProjects = async () => {

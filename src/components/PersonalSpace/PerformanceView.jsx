@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
 import { supabase } from '../../supabaseClient';
+import { getThreeMonthsAgoISO } from '../../utils/timeUtils';
 import { Edit2, Check, RotateCcw } from 'lucide-react';
 
 // Master list of all registered active staff across APEX teams
@@ -284,9 +285,10 @@ const PerformanceView = ({
     let isMounted = true;
     const fetchApexLeave = async () => {
       try {
+        const threeMonthsAgoIso = getThreeMonthsAgoISO(3);
         const [spanRes, leaveRes] = await Promise.all([
-          supabase.from('APEX_Leave_Span').select('*'),
-          supabase.from('APEX_Leave').select('*')
+          supabase.from('APEX_Leave_Span').select('*').gte('start_at', threeMonthsAgoIso),
+          supabase.from('APEX_Leave').select('*').gte('created_at', threeMonthsAgoIso)
         ]);
         if (isMounted) {
           if (spanRes.data) setApexLeaveSpans(spanRes.data);

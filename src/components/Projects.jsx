@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useApp } from '../context/AppContext';
+import { getThreeMonthsAgoISO } from '../utils/timeUtils';
 import NeumorphicSearch from './buttons/NeumorphicSearch';
 import NeumorphicViewSwitcher from './buttons/NeumorphicViewSwitcher';
 
@@ -51,19 +52,48 @@ const Projects = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [projRes, taskRes] = await Promise.all([
-          supabase.from('NMK_Project').select('*').order('index', { ascending: true }),
-          supabase.from('NMK_Task').select('project_id, name').limit(15000)
-        ]);
+        const threeMonthsAgoIso = getThreeMonthsAgoISO(3);
         
-        if (projRes.error) throw projRes.error;
-        if (taskRes.error) throw taskRes.error;
+        // Ưu tiên tải APEX_Project
+        let projectsData = [];
+        const { data: apexProj } = await supabase
+          .from('APEX_Project')
+          .select('*')
+          .order('name', { ascending: true });
 
-        const projectsData = projRes.data || [];
+        if (apexProj && apexProj.length > 0) {
+          projectsData = apexProj;
+        } else {
+          const { data: nmkProj, error: pErr } = await supabase
+            .from('NMK_Project')
+            .select('*')
+            .order('index', { ascending: true });
+          if (pErr) throw pErr;
+          projectsData = nmkProj || [];
+        }
+
+        // Tải APEX_Task trong 3 tháng gần nhất
+        let taskData = [];
+        const { data: apexTasks } = await supabase
+          .from('APEX_Task')
+          .select('project_id, name')
+          .gte('created_at', threeMonthsAgoIso)
+          .limit(15000);
+
+        if (apexTasks && apexTasks.length > 0) {
+          taskData = apexTasks;
+        } else {
+          const { data: nmkTasks } = await supabase
+            .from('NMK_Task')
+            .select('project_id, name')
+            .gte('created_at', threeMonthsAgoIso)
+            .limit(15000);
+          taskData = nmkTasks || [];
+        }
         
         const counts = {};
-        if (taskRes.data) {
-          taskRes.data.forEach(t => {
+        if (taskData) {
+          taskData.forEach(t => {
             // Group by real database project ID UUID
             if (t.project_id) {
               counts[t.project_id] = (counts[t.project_id] || 0) + 1;

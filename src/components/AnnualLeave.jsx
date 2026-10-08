@@ -21,6 +21,7 @@ import NeumorphicSearch from './buttons/NeumorphicSearch';
 import OvertimeLeaveView from './AnnualLeave/OvertimeLeaveView';
 import LeaveScheduleView from './AnnualLeave/LeaveScheduleView';
 import ThreeDLeaveChart from './AnnualLeave/ThreeDLeaveChart';
+import { getThreeMonthsAgoISO } from '../utils/timeUtils';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -86,50 +87,80 @@ const AnnualLeave = () => {
 
   const [allLeaveEntries, setAllLeaveEntries] = useState([]);
 
-  // Fetch Users and Leave Data from Supabase
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoadingUsers(true);
-      try {
-        // 1. Fetch Vietnam Users
-        const { data: userData, error: userError } = await supabase
-          .from('APEX_User')
-          .select('id, name, email, team, location')
-          .ilike('location', 'VIETNAM')
-          .order('name');
-          
-        if (userError) throw userError;
-        setUsers(userData || []);
+  // Fetch Users and Leave Data from Supabase (giới hạn 3 tháng)
+  const fetchLeaveData = async () => {
+    setIsLoadingUsers(true);
+    try {
+      const threeMonthsAgoIso = getThreeMonthsAgoISO(3);
 
-        // 2. Fetch All Leave Entries
-        const { data: leaveData, error: leaveError } = await supabase
-          .from('NMK_Leave')
-          .select('*')
-          .order('created_at', { ascending: false });
+      // 1. Fetch Vietnam Users
+      const { data: userData, error: userError } = await supabase
+        .from('APEX_User')
+        .select('id, name, email, team, location')
+        .ilike('location', 'VIETNAM')
+        .order('name');
+        
+      if (userError) throw userError;
+      setUsers(userData || []);
 
-        if (leaveError) {
-          console.error('Error fetching NMK_Leave:', leaveError);
-          setAllLeaveEntries([]);
-        } else {
-          console.log(`[DATABASE] Fetched ${userData?.length || 0} Vietnam users.`);
-          console.log(`[DATABASE] Fetched ${leaveData?.length || 0} total leave entries.`);
-          
-          // Debug matching
-          if (userData && leaveData) {
-            const userIds = new Set(userData.map(u => u.id));
-            const matchingEntries = leaveData.filter(e => userIds.has(e.create_by));
-            console.log(`[DATABASE] Found ${matchingEntries.length} entries matching filtered Vietnam users.`);
+      // 2. Fetch Leave Entries (3 months)
+      let combinedLeaves = [];
+
+      // Ưu tiên APEX_Leave và APEX_Leave_Span
+      const [apexLeaveRes, apexSpanRes] = await Promise.all([
+        supabase.from('APEX_Leave').select('*').gte('created_at', threeMonthsAgoIso),
+        supabase.from('APEX_Leave_Span').select('*').gte('start_at', threeMonthsAgoIso)
+      ]);
+
+      if (apexLeaveRes.data && apexSpanRes.data && apexLeaveRes.data.length > 0) {
+        const leaveById = {};
+        apexLeaveRes.data.forEach(l => { leaveById[l.id] = l; });
+        
+        apexSpanRes.data.forEach(span => {
+          const l = leaveById[span.leave_id];
+          if (l) {
+            combinedLeaves.push({
+              id: span.id,
+              create_by: l.user_id,
+              user_id: l.user_id,
+              start_at: span.start_at,
+              end_at: span.end_at,
+              leave_reason: l.reason || 'Nghỉ phép',
+              type: l.kind || 'Annual Leave',
+              status: l.status,
+              created_at: l.created_at,
+              leave_list: [{
+                Start: span.start_at,
+                End: span.end_at,
+                LeaveStart: span.start_at,
+                LeaveEnd: span.end_at
+              }]
+            });
           }
-          
-          setAllLeaveEntries(leaveData || []);
-        }
-      } catch (err) {
-        console.error('Failed to fetch data from Supabase:', err);
-      } finally {
-        setIsLoadingUsers(false);
+        });
       }
-    };
-    fetchData();
+
+      // Fallback thêm từ NMK_Leave (nếu có, giới hạn 3 tháng)
+      const { data: nmkLeaveData } = await supabase
+        .from('NMK_Leave')
+        .select('*')
+        .gte('created_at', threeMonthsAgoIso)
+        .order('created_at', { ascending: false });
+
+      if (nmkLeaveData && nmkLeaveData.length > 0) {
+        combinedLeaves = [...combinedLeaves, ...nmkLeaveData];
+      }
+
+      setAllLeaveEntries(combinedLeaves);
+    } catch (err) {
+      console.error('Failed to fetch data from Supabase:', err);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeaveData();
   }, []);
 
   // Filtered users by team (excluding MANAGER and ADMIN)
@@ -568,13 +599,7 @@ const AnnualLeave = () => {
             setOtConversions={setOtConversions}
             searchQuery={searchQuery}
             onConversionSuccess={() => {
-              supabase
-                .from('NMK_Leave')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .then(({ data }) => {
-                  if (data) setAllLeaveEntries(data);
-                });
+              fetchLeaveData();
             }}
           />
         </div>

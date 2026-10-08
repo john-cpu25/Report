@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from './AuthContext';
+import { getThreeMonthsAgoISO } from '../utils/timeUtils';
 
 const NotificationContext = createContext();
 
@@ -74,24 +75,48 @@ export const NotificationProvider = ({ children }) => {
       }
       setIsLoading(false);
     } else {
-      // Real database fetch with robust error fallback
+      // Real database fetch with robust error fallback (giới hạn 3 tháng)
       try {
-        const { data, error } = await supabase
-          .from('NMK_Notification')
+        const threeMonthsAgoIso = getThreeMonthsAgoISO(3);
+        
+        // Ưu tiên APEX_Notify
+        const { data: apexData } = await supabase
+          .from('APEX_Notify')
           .select('*')
+          .gte('created_at', threeMonthsAgoIso)
           .order('created_at', { ascending: false });
 
-        if (error) {
-          // If table doesn't exist yet, gracefully fall back to local storage
-          if (error.code === '42P01') {
-            console.warn('[NotificationContext] NMK_Notification table not found in Supabase. Falling back to local storage.');
-            const savedLocal = localStorage.getItem('app_notifications');
-            setNotifications(savedLocal ? JSON.parse(savedLocal) : []);
-          } else {
-            throw error;
-          }
+        if (apexData && apexData.length > 0) {
+          const mapped = apexData.map(n => ({
+            id: n.id,
+            created_at: n.created_at,
+            title: n.title,
+            content: n.body,
+            is_read: n.is_read,
+            type: n.kind,
+            recipient: n.send_to_id,
+            sender: n.create_by_id
+          }));
+          setNotifications(mapped);
         } else {
-          setNotifications(data || []);
+          const { data, error } = await supabase
+            .from('NMK_Notification')
+            .select('*')
+            .gte('created_at', threeMonthsAgoIso)
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            // If table doesn't exist yet, gracefully fall back to local storage
+            if (error.code === '42P01') {
+              console.warn('[NotificationContext] NMK_Notification table not found in Supabase. Falling back to local storage.');
+              const savedLocal = localStorage.getItem('app_notifications');
+              setNotifications(savedLocal ? JSON.parse(savedLocal) : []);
+            } else {
+              throw error;
+            }
+          } else {
+            setNotifications(data || []);
+          }
         }
       } catch (err) {
         console.error('[NotificationContext] Supabase fetch error:', err);

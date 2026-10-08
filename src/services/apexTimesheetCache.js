@@ -1,4 +1,5 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from '../supabaseClient.js';
+import { getThreeMonthsAgoISO, getThreeMonthsAgoDate, getISOWeekAndYear } from '../utils/timeUtils.js';
 
 // Module-level singleton cache for APEX Timesheet data
 let cachedData = null;
@@ -26,6 +27,7 @@ const notifyListeners = (data) => {
 
 /**
  * Fetch APEX timesheet data once and cache it in memory.
+ * Giới hạn tải dữ liệu trong vòng 3 tháng gần nhất (không load hết).
  * @param {boolean} force If true, bypasses cache and re-fetches from Supabase (e.g. on Sync button click)
  */
 export const fetchApexTimesheetData = async (force = false) => {
@@ -38,14 +40,24 @@ export const fetchApexTimesheetData = async (force = false) => {
 
   inFlightPromise = (async () => {
     try {
+      const threeMonthsAgoIso = getThreeMonthsAgoISO(3);
+      const threeMonthsAgoDate = getThreeMonthsAgoDate(3);
+      const { year: cutoffYear, week: cutoffWeek } = getISOWeekAndYear(threeMonthsAgoDate);
+      const currentYear = new Date().getFullYear();
+
+      // Query Timesheet theo tuần và năm trong vòng 3 tháng
+      const tsQuery = cutoffYear === currentYear
+        ? supabase.from('APEX_TimeSheet').select('*').gte('year', cutoffYear).gte('week', cutoffWeek)
+        : supabase.from('APEX_TimeSheet').select('*').or(`year.gt.${cutoffYear},and(year.eq.${cutoffYear},week.gte.${cutoffWeek})`);
+
       const [tsRes, typeRes, taskRes, userRes, projRes, spanRes, leaveRes] = await Promise.all([
-        supabase.from('APEX_TimeSheet').select('*'),
+        tsQuery,
         supabase.from('APEX_TimeSheetType').select('*'),
-        supabase.from('APEX_Task').select('*'),
+        supabase.from('APEX_Task').select('*').gte('created_at', threeMonthsAgoIso).order('created_at', { ascending: false }),
         supabase.from('APEX_User').select('*'),
         supabase.from('APEX_Project').select('*'),
-        supabase.from('APEX_Leave_Span').select('*'),
-        supabase.from('APEX_Leave').select('*')
+        supabase.from('APEX_Leave_Span').select('*').gte('start_at', threeMonthsAgoIso),
+        supabase.from('APEX_Leave').select('*').gte('created_at', threeMonthsAgoIso)
       ]);
 
       cachedData = {

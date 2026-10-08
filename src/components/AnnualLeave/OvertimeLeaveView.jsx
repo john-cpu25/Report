@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { parseISO } from 'date-fns';
 import { supabase } from '../../supabaseClient';
+import { getThreeMonthsAgoDate, getISOWeekAndYear } from '../../utils/timeUtils';
 
 const HOURS_PER_DAY = 8; // Quy chuẩn: 8 giờ làm thêm (OT) = 1 ngày nghỉ bù
 const MONTH_SHORT = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -49,9 +50,15 @@ const OvertimeLeaveView = ({
     const fetchTimesheetData = async () => {
       setIsLoadingTimesheet(true);
       try {
-        const { data, error } = await supabase
-          .from('APEX_TimeSheet')
-          .select('*');
+        const threeMonthsAgoDate = getThreeMonthsAgoDate(3);
+        const { year: cutoffYear, week: cutoffWeek } = getISOWeekAndYear(threeMonthsAgoDate);
+        const currentYear = new Date().getFullYear();
+
+        const tsQuery = cutoffYear === currentYear
+          ? supabase.from('APEX_TimeSheet').select('*').gte('year', cutoffYear).gte('week', cutoffWeek)
+          : supabase.from('APEX_TimeSheet').select('*').or(`year.gt.${cutoffYear},and(year.eq.${cutoffYear},week.gte.${cutoffWeek})`);
+
+        const { data, error } = await tsQuery;
 
         if (isMounted && !error && data) {
           setTimesheetRecords(data);
