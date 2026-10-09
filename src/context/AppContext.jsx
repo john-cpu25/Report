@@ -224,7 +224,7 @@ export const AppProvider = ({ children }) => {
         
         apexSpanRes.data.forEach(span => {
           const l = leaveById[span.leave_id];
-          if (l && l.status !== 'rejected') {
+          if (l && l.status === 'approved') {
             apexLeaveList.push({
               _isApexSpan: true,
               user_id: l.user_id,

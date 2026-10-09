@@ -460,7 +460,7 @@ const PerformanceTimesheetView = forwardRef(({
 
       apexLeaveSpans.forEach(span => {
         const parentLeave = leaveById[span.leave_id];
-        if (!parentLeave || parentLeave.status === 'rejected') return;
+        if (!parentLeave || parentLeave.status !== 'approved') return;
 
         const rawUserName = userIdToName[parentLeave.user_id] || parentLeave.user_id;
         const uName = getCanonicalStaffName(rawUserName);

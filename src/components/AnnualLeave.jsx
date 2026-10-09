@@ -118,7 +118,7 @@ const AnnualLeave = () => {
         
         apexSpanRes.data.forEach(span => {
           const l = leaveById[span.leave_id];
-          if (l) {
+          if (l && l.status === 'approved') {
             combinedLeaves.push({
               id: span.id,
               create_by: l.user_id,

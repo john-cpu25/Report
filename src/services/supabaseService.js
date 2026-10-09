@@ -254,20 +254,25 @@ export const fetchLeaveEntries = async (userName = null) => {
     if (leaveRes.data && spanRes.data) {
       const leaveMap = {};
       leaveRes.data.forEach(l => { leaveMap[l.id] = l; });
-      return spanRes.data.map(span => {
-        const parent = leaveMap[span.leave_id] || {};
-        return {
-          id: span.id,
-          create_by: parent.user_id,
-          user_id: parent.user_id,
-          start_at: span.start_at,
-          end_at: span.end_at,
-          date: span.start_at ? span.start_at.split('T')[0] : null,
-          status: parent.status,
-          reason: parent.reason,
-          kind: parent.kind
-        };
-      });
+      return spanRes.data
+        .filter(span => {
+          const parent = leaveMap[span.leave_id];
+          return parent && parent.status === 'approved';
+        })
+        .map(span => {
+          const parent = leaveMap[span.leave_id] || {};
+          return {
+            id: span.id,
+            create_by: parent.user_id,
+            user_id: parent.user_id,
+            start_at: span.start_at,
+            end_at: span.end_at,
+            date: span.start_at ? span.start_at.split('T')[0] : null,
+            status: parent.status,
+            reason: parent.reason,
+            kind: parent.kind
+          };
+        });
     }
   } catch (e) {
     console.warn('Fallback to APEX_Leave error:', e);
