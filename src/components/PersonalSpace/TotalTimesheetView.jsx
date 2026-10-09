@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { format, addDays, startOfWeek, getISOWeek } from 'date-fns';
-import { ChevronRight, ChevronDown, RefreshCw, ArrowUpDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, RefreshCw, ArrowUpDown, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { supabase } from '../../supabaseClient';
 import { calculateDailyWorkingMinutes } from '../../utils/performanceEngine';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
@@ -452,9 +453,152 @@ const TotalTimesheetView = forwardRef(({
     return h > 0 ? h.toFixed(2) : '';
   };
 
+  const handleExportExcel = useCallback(() => {
+    try {
+      const wb = XLSX.utils.book_new();
+
+      // ── SHEET 1: PROJECT SUMMARY ──
+      const summaryRows = [
+        [`APEX SOUTHERN CROSS ENGINEERING - TOTAL TIMESHEET SUMMARY`],
+        [`Week: W${currentWeek} (${format(weekDates[0], 'dd/MM/yyyy')} - ${format(weekDates[6], 'dd/MM/yyyy')}) | Year: ${currentYear}`],
+        [],
+        [
+          'No.',
+          'Project Code',
+          'Project Name',
+          'Slab Design (hrs)',
+          'PT&Reo (hrs)',
+          'Modelling (hrs)',
+          'Lateral Design (hrs)',
+          'Total Hours (hrs)'
+        ]
+      ];
+
+      filteredAndSortedRows.forEach((r, idx) => {
+        summaryRows.push([
+          idx + 1,
+          r.key || 'UNASSIGNED',
+          r.name || r.key || '',
+          r.slabHours > 0 ? Number(r.slabHours.toFixed(2)) : '',
+          r.ptHours > 0 ? Number(r.ptHours.toFixed(2)) : '',
+          r.modellingHours > 0 ? Number(r.modellingHours.toFixed(2)) : '',
+          r.lateralHours > 0 ? Number(r.lateralHours.toFixed(2)) : '',
+          r.totalHours > 0 ? Number(r.totalHours.toFixed(2)) : 0
+        ]);
+      });
+
+      // Total row
+      summaryRows.push([
+        'TOTAL',
+        '',
+        '',
+        tableTotals.slab > 0 ? Number(tableTotals.slab.toFixed(2)) : '',
+        tableTotals.pt > 0 ? Number(tableTotals.pt.toFixed(2)) : '',
+        tableTotals.modelling > 0 ? Number(tableTotals.modelling.toFixed(2)) : '',
+        tableTotals.lateral > 0 ? Number(tableTotals.lateral.toFixed(2)) : '',
+        tableTotals.grandTotal > 0 ? Number(tableTotals.grandTotal.toFixed(2)) : 0
+      ]);
+
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+      wsSummary['!cols'] = [
+        { wch: 8 },  // No.
+        { wch: 25 }, // Project Code
+        { wch: 45 }, // Project Name
+        { wch: 18 }, // Slab Design
+        { wch: 18 }, // PT&Reo
+        { wch: 18 }, // Modelling
+        { wch: 22 }, // Lateral Design
+        { wch: 18 }  // Total Hours
+      ];
+
+      XLSX.utils.book_append_sheet(wb, wsSummary, `W${currentWeek} Summary`);
+
+      // ── SHEET 2: DETAILED TASKS BREAKDOWN ──
+      const detailRows = [
+        [`APEX SOUTHERN CROSS ENGINEERING - TIMESHEET TASKS BREAKDOWN`],
+        [`Week: W${currentWeek} (${format(weekDates[0], 'dd/MM/yyyy')} - ${format(weekDates[6], 'dd/MM/yyyy')}) | Year: ${currentYear}`],
+        [],
+        [
+          'No.',
+          'Project Code',
+          'Project Name',
+          'Member',
+          'Team',
+          'Discipline / Category',
+          'Task Type / Name',
+          `Mon (${format(weekDates[0], 'dd/MM')})`,
+          `Tue (${format(weekDates[1], 'dd/MM')})`,
+          `Wed (${format(weekDates[2], 'dd/MM')})`,
+          `Thu (${format(weekDates[3], 'dd/MM')})`,
+          `Fri (${format(weekDates[4], 'dd/MM')})`,
+          `Sat (${format(weekDates[5], 'dd/MM')})`,
+          `Sun (${format(weekDates[6], 'dd/MM')})`,
+          'Total Hours (hrs)'
+        ]
+      ];
+
+      let taskIdx = 1;
+      filteredAndSortedRows.forEach(r => {
+        (r.tasks || []).forEach(t => {
+          const teamLabel = t.teamId === 'slab' ? 'Slab Design' :
+                            t.teamId === 'pt' ? 'PT&Reo' :
+                            t.teamId === 'modelling' ? 'Modelling' :
+                            t.teamId === 'lateral' ? 'Lateral Design' : (t.team || 'Other');
+          const daily = t.daily || [0, 0, 0, 0, 0, 0, 0];
+          detailRows.push([
+            taskIdx++,
+            r.key,
+            r.name,
+            t.user || 'Unknown',
+            t.team || '',
+            teamLabel,
+            t.name || '',
+            daily[0] > 0 ? Number(daily[0].toFixed(2)) : '',
+            daily[1] > 0 ? Number(daily[1].toFixed(2)) : '',
+            daily[2] > 0 ? Number(daily[2].toFixed(2)) : '',
+            daily[3] > 0 ? Number(daily[3].toFixed(2)) : '',
+            daily[4] > 0 ? Number(daily[4].toFixed(2)) : '',
+            daily[5] > 0 ? Number(daily[5].toFixed(2)) : '',
+            daily[6] > 0 ? Number(daily[6].toFixed(2)) : '',
+            t.hours > 0 ? Number(t.hours.toFixed(2)) : 0
+          ]);
+        });
+      });
+
+      if (detailRows.length > 4) {
+        const wsDetail = XLSX.utils.aoa_to_sheet(detailRows);
+        wsDetail['!cols'] = [
+          { wch: 8 },  // No.
+          { wch: 22 }, // Project Code
+          { wch: 35 }, // Project Name
+          { wch: 22 }, // Member
+          { wch: 16 }, // Team
+          { wch: 20 }, // Discipline
+          { wch: 28 }, // Task Type / Name
+          { wch: 12 }, // Mon
+          { wch: 12 }, // Tue
+          { wch: 12 }, // Wed
+          { wch: 12 }, // Thu
+          { wch: 12 }, // Fri
+          { wch: 12 }, // Sat
+          { wch: 12 }, // Sun
+          { wch: 16 }  // Total Hours
+        ];
+        XLSX.utils.book_append_sheet(wb, wsDetail, `Tasks Detail`);
+      }
+
+      const fileName = `APEX_Total_Timesheet_W${currentWeek}_${currentYear}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    } catch (err) {
+      console.error('Error exporting Total Timesheet to Excel:', err);
+    }
+  }, [filteredAndSortedRows, tableTotals, currentWeek, currentYear, weekDates]);
+
   useImperativeHandle(ref, () => ({
-    refresh: fetchApexData
-  }));
+    refresh: fetchApexTimesheetData,
+    exportExcel: handleExportExcel,
+    exportCSV: handleExportExcel
+  }), [handleExportExcel]);
 
   return (
     <div className="personal-table-wrapper rounded-2xl border border-[var(--border)] overflow-hidden shadow-md bg-[var(--bg-card)] animate-in fade-in duration-300">
@@ -738,7 +882,17 @@ const TotalTimesheetView = forwardRef(({
                 className="sys-py text-left uppercase tracking-wider border-r border-[var(--border)] text-[var(--text-contrast)]"
                 style={{ paddingLeft: '20px', verticalAlign: 'middle' }}
               >
-                TOTAL
+                <div className="flex items-center justify-between pr-4">
+                  <span>TOTAL</span>
+                  <button
+                    onClick={handleExportExcel}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-black rounded-lg shadow-sm transition-all duration-200 hover:scale-[1.03] cursor-pointer tracking-wider"
+                    title="Export this table to Excel (.xlsx)"
+                  >
+                    <Download size={13} />
+                    <span>EXPORT EXCEL</span>
+                  </button>
+                </div>
               </td>
 
               {/* Total Slab Design */}

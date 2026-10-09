@@ -1,8 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
+import * as XLSX from 'xlsx';
 import { supabase } from '../../supabaseClient';
 import { getThreeMonthsAgoISO } from '../../utils/timeUtils';
-import { Edit2, Check, RotateCcw } from 'lucide-react';
+import { Edit2, Check, RotateCcw, Download } from 'lucide-react';
 
 // Master list of all registered active staff across APEX teams
 const CANONICAL_STAFF_NAMES = {
@@ -219,7 +220,7 @@ const getStaffRole = (name, allUsers = []) => {
   return 'USER';
 };
 
-const PerformanceView = ({
+const PerformanceView = forwardRef(({
   filteredData = [],
   dashboardProjects = [],
   dashboardUsers = [],
@@ -230,7 +231,7 @@ const PerformanceView = ({
   selectedTeam = '',
   rawUsers = [],
   userTeamByName = {}
-}) => {
+}, ref) => {
   // Current active week boundaries
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
@@ -734,6 +735,109 @@ const PerformanceView = ({
     document.body.removeChild(link);
   };
 
+  const handleExportExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+
+      // Sheet 1: Team Performance & Capacity
+      const perfRows = [
+        ['APEX TEAM CAPACITY & PERFORMANCE REPORT'],
+        [`Week: ${format(weekStart, 'dd/MM/yyyy')} - ${format(weekEnd, 'dd/MM/yyyy')}`],
+        [],
+        [
+          'Staff',
+          'Role',
+          'Capacity (hrs)',
+          'Target %',
+          'Target Total (hrs)',
+          'Work Time (hrs)',
+          'Free Time (hrs)',
+          'Leave (hrs)',
+          'Overtime (hrs)',
+          'Utilization Rate (%)',
+          'Efficiency (%)'
+        ]
+      ];
+
+      teamPerformanceData.rows.forEach(t => {
+        perfRows.push([
+          t.staff,
+          t.role || 'USER',
+          Number(t.weekCapacity.toFixed(1)),
+          `${t.targetPercent}%`,
+          Number(t.targetTotalHours.toFixed(1)),
+          Number(t.workTime.toFixed(1)),
+          Number(t.freeTime.toFixed(1)),
+          t.leaveHours > 0 ? Number(t.leaveHours.toFixed(1)) : 0,
+          t.overTime > 0 ? Number(t.overTime.toFixed(1)) : 0,
+          `${t.utilizationRate.toFixed(1)}%`,
+          `${t.efficiency.toFixed(1)}%`
+        ]);
+      });
+
+      perfRows.push([
+        'TOTAL',
+        '',
+        Number(teamPerformanceData.totals.weekCapacity.toFixed(1)),
+        '-',
+        Number(teamPerformanceData.totals.targetTotalHours.toFixed(1)),
+        Number(teamPerformanceData.totals.workTime.toFixed(1)),
+        Number(teamPerformanceData.totals.freeTime.toFixed(1)),
+        Number(teamPerformanceData.totals.leaveHours.toFixed(1)),
+        Number(teamPerformanceData.totals.overTime.toFixed(1)),
+        `${teamPerformanceData.totalUtilizationRate.toFixed(1)}%`,
+        `${teamPerformanceData.totalEfficiency.toFixed(1)}%`
+      ]);
+
+      const wsPerf = XLSX.utils.aoa_to_sheet(perfRows);
+      wsPerf['!cols'] = [
+        { wch: 22 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 18 },
+        { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 15 }, { wch: 20 }, { wch: 16 }
+      ];
+      XLSX.utils.book_append_sheet(wb, wsPerf, 'Team Performance');
+
+      // Sheet 2: Project Time
+      const projRows = [
+        ['PROJECT TIME BREAKDOWN'],
+        [`Week: ${format(weekStart, 'dd/MM/yyyy')} - ${format(weekEnd, 'dd/MM/yyyy')}`],
+        [],
+        ['Project Code', 'Hours (hrs)']
+      ];
+      projectTimeData.rows.forEach(p => {
+        projRows.push([p.key, Number(p.hours.toFixed(2))]);
+      });
+      projRows.push(['TOTAL', Number(projectTimeData.totalHours.toFixed(2))]);
+      const wsProj = XLSX.utils.aoa_to_sheet(projRows);
+      wsProj['!cols'] = [{ wch: 30 }, { wch: 16 }];
+      XLSX.utils.book_append_sheet(wb, wsProj, 'Project Time');
+
+      // Sheet 3: Leave Breakdown (if any)
+      if (leaveTableData.length > 0) {
+        const leaveRows = [
+          ['LEAVE BREAKDOWN'],
+          [],
+          ['Staff', 'Leave Hours', 'Target %', 'Lost Capacity (hrs)']
+        ];
+        leaveTableData.forEach(l => {
+          leaveRows.push([l.staff, Number(l.leaveHours.toFixed(1)), `${l.targetPercent}%`, Number(l.lostCapacity.toFixed(1))]);
+        });
+        const wsLeave = XLSX.utils.aoa_to_sheet(leaveRows);
+        wsLeave['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 20 }];
+        XLSX.utils.book_append_sheet(wb, wsLeave, 'Leave Breakdown');
+      }
+
+      XLSX.writeFile(wb, `APEX_Performance_Capacity_${format(weekStart, 'yyyyMMdd')}.xlsx`);
+    } catch (e) {
+      console.error('Error exporting Performance to Excel:', e);
+      handleExportCSV();
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    exportExcel: handleExportExcel,
+    exportCSV: handleExportCSV
+  }), [handleExportCSV, teamPerformanceData, projectTimeData, leaveTableData]);
+
   return (
     <div className="animate-in fade-in duration-300 h-full flex flex-col min-h-0 overflow-hidden">
       {/* ── MAIN TABLES: 2-COLUMN LAYOUT MATCHING EXCEL ── */}
@@ -1185,7 +1289,17 @@ const PerformanceView = ({
                       className="sys-py text-left uppercase tracking-wider border-r border-[var(--border)] text-[var(--text-contrast)]"
                       style={{ paddingLeft: '20px', paddingRight: '16px', verticalAlign: 'middle' }}
                     >
-                      TOTAL
+                      <div className="flex items-center justify-between pr-2">
+                        <span>TOTAL</span>
+                        <button
+                          onClick={handleExportExcel}
+                          className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black rounded-lg shadow-sm transition-all duration-200 hover:scale-[1.03] cursor-pointer tracking-wider"
+                          title="Export Performance Report to Excel (.xlsx)"
+                        >
+                          <Download size={12} />
+                          <span>EXPORT EXCEL</span>
+                        </button>
+                      </div>
                     </td>
                     <td className="px-[10px] sys-py align-middle text-center font-mono text-[var(--text-contrast)] border-r border-[var(--border)]">
                       {teamPerformanceData.totals.weekCapacity.toFixed(0)}
@@ -1223,6 +1337,6 @@ const PerformanceView = ({
       </div>
     </div>
   );
-};
+});
 
 export default PerformanceView;

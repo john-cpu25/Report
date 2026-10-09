@@ -1,6 +1,6 @@
 import React from 'react';
 import { format, isSameDay } from 'date-fns';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Download } from 'lucide-react';
 
 const formatHoursAndMinutes = (hoursDecimal) => {
   if (!hoursDecimal || hoursDecimal <= 0) return '';
@@ -13,7 +13,7 @@ const formatHoursAndMinutes = (hoursDecimal) => {
   return `${mins}m`;
 };
 
-const TimesheetView = ({ timesheetData, getProjectColor }) => {
+const TimesheetView = ({ timesheetData, getProjectColor, onExportExcel }) => {
   return (
     <div className="personal-table-wrapper">
       <div className="max-h-[calc(100vh-335px)] overflow-y-auto overflow-x-auto custom-scrollbar">
@@ -151,7 +151,21 @@ const TimesheetView = ({ timesheetData, getProjectColor }) => {
           {timesheetData.teams.length > 0 && (
             <tfoot>
               <tr className="bg-white/[0.05] border-t-2 border-[var(--border)]">
-                <td colSpan={4} className="px-[16px] py-[12px] text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest border-r border-[var(--border)]">Total</td>
+                <td colSpan={4} className="px-[16px] py-[12px] text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest border-r border-[var(--border)]">
+                  <div className="flex items-center justify-between pr-4">
+                    <span>Total</span>
+                    {onExportExcel && (
+                      <button
+                        onClick={onExportExcel}
+                        className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-black rounded-lg shadow-sm transition-all duration-200 hover:scale-[1.03] cursor-pointer tracking-wider"
+                        title="Export Daily Timesheet to Excel (.xlsx)"
+                      >
+                        <Download size={13} />
+                        <span>EXPORT EXCEL</span>
+                      </button>
+                    )}
+                  </div>
+                </td>
                 {timesheetData.totalPerDay.map((total, i) => {
                   const isToday = isSameDay(timesheetData.weekDates[i], new Date());
                   const isWeekendDay = i >= 5;

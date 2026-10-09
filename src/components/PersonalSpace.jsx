@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import UnifiedTable from './CSVProcessor/UnifiedTable';
@@ -135,6 +136,10 @@ const PersonalSpace = () => {
   const [localMaps, setLocalMaps] = useState({ userMap: {}, teamMap: {} });
   const [selectedTimeMetric, setSelectedTimeMetric] = useState('t2'); // Default to T2 (USER TIME)
   const projectViewRef = useRef(null);
+  const totalTimesheetRef = useRef(null);
+  const apexTimesheetRef = useRef(null);
+  const performanceRef = useRef(null);
+  const performanceTimesheetRef = useRef(null);
   
   // Optimization: Date Filtering
   const [timeRange, setTimeRange] = useState('week'); // 'day' | 'week' | 'month' | 'year'
@@ -468,6 +473,222 @@ const PersonalSpace = () => {
     return { label: 'Personal Intelligence', sub: 'Individual Performance Mode', color: 'text-emerald-500', bg: 'bg-emerald-500/10' };
   }, [user]);
 
+  const exportListView = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const rows = [
+        ['APEX SOUTHERN CROSS ENGINEERING - TASKS LIST'],
+        [`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`],
+        [],
+        [
+          'No.',
+          'Project',
+          'Task Name',
+          'Assigned To',
+          'Team',
+          'Status',
+          'Planned Start',
+          'Planned End',
+          'Hours Planned',
+          'Hours Complete'
+        ]
+      ];
+
+      (strictlyFilteredData || []).forEach((t, idx) => {
+        rows.push([
+          idx + 1,
+          t.project || t.projectName || '',
+          t.task || t.name || t.detail || '',
+          t.assignedTo || t.user || '',
+          t.team || '',
+          t.status || '',
+          t.plannedStart || t.planned_start || '',
+          t.plannedEnd || t.planned_end || '',
+          t.hoursPlanned !== undefined ? Number(t.hoursPlanned) : (t.hours_planned !== undefined ? Number(t.hours_planned) : 0),
+          t.hoursComplete !== undefined ? Number(t.hoursComplete) : (t.hours_complete !== undefined ? Number(t.hours_complete) : 0)
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 8 },
+        { wch: 25 },
+        { wch: 40 },
+        { wch: 22 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 16 },
+        { wch: 16 }
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Tasks List');
+      XLSX.writeFile(wb, `APEX_Tasks_List_${format(new Date(), 'yyyyMMdd_HHmm')}.xlsx`);
+    } catch (err) {
+      console.error('Error exporting list view to Excel:', err);
+    }
+  };
+
+  const exportDailyTimesheet = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const dates = timesheetData?.weekDates || [];
+      const rows = [
+        ['APEX SOUTHERN CROSS ENGINEERING - DAILY TIMESHEET'],
+        [`Week: W${getISOWeek(currentDate)} (${dates[0] ? format(dates[0], 'dd/MM/yyyy') : ''} - ${dates[6] ? format(dates[6], 'dd/MM/yyyy') : ''}) | Year: ${currentDate.getFullYear()}`],
+        [],
+        [
+          'No.',
+          'Team',
+          'Project',
+          'Task Name',
+          'User',
+          dates[0] ? `Mon (${format(dates[0], 'dd/MM')})` : 'Mon',
+          dates[1] ? `Tue (${format(dates[1], 'dd/MM')})` : 'Tue',
+          dates[2] ? `Wed (${format(dates[2], 'dd/MM')})` : 'Wed',
+          dates[3] ? `Thu (${format(dates[3], 'dd/MM')})` : 'Thu',
+          dates[4] ? `Fri (${format(dates[4], 'dd/MM')})` : 'Fri',
+          dates[5] ? `Sat (${format(dates[5], 'dd/MM')})` : 'Sat',
+          dates[6] ? `Sun (${format(dates[6], 'dd/MM')})` : 'Sun',
+          'Total Hours'
+        ]
+      ];
+
+      let rowIdx = 1;
+      (timesheetData?.teams || []).forEach(team => {
+        (team.projects || []).forEach(proj => {
+          (proj.tasks || []).forEach(task => {
+            const d = task.daily || [0, 0, 0, 0, 0, 0, 0];
+            rows.push([
+              rowIdx++,
+              team.name || task.team || '',
+              proj.name || task.project || '',
+              task.name || '',
+              task.user || '',
+              d[0] > 0 ? Number(d[0].toFixed(2)) : '',
+              d[1] > 0 ? Number(d[1].toFixed(2)) : '',
+              d[2] > 0 ? Number(d[2].toFixed(2)) : '',
+              d[3] > 0 ? Number(d[3].toFixed(2)) : '',
+              d[4] > 0 ? Number(d[4].toFixed(2)) : '',
+              d[5] > 0 ? Number(d[5].toFixed(2)) : '',
+              d[6] > 0 ? Number(d[6].toFixed(2)) : '',
+              task.totalHours > 0 ? Number(task.totalHours.toFixed(2)) : (task.total > 0 ? Number(task.total.toFixed(2)) : 0)
+            ]);
+          });
+        });
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 8 },
+        { wch: 16 },
+        { wch: 25 },
+        { wch: 35 },
+        { wch: 22 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 16 }
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Daily Timesheet');
+      XLSX.writeFile(wb, `APEX_Daily_Timesheet_W${getISOWeek(currentDate)}_${currentDate.getFullYear()}.xlsx`);
+    } catch (err) {
+      console.error('Error exporting daily timesheet to Excel:', err);
+    }
+  };
+
+  const exportGantt = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const rows = [
+        ['APEX SOUTHERN CROSS ENGINEERING - GANTT TIMELINE & PROJECT SCHEDULE'],
+        [`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`],
+        [],
+        [
+          'No.',
+          'Project Code',
+          'Project Name',
+          'Task / Work Package',
+          'Assigned To',
+          'Planned Start',
+          'Planned End',
+          'Progress (%)',
+          'Status'
+        ]
+      ];
+
+      let rowIdx = 1;
+      (projectGroups || []).forEach(group => {
+        (group.tasks || []).forEach(task => {
+          rows.push([
+            rowIdx++,
+            group.key || group.projectCode || '',
+            group.name || group.projectName || group.key || '',
+            task.name || task.task || task.detail || '',
+            task.assignedTo || task.user || '',
+            task.plannedStart || task.planned_start || '',
+            task.plannedEnd || task.planned_end || '',
+            task.progress !== undefined ? `${task.progress}%` : '',
+            task.status || ''
+          ]);
+        });
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 8 },
+        { wch: 20 },
+        { wch: 35 },
+        { wch: 40 },
+        { wch: 22 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 16 }
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Gantt Schedule');
+      XLSX.writeFile(wb, `APEX_Gantt_Schedule_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+    } catch (err) {
+      console.error('Error exporting Gantt to Excel:', err);
+    }
+  };
+
+  const handleExportAll = () => {
+    switch (viewMode) {
+      case 'total_timesheet':
+        totalTimesheetRef.current?.exportExcel?.();
+        break;
+      case 'project':
+        projectViewRef.current?.exportExcel ? projectViewRef.current.exportExcel() : projectViewRef.current?.exportCSV?.();
+        break;
+      case 'timesheet':
+        apexTimesheetRef.current?.exportExcel?.();
+        break;
+      case 'performance':
+        performanceRef.current?.exportExcel ? performanceRef.current.exportExcel() : performanceRef.current?.exportCSV?.();
+        break;
+      case 'performance_timesheet':
+        performanceTimesheetRef.current?.exportExcel ? performanceTimesheetRef.current.exportExcel() : performanceTimesheetRef.current?.exportCSV?.();
+        break;
+      case 'daily':
+        exportDailyTimesheet();
+        break;
+      case 'list':
+        exportListView();
+        break;
+      case 'gantt':
+        exportGantt();
+        break;
+      default:
+        exportListView();
+        break;
+    }
+  };
+
   if (isLoading && (!analystTasks || analystTasks.length === 0)) {
     return (
       <div className="space-y-[10px] pb-20">
@@ -643,6 +864,7 @@ const PersonalSpace = () => {
               </span>
             </div>
 
+
               <div className="w-[1px] h-8 bg-[var(--border)] mx-2 hidden xl:block" />
 
               {/* Drop List for Time Metric (Available for Daily, Project, and Timesheet views) */}
@@ -671,17 +893,15 @@ const PersonalSpace = () => {
                 );
               })()}
 
-              {/* Export Excel Button (Available for Project View) */}
-              {viewMode === 'project' && (
-                <button
-                  onClick={() => projectViewRef.current?.exportCSV()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-black rounded-xl shadow-sm transition-all duration-200 hover:scale-[1.02] cursor-pointer"
-                  title="Export this table to Excel (.csv)"
-                >
-                  <Download size={14} />
-                  <span>EXPORT EXCEL</span>
-                </button>
-              )}
+              {/* Export Excel Button (Always available for ALL tabs) */}
+              <button
+                onClick={handleExportAll}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-black rounded-xl shadow-sm transition-all duration-200 hover:scale-[1.02] cursor-pointer"
+                title={`Export current tab (${viewMode.toUpperCase()}) to Excel (.xlsx)`}
+              >
+                <Download size={14} />
+                <span>EXPORT EXCEL</span>
+              </button>
             </div>
 
             {/* Enhanced Year/Week/Month Picker + Navigation */}
@@ -842,11 +1062,12 @@ const PersonalSpace = () => {
 
 
       {viewMode === 'daily' && (
-        <TimesheetView timesheetData={timesheetData} getProjectColor={getProjectColor} />
+        <TimesheetView timesheetData={timesheetData} getProjectColor={getProjectColor} onExportExcel={exportDailyTimesheet} />
       )}
 
       {viewMode === 'timesheet' && (
         <ApexTimesheetView 
+          ref={apexTimesheetRef}
           currentDate={currentDate}
           getProjectColor={getProjectColor}
           selectedTimeMetric={selectedTimeMetric}
@@ -863,6 +1084,7 @@ const PersonalSpace = () => {
 
       {viewMode === 'total_timesheet' && (
         <TotalTimesheetView 
+          ref={totalTimesheetRef}
           currentDate={currentDate}
           getProjectColor={getProjectColor}
           selectedTimeMetric={selectedTimeMetric}
@@ -880,6 +1102,7 @@ const PersonalSpace = () => {
       {viewMode === 'performance' && (
         <div className="flex-1 min-h-0 h-full overflow-hidden">
           <PerformanceView 
+            ref={performanceRef}
             filteredData={filteredData}
             dashboardProjects={dashboardProjects}
             dashboardUsers={dashboardUsers}
@@ -897,6 +1120,7 @@ const PersonalSpace = () => {
       {viewMode === 'performance_timesheet' && (
         <div className="flex-1 min-h-0 h-full overflow-hidden">
           <PerformanceTimesheetView 
+            ref={performanceTimesheetRef}
             filteredData={filteredData}
             analystTasks={analystTasks}
             dashboardProjects={dashboardProjects}

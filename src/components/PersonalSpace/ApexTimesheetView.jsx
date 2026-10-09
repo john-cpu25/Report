@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { format, isSameDay, addDays, startOfWeek, getISOWeek } from 'date-fns';
-import { CalendarDays, RefreshCw } from 'lucide-react';
+import { CalendarDays, RefreshCw, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { supabase } from '../../supabaseClient';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
 import { getCanonicalName, isSameUser } from '../../utils/userUtils';
@@ -29,7 +30,7 @@ const getTaskTypeTextStyle = (typeStr) => {
   return 'text-[var(--text-contrast)]';
 };
 
-const ApexTimesheetView = ({
+const ApexTimesheetView = forwardRef(({
   currentDate = new Date(),
   getProjectColor = () => 'var(--text-contrast)',
   selectedTimeMetric = 't1',
@@ -41,7 +42,7 @@ const ApexTimesheetView = ({
   selectedProject = '',
   selectedUser = '',
   searchQuery = ''
-}) => {
+}, ref) => {
   const cached = getCachedApexTimesheetData();
   const [timesheetRecords, setTimesheetRecords] = useState(cached?.timesheetRecords || []);
   const [timesheetTypes, setTimesheetTypes] = useState(cached?.timesheetTypes || []);
@@ -258,6 +259,101 @@ const ApexTimesheetView = ({
     };
   }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, userMap, projectMap, currentWeek, currentYear, currentMonday, weekDates, userTeamByName, selectedTeam, selectedProject, selectedUser, searchQuery]);
 
+  const handleExportExcel = useCallback(() => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const rows = [
+        [`APEX SOUTHERN CROSS ENGINEERING - TIMESHEET`],
+        [`Week: W${currentWeek} (${format(weekDates[0], 'dd/MM/yyyy')} - ${format(weekDates[6], 'dd/MM/yyyy')}) | Year: ${currentYear}`],
+        [],
+        [
+          'No.',
+          'Team',
+          'Project Code',
+          'Project Name',
+          'Task Type',
+          'User',
+          `Mon (${format(weekDates[0], 'dd/MM')})`,
+          `Tue (${format(weekDates[1], 'dd/MM')})`,
+          `Wed (${format(weekDates[2], 'dd/MM')})`,
+          `Thu (${format(weekDates[3], 'dd/MM')})`,
+          `Fri (${format(weekDates[4], 'dd/MM')})`,
+          `Sat (${format(weekDates[5], 'dd/MM')})`,
+          `Sun (${format(weekDates[6], 'dd/MM')})`,
+          'Total Hours'
+        ]
+      ];
+
+      let rowIdx = 1;
+      (timesheetData.teams || []).forEach(team => {
+        (team.projects || []).forEach(project => {
+          (project.tasks || []).forEach(task => {
+            rows.push([
+              rowIdx++,
+              team.name,
+              project.name,
+              project.fullName || project.name,
+              task.taskName,
+              task.userName,
+              task.hours[0] > 0 ? Number(task.hours[0].toFixed(2)) : '',
+              task.hours[1] > 0 ? Number(task.hours[1].toFixed(2)) : '',
+              task.hours[2] > 0 ? Number(task.hours[2].toFixed(2)) : '',
+              task.hours[3] > 0 ? Number(task.hours[3].toFixed(2)) : '',
+              task.hours[4] > 0 ? Number(task.hours[4].toFixed(2)) : '',
+              task.hours[5] > 0 ? Number(task.hours[5].toFixed(2)) : '',
+              task.hours[6] > 0 ? Number(task.hours[6].toFixed(2)) : '',
+              task.totalHours > 0 ? Number(task.totalHours.toFixed(2)) : 0
+            ]);
+          });
+        });
+      });
+
+      const dayTotals = timesheetData.totalPerDay || [0, 0, 0, 0, 0, 0, 0];
+      rows.push([
+        'TOTAL',
+        '',
+        '',
+        '',
+        '',
+        '',
+        dayTotals[0] > 0 ? Number(dayTotals[0].toFixed(2)) : '',
+        dayTotals[1] > 0 ? Number(dayTotals[1].toFixed(2)) : '',
+        dayTotals[2] > 0 ? Number(dayTotals[2].toFixed(2)) : '',
+        dayTotals[3] > 0 ? Number(dayTotals[3].toFixed(2)) : '',
+        dayTotals[4] > 0 ? Number(dayTotals[4].toFixed(2)) : '',
+        dayTotals[5] > 0 ? Number(dayTotals[5].toFixed(2)) : '',
+        dayTotals[6] > 0 ? Number(dayTotals[6].toFixed(2)) : '',
+        Number(timesheetData.grandTotalHours?.toFixed(2) || 0)
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 8 },  // No.
+        { wch: 16 }, // Team
+        { wch: 20 }, // Project Code
+        { wch: 35 }, // Project Name
+        { wch: 22 }, // Task Type
+        { wch: 22 }, // User
+        { wch: 12 }, // Mon
+        { wch: 12 }, // Tue
+        { wch: 12 }, // Wed
+        { wch: 12 }, // Thu
+        { wch: 12 }, // Fri
+        { wch: 12 }, // Sat
+        { wch: 12 }, // Sun
+        { wch: 16 }  // Total
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, `Timesheet W${currentWeek}`);
+      XLSX.writeFile(wb, `APEX_Timesheet_W${currentWeek}_${currentYear}.xlsx`);
+    } catch (e) {
+      console.error('Error exporting Apex Timesheet to Excel:', e);
+    }
+  }, [timesheetData, currentWeek, currentYear, weekDates]);
+
+  useImperativeHandle(ref, () => ({
+    exportExcel: handleExportExcel
+  }), [handleExportExcel]);
+
   return (
     <div className="personal-table-wrapper">
       <div className="max-h-[calc(100vh-335px)] overflow-y-auto overflow-x-auto custom-scrollbar">
@@ -416,7 +512,19 @@ const ApexTimesheetView = ({
           {timesheetData.teams.length > 0 && (
             <tfoot>
               <tr className="bg-[var(--bg-card)] border-t-2 border-[var(--border)]">
-                <td colSpan={4} className="px-[16px] py-[14px] text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest border-r border-[var(--border)]">Total</td>
+                <td colSpan={4} className="px-[16px] py-[14px] text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest border-r border-[var(--border)]">
+                  <div className="flex items-center justify-between pr-4">
+                    <span>Total</span>
+                    <button
+                      onClick={handleExportExcel}
+                      className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-black rounded-lg shadow-sm transition-all duration-200 hover:scale-[1.03] cursor-pointer tracking-wider"
+                      title="Export Timesheet to Excel (.xlsx)"
+                    >
+                      <Download size={13} />
+                      <span>EXPORT EXCEL</span>
+                    </button>
+                  </div>
+                </td>
                 {timesheetData.totalPerDay.map((total, i) => {
                   const isToday = isSameDay(timesheetData.weekDates[i], new Date());
                   const isWeekendDay = i >= 5;
@@ -443,6 +551,6 @@ const ApexTimesheetView = ({
       </div>
     </div>
   );
-};
+});
 
 export default ApexTimesheetView;

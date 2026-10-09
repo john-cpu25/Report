@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useImperativeHandle, forwardRef } from 'react';
-import { ChevronRight, ChevronDown, Layers, ArrowUpDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, Layers, ArrowUpDown, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const TEAM_COLUMNS = [
   {
@@ -325,9 +326,72 @@ const ProjectView = forwardRef(({
     document.body.removeChild(link);
   };
 
+  const handleExportExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const rows = [
+        ['APEX SOUTHERN CROSS ENGINEERING - PROJECT HOURS SUMMARY'],
+        [`Date: ${new Date().toISOString().slice(0, 10)}`],
+        [],
+        [
+          'No.',
+          'Project Code Name',
+          'Project Name',
+          'Slab Design (hrs)',
+          'PT&Reo (hrs)',
+          'Modelling (hrs)',
+          'Lateral Design (hrs)',
+          'Total Hours (hrs)'
+        ]
+      ];
+
+      filteredRows.forEach((r, idx) => {
+        rows.push([
+          idx + 1,
+          r.key,
+          r.name || '',
+          r.slabHours > 0 ? Number(r.slabHours.toFixed(2)) : '',
+          r.ptHours > 0 ? Number(r.ptHours.toFixed(2)) : '',
+          r.modellingHours > 0 ? Number(r.modellingHours.toFixed(2)) : '',
+          r.lateralHours > 0 ? Number(r.lateralHours.toFixed(2)) : '',
+          Number(r.totalHours.toFixed(2))
+        ]);
+      });
+
+      rows.push([
+        'TOTAL',
+        '',
+        '',
+        totals.slab > 0 ? Number(totals.slab.toFixed(2)) : '',
+        totals.pt > 0 ? Number(totals.pt.toFixed(2)) : '',
+        totals.modelling > 0 ? Number(totals.modelling.toFixed(2)) : '',
+        totals.lateral > 0 ? Number(totals.lateral.toFixed(2)) : '',
+        Number(totals.grandTotal.toFixed(2))
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 8 },  // No.
+        { wch: 25 }, // Project Code
+        { wch: 45 }, // Project Name
+        { wch: 18 }, // Slab Design
+        { wch: 18 }, // PT&Reo
+        { wch: 18 }, // Modelling
+        { wch: 22 }, // Lateral Design
+        { wch: 18 }  // Total Hours
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Project Summary');
+      XLSX.writeFile(wb, `APEX_Project_Hours_Summary_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (e) {
+      console.error('Error exporting Project View to Excel:', e);
+      handleExportCSV();
+    }
+  };
+
   useImperativeHandle(ref, () => ({
-    exportCSV: handleExportCSV
-  }), [handleExportCSV]);
+    exportCSV: handleExportCSV,
+    exportExcel: handleExportExcel
+  }), [handleExportCSV, filteredRows, totals]);
 
   const formatHours = (val) => {
     if (!val || val <= 0.001) return '';
@@ -615,11 +679,21 @@ const ProjectView = forwardRef(({
                   className="sys-py text-left font-black tracking-widest uppercase border-r border-[var(--border)] text-[var(--text-contrast)]"
                   style={{ paddingLeft: '20px', paddingRight: '16px', verticalAlign: 'middle' }}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[14px] font-black text-rose-500">TOTAL</span>
-                    <span className="text-xs font-normal text-[var(--text-muted)] lowercase">
-                      ({filteredRows.length} projects)
-                    </span>
+                  <div className="flex items-center justify-between pr-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[14px] font-black text-rose-500">TOTAL</span>
+                      <span className="text-xs font-normal text-[var(--text-muted)] lowercase">
+                        ({filteredRows.length} projects)
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleExportExcel}
+                      className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-black rounded-lg shadow-sm transition-all duration-200 hover:scale-[1.03] cursor-pointer tracking-wider"
+                      title="Export Project Table to Excel (.xlsx)"
+                    >
+                      <Download size={13} />
+                      <span>EXPORT EXCEL</span>
+                    </button>
                   </div>
                 </td>
 
