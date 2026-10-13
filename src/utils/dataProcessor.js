@@ -103,7 +103,7 @@ export const processTaskData = (tasksData, userMap = {}, teamMap = {}) => {
         hours_ot: Number(row.hours_ot) || 0,
         ot_note: row.ot_note || '',
         area: row.area || '-',
-        dateObj: createdAt || dateStart,
+        dateObj: dateStart || dateStarted || createdAt,
         createdAtStr: formatDateTime(createdAt),
         dateStartStr: formatDateTime(dateStart),
         dateEndStr: formatDateTime(dateEnd),

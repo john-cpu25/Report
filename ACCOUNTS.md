@@ -72,6 +72,7 @@ Tài liệu chi tiết về toàn bộ danh sách tài khoản nhân sự, phân
 | **Nhân Phạm** | `nhan.pham@apexscengineering.com` | ENGINEER | VietNam | User |
 | **Kỳ Phan** | `ky.phan@apexscengineering.com` | ENGINEER | VietNam | User |
 | **Ngân Trần (Annie)** | `annie.tran@apexscengineering.com` | ENGINEER | VietNam | User |
+| **Khánh Nguyễn** | `khanh.nguyen@apexscengineering.com` | MODELLING | VietNam | AdminApp |
 
 
 
@@ -99,4 +100,5 @@ Tài liệu chi tiết về toàn bộ danh sách tài khoản nhân sự, phân
 | `quang.nguyen@rincovitch.com.au` | `s9gf6xtp` | `e604e7bd8d9f770920acb01e76bd27c4f530...` |
 | `vu.donguyen@rincovitch.com.au` | `VuDo@2026` | `f0712bc695e66dbfce777ca6abc748a238ec...` |
 | `kamala.tran@apexscengineering.com` | `Kamala@2026` | `63ac09745020d61dc3b3f6451a385aef1cec...` |
+| `khanh.nguyen@apexscengineering.com` | `Khanh@2026` | `219bd7024a9af8aa21f8ad8393545e8e421c...` |
 

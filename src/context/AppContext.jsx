@@ -211,7 +211,7 @@ export const AppProvider = ({ children }) => {
             ...t,
             user_id: t.assigned_to_id || t.user_id,
             create_by: t.create_by_id || t.create_by,
-            date: t.created_at
+            date: t.planned_start || t.date_start || t.created_at
           }))
         : (taskRes.data || []);
       setDashboardTasks(rawTasks);

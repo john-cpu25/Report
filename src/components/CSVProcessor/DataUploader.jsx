@@ -81,7 +81,7 @@ const DataUploader = ({
             time3Str: formatDuration(time3),
             time4Str: formatDuration(time4),
             time5Str: formatDuration(time5),
-            dateObj: createdAt || dateStart
+            dateObj: dateStart || dateStarted || createdAt
           };
         } catch (err) {
           console.error(`Error processing row ${idx}:`, err, row);

@@ -146,7 +146,7 @@ export const usePersonalSpaceEngine = (params) => {
       const weekEnd = addDays(weekDates[6], 1); 
 
       if (!rangeStart || !rangeEnd || rangeStart === '-' || rangeEnd === '-') {
-        const fallbackDate = t.dateObj || new Date(t.created_at || Date.now());
+        const fallbackDate = t.dateObj || new Date(t.date_start || t.planned_start || t.created_at || Date.now());
         return fallbackDate >= weekStart && fallbackDate < weekEnd;
       }
       
@@ -154,7 +154,7 @@ export const usePersonalSpaceEngine = (params) => {
       const endD = new Date(rangeEnd);
       
       if (isNaN(startD.getTime()) || isNaN(endD.getTime())) {
-        const fallbackDate = t.dateObj || new Date(t.created_at || Date.now());
+        const fallbackDate = t.dateObj || new Date(t.date_start || t.planned_start || t.created_at || Date.now());
         return fallbackDate >= weekStart && fallbackDate < weekEnd;
       }
 
@@ -283,7 +283,7 @@ export const usePersonalSpaceEngine = (params) => {
       const weekEnd = addDays(weekDates[4], 1);
 
       if (!rangeStart || !rangeEnd || rangeStart === '-' || rangeEnd === '-') {
-        const fallbackDate = t.dateObj || new Date(t.created_at || Date.now());
+        const fallbackDate = t.dateObj || new Date(t.date_start || t.planned_start || t.created_at || Date.now());
         return fallbackDate >= weekStart && fallbackDate < weekEnd;
       }
       
@@ -291,7 +291,7 @@ export const usePersonalSpaceEngine = (params) => {
       const endD = new Date(rangeEnd);
       
       if (isNaN(startD.getTime()) || isNaN(endD.getTime())) {
-        const fallbackDate = t.dateObj || new Date(t.created_at || Date.now());
+        const fallbackDate = t.dateObj || new Date(t.date_start || t.planned_start || t.created_at || Date.now());
         return fallbackDate >= weekStart && fallbackDate < weekEnd;
       }
 
