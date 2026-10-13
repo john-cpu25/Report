@@ -145,11 +145,14 @@ const KNOWN_APEX_USERS = [
 
   // ETABS
   { name: 'Sơn Lâm', team: 'ETABS', isLeader: true },
-  { name: 'Linh Huynh', team: 'ETABS' }
+  { name: 'Linh Huynh', team: 'ETABS' },
+
+  // MANAGER
+  { name: 'Kamala Tran', team: 'MANAGER', isLeader: false, isAdmin: true }
 ];
 
 const DEFAULT_ADMIN_MANAGERS = [];
-const DEFAULT_ADMINS = ['NHÂN NGUYỄN', 'NHAN NGUYEN', 'VŨ ĐỖ', 'VU DO', 'VU DO NGUYEN', 'VŨ', 'VU'];
+const DEFAULT_ADMINS = ['NHÂN NGUYỄN', 'NHAN NGUYEN', 'VŨ ĐỖ', 'VU DO', 'VU DO NGUYEN', 'VŨ', 'VU', 'KAMALA TRAN', 'KAMALA'];
 const DEFAULT_LEADERS = [
   // MODELLING
   'NGUYÊN LÝ', 'NGUYEN LY',
@@ -185,6 +188,14 @@ const getStaffRole = (name, allUsers = []) => {
     norm === 'VŨ ĐỖ' || norm === 'VU DO' ||
     rawNorm === 'VŨ ĐỖ' || rawNorm === 'VU DO' || rawNorm === 'VU DO NGUYEN' ||
     rawNorm === 'VŨ' || rawNorm === 'VU'
+  ) {
+    return 'ADMIN';
+  }
+
+  // 3. Kamala Tran: Admin (Manager)
+  if (
+    norm === 'KAMALA TRAN' || norm === 'KAMALA' ||
+    rawNorm === 'KAMALA TRAN' || rawNorm === 'KAMALA'
   ) {
     return 'ADMIN';
   }

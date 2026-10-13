@@ -55,6 +55,7 @@ Tài liệu chi tiết về toàn bộ danh sách tài khoản nhân sự, phân
 | **Vũ Đỗ** | `vu@apexscengineering.com` | MANAGER | VietNam | **Admin** |
 | **Vu Do** | `vu.donguyen@apexscengineering.com` | MANAGER | VietNam | **Admin** |
 | **Jason Le** | `jason@apexscengineering.com` | MANAGER | VietNam | **Admin** |
+| **Kamala Tran** | `kamala.tran@apexscengineering.com` | MANAGER | VietNam | **Admin** |
 | **System Admin** | `96FCEF00-994D-4BA9-ADAE-EA948702F606@admin.com.au` | MODELLING | VietNam | **AdminApp** |
 
 ---
@@ -71,7 +72,6 @@ Tài liệu chi tiết về toàn bộ danh sách tài khoản nhân sự, phân
 | **Nhân Phạm** | `nhan.pham@apexscengineering.com` | ENGINEER | VietNam | User |
 | **Kỳ Phan** | `ky.phan@apexscengineering.com` | ENGINEER | VietNam | User |
 | **Ngân Trần (Annie)** | `annie.tran@apexscengineering.com` | ENGINEER | VietNam | User |
-| **Kamala Tran** | `kamala.tran@apexscengineering.com` | MANAGER | VietNam | User |
 
 
 
