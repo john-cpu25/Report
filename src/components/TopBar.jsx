@@ -10,7 +10,7 @@ import NeumorphicSearch from './buttons/NeumorphicSearch';
 import NeumorphicWeeklySwitcher from './buttons/NeumorphicWeeklySwitcher';
 
 const TopBar = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, canViewAllTeams } = useAuth();
   const {
     sidebarCollapsed, setSidebarCollapsed,
     mobileSidebarOpen, setMobileSidebarOpen,
@@ -220,7 +220,7 @@ const TopBar = () => {
 
           <div className="flex items-center sys-gap">
 
-            {activeTab === 'dashboard' && isAdmin && (
+            {activeTab === 'dashboard' && canViewAllTeams && (
               <div className="flex items-center gap-2 mr-2 shrink-0">
                 {/* ADMIN / TEAM SWITCHER */}
                 <div className="flex items-center bg-[var(--bg-surface)]/60 p-1 rounded-2xl border border-[var(--border)] shadow-[inset_1px_1px_4px_rgba(0,0,0,0.05)]">

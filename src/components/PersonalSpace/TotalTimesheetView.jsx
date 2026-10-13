@@ -6,6 +6,7 @@ import { supabase } from '../../supabaseClient';
 import { calculateDailyWorkingMinutes } from '../../utils/performanceEngine';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
 import { getCanonicalName, isSameUser } from '../../utils/userUtils';
+import { getWeeksForMonth, isRecordInTimeRange } from '../../utils/timeUtils';
 
 const TEAM_COLUMNS = [
   {
@@ -73,6 +74,7 @@ const getTaskTextStyle = (taskName) => {
 
 const TotalTimesheetView = forwardRef(({
   currentDate = new Date(),
+  timeRange = 'week',
   getProjectColor = () => '#6366f1',
   selectedTimeMetric = 't1',
   rawUsers = [],
@@ -99,12 +101,16 @@ const TotalTimesheetView = forwardRef(({
 
   const activeSearch = (externalSearchQuery || localSearch).trim().toLowerCase();
 
-  // Week calculation from currentDate
+  // Date / Range calculation from currentDate
   const today = currentDate || new Date();
   const currentMonday = startOfWeek(today, { weekStartsOn: 1 });
   const weekDates = useMemo(() => [0, 1, 2, 3, 4, 5, 6].map(i => addDays(currentMonday, i)), [currentMonday]);
   const currentWeek = getISOWeek(today);
   const currentYear = today.getFullYear();
+
+  const monthWeeks = useMemo(() => {
+    return getWeeksForMonth(currentYear, today.getMonth());
+  }, [currentYear, today]);
 
   useEffect(() => {
     // If cache not present, fetch once
@@ -180,9 +186,7 @@ const TotalTimesheetView = forwardRef(({
     const weekEnd = addDays(weekDates[6], 1);
 
     const weekRecords = timesheetRecords.filter(r => {
-      const w = Number(r.week);
-      const y = Number(r.year);
-      return w === currentWeek && (!y || y === currentYear);
+      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks);
     });
 
     const summaryMap = {};
@@ -587,12 +591,17 @@ const TotalTimesheetView = forwardRef(({
         XLSX.utils.book_append_sheet(wb, wsDetail, `Tasks Detail`);
       }
 
-      const fileName = `APEX_Total_Timesheet_W${currentWeek}_${currentYear}.xlsx`;
+      const timeRangeSuffix = timeRange === 'week' 
+        ? `W${currentWeek}_${currentYear}` 
+        : timeRange === 'month' 
+        ? `Thang_${today.getMonth() + 1}_${currentYear}` 
+        : `Nam_${currentYear}`;
+      const fileName = `APEX_Total_Timesheet_${timeRangeSuffix}.xlsx`;
       XLSX.writeFile(wb, fileName);
     } catch (err) {
       console.error('Error exporting Total Timesheet to Excel:', err);
     }
-  }, [filteredAndSortedRows, tableTotals, currentWeek, currentYear, weekDates]);
+  }, [filteredAndSortedRows, tableTotals, currentWeek, currentYear, weekDates, timeRange, today]);
 
   useImperativeHandle(ref, () => ({
     refresh: fetchApexTimesheetData,
@@ -714,7 +723,7 @@ const TotalTimesheetView = forwardRef(({
             ) : filteredAndSortedRows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="sys-py text-center text-sm text-[var(--text-muted)] font-medium border-b border-[var(--border)] py-12">
-                  Chưa có dữ liệu TimeSheet cho tuần {currentWeek} ({currentYear}).
+                  Chưa có dữ liệu TimeSheet cho {timeRange === 'week' ? `tuần ${currentWeek}` : timeRange === 'month' ? `tháng ${today.getMonth() + 1}` : 'năm'} ({currentYear}).
                 </td>
               </tr>
             ) : (

@@ -23,6 +23,7 @@ import NeumorphicDropdown from './buttons/NeumorphicDropdown';
 
 import { Filter, ChevronRight, ChevronLeft, ArrowUpDown, ChevronDown, Download } from 'lucide-react';
 import { differenceInDays, startOfDay, addDays, isSameDay, isWithinInterval, eachMonthOfInterval, subDays } from 'date-fns';
+import { isRecordInTimeRange } from '../utils/timeUtils';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -180,7 +181,7 @@ const PersonalSpace = () => {
     let total = 0;
     let count = 0;
     records.forEach(r => {
-      if (Number(r.week) === currentWk && (Number(r.year) === currentYr || !r.year)) {
+      if (isRecordInTimeRange(r.week, r.year, currentDate, timeRange)) {
         const uObj = userMap[r.user_id];
         if (isAustralia(uObj)) return;
         const pKey = projMap[r.project_id] || '';
@@ -204,7 +205,7 @@ const PersonalSpace = () => {
       }
     });
     return { totalHours: total, count };
-  }, [apexTimesheetCache, currentDate, localMaps, localFilters]);
+  }, [apexTimesheetCache, currentDate, timeRange, viewMode, localMaps, localFilters]);
 
   const loadData = async (force = false) => {
     if (!user) return;
@@ -789,7 +790,7 @@ const PersonalSpace = () => {
           )}
 
             {/* Time Segmented Control (New Design) */}
-            {['list', 'daily', 'project', 'timesheet', 'gantt', 'performance'].includes(viewMode) && (
+            {['list', 'daily', 'project', 'timesheet', 'total_timesheet', 'performance_timesheet', 'gantt', 'performance'].includes(viewMode) && (
               <div className={`flex items-center gap-1 p-[3px] backdrop-blur-md rounded-xl shadow-inner relative shrink-0 ${
                 isDark 
                   ? 'bg-slate-950/80 border border-slate-800' 
@@ -1069,6 +1070,7 @@ const PersonalSpace = () => {
         <ApexTimesheetView 
           ref={apexTimesheetRef}
           currentDate={currentDate}
+          timeRange={timeRange}
           getProjectColor={getProjectColor}
           selectedTimeMetric={selectedTimeMetric}
           rawUsers={localMaps.rawUsers}
@@ -1086,6 +1088,7 @@ const PersonalSpace = () => {
         <TotalTimesheetView 
           ref={totalTimesheetRef}
           currentDate={currentDate}
+          timeRange={timeRange}
           getProjectColor={getProjectColor}
           selectedTimeMetric={selectedTimeMetric}
           rawUsers={localMaps.rawUsers}
@@ -1129,6 +1132,7 @@ const PersonalSpace = () => {
             getProjectColor={getProjectColor}
             selectedTimeMetric={selectedTimeMetric}
             currentDate={currentDate}
+            timeRange={timeRange}
             selectedTeam={localFilters.team}
             selectedProject={localFilters.project}
             selectedUser={localFilters.user}

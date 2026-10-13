@@ -723,7 +723,7 @@ const Dashboard = () => {
     adminActiveTeam
   } = useApp();
 
-  const { user, isAdmin, isLeader, userTeam } = useAuth();
+  const { user, isAdmin, isLeader, userTeam, canViewAllTeams } = useAuth();
 
   const userTeamKey = useMemo(() => {
     if (!userTeam) return 'ALL';
@@ -736,19 +736,19 @@ const Dashboard = () => {
   }, [userTeam]);
 
   const [chartTeam, setChartTeam] = useState(() => {
-    if (!isAdmin && userTeamKey !== 'ALL') {
+    if (!canViewAllTeams && userTeamKey !== 'ALL') {
       return userTeamKey;
     }
     return 'ALL';
   });
 
   useEffect(() => {
-    if (!isAdmin && userTeamKey !== 'ALL') {
+    if (!canViewAllTeams && userTeamKey !== 'ALL') {
       setChartTeam(userTeamKey);
-    } else if (isAdmin) {
+    } else if (canViewAllTeams) {
       setChartTeam('ALL');
     }
-  }, [isAdmin, userTeamKey]);
+  }, [canViewAllTeams, userTeamKey]);
 
   const [timeRange, setTimeRange] = useState('WEEK'); // DAY, WEEK, MONTH
   const [chartType, setChartType] = useState('LINE'); // LINE, BAR, POLAR
@@ -1408,21 +1408,21 @@ const Dashboard = () => {
           {/* LEFT: Teams Section (8/12) */}
           <div className="xl:col-span-8 flex flex-col sys-gap">
             
-            {(isTeamUser || (isAdmin && adminViewMode === 'TEAM')) ? (
+            {(!canViewAllTeams || adminViewMode === 'TEAM') ? (
               // FIG 1: TEAM VIEW (Side by side structure, max height 258px)
               <div className="grid grid-cols-1 md:grid-cols-2 sys-gap flex-1">
                 
                 {/* Left Side: Xanh Dương (Card Nhóm) + Khung Cam (Mở Rộng) */}
-                <div className="flex flex-col sys-gap h-full flex-1">
+                <div className="flex flex-col sys-gap h-full flex-1 min-h-0">
                   
                   {/* Blue Box (Card Nhóm) */}
-                  <div className="flex flex-col flex-1">
+                  <div className="flex flex-col flex-1 min-h-0">
                     {(() => {
                       const team = teamPulse.find(t => t.id === activeTeamId) || {
                         name: activeTeamId, members: 0, working: [], available: [], leave: [], dailyTasks: null, hasData: false, isVisible: true
                       };
                       return (
-                        <motion.div variants={itemVariants} className="team-card flex flex-col md:flex-row gap-3 relative flex-1 sys-p">
+                        <motion.div variants={itemVariants} className="team-card flex flex-col md:flex-row gap-3 relative flex-1 sys-p h-[140px] max-h-[140px] overflow-hidden">
                           {(!team.hasData && loading) ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
                               <div className="flex flex-col items-center gap-1.5">
@@ -1465,8 +1465,8 @@ const Dashboard = () => {
                           </div>
 
                           {/* Right Column - Tasks */}
-                          <div className="flex-1 bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden flex-1">
-                            <div className="flex flex-col justify-start gap-1.5 h-full p-2.5 overflow-y-auto custom-scrollbar">
+                          <div className="flex-1 min-w-0 min-h-0 h-full bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden">
+                            <div className="flex flex-col justify-start gap-1.5 h-full p-2.5 overflow-y-auto custom-scrollbar min-h-0">
                               {team.dailyTasks ? team.dailyTasks.map((t, j) => (
                                 <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
                                   <span className={`w-1 h-1 rounded-full shrink-0 ${t.isWorking ? 'task-dot-working' : 'task-dot-free'}`}></span>
@@ -1513,8 +1513,8 @@ const Dashboard = () => {
               // FIG 2: ORIGINAL 2x2 GRID (Default View for Admin/Non-Team users)
               <div className="grid grid-cols-1 md:grid-cols-2 sys-gap auto-rows-fr flex-1">
                 {teamPulse.map((team, i) => (
-                  <div key={i} className="flex flex-col h-full">
-                    <motion.div variants={itemVariants} className="team-card flex flex-col md:flex-row gap-3 h-full relative flex-1 sys-p">
+                  <div key={i} className="flex flex-col h-[140px] max-h-[140px] min-h-0">
+                    <motion.div variants={itemVariants} className="team-card h-[140px] max-h-[140px] overflow-hidden flex flex-col md:flex-row gap-3 relative flex-1 sys-p">
                       {(!team.hasData && loading) ? (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
                           <div className="flex flex-col items-center gap-3">
@@ -1535,7 +1535,7 @@ const Dashboard = () => {
                       ) : null}
 
                       {/* Left Column - Team Info (Compact) */}
-                      <div className="w-[125px] shrink-0 flex flex-col justify-between">
+                      <div className="w-[125px] shrink-0 flex flex-col justify-between h-full">
                         <p className="text-[14px] text-[var(--text-main)] font-black uppercase tracking-widest leading-tight break-words">{team.name}</p>
                         <div className="flex flex-col gap-1.5 text-[12px] font-bold text-[var(--text-main)] my-1">
                           <div className="flex items-center gap-2">
@@ -1557,8 +1557,8 @@ const Dashboard = () => {
                       </div>
 
                       {/* Right Column - Tasks (Closer and Wider) */}
-                      <div className="flex-1 bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden">
-                        <div className="flex flex-col justify-start gap-2 h-full p-2.5 overflow-y-auto custom-scrollbar">
+                      <div className="flex-1 min-w-0 min-h-0 h-full bg-[var(--bg-surface)]/50 border border-[var(--border)] rounded-xl flex flex-col justify-start overflow-hidden">
+                        <div className="flex flex-col justify-start gap-1.5 h-full p-2.5 overflow-y-auto custom-scrollbar min-h-0">
                           {team.dailyTasks ? team.dailyTasks.map((t, j) => (
                             <div key={j} className="flex items-center gap-2 group cursor-default shrink-0">
                               <span className={`w-1 h-1 rounded-full shrink-0 ${t.isWorking ? 'task-dot-working' : 'task-dot-free'}`}></span>
@@ -1699,7 +1699,7 @@ const Dashboard = () => {
                   <select 
                     value={chartTeam}
                     onChange={(e) => setChartTeam(e.target.value)}
-                    disabled={!isAdmin}
+                    disabled={!canViewAllTeams}
                     className="relative w-full h-full bg-transparent text-[var(--text-main)] text-[12px] font-black uppercase tracking-tight rounded-2xl cursor-pointer focus:outline-none z-10 disabled:cursor-default"
                     style={{
                       WebkitAppearance: 'none',
@@ -1711,7 +1711,7 @@ const Dashboard = () => {
                       paddingRight: '40px',
                     }}
                   >
-                    {isAdmin ? (
+                    {canViewAllTeams ? (
                       <>
                         <option value="ALL">ALL TEAMS</option>
                         {TEAMS.map(t => (
@@ -1724,7 +1724,7 @@ const Dashboard = () => {
                       ))
                     )}
                   </select>
-                  {isAdmin && (
+                  {canViewAllTeams && (
                     <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)] z-20">
                       <ChevronDown size={14} />
                     </div>

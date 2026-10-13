@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
+import { canViewAllTeamsDashboard } from '../utils/userUtils';
 
 const AuthContext = createContext();
 
@@ -274,6 +275,7 @@ export const AuthProvider = ({ children }) => {
             getGraphToken,
             isAdmin: user?.isAdmin || false,
             isLeader: user?.isLeader || false,
+            canViewAllTeams: canViewAllTeamsDashboard(user),
             userTeam: user?.team || null
         }}>
             {children}

@@ -5,6 +5,7 @@ import { supabase } from '../../supabaseClient';
 import { Edit2, Check, RotateCcw, Download } from 'lucide-react';
 import { calculateDailyWorkingMinutes } from '../../utils/performanceEngine';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
+import { getWeeksForMonth, isRecordInTimeRange } from '../../utils/timeUtils';
 
 // Master list of all registered active staff across APEX teams
 // Canonical Full Names matching the USER column in TimeSheet exactly
@@ -314,6 +315,7 @@ const PerformanceTimesheetView = forwardRef(({
   getProjectColor = () => '#6366f1',
   selectedTimeMetric = 't2',
   currentDate = new Date(),
+  timeRange = 'week',
   selectedTeam = '',
   selectedProject = '',
   selectedUser = '',
@@ -321,12 +323,28 @@ const PerformanceTimesheetView = forwardRef(({
   rawUsers = [],
   userTeamByName = {}
 }, ref) => {
-  // Current active week boundaries
+  // Current active date / time boundaries
   const today = currentDate || new Date();
   const weekStart = useMemo(() => startOfWeek(today, { weekStartsOn: 1 }), [today]);
   const weekEnd = useMemo(() => endOfWeek(today, { weekStartsOn: 1 }), [today]);
   const currentWeek = useMemo(() => getISOWeek(today), [today]);
   const currentYear = useMemo(() => today.getFullYear(), [today]);
+
+  const monthWeeks = useMemo(() => {
+    return getWeeksForMonth(currentYear, today.getMonth());
+  }, [currentYear, today]);
+
+  const rangeStart = useMemo(() => {
+    if (timeRange === 'year') return new Date(currentYear, 0, 1, 0, 0, 0);
+    if (timeRange === 'month') return new Date(currentYear, today.getMonth(), 1, 0, 0, 0);
+    return weekStart;
+  }, [timeRange, currentYear, today, weekStart]);
+
+  const rangeEnd = useMemo(() => {
+    if (timeRange === 'year') return new Date(currentYear, 11, 31, 23, 59, 59, 999);
+    if (timeRange === 'month') return new Date(currentYear, today.getMonth() + 1, 0, 23, 59, 59, 999);
+    return weekEnd;
+  }, [timeRange, currentYear, today, weekEnd]);
 
   // Persistent user overrides for % Target and Rate Factor
   const [customTargets, setCustomTargets] = useState(() => {
@@ -480,7 +498,7 @@ const PerformanceTimesheetView = forwardRef(({
           const dStart = parseISO(span.start_at);
           const dEnd = span.end_at ? parseISO(span.end_at) : null;
 
-          if (isWithinInterval(dStart, { start: weekStart, end: weekEnd })) {
+          if (isWithinInterval(dStart, { start: rangeStart, end: rangeEnd })) {
             let h = 8;
             if (dEnd) {
               const diffH = Math.abs(dEnd - dStart) / (1000 * 60 * 60);
@@ -505,7 +523,7 @@ const PerformanceTimesheetView = forwardRef(({
           const dStart = parseISO(entry.start_at);
           const dEnd = entry.end_at ? parseISO(entry.end_at) : null;
 
-          if (isWithinInterval(dStart, { start: weekStart, end: weekEnd })) {
+          if (isWithinInterval(dStart, { start: rangeStart, end: rangeEnd })) {
             let h = 8;
             if (dEnd) {
               const diffH = Math.abs(dEnd - dStart) / (1000 * 60 * 60);
@@ -522,7 +540,7 @@ const PerformanceTimesheetView = forwardRef(({
         let leaveHours = 0;
         if (entry.date) {
           const entryDate = parseISO(entry.date);
-          if (isWithinInterval(entryDate, { start: weekStart, end: weekEnd })) {
+          if (isWithinInterval(entryDate, { start: rangeStart, end: rangeEnd })) {
             leaveHours += Number(entry.hours) || (Number(entry.days) ? Number(entry.days) * 8 : 8);
           }
         }
@@ -535,15 +553,15 @@ const PerformanceTimesheetView = forwardRef(({
     });
 
     return lMap;
-  }, [apexLeaveSpans, apexLeaves, dashboardLeave, rawUsers, dashboardUsers, apexUsers, weekStart, weekEnd]);
+  }, [apexLeaveSpans, apexLeaves, dashboardLeave, rawUsers, dashboardUsers, apexUsers, rangeStart, rangeEnd]);
 
-  // 1b. PLAN TIME & TASK OT FROM Supabase Tasks (Tasks assigned by Leader/Manager in this week)
+  // 1b. PLAN TIME & TASK OT FROM Supabase Tasks (Tasks assigned by Leader/Manager in this period)
   const apexTaskStats = useMemo(() => {
     const leaderPlanMap = {};
     const taskOtMap = {};
-    const weekEndTime = addDays(weekEnd, 1);
+    const rangeEndTime = addDays(rangeEnd, 1);
 
-    // Nguồn task: ưu tiên filteredData (đã lọc đúng tuần từ PersonalSpace), sau đó đến analystTasks, fallback sang apexTasks
+    // Nguồn task: ưu tiên filteredData (đã lọc đúng period từ PersonalSpace), sau đó đến analystTasks, fallback sang apexTasks
     const taskPool = (filteredData && filteredData.length > 0)
       ? filteredData
       : (analystTasks && analystTasks.length > 0)
@@ -551,20 +569,20 @@ const PerformanceTimesheetView = forwardRef(({
       : (apexTasks || []);
 
     taskPool.forEach(t => {
-      // 1. Kiểm tra ngày thuộc tuần hiện tại (khi dùng analystTasks hoặc apexTasks)
-      let isInWeek = true;
+      // 1. Kiểm tra ngày thuộc period hiện tại
+      let isInRange = true;
       if (t.dateObj) {
-        isInWeek = isWithinInterval(t.dateObj, { start: weekStart, end: weekEnd });
+        isInRange = isWithinInterval(t.dateObj, { start: rangeStart, end: rangeEnd });
       } else {
-        const rangeStart = t.planned_start || t.date_start || t.created_at;
-        const rangeEnd = t.planned_end || t.date_end || rangeStart;
-        if (rangeStart) {
-          const sDate = new Date(rangeStart);
-          const eDate = rangeEnd ? new Date(rangeEnd) : sDate;
-          isInWeek = !(isNaN(sDate.getTime()) || sDate >= weekEndTime || eDate < weekStart);
+        const rStart = t.planned_start || t.date_start || t.created_at;
+        const rEnd = t.planned_end || t.date_end || rStart;
+        if (rStart) {
+          const sDate = new Date(rStart);
+          const eDate = rEnd ? new Date(rEnd) : sDate;
+          isInRange = !(isNaN(sDate.getTime()) || sDate >= rangeEndTime || eDate < rangeStart);
         }
       }
-      if (!isInWeek) return;
+      if (!isInRange) return;
 
       // 2. Xác định Người thực hiện (Assignee)
       const rawAssignee = t.userName || (userMap[t.assigned_to_id]?.name || t.assigned_to || '');
@@ -576,13 +594,12 @@ const PerformanceTimesheetView = forwardRef(({
       const rawCreator = t.createdBy || (userMap[t.create_by_id]?.name || t.create_by || '');
       const creatorName = getCanonicalStaffName(rawCreator);
       const creatorRole = getStaffRole(creatorName, allUsersList);
-      // Giao task bởi Leader, Manager, Admin hoặc người giao khác người nhận
       const isLeaderOrManager = creatorRole === 'LEADER' || 
                                 creatorRole === 'MANAGER' || 
                                 creatorRole === 'ADMIN' || 
                                 (creatorName && staffName && creatorName.toLowerCase() !== staffName.toLowerCase());
 
-      // 4. Lấy số giờ PLAN TIME: chuẩn xác theo hours_planned hoặc t1/3600 (giống hệt tab LIST)
+      // 4. Lấy số giờ PLAN TIME
       let taskPlannedHours = 0;
       if (t.hours_planned !== null && t.hours_planned !== undefined && t.hours_planned !== '' && !isNaN(Number(t.hours_planned)) && Number(t.hours_planned) > 0) {
         taskPlannedHours = Number(t.hours_planned);
@@ -590,14 +607,14 @@ const PerformanceTimesheetView = forwardRef(({
         taskPlannedHours = Number(t.t1) / 3600;
       } else if (t.planned_start && t.planned_end) {
         const breakdown = calculateDailyWorkingMinutes(t.planned_start, t.planned_end);
-        let weekMins = 0;
+        let planMins = 0;
         Object.entries(breakdown).forEach(([dateStr, mins]) => {
           const d = new Date(dateStr);
-          if (d >= weekStart && d < weekEndTime) {
-            weekMins += mins;
+          if (d >= rangeStart && d < rangeEndTime) {
+            planMins += mins;
           }
         });
-        taskPlannedHours = weekMins > 0 ? (weekMins / 60) : 0;
+        taskPlannedHours = planMins > 0 ? (planMins / 60) : 0;
       }
 
       if (isLeaderOrManager && taskPlannedHours > 0) {
@@ -611,7 +628,7 @@ const PerformanceTimesheetView = forwardRef(({
     });
 
     return { leaderPlanMap, taskOtMap };
-  }, [filteredData, analystTasks, apexTasks, userMap, weekStart, weekEnd, allUsersList]);
+  }, [filteredData, analystTasks, apexTasks, userMap, rangeStart, rangeEnd, allUsersList]);
 
   // 2. PARSE TIMESHEET DATA: PROJECT TIME & STAFF HOURS directly from APEX_TimeSheet & APEX_TimeSheetType
   const timesheetAggregated = useMemo(() => {
@@ -626,8 +643,7 @@ const PerformanceTimesheetView = forwardRef(({
     const projectHoursMap = {};
 
     const weekRecords = timesheetRecords.filter(r => 
-      Number(r.week) === currentWeek && 
-      (Number(r.year) === currentYear || !r.year)
+      isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks)
     );
 
     const weekEndTime = addDays(weekEnd, 1);
@@ -836,7 +852,7 @@ const PerformanceTimesheetView = forwardRef(({
     }
 
     return { staffHoursMap, staffProjectMap, staffApexMap, staffLearningMap, staffApexTimeMap, staffLeaveTimesheetMap, staffOtMap, staffWeekendMap, projectHoursMap };
-  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, apexTasks, userMap, projectMap, currentWeek, currentYear, weekStart, weekEnd, selectedTimeMetric, selectedTeam, selectedProject, selectedUser, searchQuery, allUsersList, userTeamByName]);
+  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, apexTasks, userMap, projectMap, currentWeek, currentYear, weekStart, weekEnd, today, timeRange, monthWeeks, selectedTimeMetric, selectedTeam, selectedProject, selectedUser, searchQuery, allUsersList, userTeamByName]);
 
   // 3. PROJECT TIME TABLE DATA
   const projectTimeData = useMemo(() => {
@@ -972,13 +988,15 @@ const PerformanceTimesheetView = forwardRef(({
       // Use whichever is greater to avoid double counting
       const leaveHours = Math.max(leaveFromDB, leaveFromTimesheet);
 
-      // Available capacity: 40h standard minus leave
-      const weekCapacity = Math.max(0, 40 - leaveHours);
+      // Available capacity: 40h standard per week minus leave
+      const numWeeks = timeRange === 'year' ? 52 : (timeRange === 'month' ? (monthWeeks.length || 4) : 1);
+      const baseStandardCapacity = numWeeks * 40;
+      const weekCapacity = Math.max(0, baseStandardCapacity - leaveHours);
 
       // Total target billable hours
       const targetTotalHours = (weekCapacity * targetPercent) / 100;
 
-      // PLAN TIME: Leader / Manager giao task trong tuần/ngày đó, lấy từ Supabase (APEX_Task)
+      // PLAN TIME: Leader / Manager giao task trong khoảng thời gian đó, lấy từ Supabase (APEX_Task)
       const leaderPlanHours = apexTaskStats.leaderPlanMap[staffName] || 0;
       const customPlan = customPlanTimes[staffName];
       const hasCustomPlan = customPlan !== undefined && customPlan !== '' && !isNaN(Number(customPlan));
@@ -1000,10 +1018,10 @@ const PerformanceTimesheetView = forwardRef(({
       // Overtime:
       // 1) Giờ OT từ cột hours_ot trong APEX_Task (Supabase)
       // 2) Giờ làm việc Thứ 7 & Chủ Nhật (sat + sun) từ APEX_TimeSheet
-      // 3) Phần giờ làm việc vượt quá 40h/tuần
+      // 3) Phần giờ làm việc vượt quá tiêu chuẩn thời gian
       const taskOt = apexTaskStats.taskOtMap[staffName] || (staffOtMap[staffName] || 0);
       const weekendOt = staffWeekendMap?.[staffName] || 0;
-      const excessOt = Math.max(0, workTime - 40);
+      const excessOt = Math.max(0, workTime - baseStandardCapacity);
       const overTime = Math.max(taskOt, weekendOt + excessOt);
 
       // 1. UTILIZATION RATE = ( WORK TIME + APEX TIME + OVER TIME ) / WEEK
@@ -1257,7 +1275,7 @@ const PerformanceTimesheetView = forwardRef(({
       // Sheet 2: Project Time
       const projRows = [
         ['PROJECT TIME BREAKDOWN'],
-        [`Week: ${format(weekStart, 'dd/MM/yyyy')} - ${format(weekEnd, 'dd/MM/yyyy')}`],
+        [`${timeRange === 'week' ? `Week: ${format(weekStart, 'dd/MM/yyyy')} - ${format(weekEnd, 'dd/MM/yyyy')}` : timeRange === 'month' ? `Month: ${format(today, 'MM/yyyy')}` : `Year: ${currentYear}`}`],
         [],
         ['Project Code', 'Hours (hrs)']
       ];
@@ -1284,7 +1302,12 @@ const PerformanceTimesheetView = forwardRef(({
         XLSX.utils.book_append_sheet(wb, wsLeave, 'Leave Breakdown');
       }
 
-      XLSX.writeFile(wb, `APEX_Performance_Timesheet_${format(weekStart, 'yyyyMMdd')}.xlsx`);
+      const timeRangeSuffix = timeRange === 'week' 
+        ? `W${currentWeek}_${currentYear}` 
+        : timeRange === 'month' 
+        ? `Thang_${today.getMonth() + 1}_${currentYear}` 
+        : `Nam_${currentYear}`;
+      XLSX.writeFile(wb, `APEX_Performance_Timesheet_${timeRangeSuffix}.xlsx`);
     } catch (e) {
       console.error('Error exporting Performance Timesheet to Excel:', e);
       handleExportCSV();

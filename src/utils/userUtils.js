@@ -100,3 +100,55 @@ export const isSameUser = (nameA, nameB) => {
 
   return false;
 };
+
+/**
+ * Kiểm tra quyền xem toàn bộ team trên Dashboard (Hình 2: ADMIN / TEAM Switcher & ALL TEAMS Grid)
+ * Chỉ có 3 tài khoản được phép:
+ * 1. Nhân Nguyễn (Johnny) - johnny.nguyen@apexscengineering.com
+ * 2. Vu Do - vu@apexscengineering.com, vu.donguyen@apexscengineering.com
+ * 3. Kamala Tran - kamala.tran@apexscengineering.com
+ */
+export const canViewAllTeamsDashboard = (user) => {
+  if (!user) return false;
+  const email = (user.email || '').toLowerCase().trim();
+  const name = (user.name || user.full_name || '').toLowerCase().trim();
+
+  // 1. Nhân Nguyễn (Johnny)
+  if (
+    email === 'johnny.nguyen@apexscengineering.com' ||
+    name === 'johnny' ||
+    name === 'nhân nguyễn' ||
+    name === 'nhan nguyen' ||
+    name.includes('johnny') ||
+    name.includes('nhân nguyễn')
+  ) {
+    return true;
+  }
+
+  // 2. Vu Do
+  if (
+    email === 'vu@apexscengineering.com' ||
+    email === 'vu.donguyen@apexscengineering.com' ||
+    name === 'vu do' ||
+    name === 'vũ đỗ' ||
+    name === 'vu do nguyen' ||
+    name === 'vũ đỗ nguyễn' ||
+    name.includes('vũ đỗ') ||
+    name.includes('vu do')
+  ) {
+    return true;
+  }
+
+  // 3. Kamala Tran
+  if (
+    email === 'kamala.tran@apexscengineering.com' ||
+    name === 'kamala' ||
+    name === 'kamala tran' ||
+    name.includes('kamala')
+  ) {
+    return true;
+  }
+
+  return false;
+};
+

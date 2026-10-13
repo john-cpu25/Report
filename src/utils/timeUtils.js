@@ -76,6 +76,79 @@ export function getThreeMonthsAgoISO(months = 3) {
   return getThreeMonthsAgoDate(months).toISOString();
 }
 
+import { getISOWeek } from 'date-fns';
+
+/**
+ * Lấy danh sách các số tuần ISO (1..53) thuộc tháng & năm được chỉ định.
+ * Trong chuẩn ISO-8601, thứ Năm quyết định tuần thuộc về tháng và năm nào.
+ */
+export function getWeeksForMonth(year, month) {
+  const weeks = [];
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+    if (d.getDay() === 4) { // Thứ 5 quyết định tuần ISO
+      const w = getISOWeek(d);
+      if (!weeks.includes(w)) {
+        weeks.push(w);
+      }
+    }
+  }
+  if (weeks.length === 0) {
+    for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+      const w = getISOWeek(d);
+      if (!weeks.includes(w)) {
+        weeks.push(w);
+      }
+    }
+  }
+  return weeks;
+}
+
+/**
+ * Lấy tháng (0-11) mà một tuần ISO thuộc về (dựa vào thứ 5 của tuần đó).
+ */
+export function getMonthFromISOWeek(weekNumber, year) {
+  const jan4 = new Date(year, 0, 4);
+  const dayOfWeek = jan4.getDay() || 7;
+  const firstThursday = new Date(jan4);
+  firstThursday.setDate(jan4.getDate() + (4 - dayOfWeek));
+
+  const targetThursday = new Date(firstThursday);
+  targetThursday.setDate(firstThursday.getDate() + (weekNumber - 1) * 7);
+
+  return targetThursday.getMonth();
+}
+
+/**
+ * Kiểm tra xem một bản ghi timesheet (có r.week và r.year) có thỏa mãn điều kiện lọc timeRange không
+ * @param {number|string} recordWeek 
+ * @param {number|string} recordYear 
+ * @param {Date} currentDate 
+ * @param {'week'|'month'|'year'} timeRange 
+ * @param {Array<number>} [monthWeeks] Mảng các tuần trong tháng để tối ưu
+ */
+export function isRecordInTimeRange(recordWeek, recordYear, currentDate, timeRange = 'week', monthWeeks = null) {
+  const w = Number(recordWeek);
+  const y = Number(recordYear);
+  const targetYear = currentDate.getFullYear();
+
+  if (y && y !== targetYear) return false;
+
+  if (timeRange === 'year') {
+    return true;
+  }
+
+  if (timeRange === 'month') {
+    const weeks = monthWeeks || getWeeksForMonth(targetYear, currentDate.getMonth());
+    return weeks.includes(w);
+  }
+
+  // timeRange === 'week' (mặc định)
+  const currentWeek = getISOWeek(currentDate);
+  return w === currentWeek;
+}
+
 /**
  * Lấy năm và tuần ISO cho mốc thời gian
  */
@@ -86,3 +159,5 @@ export function getISOWeekAndYear(date = new Date()) {
   const weekNo = Math.ceil((((target - yearStart) / 86400000) + 1) / 7);
   return { year: target.getUTCFullYear(), week: weekNo };
 }
+
+

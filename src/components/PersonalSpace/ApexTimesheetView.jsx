@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { supabase } from '../../supabaseClient';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
 import { getCanonicalName, isSameUser } from '../../utils/userUtils';
+import { getWeeksForMonth, getMonthFromISOWeek, isRecordInTimeRange } from '../../utils/timeUtils';
 
 const formatHoursAndMinutes = (hoursDecimal) => {
   if (!hoursDecimal || hoursDecimal <= 0) return '';
@@ -32,6 +33,7 @@ const getTaskTypeTextStyle = (typeStr) => {
 
 const ApexTimesheetView = forwardRef(({
   currentDate = new Date(),
+  timeRange = 'week',
   getProjectColor = () => 'var(--text-contrast)',
   selectedTimeMetric = 't1',
   rawUsers = [],
@@ -50,12 +52,56 @@ const ApexTimesheetView = forwardRef(({
   const [apexProjects, setApexProjects] = useState(cached?.apexProjects || []);
   const [isLoading, setIsLoading] = useState(!cached || !cached.timesheetRecords?.length);
 
-  // Week calculation from currentDate
+  // Date / Range calculation from currentDate
   const today = currentDate || new Date();
   const currentMonday = startOfWeek(today, { weekStartsOn: 1 });
   const weekDates = useMemo(() => [0, 1, 2, 3, 4, 5, 6].map(i => addDays(currentMonday, i)), [currentMonday]);
   const currentWeek = getISOWeek(today);
   const currentYear = today.getFullYear();
+
+  const monthWeeks = useMemo(() => {
+    return getWeeksForMonth(currentYear, today.getMonth());
+  }, [currentYear, today]);
+
+  // Dynamic table columns based on timeRange
+  const columns = useMemo(() => {
+    if (timeRange === 'year') {
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return monthNames.map((name, i) => ({
+        id: `m_${i}`,
+        index: i,
+        label: name,
+        sub: `Tháng ${i + 1}`,
+        width: '65px'
+      }));
+    }
+    if (timeRange === 'month') {
+      return monthWeeks.map((wk, i) => ({
+        id: `w_${wk}`,
+        weekNum: wk,
+        index: i,
+        label: `W${wk}`,
+        sub: `Tuần ${wk}`,
+        width: '85px'
+      }));
+    }
+    // Default 'week'
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return weekDates.map((date, i) => {
+      const isToday = isSameDay(date, new Date());
+      const isWeekendDay = i >= 5;
+      return {
+        id: `d_${i}`,
+        index: i,
+        date,
+        label: dayLabels[i],
+        sub: format(date, 'dd/MM'),
+        isToday,
+        isWeekendDay,
+        width: '75px'
+      };
+    });
+  }, [timeRange, monthWeeks, weekDates]);
 
   useEffect(() => {
     // If not cached yet, fetch once
@@ -114,18 +160,19 @@ const ApexTimesheetView = forwardRef(({
   // Build Timesheet Data structure directly from APEX_TimeSheet & APEX_TimeSheetType
   const timesheetData = useMemo(() => {
     const weekRecords = timesheetRecords.filter(r => {
-      const w = Number(r.week);
-      const y = Number(r.year);
-      return w === currentWeek && (!y || y === currentYear);
+      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks);
     });
+
+    const numCols = columns.length;
 
     if (weekRecords.length === 0) {
       return {
         weekNumber: currentWeek,
         monday: currentMonday,
         weekDates,
+        columns,
         teams: [],
-        totalPerDay: [0, 0, 0, 0, 0, 0, 0],
+        totalPerCol: new Array(numCols).fill(0),
         grandTotalHours: 0
       };
     }
@@ -182,17 +229,31 @@ const ApexTimesheetView = forwardRef(({
         if (!matchSearch) return;
       }
 
-      const hours = [
-        Number(record.mon) || 0,
-        Number(record.tue) || 0,
-        Number(record.wed) || 0,
-        Number(record.thu) || 0,
-        Number(record.fri) || 0,
-        Number(record.sat) || 0,
-        Number(record.sun) || 0
-      ];
+      const rowSum = (Number(record.mon) || 0) + (Number(record.tue) || 0) + (Number(record.wed) || 0) +
+                     (Number(record.thu) || 0) + (Number(record.fri) || 0) + (Number(record.sat) || 0) + (Number(record.sun) || 0);
 
-      const rowTotal = hours.reduce((a, b) => a + b, 0);
+      const recordColHours = new Array(numCols).fill(0);
+
+      if (timeRange === 'year') {
+        const mIdx = getMonthFromISOWeek(Number(record.week), currentYear);
+        if (mIdx >= 0 && mIdx < numCols) {
+          recordColHours[mIdx] = rowSum;
+        }
+      } else if (timeRange === 'month') {
+        const wIdx = monthWeeks.indexOf(Number(record.week));
+        if (wIdx >= 0 && wIdx < numCols) {
+          recordColHours[wIdx] = rowSum;
+        }
+      } else {
+        // week
+        recordColHours[0] = Number(record.mon) || 0;
+        recordColHours[1] = Number(record.tue) || 0;
+        recordColHours[2] = Number(record.wed) || 0;
+        recordColHours[3] = Number(record.thu) || 0;
+        recordColHours[4] = Number(record.fri) || 0;
+        recordColHours[5] = Number(record.sat) || 0;
+        recordColHours[6] = Number(record.sun) || 0;
+      }
 
       if (!teamMap[teamName]) teamMap[teamName] = {};
       if (!teamMap[teamName][projectCode]) teamMap[teamName][projectCode] = {};
@@ -202,17 +263,16 @@ const ApexTimesheetView = forwardRef(({
         teamMap[teamName][projectCode][itemKey] = {
           taskName: taskType,
           userName,
-          hours: [...hours],
-          totalHours: rowTotal,
+          hours: [...recordColHours],
+          totalHours: rowSum,
           projectCode,
           projectFullName
         };
       } else {
-        // Accumulate hours if multiple records exist
-        for (let i = 0; i < 7; i++) {
-          teamMap[teamName][projectCode][itemKey].hours[i] += hours[i];
+        for (let i = 0; i < numCols; i++) {
+          teamMap[teamName][projectCode][itemKey].hours[i] += recordColHours[i];
         }
-        teamMap[teamName][projectCode][itemKey].totalHours += rowTotal;
+        teamMap[teamName][projectCode][itemKey].totalHours += rowSum;
       }
     });
 
@@ -240,11 +300,11 @@ const ApexTimesheetView = forwardRef(({
         };
       });
 
-    const totalPerDay = [0, 0, 0, 0, 0, 0, 0];
+    const totalPerCol = new Array(numCols).fill(0);
     teams.forEach(team => {
       team.projects.forEach(project => {
         project.tasks.forEach(task => {
-          task.hours.forEach((val, i) => { totalPerDay[i] += val; });
+          task.hours.forEach((val, i) => { if (i < totalPerCol.length) totalPerCol[i] += val; });
         });
       });
     });
@@ -253,18 +313,27 @@ const ApexTimesheetView = forwardRef(({
       weekNumber: currentWeek,
       monday: currentMonday,
       weekDates,
+      columns,
       teams,
-      totalPerDay,
-      grandTotalHours: totalPerDay.reduce((a, b) => a + b, 0)
+      totalPerCol,
+      grandTotalHours: totalPerCol.reduce((a, b) => a + b, 0)
     };
-  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, userMap, projectMap, currentWeek, currentYear, currentMonday, weekDates, userTeamByName, selectedTeam, selectedProject, selectedUser, searchQuery]);
+  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, userMap, projectMap, currentWeek, currentYear, currentMonday, weekDates, today, timeRange, monthWeeks, columns, userTeamByName, selectedTeam, selectedProject, selectedUser, searchQuery]);
 
   const handleExportExcel = useCallback(() => {
     try {
       const wb = XLSX.utils.book_new();
+      const periodLabel = timeRange === 'week'
+        ? `Week: W${currentWeek} (${format(weekDates[0], 'dd/MM/yyyy')} - ${format(weekDates[6], 'dd/MM/yyyy')}) | Year: ${currentYear}`
+        : timeRange === 'month'
+        ? `Month: ${format(today, 'MM/yyyy')} | Year: ${currentYear}`
+        : `Year: ${currentYear}`;
+
+      const colHeaders = columns.map(c => `${c.label} (${c.sub})`);
+
       const rows = [
         [`APEX SOUTHERN CROSS ENGINEERING - TIMESHEET`],
-        [`Week: W${currentWeek} (${format(weekDates[0], 'dd/MM/yyyy')} - ${format(weekDates[6], 'dd/MM/yyyy')}) | Year: ${currentYear}`],
+        [periodLabel],
         [],
         [
           'No.',
@@ -273,13 +342,7 @@ const ApexTimesheetView = forwardRef(({
           'Project Name',
           'Task Type',
           'User',
-          `Mon (${format(weekDates[0], 'dd/MM')})`,
-          `Tue (${format(weekDates[1], 'dd/MM')})`,
-          `Wed (${format(weekDates[2], 'dd/MM')})`,
-          `Thu (${format(weekDates[3], 'dd/MM')})`,
-          `Fri (${format(weekDates[4], 'dd/MM')})`,
-          `Sat (${format(weekDates[5], 'dd/MM')})`,
-          `Sun (${format(weekDates[6], 'dd/MM')})`,
+          ...colHeaders,
           'Total Hours'
         ]
       ];
@@ -288,6 +351,7 @@ const ApexTimesheetView = forwardRef(({
       (timesheetData.teams || []).forEach(team => {
         (team.projects || []).forEach(project => {
           (project.tasks || []).forEach(task => {
+            const hourVals = (task.hours || []).map(h => (h > 0 ? Number(h.toFixed(2)) : ''));
             rows.push([
               rowIdx++,
               team.name,
@@ -295,20 +359,14 @@ const ApexTimesheetView = forwardRef(({
               project.fullName || project.name,
               task.taskName,
               task.userName,
-              task.hours[0] > 0 ? Number(task.hours[0].toFixed(2)) : '',
-              task.hours[1] > 0 ? Number(task.hours[1].toFixed(2)) : '',
-              task.hours[2] > 0 ? Number(task.hours[2].toFixed(2)) : '',
-              task.hours[3] > 0 ? Number(task.hours[3].toFixed(2)) : '',
-              task.hours[4] > 0 ? Number(task.hours[4].toFixed(2)) : '',
-              task.hours[5] > 0 ? Number(task.hours[5].toFixed(2)) : '',
-              task.hours[6] > 0 ? Number(task.hours[6].toFixed(2)) : '',
+              ...hourVals,
               task.totalHours > 0 ? Number(task.totalHours.toFixed(2)) : 0
             ]);
           });
         });
       });
 
-      const dayTotals = timesheetData.totalPerDay || [0, 0, 0, 0, 0, 0, 0];
+      const colTotals = (timesheetData.totalPerCol || []).map(t => (t > 0 ? Number(t.toFixed(2)) : ''));
       rows.push([
         'TOTAL',
         '',
@@ -316,13 +374,7 @@ const ApexTimesheetView = forwardRef(({
         '',
         '',
         '',
-        dayTotals[0] > 0 ? Number(dayTotals[0].toFixed(2)) : '',
-        dayTotals[1] > 0 ? Number(dayTotals[1].toFixed(2)) : '',
-        dayTotals[2] > 0 ? Number(dayTotals[2].toFixed(2)) : '',
-        dayTotals[3] > 0 ? Number(dayTotals[3].toFixed(2)) : '',
-        dayTotals[4] > 0 ? Number(dayTotals[4].toFixed(2)) : '',
-        dayTotals[5] > 0 ? Number(dayTotals[5].toFixed(2)) : '',
-        dayTotals[6] > 0 ? Number(dayTotals[6].toFixed(2)) : '',
+        ...colTotals,
         Number(timesheetData.grandTotalHours?.toFixed(2) || 0)
       ]);
 
@@ -334,21 +386,22 @@ const ApexTimesheetView = forwardRef(({
         { wch: 35 }, // Project Name
         { wch: 22 }, // Task Type
         { wch: 22 }, // User
-        { wch: 12 }, // Mon
-        { wch: 12 }, // Tue
-        { wch: 12 }, // Wed
-        { wch: 12 }, // Thu
-        { wch: 12 }, // Fri
-        { wch: 12 }, // Sat
-        { wch: 12 }, // Sun
+        ...columns.map(() => ({ wch: 12 })),
         { wch: 16 }  // Total
       ];
-      XLSX.utils.book_append_sheet(wb, ws, `Timesheet W${currentWeek}`);
-      XLSX.writeFile(wb, `APEX_Timesheet_W${currentWeek}_${currentYear}.xlsx`);
+      
+      const fileSuffix = timeRange === 'week' 
+        ? `W${currentWeek}_${currentYear}` 
+        : timeRange === 'month' 
+        ? `Thang_${today.getMonth() + 1}_${currentYear}` 
+        : `Nam_${currentYear}`;
+
+      XLSX.utils.book_append_sheet(wb, ws, `Timesheet`);
+      XLSX.writeFile(wb, `APEX_Timesheet_${fileSuffix}.xlsx`);
     } catch (e) {
       console.error('Error exporting Apex Timesheet to Excel:', e);
     }
-  }, [timesheetData, currentWeek, currentYear, weekDates]);
+  }, [timesheetData, currentWeek, currentYear, weekDates, timeRange, today, columns]);
 
   useImperativeHandle(ref, () => ({
     exportExcel: handleExportExcel
@@ -363,13 +416,9 @@ const ApexTimesheetView = forwardRef(({
             <col style={{ width: '150px' }} />
             <col style={{ width: '160px' }} />
             <col style={{ width: '150px' }} />
-            <col style={{ width: '75px' }} />
-            <col style={{ width: '75px' }} />
-            <col style={{ width: '75px' }} />
-            <col style={{ width: '75px' }} />
-            <col style={{ width: '75px' }} />
-            <col style={{ width: '75px' }} />
-            <col style={{ width: '75px' }} />
+            {columns.map(c => (
+              <col key={c.id} style={{ width: c.width || '75px' }} />
+            ))}
             <col style={{ width: '90px' }} />
           </colgroup>
           <thead>
@@ -378,25 +427,18 @@ const ApexTimesheetView = forwardRef(({
               <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)] text-[var(--text-main)] dark:text-white" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Project Code</th>
               <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)] text-[var(--text-main)] dark:text-white" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>Task Type</th>
               <th className="th-primary sticky z-[35] text-left border-b border-r border-[var(--border)] text-[var(--text-main)] dark:text-white" style={{ top: '0px', paddingLeft: '12px', paddingRight: '12px' }}>User</th>
-              {timesheetData.weekDates.map((date, i) => {
-                const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                const isToday = isSameDay(date, new Date());
-                const isWeekendDay = i >= 5;
-                const dateColor = isToday ? 'text-emerald-500' : (isWeekendDay ? 'text-rose-500/80 dark:text-rose-400/80' : 'text-[var(--text-muted)] dark:text-slate-300');
-                const labelColor = isToday ? 'text-emerald-500' : (isWeekendDay ? 'text-rose-500 dark:text-rose-400' : 'text-[var(--text-main)] dark:text-white');
-                return (
-                  <th 
-                    key={i} 
-                    className={`sticky z-[35] text-center sys-px py-[12px] border-b border-r border-[var(--border)] ${
-                      isToday ? 'bg-indigo-500/10' : (isWeekendDay ? 'bg-rose-500/[0.03]' : 'bg-[var(--bg-card)]')
-                    }`} 
-                    style={{ top: '0px' }}
-                  >
-                    <div className={`text-[14px] font-black uppercase tracking-wider ${labelColor}`}>{dayLabels[i]?.toUpperCase() || ''}</div>
-                    <div className={`text-[12px] font-normal ${dateColor}`}>{format(date, 'dd/MM')}</div>
-                  </th>
-                );
-              })}
+              {columns.map((col) => (
+                <th 
+                  key={col.id} 
+                  className={`sticky z-[35] text-center sys-px py-[12px] border-b border-r border-[var(--border)] ${
+                    col.isToday ? 'bg-indigo-500/10' : (col.isWeekendDay ? 'bg-rose-500/[0.03]' : 'bg-[var(--bg-card)]')
+                  }`} 
+                  style={{ top: '0px' }}
+                >
+                  <div className={`text-[14px] font-black uppercase tracking-wider ${col.isToday ? 'text-emerald-500' : (col.isWeekendDay ? 'text-rose-500 dark:text-rose-400' : 'text-[var(--text-main)] dark:text-white')}`}>{col.label}</div>
+                  <div className={`text-[12px] font-normal ${col.isToday ? 'text-emerald-500' : (col.isWeekendDay ? 'text-rose-500/80 dark:text-rose-400/80' : 'text-[var(--text-muted)] dark:text-slate-300')}`}>{col.sub}</div>
+                </th>
+              ))}
               <th className="th-primary sticky z-[35] text-center border-b border-[var(--border)] text-indigo-600 dark:text-indigo-400" style={{ top: '0px', paddingLeft: '8px', paddingRight: '8px' }}>
                 TOTAL
               </th>
@@ -405,17 +447,17 @@ const ApexTimesheetView = forwardRef(({
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={12} className="text-center py-[50px]">
+                <td colSpan={5 + columns.length} className="text-center py-[50px]">
                   <RefreshCw size={28} className="animate-spin text-indigo-500 mx-auto mb-2" />
                   <p className="text-[13px] font-bold text-[var(--text-muted)]">Đang tải dữ liệu từ APEX_TimeSheet...</p>
                 </td>
               </tr>
             ) : (!timesheetData?.teams || timesheetData.teams.length === 0) ? (
               <tr>
-                <td colSpan={12} className="text-center py-[50px]">
+                <td colSpan={5 + columns.length} className="text-center py-[50px]">
                   <CalendarDays size={32} className="text-[var(--text-muted)] opacity-30 mx-auto mb-2" />
                   <p className="text-[13px] font-bold text-[var(--text-muted)] uppercase tracking-[0.15em]">
-                    Chưa có dữ liệu trong APEX_TimeSheet cho Tuần {timesheetData?.weekNumber || currentWeek} ({currentYear})
+                    Chưa có dữ liệu trong APEX_TimeSheet cho {timeRange === 'week' ? `Tuần ${timesheetData?.weekNumber || currentWeek}` : timeRange === 'month' ? `Tháng ${today.getMonth() + 1}` : 'Năm'} ({currentYear})
                   </p>
                 </td>
               </tr>
@@ -473,20 +515,19 @@ const ApexTimesheetView = forwardRef(({
                               {task.userName}
                             </div>
                           </td>
-                          {/* Mon - Sun columns */}
+                          {/* Period Columns (Days / Weeks / Months) */}
                           {task.hours.map((hours, di) => {
-                            const isToday = isSameDay(timesheetData.weekDates[di], new Date());
-                            const isWeekendDay = di >= 5;
+                            const col = columns[di];
                             const cellColor = hours === 0 
                               ? 'text-[var(--text-muted)] opacity-30 font-medium' 
-                              : hours > 8 
+                              : hours > (timeRange === 'week' ? 8 : 40) 
                               ? 'text-rose-500 dark:text-rose-400 font-bold' 
                               : 'text-[var(--text-contrast)] font-medium';
                             return (
                               <td
                                 key={di}
                                 className={`text-center py-[10px] text-[13px] leading-[20px] font-mono border-r border-[var(--border)] align-middle ${
-                                  isToday ? 'bg-indigo-500/5' : (isWeekendDay ? 'bg-rose-500/[0.02]' : '')
+                                  col?.isToday ? 'bg-indigo-500/5' : (col?.isWeekendDay ? 'bg-rose-500/[0.02]' : '')
                                 } ${cellColor}`}
                               >
                                 {hours > 0 ? (
@@ -525,13 +566,12 @@ const ApexTimesheetView = forwardRef(({
                     </button>
                   </div>
                 </td>
-                {timesheetData.totalPerDay.map((total, i) => {
-                  const isToday = isSameDay(timesheetData.weekDates[i], new Date());
-                  const isWeekendDay = i >= 5;
-                  const totalColor = total > 8 ? 'text-rose-500 dark:text-rose-400 font-bold' : 'text-[var(--text-contrast)]';
+                {(timesheetData.totalPerCol || []).map((total, i) => {
+                  const col = columns[i];
+                  const totalColor = total > (timeRange === 'week' ? 8 : 40) ? 'text-rose-500 dark:text-rose-400 font-bold' : 'text-[var(--text-contrast)]';
                   return (
                     <td key={i} className={`text-center py-[14px] text-[14px] font-mono font-bold ${totalColor} border-r border-[var(--border)] ${
-                      isToday ? 'bg-indigo-500/10' : (isWeekendDay ? 'bg-rose-500/[0.03]' : '')
+                      col?.isToday ? 'bg-indigo-500/10' : (col?.isWeekendDay ? 'bg-rose-500/[0.03]' : '')
                     }`}>
                       {total > 0 ? (
                         <div title={`${total.toFixed(2)}h (${formatHoursAndMinutes(total)})`}>
