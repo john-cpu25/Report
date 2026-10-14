@@ -147,6 +147,14 @@ const TimesheetPlusView = forwardRef(({
   }, []);
 
   // Quick lookup maps
+  const timeSheetTypeMap = useMemo(() => {
+    const map = {};
+    (timesheetTypes || []).forEach(t => {
+      if (t.id) map[t.id] = (t.type || '').trim().toUpperCase();
+    });
+    return map;
+  }, [timesheetTypes]);
+
   const userMap = useMemo(() => {
     const map = {};
     (rawUsers || []).forEach(u => { if (u.id) map[u.id] = u; });
@@ -176,6 +184,8 @@ const TimesheetPlusView = forwardRef(({
     };
     (dashboardProjects || []).forEach(registerName);
     (apexProjects || []).forEach(registerName);
+    map['APEX'] = 'APEX (Management, R&D, Training, Annual Leave)';
+    map['APEX FREE'] = 'APEX FREE (Learning)';
     return map;
   }, [dashboardProjects, apexProjects]);
 
@@ -193,6 +203,11 @@ const TimesheetPlusView = forwardRef(({
     };
     (dashboardProjects || []).forEach(registerColor);
     (apexProjects || []).forEach(registerColor);
+
+    // Color for APEX and APEX FREE
+    const apexCol = map['APEX'] || '#f43f5e';
+    map['APEX'] = apexCol;
+    map['APEX FREE'] = map['APEX FREE'] || '#06b6d4'; // Cyan for Learning
     return map;
   }, [dashboardProjects, apexProjects]);
 
@@ -251,7 +266,20 @@ const TimesheetPlusView = forwardRef(({
       // Không hiển thị Team MANAGER / MANAGEMENT
       if (teamName.includes('MANAGER') || teamName.includes('MANAGEMENT')) return;
 
-      const projectCode = (projObj?.key || projObj?.code || projObj?.name || 'UNASSIGNED').toString().trim().toUpperCase();
+      const baseProjectCode = (projObj?.key || projObj?.code || projObj?.name || 'UNASSIGNED').toString().trim().toUpperCase();
+      const taskType = (timeSheetTypeMap[record.kind] || '').toString().trim().toUpperCase();
+
+      // Phân tách cột APEX:
+      // + APEX FREE : LEARNING
+      // + APEX : MANAGEMENT, R&D, TRAINING, ANNUAL LEAVE và các loại task khác
+      let projectCode = baseProjectCode;
+      if (baseProjectCode === 'APEX') {
+        if (taskType.includes('LEARNING')) {
+          projectCode = 'APEX FREE';
+        } else {
+          projectCode = 'APEX';
+        }
+      }
 
       // Filter: Team
       if (selectedTeam && teamName.toLowerCase() !== selectedTeam.trim().toLowerCase()) return;
@@ -259,7 +287,7 @@ const TimesheetPlusView = forwardRef(({
       // Filter: Project
       if (selectedProject) {
         const selP = selectedProject.trim().toLowerCase();
-        if (projectCode.toLowerCase() !== selP && !projectCode.toLowerCase().includes(selP)) return;
+        if (projectCode.toLowerCase() !== selP && baseProjectCode.toLowerCase() !== selP) return;
       }
 
       // Filter: User
@@ -273,6 +301,8 @@ const TimesheetPlusView = forwardRef(({
         const matchSearch = userName.toLowerCase().includes(q) ||
                             rawUserName.toLowerCase().includes(q) ||
                             projectCode.toLowerCase().includes(q) ||
+                            baseProjectCode.toLowerCase().includes(q) ||
+                            taskType.toLowerCase().includes(q) ||
                             teamName.toLowerCase().includes(q);
         if (!matchSearch) return;
       }
@@ -309,9 +339,26 @@ const TimesheetPlusView = forwardRef(({
       }
     });
 
-    // Also include all active users in rawUsers / dashboardUsers if no records yet, so the matrix is comprehensive
-    if (rawUsers && rawUsers.length > 0 && !selectedUser && !searchQuery) {
-      rawUsers.forEach(u => {
+    // Luôn đảm bảo nếu có cột APEX hoặc APEX FREE thì xuất hiện cả cặp liền kề
+    if (projectCodesSet.has('APEX') || projectCodesSet.has('APEX FREE')) {
+      projectCodesSet.add('APEX');
+      projectCodesSet.add('APEX FREE');
+    }
+
+    // Also include all active users in rawUsers / dashboardUsers / apexUsers if no records yet, so the matrix is comprehensive
+    const candidateUsers = [];
+    const seenStaffIds = new Set();
+    [...(rawUsers || []), ...(dashboardUsers || []), ...(apexUsers || [])].forEach(u => {
+      if (!u) return;
+      const key = (u.id || u.name || '').toString().toLowerCase();
+      if (key && !seenStaffIds.has(key)) {
+        seenStaffIds.add(key);
+        candidateUsers.push(u);
+      }
+    });
+
+    if (candidateUsers.length > 0 && !selectedUser && !searchQuery) {
+      candidateUsers.forEach(u => {
         const userLoc = (u?.location || '').toString().toLowerCase();
         if (userLoc.includes('aus') || userLoc.includes('australia')) return;
         const userName = getCanonicalName(u.name || u.full_name || '');
@@ -429,7 +476,7 @@ const TimesheetPlusView = forwardRef(({
       grandAvgWuz,
       totalUsersCount: rows.length
     };
-  }, [timesheetRecords, today, timeRange, monthWeeks, selectedWeeks, userMap, projectMap, selectedTeam, selectedProject, selectedUser, searchQuery, userTeamByName, weekCols, baseStandardCapacity, rawUsers]);
+  }, [timesheetRecords, today, timeRange, monthWeeks, selectedWeeks, userMap, projectMap, timeSheetTypeMap, selectedTeam, selectedProject, selectedUser, searchQuery, userTeamByName, weekCols, baseStandardCapacity, rawUsers, dashboardUsers, apexUsers]);
 
   // Excel Export Handler (Matching Hình 1 & Hình 2 layout)
   const handleExportExcel = useCallback(() => {

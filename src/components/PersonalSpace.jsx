@@ -362,6 +362,11 @@ const PersonalSpace = () => {
       .filter((v, i, a) => a.indexOf(v) === i)
       .sort();
 
+    if (projects.includes('APEX') && !projects.includes('APEX FREE')) {
+      projects.push('APEX FREE');
+      projects.sort();
+    }
+
     // 4. Users:
     // If team is selected: ONLY show users belonging to this team! (Exclude Australia)
     let candidateUsers = [];
