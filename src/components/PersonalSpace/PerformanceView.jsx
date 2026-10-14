@@ -3,148 +3,48 @@ import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date
 import * as XLSX from 'xlsx';
 import { supabase } from '../../supabaseClient';
 import { getThreeMonthsAgoISO } from '../../utils/timeUtils';
+import { getCanonicalName } from '../../utils/userUtils';
 import { Edit2, Check, RotateCcw, Download } from 'lucide-react';
-
-// Master list of all registered active staff across APEX teams
-const CANONICAL_STAFF_NAMES = {
-  // Direct clean mapping
-  'TRUNGTHENGUYEN': 'Trung Thế Nguyễn',
-  'TRUNG THẾ NGUYỄN': 'Trung Thế Nguyễn',
-  'TRUNG THE NGUYEN': 'Trung Thế Nguyễn',
-  'KY PHAN': 'Kỳ Phan',
-  'KỲ PHAN': 'Kỳ Phan',
-  'NHAN NGUYEN': 'Nhân Nguyễn',
-  'NHÂN NGUYỄN': 'Nhân Nguyễn',
-  'JOHNNY': 'Nhân Nguyễn',
-  'NGAN TRAN': 'Ngân Trần',
-  'NGÂN TRẦN': 'Ngân Trần',
-  'KHIEM NGUYEN': 'Khiêm Nguyễn',
-  'KHIÊM NGUYỄN': 'Khiêm Nguyễn',
-  'CUONG PHAM': 'Cường Phạm',
-  'CƯỜNG PHẠM': 'Cường Phạm',
-  'LOC PHAM': 'Loc Pham',
-  'LỘC PHẠM': 'Loc Pham',
-  'NAM LE': 'Nam Le',
-  'NAM LÊ': 'Nam Le',
-  'KHANG TRINH': 'Khang Trinh',
-  'TRUNG NGUYEN': 'Trung Nguyễn',
-  'TRUNG NGUYỄN': 'Trung Nguyễn',
-  'HOANG PHAM': 'Hoàng Phạm',
-  'HOÀNG PHẠM': 'Hoàng Phạm',
-  'NHAN PHAM': 'Nhân Phạm',
-  'NHÂN PHẠM': 'Nhân Phạm',
-  'DUC PHAM': 'Đức Phạm',
-  'ĐỨC PHẠM': 'Đức Phạm',
-  'TIEN TRAN': 'Tiến Trần',
-  'TIẾN TRẦN': 'Tiến Trần',
-  'KHANH NGUYEN': 'Khánh Nguyễn',
-  'KHÁNH NGUYỄN': 'Khánh Nguyễn',
-  'NGUYEN LY': 'Nguyên Lý',
-  'NGUYÊN LÝ': 'Nguyên Lý',
-  'NEIL': 'Nguyên Lý',
-  'QUAN NGUYEN': 'Quân Nguyễn',
-  'QUÂN NGUYỄN': 'Quân Nguyễn',
-  'ANH NGUYEN': 'Ánh Nguyễn',
-  'ÁNH NGUYỄN': 'Ánh Nguyễn',
-  'SON LAM': 'Sơn Lâm',
-  'SƠN LÂM': 'Sơn Lâm',
-  'BAO PHAM': 'Bảo Phạm',
-  'BẢO PHẠM': 'Bảo Phạm',
-  'DUNG DO': 'Dũng Đỗ',
-  'DŨNG ĐỖ': 'Dũng Đỗ',
-
-  // Short and uppercase variants mapping to canonical full names
-  'NHÂN': 'Nhân Nguyễn',
-  'NHAN': 'Nhân Nguyễn',
-  'NHÂN P.': 'Nhân Phạm',
-  'NHÂN P': 'Nhân Phạm',
-  'NHAN P.': 'Nhân Phạm',
-  'NHAN P': 'Nhân Phạm',
-  'ĐỨC': 'Đức Phạm',
-  'DUC': 'Đức Phạm',
-  'NGUYÊN': 'Nguyên Lý',
-  'NGUYEN': 'Nguyên Lý',
-  'KHÁNH': 'Khánh Nguyễn',
-  'KHANH': 'Khánh Nguyễn',
-  'KHIÊM': 'Khiêm Nguyễn',
-  'KHIEM': 'Khiêm Nguyễn',
-  'KHANG': 'Khang Trinh',
-  'TÂM': 'Tâm Phan',
-  'TAM': 'Tâm Phan',
-  'ÁNH': 'Ánh Nguyễn',
-  'ANH': 'Ánh Nguyễn',
-  'NAM': 'Nam Le',
-  'LỘC': 'Loc Pham',
-  'LOC': 'Loc Pham',
-  'HOÀNG': 'Hoàng Phạm',
-  'HOANG': 'Hoàng Phạm',
-  'CƯỜNG': 'Cường Phạm',
-  'CUONG': 'Cường Phạm',
-  'TIẾN': 'Tiến Trần',
-  'TIEN': 'Tiến Trần',
-  'TRUNG': 'Trung Nguyễn',
-  'TRUNG THẾ': 'Trung Thế Nguyễn',
-  'TRUNG THE': 'Trung Thế Nguyễn',
-  'NGÂN': 'Ngân Trần',
-  'NGAN': 'Ngân Trần',
-  'KỲ': 'Kỳ Phan',
-  'KY': 'Kỳ Phan',
-  'LINH': 'Linh Huynh',
-  'SƠN': 'Sơn Lâm',
-  'SON': 'Sơn Lâm',
-  'BẢO': 'Bảo Phạm',
-  'BAO': 'Bảo Phạm',
-  'DŨNG': 'Dũng Đỗ',
-  'DUNG': 'Dũng Đỗ',
-  'QUÂN': 'Quân Nguyễn',
-  'QUAN': 'Quân Nguyễn',
-  'KAMALA TRAN': 'Kamala Tran',
-  'KAMALA': 'Kamala Tran'
-};
 
 const getCanonicalStaffName = (rawName) => {
   if (!rawName) return 'Unknown';
-  const clean = rawName.trim();
-  const upper = clean.toUpperCase();
-  if (CANONICAL_STAFF_NAMES[upper]) return CANONICAL_STAFF_NAMES[upper];
-  return clean;
+  return getCanonicalName(rawName);
 };
 
 // Backwards compatibility alias
 const getStaffDisplayName = (rawName) => getCanonicalStaffName(rawName);
 
 // Master list of all registered active staff across APEX teams with full names
-// Master list of all registered active staff across APEX teams with full names
 const KNOWN_APEX_USERS = [
   // MODELLING
-  { name: 'Nhân Nguyễn', team: 'MODELLING', isLeader: true, isAdmin: true },
-  { name: 'Nguyên Lý', team: 'MODELLING', isLeader: true },
-  { name: 'Khánh Nguyễn', team: 'MODELLING', isLeader: true },
-  { name: 'Quân Nguyễn', team: 'MODELLING' },
-  { name: 'Khiêm Nguyễn', team: 'MODELLING' },
+  { name: 'Nhan Nguyen', team: 'MODELLING', isLeader: true, isAdmin: true },
+  { name: 'Nguyen Ly', team: 'MODELLING', isLeader: true },
+  { name: 'Khanh Nguyen', team: 'MODELLING', isLeader: true },
+  { name: 'Quan Nguyen', team: 'MODELLING' },
+  { name: 'Khiem Nguyen', team: 'MODELLING' },
   { name: 'Khang Trinh', team: 'MODELLING' },
-  { name: 'Tâm Phan', team: 'MODELLING' },
+  { name: 'Tam Phan', team: 'MODELLING' },
 
   // PT&REO
-  { name: 'Hoàng Phạm', team: 'PT&REO', isLeader: true },
-  { name: 'Tiến Trần', team: 'PT&REO', isLeader: true },
-  { name: 'Cường Phạm', team: 'PT&REO', isLeader: true },
-  { name: 'Ánh Nguyễn', team: 'PT&REO' },
+  { name: 'Hoang Pham', team: 'PT&REO', isLeader: true },
+  { name: 'Tien Tran', team: 'PT&REO', isLeader: true },
+  { name: 'Cuong Pham', team: 'PT&REO', isLeader: true },
+  { name: 'Anh Nguyen', team: 'PT&REO' },
   { name: 'Nam Le', team: 'PT&REO' },
   { name: 'Loc Pham', team: 'PT&REO' },
-  { name: 'Trung Nguyễn', team: 'PT&REO' },
+  { name: 'Trung Nguyen', team: 'PT&REO' },
 
   // ENGINEER
-  { name: 'Đức Phạm', team: 'ENGINEER', isLeader: true },
-  { name: 'Nhân Phạm', team: 'ENGINEER', isLeader: true },
-  { name: 'Kỳ Phan', team: 'ENGINEER' },
-  { name: 'Dũng Đỗ', team: 'ENGINEER' },
-  { name: 'Ngân Trần', team: 'ENGINEER' },
-  { name: 'Bảo Phạm', team: 'ENGINEER' },
-  { name: 'Trung Thế Nguyễn', team: 'ENGINEER' },
+  { name: 'Duc Pham', team: 'ENGINEER', isLeader: true },
+  { name: 'Nhan Pham', team: 'ENGINEER', isLeader: true },
+  { name: 'Ky Phan', team: 'ENGINEER' },
+  { name: 'Dung Do', team: 'ENGINEER' },
+  { name: 'Ngan Tran', team: 'ENGINEER' },
+  { name: 'Bao Pham', team: 'ENGINEER' },
+  { name: 'Trung The Nguyen', team: 'ENGINEER' },
 
   // ETABS
-  { name: 'Sơn Lâm', team: 'ETABS', isLeader: true },
+  { name: 'Son Lam', team: 'ETABS', isLeader: true },
   { name: 'Linh Huynh', team: 'ETABS' },
 
   // MANAGER

@@ -49,11 +49,11 @@ Tài liệu chi tiết về toàn bộ danh sách tài khoản nhân sự, phân
 ## 3. DANH SÁCH TÀI KHOẢN NHÂN SỰ APEX
 
 ### 👑 Nhóm Quản Trị Hệ Thống (Admins)
-| Họ và Tên | Email | Team | Văn phòng | Quyền |
+| Họ và Tên (Supabase) | Email | Team | Văn phòng | Quyền |
 | :--- | :--- | :--- | :--- | :--- |
-| **Nhân Nguyễn (Johnny)** | `johnny.nguyen@apexscengineering.com` | MODELLING | VietNam | **Admin** |
-| **Vũ Đỗ** | `vu@apexscengineering.com` | MANAGER | VietNam | **Admin** |
-| **Vu Do** | `vu.donguyen@apexscengineering.com` | MANAGER | VietNam | **Admin** |
+| **Nhan Nguyen (Johnny)** | `johnny.nguyen@apexscengineering.com` | MODELLING | VietNam | **Admin** |
+| **Vu Do** | `vu@apexscengineering.com` | MANAGER | VietNam | **Admin** |
+| **Vu Do Nguyen** | `vu.donguyen@apexscengineering.com` | MANAGER | VietNam | **Admin** |
 | **Jason Le** | `jason@apexscengineering.com` | MANAGER | VietNam | **Admin** |
 | **Kamala Tran** | `kamala.tran@apexscengineering.com` | MANAGER | VietNam | **Admin** |
 | **System Admin** | `96FCEF00-994D-4BA9-ADAE-EA948702F606@admin.com.au` | MODELLING | VietNam | **AdminApp** |
@@ -61,18 +61,19 @@ Tài liệu chi tiết về toàn bộ danh sách tài khoản nhân sự, phân
 ---
 
 ### 🇻🇳 Nhóm Kỹ Sư & Mô Hình Hóa Việt Nam (Vietnam Team)
-| Họ và Tên | Email | Team | Vị trí | Quyền |
+| Họ và Tên (Supabase) | Email | Team | Vị trí | Quyền |
 | :--- | :--- | :--- | :--- | :--- |
-| **Quân Nguyễn** | `quan.nguyen@apexscengineering.com` | MODELLING | VietNam | User |
-| **Khang Trịnh** | `khang.trinh@apexscengineering.com` | MODELLING | VietNam | User |
-| **Nam Lê** | `nam.le@apexscengineering.com` | PT&REO | VietNam | User |
-| **Lộc Phạm** | `loc.pham@apexscengineering.com` | PT&REO | VietNam | User |
-| **Ánh Nguyễn** | `anh.nguyen@apexscengineering.com` | PT&REO | VietNam | User |
-| **Dũng Đỗ** | `dung.do@apexscengineering.com` | ENGINEER | VietNam | User |
-| **Nhân Phạm** | `nhan.pham@apexscengineering.com` | ENGINEER | VietNam | User |
-| **Kỳ Phan** | `ky.phan@apexscengineering.com` | ENGINEER | VietNam | User |
-| **Ngân Trần (Annie)** | `annie.tran@apexscengineering.com` | ENGINEER | VietNam | User |
-| **Khánh Nguyễn** | `khanh.nguyen@apexscengineering.com` | MODELLING | VietNam | AdminApp |
+| **Quan Nguyen** | `quan.nguyen@apexscengineering.com` | MODELLING | VietNam | User |
+| **Khang Trinh** | `khang.trinh@apexscengineering.com` | MODELLING | VietNam | User |
+| **Nam Le** | `nam.le@apexscengineering.com` | PT&REO | VietNam | User |
+| **Loc Pham** | `loc.pham@apexscengineering.com` | PT&REO | VietNam | User |
+| **Anh Nguyen** | `anh.nguyen@apexscengineering.com` | PT&REO | VietNam | User |
+| **Dung Do** | `dung.do@apexscengineering.com` | ENGINEER | VietNam | User |
+| **Dat Le** | `dat.le@apexscengineering.com` | ENGINEER | VietNam | User |
+| **Nhan Pham** | `nhan.pham@apexscengineering.com` | ENGINEER | VietNam | User |
+| **Ky Phan** | `ky.phan@apexscengineering.com` | ENGINEER | VietNam | User |
+| **Ngan Tran (Annie)** | `annie.tran@apexscengineering.com` | ENGINEER | VietNam | User |
+| **Khanh Nguyen** | `khanh.nguyen@apexscengineering.com` | MODELLING | VietNam | AdminApp |
 
 
 
