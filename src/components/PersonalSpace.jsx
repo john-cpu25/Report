@@ -14,12 +14,15 @@ import TimesheetView from './PersonalSpace/TimesheetView';
 import ApexTimesheetView from './PersonalSpace/ApexTimesheetView';
 import TotalTimesheetView from './PersonalSpace/TotalTimesheetView';
 import PerformanceTimesheetView from './PersonalSpace/PerformanceTimesheetView';
+import TimesheetPlusView from './PersonalSpace/TimesheetPlusView';
 import ProjectView from './PersonalSpace/ProjectView';
 import GanttView from './PersonalSpace/GanttView';
 import PerformanceView from './PersonalSpace/PerformanceView';
 import NeumorphicPersonalSwitcher from './buttons/NeumorphicPersonalSwitcher';
 import NeumorphicSearch from './buttons/NeumorphicSearch';
 import NeumorphicDropdown from './buttons/NeumorphicDropdown';
+
+import MultiWeekPicker from './PersonalSpace/MultiWeekPicker';
 
 import { Filter, ChevronRight, ChevronLeft, ArrowUpDown, ChevronDown, Download } from 'lucide-react';
 import { differenceInDays, startOfDay, addDays, isSameDay, isWithinInterval, eachMonthOfInterval, subDays } from 'date-fns';
@@ -87,10 +90,15 @@ const PersonalSpace = () => {
     const map = {};
     if (dashboardProjects) {
       dashboardProjects.forEach(p => {
-        const key = (p.key || '').toUpperCase();
-        const name = (p.name || '').toUpperCase();
-        if (key && p.color) map[key] = p.color;
-        if (name && p.color) map[name] = p.color;
+        if (!p || !p.color) return;
+        const key = (p.key || '').trim().toUpperCase();
+        const code = (p.code || '').trim().toUpperCase();
+        const name = (p.name || '').trim().toUpperCase();
+        const fullName = (p.full_name || '').trim().toUpperCase();
+        if (key) map[key] = p.color;
+        if (code) map[code] = p.color;
+        if (name) map[name] = p.color;
+        if (fullName) map[fullName] = p.color;
       });
     }
     return map;
@@ -139,12 +147,30 @@ const PersonalSpace = () => {
   const projectViewRef = useRef(null);
   const totalTimesheetRef = useRef(null);
   const apexTimesheetRef = useRef(null);
+  const timesheetPlusRef = useRef(null);
   const performanceRef = useRef(null);
   const performanceTimesheetRef = useRef(null);
   
   // Optimization: Date Filtering
-  const [timeRange, setTimeRange] = useState('week'); // 'day' | 'week' | 'month' | 'year'
+  const [timeRange, setTimeRange] = useState('week'); // 'day' | 'week' | 'month' | 'year' | 'custom'
   
+  // Custom Multi-Week Filter State (for timeRange === 'custom')
+  const [selectedCustomWeeks, setSelectedCustomWeeks] = useState(() => {
+    const saved = localStorage.getItem('personal_custom_weeks');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) { /* ignore */ }
+    }
+    const curr = getISOWeek(new Date());
+    return [curr - 2, curr - 1, curr].filter(w => w > 0);
+  });
+
+  useEffect(() => {
+    localStorage.setItem('personal_custom_weeks', JSON.stringify(selectedCustomWeeks));
+  }, [selectedCustomWeeks]);
+
   // Local Filter States
   const [localFilters, setLocalFilters] = useState({
     team: '',
@@ -181,7 +207,7 @@ const PersonalSpace = () => {
     let total = 0;
     let count = 0;
     records.forEach(r => {
-      if (isRecordInTimeRange(r.week, r.year, currentDate, timeRange)) {
+      if (isRecordInTimeRange(r.week, r.year, currentDate, timeRange, null, selectedCustomWeeks)) {
         const uObj = userMap[r.user_id];
         if (isAustralia(uObj)) return;
         const pKey = projMap[r.project_id] || '';
@@ -205,7 +231,7 @@ const PersonalSpace = () => {
       }
     });
     return { totalHours: total, count };
-  }, [apexTimesheetCache, currentDate, timeRange, viewMode, localMaps, localFilters]);
+  }, [apexTimesheetCache, currentDate, timeRange, selectedCustomWeeks, viewMode, localMaps, localFilters]);
 
   const loadData = async (force = false) => {
     if (!user) return;
@@ -279,9 +305,9 @@ const PersonalSpace = () => {
     };
   }, []);
 
-  // Ensure daily, timesheet, total_timesheet & performance_timesheet views only use weekly range
+  // Ensure daily view only uses weekly range
   useEffect(() => {
-    if ((viewMode === 'daily' || viewMode === 'timesheet' || viewMode === 'total_timesheet' || viewMode === 'performance_timesheet') && timeRange !== 'week') {
+    if (viewMode === 'daily' && timeRange !== 'week') {
       setTimeRange('week');
     }
   }, [viewMode]);
@@ -404,6 +430,10 @@ const PersonalSpace = () => {
           dateMatch = isWithinInterval(t.dateObj, { start: startOfCurrentMonth, end: endOfCurrentMonth });
         } else if (timeRange === 'year') {
           dateMatch = t.dateObj.getFullYear() === currentDate.getFullYear();
+        } else if (timeRange === 'custom') {
+          const taskWeek = getISOWeek(t.dateObj);
+          const taskYear = t.dateObj.getFullYear();
+          dateMatch = taskYear === currentDate.getFullYear() && selectedCustomWeeks.includes(taskWeek);
         }
       }
 
@@ -445,7 +475,7 @@ const PersonalSpace = () => {
       default: break;
     }
     return sorted;
-  }, [rbacBaseTasks, localFilters, timeRange, localSort, user, currentDate, viewMode]);
+  }, [rbacBaseTasks, localFilters, timeRange, selectedCustomWeeks, localSort, user, currentDate, viewMode]);
 
   const strictlyFilteredData = useMemo(() => {
     if (user?.isAdmin) return filteredData;
@@ -669,6 +699,9 @@ const PersonalSpace = () => {
       case 'timesheet':
         apexTimesheetRef.current?.exportExcel?.();
         break;
+      case 'timesheet_plus':
+        timesheetPlusRef.current?.exportExcel?.();
+        break;
       case 'performance':
         performanceRef.current?.exportExcel ? performanceRef.current.exportExcel() : performanceRef.current?.exportCSV?.();
         break;
@@ -790,13 +823,13 @@ const PersonalSpace = () => {
           )}
 
             {/* Time Segmented Control (New Design) */}
-            {['list', 'daily', 'project', 'timesheet', 'total_timesheet', 'performance_timesheet', 'gantt', 'performance'].includes(viewMode) && (
+            {['list', 'daily', 'project', 'timesheet', 'timesheet_plus', 'total_timesheet', 'performance_timesheet', 'gantt', 'performance'].includes(viewMode) && (
               <div className={`flex items-center gap-1 p-[3px] backdrop-blur-md rounded-xl shadow-inner relative shrink-0 ${
                 isDark 
                   ? 'bg-slate-950/80 border border-slate-800' 
                   : 'bg-slate-200/50 border border-white/20'
               }`}>
-                {['week', 'month', 'year'].map((id) => {
+                {['week', 'month', 'year', 'custom'].map((id) => {
                   const isActive = timeRange === id;
                   return (
                     <button
@@ -805,8 +838,9 @@ const PersonalSpace = () => {
                       className={`relative w-[46px] h-[46px] text-[14px] font-black uppercase transition-all duration-300 z-10 time-range-btn flex items-center justify-center ${
                         isActive ? 'active' : ''
                       }`}
+                      title={id === 'custom' ? 'Custom Weeks (Chọn tuần tùy ý)' : undefined}
                     >
-                      {{ week: 'W', month: 'M', year: 'Y' }[id]}
+                      {{ week: 'W', month: 'M', year: 'Y', custom: 'W+' }[id]}
                       {isActive && (
                         <motion.div
                           layoutId="activeRange"
@@ -851,7 +885,7 @@ const PersonalSpace = () => {
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
               <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Total Hours:</span>
               <span className="text-[14px] font-black stat-val-hours">
-                {['timesheet', 'total_timesheet', 'performance_timesheet'].includes(viewMode)
+                {['timesheet', 'timesheet_plus', 'total_timesheet', 'performance_timesheet'].includes(viewMode)
                   ? (timesheetWeeklyStats.totalHours || 0).toFixed(1)
                   : ((viewMode === 'daily' || viewMode === 'list') ? timesheetData?.grandTotalHours : projectTimesheetData?.grandTotalHours || 0).toFixed(2)}
               </span>
@@ -859,7 +893,7 @@ const PersonalSpace = () => {
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
               <span className="text-[14px] font-black text-[var(--text-muted)] uppercase tracking-widest">Tasks:</span>
               <span className="text-[14px] font-black stat-val-tasks">
-                {['timesheet', 'total_timesheet', 'performance_timesheet'].includes(viewMode)
+                {['timesheet', 'timesheet_plus', 'total_timesheet', 'performance_timesheet'].includes(viewMode)
                   ? timesheetWeeklyStats.count
                   : ((viewMode === 'daily' || viewMode === 'list') ? timesheetData?.grandTotalTasks : projectTimesheetData?.grandTotalTasks || 0)}
               </span>
@@ -905,7 +939,7 @@ const PersonalSpace = () => {
               </button>
             </div>
 
-            {/* Enhanced Year/Week/Month Picker + Navigation */}
+            {/* Enhanced Year/Week/Month/Custom Picker + Navigation */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 p-1.5 rounded-xl shadow-sm date-picker-wrapper">
                 <select 
@@ -921,7 +955,17 @@ const PersonalSpace = () => {
                   {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
                 
-                {timeRange !== 'year' && (
+                {timeRange === 'custom' ? (
+                  <>
+                    <div className="w-[1px] h-4 bg-indigo-500/20" />
+                    <MultiWeekPicker 
+                      selectedWeeks={selectedCustomWeeks}
+                      onChange={setSelectedCustomWeeks}
+                      year={currentDate.getFullYear()}
+                      isDark={isDark}
+                    />
+                  </>
+                ) : timeRange !== 'year' && (
                   <>
                     <div className="w-[1px] h-4 bg-indigo-500/20" />
                     
@@ -960,50 +1004,52 @@ const PersonalSpace = () => {
                 )}
               </div>
 
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    if (timeRange === 'week') {
-                      setCurrentDate(addDays(currentDate, -7));
-                    } else if (timeRange === 'month') {
-                      const newDate = new Date(currentDate);
-                      newDate.setMonth(currentDate.getMonth() - 1);
-                      setCurrentDate(newDate);
-                    } else if (timeRange === 'year') {
-                      const newDate = new Date(currentDate);
-                      newDate.setFullYear(currentDate.getFullYear() - 1);
-                      setCurrentDate(newDate);
-                    } else {
-                      setCurrentDate(addDays(currentDate, -1));
-                    }
-                  }}
-                  className="w-[32px] h-[32px] rounded-lg flex items-center justify-center transition-all date-nav-btn"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  onClick={() => {
-                    if (timeRange === 'week') {
-                      setCurrentDate(addDays(currentDate, 7));
-                    } else if (timeRange === 'month') {
-                      const newDate = new Date(currentDate);
-                      newDate.setMonth(currentDate.getMonth() + 1);
-                      setCurrentDate(newDate);
-                    } else if (timeRange === 'year') {
-                      const newDate = new Date(currentDate);
-                      newDate.setFullYear(currentDate.getFullYear() + 1);
-                      setCurrentDate(newDate);
-                    } else {
-                      setCurrentDate(addDays(currentDate, 1));
-                    }
-                  }}
-                  className="w-[32px] h-[32px] rounded-lg flex items-center justify-center transition-all date-nav-btn"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
+              {timeRange !== 'custom' && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      if (timeRange === 'week') {
+                        setCurrentDate(addDays(currentDate, -7));
+                      } else if (timeRange === 'month') {
+                        const newDate = new Date(currentDate);
+                        newDate.setMonth(currentDate.getMonth() - 1);
+                        setCurrentDate(newDate);
+                      } else if (timeRange === 'year') {
+                        const newDate = new Date(currentDate);
+                        newDate.setFullYear(currentDate.getFullYear() - 1);
+                        setCurrentDate(newDate);
+                      } else {
+                        setCurrentDate(addDays(currentDate, -1));
+                      }
+                    }}
+                    className="w-[32px] h-[32px] rounded-lg flex items-center justify-center transition-all date-nav-btn"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (timeRange === 'week') {
+                        setCurrentDate(addDays(currentDate, 7));
+                      } else if (timeRange === 'month') {
+                        const newDate = new Date(currentDate);
+                        newDate.setMonth(currentDate.getMonth() + 1);
+                        setCurrentDate(newDate);
+                      } else if (timeRange === 'year') {
+                        const newDate = new Date(currentDate);
+                        newDate.setFullYear(currentDate.getFullYear() + 1);
+                        setCurrentDate(newDate);
+                      } else {
+                        setCurrentDate(addDays(currentDate, 1));
+                      }
+                    }}
+                    className="w-[32px] h-[32px] rounded-lg flex items-center justify-center transition-all date-nav-btn"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
 
-              {weekOffset !== 0 && (
+              {weekOffset !== 0 && timeRange !== 'custom' && (
                 <button
                   onClick={() => setCurrentDate(new Date())}
                   className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded transition-all date-today-btn"
@@ -1071,6 +1117,26 @@ const PersonalSpace = () => {
           ref={apexTimesheetRef}
           currentDate={currentDate}
           timeRange={timeRange}
+          selectedWeeks={selectedCustomWeeks}
+          getProjectColor={getProjectColor}
+          selectedTimeMetric={selectedTimeMetric}
+          rawUsers={localMaps.rawUsers}
+          userTeamByName={localMaps.userTeamByName}
+          dashboardProjects={dashboardProjects}
+          dashboardUsers={dashboardUsers}
+          selectedTeam={localFilters.team}
+          selectedProject={localFilters.project}
+          selectedUser={localFilters.user}
+          searchQuery={localFilters.search || ''}
+        />
+      )}
+
+      {viewMode === 'timesheet_plus' && (
+        <TimesheetPlusView 
+          ref={timesheetPlusRef}
+          currentDate={currentDate}
+          timeRange={timeRange}
+          selectedWeeks={selectedCustomWeeks}
           getProjectColor={getProjectColor}
           selectedTimeMetric={selectedTimeMetric}
           rawUsers={localMaps.rawUsers}
@@ -1089,6 +1155,7 @@ const PersonalSpace = () => {
           ref={totalTimesheetRef}
           currentDate={currentDate}
           timeRange={timeRange}
+          selectedWeeks={selectedCustomWeeks}
           getProjectColor={getProjectColor}
           selectedTimeMetric={selectedTimeMetric}
           rawUsers={localMaps.rawUsers}
@@ -1133,6 +1200,7 @@ const PersonalSpace = () => {
             selectedTimeMetric={selectedTimeMetric}
             currentDate={currentDate}
             timeRange={timeRange}
+            selectedWeeks={selectedCustomWeeks}
             selectedTeam={localFilters.team}
             selectedProject={localFilters.project}
             selectedUser={localFilters.user}

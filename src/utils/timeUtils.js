@@ -125,15 +125,20 @@ export function getMonthFromISOWeek(weekNumber, year) {
  * @param {number|string} recordWeek 
  * @param {number|string} recordYear 
  * @param {Date} currentDate 
- * @param {'week'|'month'|'year'} timeRange 
+ * @param {'week'|'month'|'year'|'custom'} timeRange 
  * @param {Array<number>} [monthWeeks] Mảng các tuần trong tháng để tối ưu
+ * @param {Array<number>} [customWeeks] Mảng các tuần được chọn tùy ý khi timeRange === 'custom'
  */
-export function isRecordInTimeRange(recordWeek, recordYear, currentDate, timeRange = 'week', monthWeeks = null) {
+export function isRecordInTimeRange(recordWeek, recordYear, currentDate, timeRange = 'week', monthWeeks = null, customWeeks = []) {
   const w = Number(recordWeek);
   const y = Number(recordYear);
   const targetYear = currentDate.getFullYear();
 
   if (y && y !== targetYear) return false;
+
+  if (timeRange === 'custom') {
+    return Array.isArray(customWeeks) && customWeeks.includes(w);
+  }
 
   if (timeRange === 'year') {
     return true;
@@ -150,6 +155,32 @@ export function isRecordInTimeRange(recordWeek, recordYear, currentDate, timeRan
 }
 
 /**
+ * Lấy ngày bắt đầu (Thứ 2) và kết thúc (Chủ Nhật) của một tuần ISO trong năm
+ * @param {number} weekNumber 
+ * @param {number} year 
+ */
+export function getWeekDateRange(weekNumber, year) {
+  const jan4 = new Date(year, 0, 4);
+  const dayOfWeek = jan4.getDay() || 7;
+  const firstThursday = new Date(jan4);
+  firstThursday.setDate(jan4.getDate() + (4 - dayOfWeek));
+
+  const targetThursday = new Date(firstThursday);
+  targetThursday.setDate(firstThursday.getDate() + (weekNumber - 1) * 7);
+
+  const monday = new Date(targetThursday);
+  monday.setDate(targetThursday.getDate() - 3);
+
+  const sunday = new Date(targetThursday);
+  sunday.setDate(targetThursday.getDate() + 3);
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const label = `${pad(monday.getDate())}/${pad(monday.getMonth() + 1)} - ${pad(sunday.getDate())}/${pad(sunday.getMonth() + 1)}`;
+
+  return { monday, sunday, label };
+}
+
+/**
  * Lấy năm và tuần ISO cho mốc thời gian
  */
 export function getISOWeekAndYear(date = new Date()) {
@@ -159,5 +190,6 @@ export function getISOWeekAndYear(date = new Date()) {
   const weekNo = Math.ceil((((target - yearStart) / 86400000) + 1) / 7);
   return { year: target.getUTCFullYear(), week: weekNo };
 }
+
 
 

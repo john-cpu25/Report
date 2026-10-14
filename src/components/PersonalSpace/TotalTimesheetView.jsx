@@ -75,6 +75,7 @@ const getTaskTextStyle = (taskName) => {
 const TotalTimesheetView = forwardRef(({
   currentDate = new Date(),
   timeRange = 'week',
+  selectedWeeks = [],
   getProjectColor = () => '#6366f1',
   selectedTimeMetric = 't1',
   rawUsers = [],
@@ -186,7 +187,7 @@ const TotalTimesheetView = forwardRef(({
     const weekEnd = addDays(weekDates[6], 1);
 
     const weekRecords = timesheetRecords.filter(r => {
-      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks);
+      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks);
     });
 
     const summaryMap = {};
@@ -377,7 +378,7 @@ const TotalTimesheetView = forwardRef(({
     });
 
     return { rows, totals };
-  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, apexTasks, userMap, projectMap, projectFullNameMap, currentWeek, currentYear, weekDates, selectedTimeMetric, userTeamByName, getProjectColor, selectedTeam, selectedProject, selectedUser]);
+  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, apexTasks, userMap, projectMap, projectFullNameMap, currentWeek, currentYear, weekDates, today, timeRange, monthWeeks, selectedWeeks, selectedTimeMetric, userTeamByName, getProjectColor, selectedTeam, selectedProject, selectedUser]);
 
   // Filtering & Sorting
   const filteredAndSortedRows = useMemo(() => {
@@ -462,9 +463,17 @@ const TotalTimesheetView = forwardRef(({
       const wb = XLSX.utils.book_new();
 
       // ── SHEET 1: PROJECT SUMMARY ──
+      const periodLabel = timeRange === 'week'
+        ? `Week: W${currentWeek} (${format(weekDates[0], 'dd/MM/yyyy')} - ${format(weekDates[6], 'dd/MM/yyyy')}) | Year: ${currentYear}`
+        : timeRange === 'month'
+        ? `Month: ${format(today, 'MM/yyyy')} | Year: ${currentYear}`
+        : timeRange === 'custom'
+        ? `Custom Weeks: ${[...selectedWeeks].sort((a,b)=>a-b).map(w=>'W'+w).join(', ')} | Year: ${currentYear}`
+        : `Year: ${currentYear}`;
+
       const summaryRows = [
         [`APEX SOUTHERN CROSS ENGINEERING - TOTAL TIMESHEET SUMMARY`],
-        [`Week: W${currentWeek} (${format(weekDates[0], 'dd/MM/yyyy')} - ${format(weekDates[6], 'dd/MM/yyyy')}) | Year: ${currentYear}`],
+        [periodLabel],
         [],
         [
           'No.',
@@ -723,7 +732,7 @@ const TotalTimesheetView = forwardRef(({
             ) : filteredAndSortedRows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="sys-py text-center text-sm text-[var(--text-muted)] font-medium border-b border-[var(--border)] py-12">
-                  Chưa có dữ liệu TimeSheet cho {timeRange === 'week' ? `tuần ${currentWeek}` : timeRange === 'month' ? `tháng ${today.getMonth() + 1}` : 'năm'} ({currentYear}).
+                  Chưa có dữ liệu TimeSheet cho {timeRange === 'week' ? `tuần ${currentWeek}` : timeRange === 'month' ? `tháng ${today.getMonth() + 1}` : timeRange === 'custom' ? `các tuần đã chọn (${[...selectedWeeks].sort((a,b)=>a-b).map(w=>'W'+w).join(', ')})` : 'năm'} ({currentYear}).
                 </td>
               </tr>
             ) : (

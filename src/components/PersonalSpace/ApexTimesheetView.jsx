@@ -34,6 +34,7 @@ const getTaskTypeTextStyle = (typeStr) => {
 const ApexTimesheetView = forwardRef(({
   currentDate = new Date(),
   timeRange = 'week',
+  selectedWeeks = [],
   getProjectColor = () => 'var(--text-contrast)',
   selectedTimeMetric = 't1',
   rawUsers = [],
@@ -85,6 +86,17 @@ const ApexTimesheetView = forwardRef(({
         width: '85px'
       }));
     }
+    if (timeRange === 'custom') {
+      const sortedWk = [...selectedWeeks].sort((a, b) => a - b);
+      return sortedWk.map((wk, i) => ({
+        id: `w_${wk}`,
+        weekNum: wk,
+        index: i,
+        label: `W${wk}`,
+        sub: `Tuần ${wk}`,
+        width: '85px'
+      }));
+    }
     // Default 'week'
     const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return weekDates.map((date, i) => {
@@ -101,7 +113,7 @@ const ApexTimesheetView = forwardRef(({
         width: '75px'
       };
     });
-  }, [timeRange, monthWeeks, weekDates]);
+  }, [timeRange, monthWeeks, weekDates, selectedWeeks]);
 
   useEffect(() => {
     // If not cached yet, fetch once
@@ -160,7 +172,7 @@ const ApexTimesheetView = forwardRef(({
   // Build Timesheet Data structure directly from APEX_TimeSheet & APEX_TimeSheetType
   const timesheetData = useMemo(() => {
     const weekRecords = timesheetRecords.filter(r => {
-      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks);
+      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks);
     });
 
     const numCols = columns.length;
@@ -244,6 +256,12 @@ const ApexTimesheetView = forwardRef(({
         if (wIdx >= 0 && wIdx < numCols) {
           recordColHours[wIdx] = rowSum;
         }
+      } else if (timeRange === 'custom') {
+        const sortedWk = [...selectedWeeks].sort((a, b) => a - b);
+        const wIdx = sortedWk.indexOf(Number(record.week));
+        if (wIdx >= 0 && wIdx < numCols) {
+          recordColHours[wIdx] = rowSum;
+        }
       } else {
         // week
         recordColHours[0] = Number(record.mon) || 0;
@@ -318,7 +336,7 @@ const ApexTimesheetView = forwardRef(({
       totalPerCol,
       grandTotalHours: totalPerCol.reduce((a, b) => a + b, 0)
     };
-  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, userMap, projectMap, currentWeek, currentYear, currentMonday, weekDates, today, timeRange, monthWeeks, columns, userTeamByName, selectedTeam, selectedProject, selectedUser, searchQuery]);
+  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, userMap, projectMap, currentWeek, currentYear, currentMonday, weekDates, today, timeRange, monthWeeks, selectedWeeks, columns, userTeamByName, selectedTeam, selectedProject, selectedUser, searchQuery]);
 
   const handleExportExcel = useCallback(() => {
     try {
@@ -327,6 +345,8 @@ const ApexTimesheetView = forwardRef(({
         ? `Week: W${currentWeek} (${format(weekDates[0], 'dd/MM/yyyy')} - ${format(weekDates[6], 'dd/MM/yyyy')}) | Year: ${currentYear}`
         : timeRange === 'month'
         ? `Month: ${format(today, 'MM/yyyy')} | Year: ${currentYear}`
+        : timeRange === 'custom'
+        ? `Custom Weeks: ${[...selectedWeeks].sort((a,b)=>a-b).map(w=>'W'+w).join(', ')} | Year: ${currentYear}`
         : `Year: ${currentYear}`;
 
       const colHeaders = columns.map(c => `${c.label} (${c.sub})`);
@@ -457,7 +477,7 @@ const ApexTimesheetView = forwardRef(({
                 <td colSpan={5 + columns.length} className="text-center py-[50px]">
                   <CalendarDays size={32} className="text-[var(--text-muted)] opacity-30 mx-auto mb-2" />
                   <p className="text-[13px] font-bold text-[var(--text-muted)] uppercase tracking-[0.15em]">
-                    Chưa có dữ liệu trong APEX_TimeSheet cho {timeRange === 'week' ? `Tuần ${timesheetData?.weekNumber || currentWeek}` : timeRange === 'month' ? `Tháng ${today.getMonth() + 1}` : 'Năm'} ({currentYear})
+                    Chưa có dữ liệu trong APEX_TimeSheet cho {timeRange === 'week' ? `Tuần ${timesheetData?.weekNumber || currentWeek}` : timeRange === 'month' ? `Tháng ${today.getMonth() + 1}` : timeRange === 'custom' ? `các tuần đã chọn (${[...selectedWeeks].sort((a,b)=>a-b).map(w=>'W'+w).join(', ')})` : 'Năm'} ({currentYear})
                   </p>
                 </td>
               </tr>

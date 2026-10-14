@@ -316,6 +316,7 @@ const PerformanceTimesheetView = forwardRef(({
   selectedTimeMetric = 't2',
   currentDate = new Date(),
   timeRange = 'week',
+  selectedWeeks = [],
   selectedTeam = '',
   selectedProject = '',
   selectedUser = '',
@@ -643,7 +644,7 @@ const PerformanceTimesheetView = forwardRef(({
     const projectHoursMap = {};
 
     const weekRecords = timesheetRecords.filter(r => 
-      isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks)
+      isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks)
     );
 
     const weekEndTime = addDays(weekEnd, 1);
@@ -852,7 +853,7 @@ const PerformanceTimesheetView = forwardRef(({
     }
 
     return { staffHoursMap, staffProjectMap, staffApexMap, staffLearningMap, staffApexTimeMap, staffLeaveTimesheetMap, staffOtMap, staffWeekendMap, projectHoursMap };
-  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, apexTasks, userMap, projectMap, currentWeek, currentYear, weekStart, weekEnd, today, timeRange, monthWeeks, selectedTimeMetric, selectedTeam, selectedProject, selectedUser, searchQuery, allUsersList, userTeamByName]);
+  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, apexTasks, userMap, projectMap, currentWeek, currentYear, weekStart, weekEnd, today, timeRange, monthWeeks, selectedWeeks, selectedTimeMetric, selectedTeam, selectedProject, selectedUser, searchQuery, allUsersList, userTeamByName]);
 
   // 3. PROJECT TIME TABLE DATA
   const projectTimeData = useMemo(() => {

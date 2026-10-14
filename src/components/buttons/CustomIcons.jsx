@@ -138,4 +138,18 @@ export const PerformanceTimesheetIcon = ({ size = 26 }) => (
   </svg>
 );
 
+export const TimesheetPlusIcon = ({ size = 26 }) => (
+  <svg viewBox="0 0 100 100" className="shrink-0" style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px` }} fill="none">
+    <rect width="100" height="100" rx="15" fill="currentColor" fillOpacity="0.05" />
+    <rect x="12" y="16" width="76" height="72" rx="8" fill="none" stroke="currentColor" strokeWidth="6" />
+    <path d="M12 36 h76" fill="none" stroke="currentColor" strokeWidth="6" />
+    <rect x="26" y="8" width="8" height="16" rx="4" fill="currentColor" />
+    <rect x="66" y="8" width="8" height="16" rx="4" fill="currentColor" />
+    {/* Plus badge inside */}
+    <circle cx="50" cy="62" r="18" fill="none" stroke="currentColor" strokeWidth="5" />
+    <path d="M50 53 v18 M41 62 h18" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+  </svg>
+);
+
+
 
