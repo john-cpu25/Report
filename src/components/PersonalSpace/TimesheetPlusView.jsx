@@ -100,7 +100,17 @@ const TimesheetPlusView = forwardRef(({
         isCurrent: wk === currentWeek
       }));
     }
-    // Default or 'month' or 'week': Show ISO weeks of the month in the year (ví dụ W39, W40, W41, W42, W43)
+    // Xem 1 tuần: Chỉ hiển thị 1 cột tuần được chọn
+    if (timeRange === 'week') {
+      return [{
+        index: 1,
+        label: `W${currentWeek}`,
+        fullLabel: `Tuần ${currentWeek}`,
+        weekNum: currentWeek,
+        isCurrent: true
+      }];
+    }
+    // Default or 'month': Show ISO weeks of the month in the year (ví dụ W39, W40, W41, W42, W43)
     const baseWeeks = (monthWeeks && monthWeeks.length > 0) ? monthWeeks : [currentWeek];
     return baseWeeks.map((wk, idx) => ({
       index: idx + 1,
@@ -113,8 +123,12 @@ const TimesheetPlusView = forwardRef(({
 
   // Capacity calculation (40h standard per week)
   const capacityMultiplier = useMemo(() => {
+    if (timeRange === 'year') return 52;
+    if (timeRange === 'week') return 1;
+    if (timeRange === 'custom') return Math.max(1, selectedWeeks?.length || 1);
+    if (timeRange === 'month') return Math.max(1, monthWeeks?.length || 4);
     return Math.max(1, weekCols.length);
-  }, [weekCols]);
+  }, [timeRange, selectedWeeks, monthWeeks, weekCols]);
 
   const baseStandardCapacity = capacityMultiplier * 40;
 
