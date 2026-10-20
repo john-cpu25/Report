@@ -4,7 +4,7 @@ import { Plus, Trash2, RefreshCw, Download, Search, Check, ChevronDown } from 'l
 import * as XLSX from 'xlsx';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
 import { getCanonicalName, isSameUser } from '../../utils/userUtils';
-import { getWeeksForMonth, isRecordInTimeRange } from '../../utils/timeUtils';
+import { getWeeksForMonth, isRecordInTimeRange, getWeeksInDateRange, getWorkingDaysCount, filterRecordByDateRange } from '../../utils/timeUtils';
 
 const getUtilizationBadge = (rate) => {
   const r = Number(rate) || 0;
@@ -50,6 +50,7 @@ const TimesheetPlusView = forwardRef(({
   currentDate = new Date(),
   timeRange = 'week',
   selectedWeeks = [],
+  customDateRange = null,
   getProjectColor = () => '#6366f1',
   selectedTimeMetric = 't1',
   rawUsers = [],
@@ -81,6 +82,17 @@ const TimesheetPlusView = forwardRef(({
 
   // Weeks list for the "WEEKLY NUMBER OF HOUR" section (show W39, W40, W41... theo week tổng của năm)
   const weekCols = useMemo(() => {
+    if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+      const weeks = getWeeksInDateRange(customDateRange.startDate, customDateRange.endDate);
+      return weeks.map((w, idx) => ({
+        index: idx + 1,
+        label: w.label,
+        fullLabel: w.fullLabel,
+        weekNum: w.weekNum,
+        year: w.year,
+        isCurrent: w.weekNum === currentWeek && w.year === currentYear
+      }));
+    }
     if (timeRange === 'year') {
       const monthNames = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
       return monthNames.map((m, idx) => ({
@@ -119,16 +131,20 @@ const TimesheetPlusView = forwardRef(({
       weekNum: wk,
       isCurrent: wk === currentWeek
     }));
-  }, [timeRange, monthWeeks, selectedWeeks, currentWeek]);
+  }, [timeRange, monthWeeks, selectedWeeks, currentWeek, currentYear, customDateRange]);
 
-  // Capacity calculation (40h standard per week)
+  // Capacity calculation (40h standard per week / 8h per working day)
   const capacityMultiplier = useMemo(() => {
+    if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+      const workingDays = getWorkingDaysCount(customDateRange.startDate, customDateRange.endDate);
+      return Math.max(0.2, workingDays / 5);
+    }
     if (timeRange === 'year') return 52;
     if (timeRange === 'week') return 1;
     if (timeRange === 'custom') return Math.max(1, selectedWeeks?.length || 1);
     if (timeRange === 'month') return Math.max(1, monthWeeks?.length || 4);
     return Math.max(1, weekCols.length);
-  }, [timeRange, selectedWeeks, monthWeeks, weekCols]);
+  }, [timeRange, selectedWeeks, monthWeeks, weekCols, customDateRange]);
 
   const baseStandardCapacity = capacityMultiplier * 40;
 
@@ -197,8 +213,8 @@ const TimesheetPlusView = forwardRef(({
       if (p.name) map[String(p.name).trim().toUpperCase()] = fullName;
     };
     (dashboardProjects || []).forEach(registerName);
-    (apexProjects || []).forEach(registerName);
-    map['APEX'] = 'APEX (Management, R&D, Training, Annual Leave)';
+    map['APEX'] = 'APEX : Management, R&D, Training';
+    map['APEX ANNUAL LEAVE'] = 'Apex Annual Leave : Annual Leave';
     map['APEX FREE'] = 'APEX FREE (Learning)';
     return map;
   }, [dashboardProjects, apexProjects]);
@@ -218,9 +234,10 @@ const TimesheetPlusView = forwardRef(({
     (dashboardProjects || []).forEach(registerColor);
     (apexProjects || []).forEach(registerColor);
 
-    // Color for APEX and APEX FREE
+    // Color for APEX, APEX ANNUAL LEAVE, and APEX FREE
     const apexCol = map['APEX'] || '#f43f5e';
     map['APEX'] = apexCol;
+    map['APEX ANNUAL LEAVE'] = map['APEX ANNUAL LEAVE'] || '#f59e0b'; // Amber for Annual Leave
     map['APEX FREE'] = map['APEX FREE'] || '#06b6d4'; // Cyan for Learning
     return map;
   }, [dashboardProjects, apexProjects]);
@@ -258,7 +275,7 @@ const TimesheetPlusView = forwardRef(({
   // Aggregate Data into Matrix: Users x Projects + Weekly sum
   const matrixData = useMemo(() => {
     const weekRecords = timesheetRecords.filter(r => {
-      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks);
+      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks, customDateRange);
     });
 
     // 1. Identify all active Project Codes in this period
@@ -267,6 +284,19 @@ const TimesheetPlusView = forwardRef(({
     const teamsMap = {}; // { [teamName]: Set of userNames }
 
     weekRecords.forEach(record => {
+      let activeRecord = record;
+      let rowSum = 0;
+      if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+        const { clipped, totalHours, hasOverlap } = filterRecordByDateRange(record, customDateRange.startDate, customDateRange.endDate);
+        if (!hasOverlap && totalHours <= 0) return;
+        activeRecord = clipped;
+        rowSum = totalHours;
+      } else {
+        rowSum = (Number(record.mon) || 0) + (Number(record.tue) || 0) + (Number(record.wed) || 0) +
+                 (Number(record.thu) || 0) + (Number(record.fri) || 0) + (Number(record.sat) || 0) + (Number(record.sun) || 0);
+      }
+      if (rowSum <= 0) return;
+
       const userObj = userMap[record.user_id];
       const projObj = projectMap[record.project_id];
 
@@ -283,13 +313,16 @@ const TimesheetPlusView = forwardRef(({
       const baseProjectCode = (projObj?.key || projObj?.code || projObj?.name || 'UNASSIGNED').toString().trim().toUpperCase();
       const taskType = (timeSheetTypeMap[record.kind] || '').toString().trim().toUpperCase();
 
-      // Phân tách cột APEX:
+      // Phân tách cột APEX thành 3 cột riêng biệt:
       // + APEX FREE : LEARNING
-      // + APEX : MANAGEMENT, R&D, TRAINING, ANNUAL LEAVE và các loại task khác
+      // + APEX ANNUAL LEAVE : ANNUAL LEAVE (và LEAVE)
+      // + APEX : MANAGEMENT, R&D, TRAINING và các loại task khác
       let projectCode = baseProjectCode;
       if (baseProjectCode === 'APEX') {
         if (taskType.includes('LEARNING')) {
           projectCode = 'APEX FREE';
+        } else if (taskType.includes('ANNUAL LEAVE') || taskType.includes('LEAVE')) {
+          projectCode = 'APEX ANNUAL LEAVE';
         } else {
           projectCode = 'APEX';
         }
@@ -301,7 +334,11 @@ const TimesheetPlusView = forwardRef(({
       // Filter: Project
       if (selectedProject) {
         const selP = selectedProject.trim().toLowerCase();
-        if (projectCode.toLowerCase() !== selP && baseProjectCode.toLowerCase() !== selP) return;
+        if (selP === 'apex' || selP === 'apex free' || selP === 'apex annual leave') {
+          if (projectCode.toLowerCase() !== selP) return;
+        } else {
+          if (projectCode.toLowerCase() !== selP && baseProjectCode.toLowerCase() !== selP) return;
+        }
       }
 
       // Filter: User
@@ -320,9 +357,6 @@ const TimesheetPlusView = forwardRef(({
                             teamName.toLowerCase().includes(q);
         if (!matchSearch) return;
       }
-
-      const rowSum = (Number(record.mon) || 0) + (Number(record.tue) || 0) + (Number(record.wed) || 0) +
-                     (Number(record.thu) || 0) + (Number(record.fri) || 0) + (Number(record.sat) || 0) + (Number(record.sun) || 0);
 
       projectCodesSet.add(projectCode);
 
@@ -346,16 +380,18 @@ const TimesheetPlusView = forwardRef(({
 
       // Add to week column hours (mapping to ISO week of year like W39, W40, ...)
       const recWk = Number(record.week);
-      const foundWeek = weekCols.find(w => w.weekNum === recWk);
+      const recYr = Number(record.year);
+      const foundWeek = weekCols.find(w => w.weekNum === recWk && (!w.year || !recYr || w.year === recYr));
       const colKey = foundWeek ? foundWeek.label : (recWk ? `W${recWk}` : '');
       if (colKey) {
         usersMap[userName].weeklyHours[colKey] = (usersMap[userName].weeklyHours[colKey] || 0) + rowSum;
       }
     });
 
-    // Luôn đảm bảo nếu có cột APEX hoặc APEX FREE thì xuất hiện cả cặp liền kề
-    if (projectCodesSet.has('APEX') || projectCodesSet.has('APEX FREE')) {
+    // Luôn đảm bảo nếu có cột APEX thì xuất hiện cả bộ 3 liền kề: APEX, APEX ANNUAL LEAVE, APEX FREE
+    if (projectCodesSet.has('APEX') || projectCodesSet.has('APEX ANNUAL LEAVE') || projectCodesSet.has('APEX FREE')) {
       projectCodesSet.add('APEX');
+      projectCodesSet.add('APEX ANNUAL LEAVE');
       projectCodesSet.add('APEX FREE');
     }
 
@@ -429,8 +465,30 @@ const TimesheetPlusView = forwardRef(({
 
       const wnoh = userTotalWeeklyHours > 0 ? userTotalWeeklyHours : userTotalProjectHours;
 
-      // WUZ (Weekly utilization) = (work time + apex time + over time) * 100 / 40h = (WNOH / 40h) * 100%
-      const wuz = baseStandardCapacity > 0 ? (wnoh / baseStandardCapacity) * 100 : 0;
+      // 1. GIỜ DỰ ÁN: tất cả thời gian trừ Apex, Apex Annual Leave, Apex Free time
+      let projectHoursOnly = 0;
+      Object.entries(projectVals).forEach(([pCode, hrs]) => {
+        const pUpper = pCode.trim().toUpperCase();
+        if (pUpper !== 'APEX' && pUpper !== 'APEX ANNUAL LEAVE' && pUpper !== 'APEX FREE') {
+          projectHoursOnly += (Number(hrs) || 0);
+        }
+      });
+
+      const apexHours = Number(projectVals['APEX'] || 0);
+      const leaveHours = Number(projectVals['APEX ANNUAL LEAVE'] || 0);
+      const freeHours = Number(projectVals['APEX FREE'] || 0);
+
+      // Financial = GIỜ DỰ ÁN / (8 * số ngày đi làm)
+      // Trong đó số ngày đi làm = (số ngày tiêu chuẩn) - (số ngày nghỉ phép)
+      // 8 * số ngày đi làm = (40 * capacityMultiplier) - leaveHours
+      const workingDays = Math.max(0, (5 * capacityMultiplier) - (leaveHours / 8));
+      const financialCapacity = workingDays * 8;
+      const financial = financialCapacity > 0 ? (projectHoursOnly / financialCapacity) * 100 : 0;
+
+      // Workforce Utilization = (GIỜ DỰ ÁN + Apex + Apex Annual Leave) / 40h
+      const workforceHours = projectHoursOnly + apexHours + leaveHours;
+      const workforceCapacity = baseStandardCapacity;
+      const workforceUtil = workforceCapacity > 0 ? (workforceHours / workforceCapacity) * 100 : 0;
 
       return {
         name: user.name,
@@ -438,7 +496,17 @@ const TimesheetPlusView = forwardRef(({
         projectVals,
         weeklyVals,
         wnoh,
-        wuz
+        projectHoursOnly,
+        apexHours,
+        leaveHours,
+        freeHours,
+        workingDays,
+        financialCapacity,
+        financial,
+        workforceHours,
+        workforceCapacity,
+        workforceUtil,
+        wuz: financial // backward compat
       };
     });
 
@@ -451,21 +519,31 @@ const TimesheetPlusView = forwardRef(({
       teamUsers.sort((a, b) => a.name.localeCompare(b.name));
 
       const teamTotalHours = teamUsers.reduce((acc, u) => acc + u.wnoh, 0);
-      const teamCapacity = teamUsers.length * baseStandardCapacity;
-      const teamWuz = teamCapacity > 0 ? (teamTotalHours / teamCapacity) * 100 : 0;
+
+      // Cột Team Utilization tách làm 2 cột:
+      // + Team Financial : Lấy trung bình của cột Financial
+      // + Team Workforce Utilization : Lấy trung bình của cột Workforce Utilization
+      const teamFinancial = teamUsers.length > 0
+        ? teamUsers.reduce((sum, u) => sum + u.financial, 0) / teamUsers.length
+        : 0;
+      const teamWorkforce = teamUsers.length > 0
+        ? teamUsers.reduce((sum, u) => sum + u.workforceUtil, 0) / teamUsers.length
+        : 0;
 
       return {
         name: teamName,
         users: teamUsers,
         totalHours: teamTotalHours,
-        teamWuz
+        teamFinancial,
+        teamWorkforce,
+        teamWuz: teamFinancial // backward compat
       };
     });
 
     // Grand Totals
     const grandTotalHours = rows.reduce((acc, r) => acc + r.wnoh, 0);
-    const totalCapacity = rows.length * baseStandardCapacity;
-    const grandAvgWuz = totalCapacity > 0 ? (grandTotalHours / totalCapacity) * 100 : 0;
+    const grandAvgFinancial = rows.length > 0 ? rows.reduce((s, r) => s + r.financial, 0) / rows.length : 0;
+    const grandAvgWorkforce = rows.length > 0 ? rows.reduce((s, r) => s + r.workforceUtil, 0) / rows.length : 0;
 
     // Project Column Totals
     const projectColTotals = {};
@@ -487,10 +565,12 @@ const TimesheetPlusView = forwardRef(({
       projectColTotals,
       weekColTotals,
       grandTotalHours,
-      grandAvgWuz,
+      grandAvgFinancial,
+      grandAvgWorkforce,
+      grandAvgWuz: grandAvgFinancial, // backward compat
       totalUsersCount: rows.length
     };
-  }, [timesheetRecords, today, timeRange, monthWeeks, selectedWeeks, userMap, projectMap, timeSheetTypeMap, selectedTeam, selectedProject, selectedUser, searchQuery, userTeamByName, weekCols, baseStandardCapacity, rawUsers, dashboardUsers, apexUsers]);
+  }, [timesheetRecords, today, timeRange, monthWeeks, selectedWeeks, customDateRange, userMap, projectMap, timeSheetTypeMap, selectedTeam, selectedProject, selectedUser, searchQuery, userTeamByName, weekCols, baseStandardCapacity, capacityMultiplier, rawUsers, dashboardUsers, apexUsers]);
 
   // Excel Export Handler (Matching Hình 1 & Hình 2 layout)
   const handleExportExcel = useCallback(() => {
@@ -500,11 +580,13 @@ const TimesheetPlusView = forwardRef(({
         ? `Week ${currentWeek}, ${currentYear}`
         : timeRange === 'custom'
         ? `Custom Weeks: W${selectedWeeks.join(', W')}`
+        : timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate
+        ? `Date Range: ${customDateRange.startDate} to ${customDateRange.endDate}`
         : timeRange === 'month'
         ? `Month: ${today.getMonth() + 1}/${currentYear}`
         : `Year: ${currentYear}`;
 
-      const { projectColumns, weekCols, teams, grandTotalHours, grandAvgWuz, projectColTotals, weekColTotals, totalUsersCount } = matrixData;
+      const { projectColumns, weekCols, teams, grandTotalHours, grandAvgFinancial, grandAvgWorkforce, projectColTotals, weekColTotals, totalUsersCount } = matrixData;
 
       // Row 1: Title
       const headerRow1 = [
@@ -512,9 +594,10 @@ const TimesheetPlusView = forwardRef(({
         'Name',
         ...new Array(projectColumns.length).fill(''),
         ...new Array(weekCols.length).fill(''),
-        'WUZ (%)',
-        'General Utilization',
-        'Team Utilization'
+        'Financial (%)',
+        'Workforce Utilization',
+        'Team Financial (%)',
+        'Team Workforce Utilization (%)'
       ];
       headerRow1[2] = 'Project'; // Group label across project columns
       headerRow1[2 + projectColumns.length] = 'Weekly number of hour'; // Group label across week columns
@@ -525,6 +608,7 @@ const TimesheetPlusView = forwardRef(({
         '',
         ...projectColumns,
         ...weekCols.map(w => w.label),
+        '',
         '',
         '',
         ''
@@ -539,20 +623,23 @@ const TimesheetPlusView = forwardRef(({
       ];
 
       // Data rows
+      const teamFinColIdx = 2 + projectColumns.length + weekCols.length + 2;
+      const teamWfColIdx = 2 + projectColumns.length + weekCols.length + 3;
+
       teams.forEach(team => {
-        team.users.forEach(user => {
+        team.users.forEach((user, ui) => {
+          const isFirst = ui === 0;
           const projCells = projectColumns.map(p => user.projectVals[p] > 0 ? Number(user.projectVals[p].toFixed(1)) : '');
           const weekCells = weekCols.map(w => user.weeklyVals[w.label] > 0 ? Number(user.weeklyVals[w.label].toFixed(1)) : '');
-          const genRating = getUtilizationBadge(user.wuz).label;
-
           rows.push([
-            user.team,
+            isFirst ? user.team : '',
             user.name,
             ...projCells,
             ...weekCells,
-            `${user.wuz.toFixed(1)}%`,
-            `${genRating} (${user.wuz.toFixed(0)}%)`,
-            `${team.teamWuz.toFixed(1)}%`
+            `${user.financial.toFixed(1)}%`,
+            `${user.workforceUtil.toFixed(1)}%`,
+            isFirst ? `${team.teamFinancial.toFixed(1)}%` : '',
+            isFirst ? `${team.teamWorkforce.toFixed(1)}%` : ''
           ]);
         });
       });
@@ -566,14 +653,15 @@ const TimesheetPlusView = forwardRef(({
         `${totalUsersCount} Nhân sự`,
         ...totalProjCells,
         ...totalWeekCells,
-        `${grandAvgWuz.toFixed(1)}%`,
-        'AVG',
-        `${grandAvgWuz.toFixed(1)}%`
+        `${grandAvgFinancial.toFixed(1)}%`,
+        `${grandAvgWorkforce.toFixed(1)}%`,
+        '',
+        ''
       ]);
 
       const ws = XLSX.utils.aoa_to_sheet(rows);
 
-      // Merge cells for 'Project', 'WEEKLY NUMBER OF HOUR', and TEAM column
+      // Merge cells for 'Project', 'WEEKLY NUMBER OF HOUR', and TEAM columns
       const excelMerges = [
         // Merge "Project" header across projectColumns: row index 3 (4th row)
         { s: { r: 3, c: 2 }, e: { r: 3, c: 2 + projectColumns.length - 1 } },
@@ -581,13 +669,21 @@ const TimesheetPlusView = forwardRef(({
         { s: { r: 3, c: 2 + projectColumns.length }, e: { r: 3, c: 2 + projectColumns.length + weekCols.length - 1 } }
       ];
 
-      // Add team merges in column A (c: 0)
+      // Add team merges in column A (c: 0), Team Financial, and Team Workforce
       let currentDataRow = 5; // row index after headers
       teams.forEach(team => {
         if (team.users.length > 1) {
           excelMerges.push({
             s: { r: currentDataRow, c: 0 },
             e: { r: currentDataRow + team.users.length - 1, c: 0 }
+          });
+          excelMerges.push({
+            s: { r: currentDataRow, c: teamFinColIdx },
+            e: { r: currentDataRow + team.users.length - 1, c: teamFinColIdx }
+          });
+          excelMerges.push({
+            s: { r: currentDataRow, c: teamWfColIdx },
+            e: { r: currentDataRow + team.users.length - 1, c: teamWfColIdx }
           });
         }
         currentDataRow += team.users.length;
@@ -599,6 +695,8 @@ const TimesheetPlusView = forwardRef(({
         ? `W${currentWeek}_${currentYear}` 
         : timeRange === 'custom' 
         ? `Custom_Weeks` 
+        : timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate
+        ? `${customDateRange.startDate}_to_${customDateRange.endDate}`
         : `Report_${currentYear}`;
 
       XLSX.utils.book_append_sheet(wb, ws, `Timesheet_Plus`);
@@ -606,7 +704,7 @@ const TimesheetPlusView = forwardRef(({
     } catch (e) {
       console.error('Error exporting Timesheet(+) matrix to Excel:', e);
     }
-  }, [matrixData, timeRange, currentWeek, currentYear, selectedWeeks, today]);
+  }, [matrixData, timeRange, currentWeek, currentYear, selectedWeeks, customDateRange, today]);
 
   useImperativeHandle(ref, () => ({
     exportExcel: handleExportExcel
@@ -621,7 +719,7 @@ const TimesheetPlusView = forwardRef(({
     );
   }
 
-  const { projectColumns, teams, projectColTotals, weekColTotals, grandTotalHours, grandAvgWuz, totalUsersCount } = matrixData;
+  const { projectColumns, teams, projectColTotals, weekColTotals, grandTotalHours, grandAvgFinancial, grandAvgWorkforce, totalUsersCount } = matrixData;
 
   return (
     <div className="personal-table-wrapper w-full h-full flex flex-col">
@@ -639,8 +737,13 @@ const TimesheetPlusView = forwardRef(({
           </div>
           <div className="w-[1px] h-3.5 bg-slate-700" />
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-400">Hiệu suất TB:</span>
-            <span className="text-sky-400 font-mono font-black">{grandAvgWuz.toFixed(1)}%</span>
+            <span className="text-slate-400">Financial TB:</span>
+            <span className="text-indigo-400 font-mono font-black">{grandAvgFinancial.toFixed(1)}%</span>
+          </div>
+          <div className="w-[1px] h-3.5 bg-slate-700" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400">Workforce TB:</span>
+            <span className="text-sky-400 font-mono font-black">{grandAvgWorkforce.toFixed(1)}%</span>
           </div>
         </div>
       </div>
@@ -650,21 +753,24 @@ const TimesheetPlusView = forwardRef(({
         <div className="max-h-[calc(100vh-335px)] overflow-y-auto overflow-x-auto custom-scrollbar">
           <table 
             className="w-full border-separate border-spacing-0 table-fixed text-[12px]"
-            style={{ minWidth: `${120 + 150 + projectColumns.length * 85 + weekCols.length * 65 + 370}px` }}
+            style={{ 
+              minWidth: `${120 + 150 + projectColumns.reduce((acc, p) => acc + (p === 'APEX ANNUAL LEAVE' ? 140 : (p.length > 7 ? 95 : 85)), 0) + weekCols.length * 65 + 110 + 140 + 120 + 140}px` 
+            }}
           >
             {/* Column Width Definitions */}
             <colgroup>
               <col style={{ width: '120px' }} />
               <col style={{ width: '150px' }} />
               {projectColumns.map((pCode) => (
-                <col key={pCode} style={{ width: '85px' }} />
+                <col key={pCode} style={{ width: `${pCode === 'APEX ANNUAL LEAVE' ? 140 : (pCode.length > 7 ? 95 : 85)}px` }} />
               ))}
               {weekCols.map((col) => (
                 <col key={col.label} style={{ width: '65px' }} />
               ))}
-              <col style={{ width: '100px' }} />
+              <col style={{ width: '110px' }} />
               <col style={{ width: '140px' }} />
-              <col style={{ width: '130px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '140px' }} />
             </colgroup>
 
             {/* Header 1: Main Group Headers */}
@@ -706,32 +812,43 @@ const TimesheetPlusView = forwardRef(({
                   WEEKLY NUMBER OF HOUR
                 </th>
 
-                {/* Utilization Headers */}
+                {/* Utilization Headers: 4 Columns */}
+                {/* 1. Financial Pair - Cùng màu Indigo */}
                 <th 
                   rowSpan={2}
-                  title="WUZ: (work time + apex time + over time) * 100 / 40h"
+                  title="Financial: GIỜ DỰ ÁN / (8 * số ngày đi làm) (Tất cả thời gian dự án trừ Apex, Apex Annual Leave, Apex Free time)"
                   className="sticky top-0 z-30 bg-[var(--bg-card)] border-r border-b border-slate-300 dark:border-slate-600 text-center px-2 py-2 text-[12px] font-black uppercase tracking-wider text-indigo-500 dark:text-indigo-400 align-middle"
                   style={{ top: 0 }}
                 >
-                  WUZ (%)
+                  Financial (%)
+                </th>
+
+                {/* 2. Workforce Pair - Cùng màu Sky Blue */}
+                <th 
+                  rowSpan={2}
+                  title="Workforce Utilization: (GIỜ DỰ ÁN + Apex + Apex Annual Leave) / 40h"
+                  className="sticky top-0 z-30 bg-[var(--bg-card)] border-r border-b border-slate-300 dark:border-slate-600 text-center px-2 py-2 text-[12px] font-black uppercase tracking-wider text-sky-500 dark:text-sky-400 align-middle"
+                  style={{ top: 0 }}
+                >
+                  Workforce Utilization (%)
                 </th>
 
                 <th 
                   rowSpan={2}
-                  title="General Utilization: Đánh giá hiệu suất cá nhân"
-                  className="sticky top-0 z-30 bg-[var(--bg-card)] border-r border-b border-slate-300 dark:border-slate-600 text-center px-2 py-2 text-[12px] font-black uppercase tracking-wider text-[var(--text-main)] dark:text-white align-middle"
+                  title="Team Financial: Lấy trung bình của cột Financial trong Team"
+                  className="sticky top-0 z-30 bg-[var(--bg-card)] border-r border-b border-slate-300 dark:border-slate-600 text-center px-2 py-2 text-[12px] font-black uppercase tracking-wider text-indigo-500 dark:text-indigo-400 align-middle"
                   style={{ top: 0 }}
                 >
-                  General Utilization
+                  Team Financial
                 </th>
 
                 <th 
                   rowSpan={2}
-                  title="Team Utilization: Đánh giá hiệu suất team"
-                  className="sticky top-0 z-30 bg-[var(--bg-card)] border-r border-b border-slate-300 dark:border-slate-600 text-center px-2 py-2 text-[12px] font-black uppercase tracking-wider text-[var(--text-main)] dark:text-white align-middle"
+                  title="Team Workforce Utilization: Lấy trung bình của cột Workforce Utilization trong Team"
+                  className="sticky top-0 z-30 bg-[var(--bg-card)] border-r border-b border-slate-300 dark:border-slate-600 text-center px-2 py-2 text-[12px] font-black uppercase tracking-wider text-sky-500 dark:text-sky-400 align-middle"
                   style={{ top: 0 }}
                 >
-                  Team Utilization
+                  Team Workforce Utilization
                 </th>
               </tr>
 
@@ -746,7 +863,15 @@ const TimesheetPlusView = forwardRef(({
                       key={pCode}
                       className="sticky z-30 bg-[var(--bg-card)] border-r border-b border-slate-300 dark:border-slate-600 text-center py-1.5 px-1 font-mono font-black text-[12px] uppercase truncate transition-colors hover:brightness-110 cursor-default"
                       style={{ top: '36px', color: pColor }}
-                      title={`Project: ${fullName}`}
+                      title={
+                        pCode === 'APEX' 
+                          ? 'APEX : Management, R&D, Training' 
+                          : (pCode === 'APEX ANNUAL LEAVE' 
+                              ? 'Apex Annual Leave : Annual Leave' 
+                              : (pCode === 'APEX FREE' 
+                                  ? 'APEX FREE (Learning)' 
+                                  : `Project: ${fullName}`))
+                      }
                     >
                       <span className="truncate block font-black" style={{ color: pColor }}>
                         {pCode}
@@ -782,7 +907,7 @@ const TimesheetPlusView = forwardRef(({
                   return (
                     <React.Fragment key={team.name}>
                       {team.users.map((user, ui) => {
-                        const userUtilBadge = getUtilizationBadge(user.wuz);
+                        const userWorkforceBadge = getUtilizationBadge(user.workforceUtil);
 
                         return (
                           <tr 
@@ -846,22 +971,43 @@ const TimesheetPlusView = forwardRef(({
                               );
                             })}
 
-                            {/* 5. WUZ (%) */}
-                            <td className="border-r border-b border-slate-300 dark:border-slate-600 text-center font-mono font-bold text-[12px] py-2 px-1 text-indigo-500 dark:text-indigo-400">
-                              {user.wuz.toFixed(1)}%
+                            {/* 5. Financial (%) */}
+                            <td 
+                              className="border-r border-b border-slate-300 dark:border-slate-600 text-center font-mono font-bold text-[12px] py-2 px-1 text-indigo-500 dark:text-indigo-400"
+                              title={`Financial: ${user.projectHoursOnly.toFixed(1)}h / ${user.financialCapacity.toFixed(1)}h (8 * ${user.workingDays.toFixed(1)} ngày)`}
+                            >
+                              {user.financial.toFixed(1)}%
                             </td>
 
-                            {/* 6. General Utilization (Personal Rating) */}
-                            <td className="border-r border-b border-slate-300 dark:border-slate-600 text-center py-2 px-1.5 font-bold text-[12px]">
-                              <span className={user.wuz >= 100 ? 'text-emerald-500' : user.wuz >= 85 ? 'text-sky-500' : user.wuz >= 70 ? 'text-amber-500' : 'text-rose-500'}>
-                                {userUtilBadge.label} ({user.wuz.toFixed(0)}%)
-                              </span>
+                            {/* 6. Workforce Utilization - Cùng màu Sky Blue */}
+                            <td 
+                              className="border-r border-b border-slate-300 dark:border-slate-600 text-center font-mono font-bold text-[12px] py-2 px-1 text-sky-500 dark:text-sky-400"
+                              title={`Workforce Utilization: ${user.workforceHours.toFixed(1)}h / ${user.workforceCapacity}h`}
+                            >
+                              {user.workforceUtil.toFixed(1)}%
                             </td>
 
-                            {/* 7. Team Utilization */}
-                            <td className="border-r border-b border-slate-300 dark:border-slate-600 text-center py-2 px-1.5 font-bold text-[12px] text-purple-600 dark:text-purple-400">
-                              {team.teamWuz.toFixed(1)}%
-                            </td>
+                            {/* 7. Team Financial - Cùng màu Indigo với Financial */}
+                            {ui === 0 && (
+                              <td 
+                                rowSpan={team.users.length}
+                                className="bg-[var(--bg-card)] border-r border-b border-slate-300 dark:border-slate-600 text-center font-mono font-bold text-[12px] text-indigo-500 dark:text-indigo-400 align-middle py-2 px-1.5"
+                                title={`Team Financial: Trung bình ${team.name}`}
+                              >
+                                {team.teamFinancial.toFixed(1)}%
+                              </td>
+                            )}
+
+                            {/* 8. Team Workforce Utilization - Cùng màu Sky Blue với Workforce */}
+                            {ui === 0 && (
+                              <td 
+                                rowSpan={team.users.length}
+                                className="bg-[var(--bg-card)] border-r border-b border-slate-300 dark:border-slate-600 text-center font-mono font-bold text-[12px] text-sky-500 dark:text-sky-400 align-middle py-2 px-1.5"
+                                title={`Team Workforce: Trung bình ${team.name}`}
+                              >
+                                {team.teamWorkforce.toFixed(1)}%
+                              </td>
+                            )}
                           </tr>
                         );
                       })}
@@ -899,15 +1045,21 @@ const TimesheetPlusView = forwardRef(({
                           );
                         })}
 
+                        {/* Team Subtotal: Financial */}
                         <td className="border-r border-b border-slate-400 dark:border-slate-500 text-center font-mono font-bold text-[12px] text-indigo-500 dark:text-indigo-400 py-1.5">
-                          {team.teamWuz.toFixed(1)}%
+                          {team.teamFinancial.toFixed(1)}%
                         </td>
 
+                        {/* Team Subtotal: Workforce */}
+                        <td className="border-r border-b border-slate-400 dark:border-slate-500 text-center font-mono font-bold text-[12px] text-sky-500 dark:text-sky-400 py-1.5">
+                          {team.teamWorkforce.toFixed(1)}%
+                        </td>
+
+                        {/* Team Subtotal: Team Financial - Không cần thể hiện ở dòng total */}
                         <td className="border-r border-b border-slate-400 dark:border-slate-500 text-center py-1.5" />
 
-                        <td className="border-r border-b border-slate-400 dark:border-slate-500 text-center py-1.5 font-bold text-[11px] text-purple-500">
-                          {team.teamWuz.toFixed(1)}%
-                        </td>
+                        {/* Team Subtotal: Team Workforce - Không cần thể hiện ở dòng total */}
+                        <td className="border-r border-b border-slate-400 dark:border-slate-500 text-center py-1.5" />
                       </tr>
                     </React.Fragment>
                   );
@@ -950,17 +1102,22 @@ const TimesheetPlusView = forwardRef(({
                     );
                   })}
 
+                  {/* Financial Grand Total */}
                   <td className="border-r border-b-2 border-slate-400 dark:border-slate-500 text-center font-mono font-black text-[12px] text-indigo-500 dark:text-indigo-400 py-2.5">
-                    {grandAvgWuz.toFixed(1)}%
+                    {grandAvgFinancial.toFixed(1)}%
                   </td>
 
-                  <td className="border-r border-b-2 border-slate-400 dark:border-slate-500 text-center py-2.5 font-black text-[12px] text-emerald-500 dark:text-emerald-400">
-                    AVG: {getUtilizationBadge(grandAvgWuz).label}
+                  {/* Workforce Grand Total */}
+                  <td className="border-r border-b-2 border-slate-400 dark:border-slate-500 text-center font-mono font-black text-[12px] text-sky-500 dark:text-sky-400 py-2.5"
+                      title={`Workforce TB: ${grandAvgWorkforce.toFixed(1)}%`}>
+                    {grandAvgWorkforce.toFixed(1)}%
                   </td>
 
-                  <td className="border-r border-b-2 border-slate-400 dark:border-slate-500 text-center py-2.5 font-black text-[12px] text-purple-600 dark:text-purple-400">
-                    {grandAvgWuz.toFixed(1)}%
-                  </td>
+                  {/* Team Financial Grand Total - Không cần thể hiện ở dòng total */}
+                  <td className="border-r border-b-2 border-slate-400 dark:border-slate-500 text-center py-2.5" />
+
+                  {/* Team Workforce Grand Total - Không cần thể hiện ở dòng total */}
+                  <td className="border-r border-b-2 border-slate-400 dark:border-slate-500 text-center py-2.5" />
                 </tr>
               </tfoot>
             )}

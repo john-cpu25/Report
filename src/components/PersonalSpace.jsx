@@ -26,7 +26,7 @@ import MultiWeekPicker from './PersonalSpace/MultiWeekPicker';
 
 import { Filter, ChevronRight, ChevronLeft, ArrowUpDown, ChevronDown, Download } from 'lucide-react';
 import { differenceInDays, startOfDay, addDays, isSameDay, isWithinInterval, eachMonthOfInterval, subDays } from 'date-fns';
-import { isRecordInTimeRange } from '../utils/timeUtils';
+import { isRecordInTimeRange, filterRecordByDateRange } from '../utils/timeUtils';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -171,6 +171,29 @@ const PersonalSpace = () => {
     localStorage.setItem('personal_custom_weeks', JSON.stringify(selectedCustomWeeks));
   }, [selectedCustomWeeks]);
 
+  // Custom Date Range Filter State (for timeRange === 'date_range', D+)
+  const [customDateRange, setCustomDateRange] = useState(() => {
+    const saved = localStorage.getItem('personal_custom_date_range');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.startDate && parsed?.endDate) return parsed;
+      } catch (e) { /* ignore */ }
+    }
+    const today = new Date();
+    const toYMD = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const past = new Date(today);
+    past.setDate(today.getDate() - 30);
+    return {
+      startDate: toYMD(past),
+      endDate: toYMD(today)
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('personal_custom_date_range', JSON.stringify(customDateRange));
+  }, [customDateRange]);
+
   // Local Filter States
   const [localFilters, setLocalFilters] = useState({
     team: '',
@@ -207,7 +230,7 @@ const PersonalSpace = () => {
     let total = 0;
     let count = 0;
     records.forEach(r => {
-      if (isRecordInTimeRange(r.week, r.year, currentDate, timeRange, null, selectedCustomWeeks)) {
+      if (isRecordInTimeRange(r.week, r.year, currentDate, timeRange, null, selectedCustomWeeks, customDateRange)) {
         const uObj = userMap[r.user_id];
         if (isAustralia(uObj)) return;
         const pKey = projMap[r.project_id] || '';
@@ -222,8 +245,15 @@ const PersonalSpace = () => {
         if (localFilters.project && pKey.toLowerCase() !== localFilters.project.trim().toLowerCase()) return;
         if (localFilters.user && !isSameUser(userName, localFilters.user)) return;
 
-        const rowHours = (Number(r.mon) || 0) + (Number(r.tue) || 0) + (Number(r.wed) || 0) +
-                         (Number(r.thu) || 0) + (Number(r.fri) || 0) + (Number(r.sat) || 0) + (Number(r.sun) || 0);
+        let rowHours = 0;
+        if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+          const { totalHours } = filterRecordByDateRange(r, customDateRange.startDate, customDateRange.endDate);
+          rowHours = totalHours;
+        } else {
+          rowHours = (Number(r.mon) || 0) + (Number(r.tue) || 0) + (Number(r.wed) || 0) +
+                     (Number(r.thu) || 0) + (Number(r.fri) || 0) + (Number(r.sat) || 0) + (Number(r.sun) || 0);
+        }
+
         if (rowHours > 0) {
           total += rowHours;
           count++;
@@ -231,7 +261,7 @@ const PersonalSpace = () => {
       }
     });
     return { totalHours: total, count };
-  }, [apexTimesheetCache, currentDate, timeRange, selectedCustomWeeks, viewMode, localMaps, localFilters]);
+  }, [apexTimesheetCache, currentDate, timeRange, selectedCustomWeeks, customDateRange, viewMode, localMaps, localFilters]);
 
   const loadData = async (force = false) => {
     if (!user) return;
@@ -362,8 +392,9 @@ const PersonalSpace = () => {
       .filter((v, i, a) => a.indexOf(v) === i)
       .sort();
 
-    if (projects.includes('APEX') && !projects.includes('APEX FREE')) {
-      projects.push('APEX FREE');
+    if (projects.includes('APEX')) {
+      if (!projects.includes('APEX ANNUAL LEAVE')) projects.push('APEX ANNUAL LEAVE');
+      if (!projects.includes('APEX FREE')) projects.push('APEX FREE');
       projects.sort();
     }
 
@@ -439,6 +470,12 @@ const PersonalSpace = () => {
           const taskWeek = getISOWeek(t.dateObj);
           const taskYear = t.dateObj.getFullYear();
           dateMatch = taskYear === currentDate.getFullYear() && selectedCustomWeeks.includes(taskWeek);
+        } else if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+          const start = new Date(customDateRange.startDate);
+          start.setHours(0, 0, 0, 0);
+          const end = new Date(customDateRange.endDate);
+          end.setHours(23, 59, 59, 999);
+          dateMatch = isWithinInterval(t.dateObj, { start, end });
         }
       }
 
@@ -480,7 +517,7 @@ const PersonalSpace = () => {
       default: break;
     }
     return sorted;
-  }, [rbacBaseTasks, localFilters, timeRange, selectedCustomWeeks, localSort, user, currentDate, viewMode]);
+  }, [rbacBaseTasks, localFilters, timeRange, selectedCustomWeeks, customDateRange, localSort, user, currentDate, viewMode]);
 
   const strictlyFilteredData = useMemo(() => {
     if (user?.isAdmin) return filteredData;
@@ -834,7 +871,7 @@ const PersonalSpace = () => {
                   ? 'bg-slate-950/80 border border-slate-800' 
                   : 'bg-slate-200/50 border border-white/20'
               }`}>
-                {['week', 'month', 'year', 'custom'].map((id) => {
+                {['week', 'month', 'year', 'custom', 'date_range'].map((id) => {
                   const isActive = timeRange === id;
                   return (
                     <button
@@ -843,9 +880,15 @@ const PersonalSpace = () => {
                       className={`relative w-[46px] h-[46px] text-[14px] font-black uppercase transition-all duration-300 z-10 time-range-btn flex items-center justify-center ${
                         isActive ? 'active' : ''
                       }`}
-                      title={id === 'custom' ? 'Custom Weeks (Chọn tuần tùy ý)' : undefined}
+                      title={
+                        id === 'custom' 
+                          ? 'W+ : Custom Weeks (Chọn tuần tùy ý)' 
+                          : id === 'date_range' 
+                          ? 'D+ : Date Range (Xem theo khoảng ngày tùy chọn)' 
+                          : undefined
+                      }
                     >
-                      {{ week: 'W', month: 'M', year: 'Y', custom: 'W+' }[id]}
+                      {{ week: 'W', month: 'M', year: 'Y', custom: 'W+', date_range: 'D+' }[id]}
                       {isActive && (
                         <motion.div
                           layoutId="activeRange"
@@ -947,69 +990,96 @@ const PersonalSpace = () => {
             {/* Enhanced Year/Week/Month/Custom Picker + Navigation */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 p-1.5 rounded-xl shadow-sm date-picker-wrapper">
-                <select 
-                  className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-year"
-                  value={currentDate.getFullYear()}
-                  onChange={(e) => {
-                    const targetYear = parseInt(e.target.value);
-                    const newDate = new Date(currentDate);
-                    newDate.setFullYear(targetYear);
-                    setCurrentDate(newDate);
-                  }}
-                >
-                  {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-                
-                {timeRange === 'custom' ? (
-                  <>
-                    <div className="w-[1px] h-4 bg-indigo-500/20" />
-                    <MultiWeekPicker 
-                      selectedWeeks={selectedCustomWeeks}
-                      onChange={setSelectedCustomWeeks}
-                      year={currentDate.getFullYear()}
-                      isDark={isDark}
-                    />
-                  </>
-                ) : timeRange !== 'year' && (
-                  <>
-                    <div className="w-[1px] h-4 bg-indigo-500/20" />
-                    
-                    <div className="flex items-center gap-1.5 px-1">
-                      <span className="text-[14px] font-black text-indigo-500/60">
-                        {timeRange === 'week' ? 'W' : 'M'}
-                      </span>
-                      {timeRange === 'week' ? (
-                        <select 
-                          className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-sub"
-                          value={getISOWeek(currentDate)}
-                          onChange={(e) => {
-                            const targetWeek = parseInt(e.target.value);
-                            const currentWeek = getISOWeek(currentDate);
-                            setCurrentDate(addDays(currentDate, (targetWeek - currentWeek) * 7));
-                          }}
-                        >
-                          {[...Array(53)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
-                        </select>
-                      ) : (
-                        <select 
-                          className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-sub"
-                          value={currentDate.getMonth() + 1}
-                          onChange={(e) => {
-                            const targetMonth = parseInt(e.target.value) - 1;
-                            const newDate = new Date(currentDate);
-                            newDate.setMonth(targetMonth);
-                            setCurrentDate(newDate);
-                          }}
-                        >
-                          {[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
-                        </select>
-                      )}
+                {timeRange === 'date_range' ? (
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="flex items-center gap-1.5 text-indigo-500 dark:text-indigo-400">
+                      <Calendar size={15} className="shrink-0" />
+                      <span className="text-[12px] font-black uppercase tracking-wider">Từ:</span>
                     </div>
+                    <input 
+                      type="date"
+                      value={customDateRange.startDate}
+                      onChange={(e) => setCustomDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[13px] font-black outline-none border border-slate-300 dark:border-slate-700 text-[var(--text-main)] cursor-pointer"
+                    />
+                    <span className="text-[14px] font-black text-slate-400">→</span>
+                    <div className="flex items-center gap-1.5 text-indigo-500 dark:text-indigo-400">
+                      <span className="text-[12px] font-black uppercase tracking-wider">Đến:</span>
+                    </div>
+                    <input 
+                      type="date"
+                      value={customDateRange.endDate}
+                      onChange={(e) => setCustomDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[13px] font-black outline-none border border-slate-300 dark:border-slate-700 text-[var(--text-main)] cursor-pointer"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <select 
+                      className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-year"
+                      value={currentDate.getFullYear()}
+                      onChange={(e) => {
+                        const targetYear = parseInt(e.target.value);
+                        const newDate = new Date(currentDate);
+                        newDate.setFullYear(targetYear);
+                        setCurrentDate(newDate);
+                      }}
+                    >
+                      {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                    
+                    {timeRange === 'custom' ? (
+                      <>
+                        <div className="w-[1px] h-4 bg-indigo-500/20" />
+                        <MultiWeekPicker 
+                          selectedWeeks={selectedCustomWeeks}
+                          onChange={setSelectedCustomWeeks}
+                          year={currentDate.getFullYear()}
+                          isDark={isDark}
+                        />
+                      </>
+                    ) : timeRange !== 'year' && (
+                      <>
+                        <div className="w-[1px] h-4 bg-indigo-500/20" />
+                        
+                        <div className="flex items-center gap-1.5 px-1">
+                          <span className="text-[14px] font-black text-indigo-500/60">
+                            {timeRange === 'week' ? 'W' : 'M'}
+                          </span>
+                          {timeRange === 'week' ? (
+                            <select 
+                              className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-sub"
+                              value={getISOWeek(currentDate)}
+                              onChange={(e) => {
+                                const targetWeek = parseInt(e.target.value);
+                                const currentWeek = getISOWeek(currentDate);
+                                setCurrentDate(addDays(currentDate, (targetWeek - currentWeek) * 7));
+                              }}
+                            >
+                              {[...Array(53)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
+                            </select>
+                          ) : (
+                            <select 
+                              className="bg-[var(--bg-surface)] rounded-lg h-[32px] px-2 text-[14px] font-black outline-none cursor-pointer transition-all border date-picker-sub"
+                              value={currentDate.getMonth() + 1}
+                              onChange={(e) => {
+                                const targetMonth = parseInt(e.target.value) - 1;
+                                const newDate = new Date(currentDate);
+                                newDate.setMonth(targetMonth);
+                                setCurrentDate(newDate);
+                              }}
+                            >
+                              {[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
+                            </select>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </div>
 
-              {timeRange !== 'custom' && (
+              {timeRange !== 'custom' && timeRange !== 'date_range' && (
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => {
@@ -1054,7 +1124,7 @@ const PersonalSpace = () => {
                 </div>
               )}
 
-              {weekOffset !== 0 && timeRange !== 'custom' && (
+              {weekOffset !== 0 && timeRange !== 'custom' && timeRange !== 'date_range' && (
                 <button
                   onClick={() => setCurrentDate(new Date())}
                   className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded transition-all date-today-btn"
@@ -1092,6 +1162,7 @@ const PersonalSpace = () => {
           getProjectColor={getProjectColor}
           selectedTimeMetric={selectedTimeMetric}
           timeRange={timeRange}
+          customDateRange={customDateRange}
           currentDate={currentDate}
           searchQuery={localFilters.search || ''}
         />
@@ -1123,6 +1194,7 @@ const PersonalSpace = () => {
           currentDate={currentDate}
           timeRange={timeRange}
           selectedWeeks={selectedCustomWeeks}
+          customDateRange={customDateRange}
           getProjectColor={getProjectColor}
           selectedTimeMetric={selectedTimeMetric}
           rawUsers={localMaps.rawUsers}
@@ -1142,6 +1214,7 @@ const PersonalSpace = () => {
           currentDate={currentDate}
           timeRange={timeRange}
           selectedWeeks={selectedCustomWeeks}
+          customDateRange={customDateRange}
           getProjectColor={getProjectColor}
           selectedTimeMetric={selectedTimeMetric}
           rawUsers={localMaps.rawUsers}
@@ -1161,6 +1234,7 @@ const PersonalSpace = () => {
           currentDate={currentDate}
           timeRange={timeRange}
           selectedWeeks={selectedCustomWeeks}
+          customDateRange={customDateRange}
           getProjectColor={getProjectColor}
           selectedTimeMetric={selectedTimeMetric}
           rawUsers={localMaps.rawUsers}
@@ -1185,6 +1259,8 @@ const PersonalSpace = () => {
             getProjectColor={getProjectColor}
             selectedTimeMetric={selectedTimeMetric}
             currentDate={currentDate}
+            timeRange={timeRange}
+            customDateRange={customDateRange}
             selectedTeam={localFilters.team}
             rawUsers={localMaps.rawUsers}
             userTeamByName={localMaps.userTeamByName}
@@ -1206,6 +1282,7 @@ const PersonalSpace = () => {
             currentDate={currentDate}
             timeRange={timeRange}
             selectedWeeks={selectedCustomWeeks}
+            customDateRange={customDateRange}
             selectedTeam={localFilters.team}
             selectedProject={localFilters.project}
             selectedUser={localFilters.user}

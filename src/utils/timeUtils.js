@@ -125,14 +125,30 @@ export function getMonthFromISOWeek(weekNumber, year) {
  * @param {number|string} recordWeek 
  * @param {number|string} recordYear 
  * @param {Date} currentDate 
- * @param {'week'|'month'|'year'|'custom'} timeRange 
+ * @param {'week'|'month'|'year'|'custom'|'date_range'} timeRange 
  * @param {Array<number>} [monthWeeks] Mảng các tuần trong tháng để tối ưu
  * @param {Array<number>} [customWeeks] Mảng các tuần được chọn tùy ý khi timeRange === 'custom'
+ * @param {{ startDate: string, endDate: string }} [customDateRange] Khoảng ngày tùy ý khi timeRange === 'date_range'
  */
-export function isRecordInTimeRange(recordWeek, recordYear, currentDate, timeRange = 'week', monthWeeks = null, customWeeks = []) {
+export function isRecordInTimeRange(recordWeek, recordYear, currentDate, timeRange = 'week', monthWeeks = null, customWeeks = [], customDateRange = null) {
   const w = Number(recordWeek);
   const y = Number(recordYear);
   const targetYear = currentDate.getFullYear();
+
+  if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+    const monday = getWeekMonday(w, y || targetYear);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    monday.setHours(0, 0, 0, 0);
+
+    const start = new Date(customDateRange.startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(customDateRange.endDate);
+    end.setHours(23, 59, 59, 999);
+
+    return monday <= end && sunday >= start;
+  }
 
   if (y && y !== targetYear) return false;
 
@@ -155,11 +171,9 @@ export function isRecordInTimeRange(recordWeek, recordYear, currentDate, timeRan
 }
 
 /**
- * Lấy ngày bắt đầu (Thứ 2) và kết thúc (Chủ Nhật) của một tuần ISO trong năm
- * @param {number} weekNumber 
- * @param {number} year 
+ * Lấy ngày Thứ 2 của tuần ISO
  */
-export function getWeekDateRange(weekNumber, year) {
+export function getWeekMonday(weekNumber, year) {
   const jan4 = new Date(year, 0, 4);
   const dayOfWeek = jan4.getDay() || 7;
   const firstThursday = new Date(jan4);
@@ -170,14 +184,113 @@ export function getWeekDateRange(weekNumber, year) {
 
   const monday = new Date(targetThursday);
   monday.setDate(targetThursday.getDate() - 3);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
 
-  const sunday = new Date(targetThursday);
-  sunday.setDate(targetThursday.getDate() + 3);
+/**
+ * Lấy ngày bắt đầu (Thứ 2) và kết thúc (Chủ Nhật) của một tuần ISO trong năm
+ * @param {number} weekNumber 
+ * @param {number} year 
+ */
+export function getWeekDateRange(weekNumber, year) {
+  const monday = getWeekMonday(weekNumber, year);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
 
   const pad = (n) => String(n).padStart(2, '0');
   const label = `${pad(monday.getDate())}/${pad(monday.getMonth() + 1)} - ${pad(sunday.getDate())}/${pad(sunday.getMonth() + 1)}`;
 
   return { monday, sunday, label };
+}
+
+/**
+ * Lấy danh sách các tuần ISO giao với khoảng ngày [startDate, endDate]
+ */
+export function getWeeksInDateRange(startDateStr, endDateStr) {
+  if (!startDateStr || !endDateStr) return [];
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return [];
+
+  const weeksMap = new Map();
+  const cur = new Date(start);
+  while (cur <= end) {
+    const yr = cur.getFullYear();
+    const wk = getISOWeek(cur);
+    const key = `${yr}-${wk}`;
+    if (!weeksMap.has(key)) {
+      const range = getWeekDateRange(wk, yr);
+      weeksMap.set(key, {
+        weekNum: wk,
+        year: yr,
+        label: `W${wk}`,
+        fullLabel: `Tuần ${wk} (${range.label})`
+      });
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return Array.from(weeksMap.values());
+}
+
+/**
+ * Đếm số ngày làm việc tiêu chuẩn (Thứ 2 đến Thứ 6) trong khoảng [startDate, endDate]
+ */
+export function getWorkingDaysCount(startDateStr, endDateStr) {
+  if (!startDateStr || !endDateStr) return 0;
+  const start = new Date(startDateStr);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(endDateStr);
+  end.setHours(23, 59, 59, 999);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return 0;
+
+  let count = 0;
+  const cur = new Date(start);
+  while (cur <= end) {
+    const day = cur.getDay(); // 0: Sun, 6: Sat
+    if (day !== 0 && day !== 6) {
+      count++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
+/**
+ * Lọc chính xác từng ngày trong bản ghi APEX_TimeSheet theo khoảng [startDate, endDate]
+ * Giữ nguyên các ngày nằm trong khoảng, zero out các ngày nằm ngoài khoảng
+ */
+export function filterRecordByDateRange(r, startDateStr, endDateStr) {
+  if (!startDateStr || !endDateStr || !r) return { clipped: r, totalHours: 0, hasOverlap: true };
+  const start = new Date(startDateStr);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(endDateStr);
+  end.setHours(23, 59, 59, 999);
+
+  const monday = getWeekMonday(Number(r.week), Number(r.year));
+  const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  
+  const clipped = { ...r };
+  let anyIncluded = false;
+  let totalHours = 0;
+
+  days.forEach((day, idx) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + idx);
+    d.setHours(12, 0, 0, 0);
+
+    if (d >= start && d <= end) {
+      const val = Number(r[day]) || 0;
+      clipped[day] = val;
+      if (val > 0) anyIncluded = true;
+      totalHours += val;
+    } else {
+      clipped[day] = 0;
+    }
+  });
+
+  return { clipped, totalHours, hasOverlap: anyIncluded };
 }
 
 /**

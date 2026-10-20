@@ -5,7 +5,7 @@ import * as XLSX from 'xlsx';
 import { supabase } from '../../supabaseClient';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
 import { getCanonicalName, isSameUser } from '../../utils/userUtils';
-import { getWeeksForMonth, getMonthFromISOWeek, isRecordInTimeRange } from '../../utils/timeUtils';
+import { getWeeksForMonth, getMonthFromISOWeek, isRecordInTimeRange, getWeeksInDateRange, filterRecordByDateRange } from '../../utils/timeUtils';
 
 const formatHoursAndMinutes = (hoursDecimal) => {
   if (!hoursDecimal || hoursDecimal <= 0) return '';
@@ -35,6 +35,7 @@ const ApexTimesheetView = forwardRef(({
   currentDate = new Date(),
   timeRange = 'week',
   selectedWeeks = [],
+  customDateRange = null,
   getProjectColor = () => 'var(--text-contrast)',
   selectedTimeMetric = 't1',
   rawUsers = [],
@@ -66,6 +67,18 @@ const ApexTimesheetView = forwardRef(({
 
   // Dynamic table columns based on timeRange
   const columns = useMemo(() => {
+    if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+      const weeks = getWeeksInDateRange(customDateRange.startDate, customDateRange.endDate);
+      return weeks.map((w, i) => ({
+        id: `w_${w.weekNum}`,
+        weekNum: w.weekNum,
+        year: w.year,
+        index: i,
+        label: w.label,
+        sub: w.fullLabel,
+        width: '85px'
+      }));
+    }
     if (timeRange === 'year') {
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return monthNames.map((name, i) => ({
@@ -113,7 +126,7 @@ const ApexTimesheetView = forwardRef(({
         width: '75px'
       };
     });
-  }, [timeRange, monthWeeks, weekDates, selectedWeeks]);
+  }, [timeRange, monthWeeks, weekDates, selectedWeeks, customDateRange]);
 
   useEffect(() => {
     // If not cached yet, fetch once
@@ -172,7 +185,7 @@ const ApexTimesheetView = forwardRef(({
   // Build Timesheet Data structure directly from APEX_TimeSheet & APEX_TimeSheetType
   const timesheetData = useMemo(() => {
     const weekRecords = timesheetRecords.filter(r => {
-      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks);
+      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks, customDateRange);
     });
 
     const numCols = columns.length;
@@ -241,12 +254,26 @@ const ApexTimesheetView = forwardRef(({
         if (!matchSearch) return;
       }
 
-      const rowSum = (Number(record.mon) || 0) + (Number(record.tue) || 0) + (Number(record.wed) || 0) +
-                     (Number(record.thu) || 0) + (Number(record.fri) || 0) + (Number(record.sat) || 0) + (Number(record.sun) || 0);
+      let rowSum = 0;
+      if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+        const { clipped, totalHours, hasOverlap } = filterRecordByDateRange(record, customDateRange.startDate, customDateRange.endDate);
+        if (!hasOverlap && totalHours <= 0) return;
+        rowSum = totalHours;
+      } else {
+        rowSum = (Number(record.mon) || 0) + (Number(record.tue) || 0) + (Number(record.wed) || 0) +
+                 (Number(record.thu) || 0) + (Number(record.fri) || 0) + (Number(record.sat) || 0) + (Number(record.sun) || 0);
+      }
+      if (rowSum <= 0) return;
 
       const recordColHours = new Array(numCols).fill(0);
 
-      if (timeRange === 'year') {
+      if (timeRange === 'date_range') {
+        const recWk = Number(record.week);
+        const wIdx = columns.findIndex(c => c.weekNum === recWk);
+        if (wIdx >= 0 && wIdx < numCols) {
+          recordColHours[wIdx] = rowSum;
+        }
+      } else if (timeRange === 'year') {
         const mIdx = getMonthFromISOWeek(Number(record.week), currentYear);
         if (mIdx >= 0 && mIdx < numCols) {
           recordColHours[mIdx] = rowSum;
@@ -336,7 +363,7 @@ const ApexTimesheetView = forwardRef(({
       totalPerCol,
       grandTotalHours: totalPerCol.reduce((a, b) => a + b, 0)
     };
-  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, userMap, projectMap, currentWeek, currentYear, currentMonday, weekDates, today, timeRange, monthWeeks, selectedWeeks, columns, userTeamByName, selectedTeam, selectedProject, selectedUser, searchQuery]);
+  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, userMap, projectMap, currentWeek, currentYear, currentMonday, weekDates, today, timeRange, monthWeeks, selectedWeeks, customDateRange, columns, userTeamByName, selectedTeam, selectedProject, selectedUser, searchQuery]);
 
   const handleExportExcel = useCallback(() => {
     try {
@@ -347,6 +374,8 @@ const ApexTimesheetView = forwardRef(({
         ? `Month: ${format(today, 'MM/yyyy')} | Year: ${currentYear}`
         : timeRange === 'custom'
         ? `Custom Weeks: ${[...selectedWeeks].sort((a,b)=>a-b).map(w=>'W'+w).join(', ')} | Year: ${currentYear}`
+        : timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate
+        ? `Date Range: ${customDateRange.startDate} to ${customDateRange.endDate}`
         : `Year: ${currentYear}`;
 
       const colHeaders = columns.map(c => `${c.label} (${c.sub})`);
@@ -414,6 +443,8 @@ const ApexTimesheetView = forwardRef(({
         ? `W${currentWeek}_${currentYear}` 
         : timeRange === 'month' 
         ? `Thang_${today.getMonth() + 1}_${currentYear}` 
+        : timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate
+        ? `${customDateRange.startDate}_to_${customDateRange.endDate}`
         : `Nam_${currentYear}`;
 
       XLSX.utils.book_append_sheet(wb, ws, `Timesheet`);
@@ -421,7 +452,7 @@ const ApexTimesheetView = forwardRef(({
     } catch (e) {
       console.error('Error exporting Apex Timesheet to Excel:', e);
     }
-  }, [timesheetData, currentWeek, currentYear, weekDates, timeRange, today, columns]);
+  }, [timesheetData, currentWeek, currentYear, weekDates, timeRange, today, columns, customDateRange]);
 
   useImperativeHandle(ref, () => ({
     exportExcel: handleExportExcel

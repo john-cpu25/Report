@@ -6,7 +6,7 @@ import { supabase } from '../../supabaseClient';
 import { calculateDailyWorkingMinutes } from '../../utils/performanceEngine';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
 import { getCanonicalName, isSameUser } from '../../utils/userUtils';
-import { getWeeksForMonth, isRecordInTimeRange } from '../../utils/timeUtils';
+import { getWeeksForMonth, isRecordInTimeRange, filterRecordByDateRange } from '../../utils/timeUtils';
 
 const TEAM_COLUMNS = [
   {
@@ -76,6 +76,7 @@ const TotalTimesheetView = forwardRef(({
   currentDate = new Date(),
   timeRange = 'week',
   selectedWeeks = [],
+  customDateRange = null,
   getProjectColor = () => '#6366f1',
   selectedTimeMetric = 't1',
   rawUsers = [],
@@ -183,11 +184,17 @@ const TotalTimesheetView = forwardRef(({
 
   // Build Project Summary Data from APEX_TimeSheet & APEX_TimeSheetType
   const projectSummaryData = useMemo(() => {
-    const weekStart = weekDates[0];
-    const weekEnd = addDays(weekDates[6], 1);
+    let weekStart = weekDates[0];
+    let weekEnd = addDays(weekDates[6], 1);
+    if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+      weekStart = new Date(customDateRange.startDate);
+      weekStart.setHours(0, 0, 0, 0);
+      weekEnd = new Date(customDateRange.endDate);
+      weekEnd.setHours(23, 59, 59, 999);
+    }
 
     const weekRecords = timesheetRecords.filter(r => {
-      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks);
+      return isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks, customDateRange);
     });
 
     const summaryMap = {};
@@ -213,8 +220,15 @@ const TotalTimesheetView = forwardRef(({
 
     if (weekRecords.length > 0) {
       weekRecords.forEach(record => {
-        const rowHours = (Number(record.mon) || 0) + (Number(record.tue) || 0) + (Number(record.wed) || 0) +
-                         (Number(record.thu) || 0) + (Number(record.fri) || 0) + (Number(record.sat) || 0) + (Number(record.sun) || 0);
+        let rowHours = 0;
+        if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+          const { clipped, totalHours, hasOverlap } = filterRecordByDateRange(record, customDateRange.startDate, customDateRange.endDate);
+          if (!hasOverlap && totalHours <= 0) return;
+          rowHours = totalHours;
+        } else {
+          rowHours = (Number(record.mon) || 0) + (Number(record.tue) || 0) + (Number(record.wed) || 0) +
+                     (Number(record.thu) || 0) + (Number(record.fri) || 0) + (Number(record.sat) || 0) + (Number(record.sun) || 0);
+        }
         if (rowHours <= 0) return;
 
         const userObj = userMap[record.user_id];
@@ -378,7 +392,7 @@ const TotalTimesheetView = forwardRef(({
     });
 
     return { rows, totals };
-  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, apexTasks, userMap, projectMap, projectFullNameMap, currentWeek, currentYear, weekDates, today, timeRange, monthWeeks, selectedWeeks, selectedTimeMetric, userTeamByName, getProjectColor, selectedTeam, selectedProject, selectedUser]);
+  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, apexTasks, userMap, projectMap, projectFullNameMap, currentWeek, currentYear, weekDates, today, timeRange, monthWeeks, selectedWeeks, customDateRange, selectedTimeMetric, userTeamByName, getProjectColor, selectedTeam, selectedProject, selectedUser]);
 
   // Filtering & Sorting
   const filteredAndSortedRows = useMemo(() => {
@@ -469,6 +483,8 @@ const TotalTimesheetView = forwardRef(({
         ? `Month: ${format(today, 'MM/yyyy')} | Year: ${currentYear}`
         : timeRange === 'custom'
         ? `Custom Weeks: ${[...selectedWeeks].sort((a,b)=>a-b).map(w=>'W'+w).join(', ')} | Year: ${currentYear}`
+        : timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate
+        ? `Date Range: ${customDateRange.startDate} to ${customDateRange.endDate}`
         : `Year: ${currentYear}`;
 
       const summaryRows = [
@@ -604,13 +620,15 @@ const TotalTimesheetView = forwardRef(({
         ? `W${currentWeek}_${currentYear}` 
         : timeRange === 'month' 
         ? `Thang_${today.getMonth() + 1}_${currentYear}` 
+        : timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate
+        ? `${customDateRange.startDate}_to_${customDateRange.endDate}`
         : `Nam_${currentYear}`;
       const fileName = `APEX_Total_Timesheet_${timeRangeSuffix}.xlsx`;
       XLSX.writeFile(wb, fileName);
     } catch (err) {
       console.error('Error exporting Total Timesheet to Excel:', err);
     }
-  }, [filteredAndSortedRows, tableTotals, currentWeek, currentYear, weekDates, timeRange, today]);
+  }, [filteredAndSortedRows, tableTotals, currentWeek, currentYear, weekDates, timeRange, today, customDateRange]);
 
   useImperativeHandle(ref, () => ({
     refresh: fetchApexTimesheetData,
