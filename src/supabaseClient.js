@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Thông tin kết nối Supabase Production mới (cvecpplwoduujrvoduku)
+// Thông tin kết nối Supabase chính thức (cvecpplwoduujrvoduku)
 const supabaseUrl = 'https://cvecpplwoduujrvoduku.supabase.co'
 const supabaseKey = 'sb_publishable_lxGJVSk8ESGalxlV9svi8g_lwPPYayD'
 

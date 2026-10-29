@@ -185,19 +185,19 @@ const UnifiedTable = (props) => {
   const row2Offset = `calc(${stickyOffset} + 40px)`; 
 
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border)] shadow-md rounded-2xl m-[20px] min-w-[calc(100%-40px)] w-fit overflow-hidden">
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] shadow-md rounded-2xl overflow-hidden w-full">
       <table className="w-full text-left border-separate border-spacing-0" style={{ minWidth: '1400px' }}>
         <thead>
           <tr className="th-primary text-[var(--text-main)] dark:text-white">
             {/* 1. PROJECT */}
-            <th rowSpan={2} className="py-[4px] text-left border-r border-b border-[var(--border)] sticky left-0 z-30 min-w-[140px] backdrop-blur-md bg-[var(--bg-card)] text-[var(--text-main)] dark:text-white" style={{ top: stickyOffset, paddingLeft: '20px', paddingRight: '16px' }}>
+            <th rowSpan={2} className="py-[4px] text-left border-r border-b border-[var(--border)] sticky left-0 z-30 w-[140px] min-w-[140px] max-w-[140px] bg-[var(--bg-card)] text-[var(--text-main)] dark:text-white" style={{ top: stickyOffset, paddingLeft: '20px', paddingRight: '16px' }}>
               <div className="flex items-center h-full cursor-pointer hover:text-[var(--text-main)] transition-colors" onClick={() => handleSort('project')}>
                 <span>PROJECT {renderSortIcon('project')}</span>
               </div>
             </th>
 
             {/* 2. TASK NAME */}
-            <th rowSpan={2} className="py-[4px] text-left border-r border-b border-[var(--border)] sticky left-[160px] z-30 min-w-[160px] backdrop-blur-md bg-[var(--bg-card)] text-[var(--text-main)] dark:text-white" style={{ top: stickyOffset, paddingLeft: '16px', paddingRight: '16px' }}>
+            <th rowSpan={2} className="py-[4px] text-left border-r border-b border-[var(--border)] sticky left-[140px] z-30 min-w-[200px] bg-[var(--bg-card)] text-[var(--text-main)] dark:text-white" style={{ top: stickyOffset, paddingLeft: '16px', paddingRight: '16px' }}>
               <div className="flex items-center h-full cursor-pointer hover:text-[var(--text-main)] transition-colors" onClick={() => handleSort('taskName')}>
                 <span>TASK NAME {renderSortIcon('taskName')}</span>
               </div>
@@ -248,20 +248,21 @@ const UnifiedTable = (props) => {
               </td>
             </tr>
           ) : tableRows.map((r, i) => {
+            const rowBg = i % 2 === 0 ? 'bg-[var(--row-even)]' : 'bg-[var(--row-odd)]';
             return (
               <tr 
                 key={r.id || i} 
-                className="transition-all duration-200 text-[14px] align-middle hover:bg-[var(--bg-surface)] group cursor-default"
+                className={`transition-all duration-200 text-[14px] align-middle hover:bg-[var(--bg-hover)] group cursor-default ${rowBg}`}
               >
                 {/* 1. PROJECT */}
-                <td className="sys-py text-left sticky left-0 z-10 border-r border-b border-[var(--border)] backdrop-blur-md bg-[var(--bg-card)] group-hover:bg-[var(--bg-surface)] transition-colors duration-200" style={{ paddingLeft: '20px', paddingRight: '16px', verticalAlign: 'middle' }}>
+                <td className="sys-py text-left sticky left-0 z-10 border-r border-b border-[var(--border)] bg-[var(--bg-card)] group-hover:bg-[var(--bg-hover)] transition-colors duration-200 w-[140px] min-w-[140px] max-w-[140px]" style={{ paddingLeft: '20px', paddingRight: '16px', verticalAlign: 'middle' }}>
                   <span className="text-[13px] font-semibold tracking-wide uppercase line-clamp-1" style={{ color: getProjectColor(r.project) }}>
                     {r.project}
                   </span>
                 </td>
 
                 {/* 2. TASK NAME */}
-                <td className="sys-py text-left sticky left-[160px] z-10 border-r border-b border-[var(--border)] backdrop-blur-md bg-[var(--bg-card)] group-hover:bg-[var(--bg-surface)] transition-colors duration-200" style={{ paddingLeft: '16px', paddingRight: '16px', verticalAlign: 'middle' }}>
+                <td className="sys-py text-left sticky left-[140px] z-10 border-r border-b border-[var(--border)] bg-[var(--bg-card)] group-hover:bg-[var(--bg-hover)] transition-colors duration-200 min-w-[200px]" style={{ paddingLeft: '16px', paddingRight: '16px', verticalAlign: 'middle' }}>
                   <span className="text-[var(--text-main)] font-medium line-clamp-1">{r.taskName}</span>
                 </td>
 

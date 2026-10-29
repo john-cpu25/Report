@@ -80,6 +80,8 @@
   --c-slate-400: #94a3b8;
   --c-slate-500: #64748b;
   --c-slate-600: #475569;
+  --c-danger: #f43f5e;
+  --c-pending: #f97316;
 
   /* ──────────── STATUS BADGE COLORS ──────────── */
   --status-done-text: #34d399;

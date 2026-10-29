@@ -24,10 +24,10 @@ export const AppProvider = ({ children }) => {
   });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Theme States - Giao diện mặc định khi vào web luôn là News Mode + Bamboo Zen
+  // Theme States - Mặc định khi chưa lưu là News Mode + Bamboo Zen
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('appTheme');
-    if (!saved || saved === 'GALAXY') {
+    if (!saved) {
       localStorage.setItem('appTheme', 'NEWS');
       return 'NEWS';
     }
@@ -35,7 +35,7 @@ export const AppProvider = ({ children }) => {
   });
   const [background, setBackground] = useState(() => {
     const saved = localStorage.getItem('appBackground');
-    if (!saved || saved === 'GALAXY') {
+    if (!saved) {
       localStorage.setItem('appBackground', 'BAMBOO');
       return 'BAMBOO';
     }
@@ -54,6 +54,15 @@ export const AppProvider = ({ children }) => {
   const [seasonalIntensity, setSeasonalIntensity] = useState(() => {
     return localStorage.getItem('appSeasonalIntensity') || 'MEDIUM';
   });
+
+  // 3D Graphics Mode (ULTRA_3D | ECO_3D | CLASSIC_2D)
+  const [graphicsMode, setGraphicsModeState] = useState(() => {
+    return localStorage.getItem('appGraphicsMode') || 'ULTRA_3D';
+  });
+  const setGraphicsMode = (mode) => {
+    localStorage.setItem('appGraphicsMode', mode);
+    setGraphicsModeState(mode);
+  };
 
   // Data States
   
@@ -248,14 +257,27 @@ export const AppProvider = ({ children }) => {
 
   async function fetchPlannerData() {
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('NMK_Task_Temporary')
         .select('*')
         .order('created_at', { ascending: true });
-      if (error) throw error;
+
+      if (error && (error.code === 'PGRST205' || error.message?.includes('Could not find the table'))) {
+        const fallback = await supabase
+          .from('NMK_Task_Temporary_new')
+          .select('*')
+          .order('created_at', { ascending: true });
+        data = fallback.data;
+        error = fallback.error;
+      }
+
+      if (error) {
+        setPlannerTasks([]);
+        return;
+      }
       setPlannerTasks(data || []);
     } catch (err) {
-      console.error('Planner Fetch Error:', err);
+      setPlannerTasks([]);
     }
   };
 
@@ -433,6 +455,7 @@ const deleteRow = async (id) => { await supabase.from("NMK_Task").delete().eq("i
     background, setBackground,
     seasonalEffect, setSeasonalEffect,
     seasonalIntensity, setSeasonalIntensity,
+    graphicsMode, setGraphicsMode,
     reportData,
     customProjects, setCustomProjects,
     supabaseProjects, setSupabaseProjects,

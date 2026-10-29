@@ -1,4 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import SeasonalCanvas3D from './3d/SeasonalCanvas3D';
+import { isWebGLAvailable } from './3d/useThreeCanvas';
+import { useApp } from '../context/AppContext';
 
 /**
  * SeasonalEffects
@@ -22,12 +25,18 @@ const getAutoSeason = () => {
 };
 
 const SeasonalEffects = ({ effect = 'AUTO', intensity = 'MEDIUM' }) => {
+  const { graphicsMode = 'ULTRA_3D' } = useApp();
   const canvasRef = useRef(null);
+  const [hasWebGL] = useState(() => isWebGLAvailable());
+  const [force2D, setForce2D] = useState(false);
 
+  const isClassic2D = graphicsMode === 'CLASSIC_2D' || force2D || !hasWebGL;
   const activeEffect = effect === 'AUTO' ? getAutoSeason() : effect;
 
   useEffect(() => {
     if (activeEffect === 'NONE' || !activeEffect) return;
+    // Skip 2D canvas execution if 3D GPU engine is active
+    if (!isClassic2D) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -436,14 +445,26 @@ const SeasonalEffects = ({ effect = 'AUTO', intensity = 'MEDIUM' }) => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [activeEffect, intensity]);
+  }, [activeEffect, intensity, isClassic2D]);
 
   if (activeEffect === 'NONE') return null;
 
+  // Primary rendering: High-performance Three.js GPU 3D Shaders
+  if (!isClassic2D) {
+    return (
+      <SeasonalCanvas3D
+        effect={activeEffect}
+        intensity={intensity}
+        onFallback2D={() => setForce2D(true)}
+      />
+    );
+  }
+
+  // Fallback rendering: Standard HTML5 Canvas 2D
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-[1]"
+      className="fixed inset-0 pointer-events-none z-0"
       style={{ width: '100%', height: '100%' }}
     />
   );

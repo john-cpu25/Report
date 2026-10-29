@@ -101,7 +101,7 @@ function App() {
       {isLoading ? (
         <Preloader key="preloader" onLoadingComplete={() => setIsLoading(false)} />
       ) : (
-        <div className={`flex ${['personal', 'leave'].includes(activeTab) ? 'h-screen overflow-hidden' : 'min-h-screen'} relative`}>
+        <div className={`flex ${['personal', 'leave', 'dashboard'].includes(activeTab) ? 'h-screen overflow-hidden' : 'min-h-screen'} relative`}>
           {background === 'GALAXY' && <CelestialBackground />}
           {background === 'BAMBOO' && <BambooBackground />}
           {background === 'MINIMAL' && (
@@ -114,9 +114,8 @@ function App() {
           <Sidebar />
           <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
 
-          <motion.div
-            layout
-            className={`flex-1 ${['personal', 'leave'].includes(activeTab) ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col transition-all duration-300 min-w-0`}
+          <div
+            className={`flex-1 ${['personal', 'leave', 'dashboard'].includes(activeTab) ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col transition-all duration-300 min-w-0 relative z-[1]`}
             style={{ 
               paddingLeft: windowWidth >= 1024 
                 ? (sidebarCollapsed ? '100px' : '260px') 
@@ -125,17 +124,17 @@ function App() {
           >
             <TopBar />
 
-            <main className={`flex-1 min-h-0 w-full flex flex-col ${['personal', 'leave'].includes(activeTab) ? 'overflow-hidden p-0' : 'p-[10px]'}`}>
-              <div className={`w-full ${['personal', 'leave'].includes(activeTab) ? 'h-full flex-1 flex flex-col min-h-0 overflow-hidden' : ''}`}>
-                <AnimatePresence mode="wait">
+            <main className={`flex-1 min-h-0 w-full flex flex-col ${['personal', 'leave', 'dashboard'].includes(activeTab) ? 'overflow-hidden p-0' : 'p-[10px]'}`}>
+              <div className={`w-full ${['personal', 'leave', 'dashboard'].includes(activeTab) ? 'h-full flex-1 flex flex-col min-h-0 overflow-hidden' : ''}`}>
+                <AnimatePresence mode="popLayout">
                   <motion.div
                     key={activeTab}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
                     style={{ transform: 'none', transformOrigin: 'unset' }}
-                    className={['personal', 'leave'].includes(activeTab) ? 'h-full flex-1 flex flex-col min-h-0 overflow-hidden' : ''}
+                    className={['personal', 'leave', 'dashboard'].includes(activeTab) ? 'h-full flex-1 flex flex-col min-h-0 overflow-hidden' : ''}
                   >
                     {renderContent()}
                   </motion.div>
@@ -143,12 +142,12 @@ function App() {
               </div>
             </main>
 
-            {!['personal', 'leave'].includes(activeTab) && (
+            {!['personal', 'leave', 'dashboard'].includes(activeTab) && (
               <footer className="px-8 py-6 border-t border-white/5 text-center text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em]">
                 &copy; 2026 APEX Southern Cross Engineering - Weekly Report Intelligence - Vietnam
               </footer>
             )}
-          </motion.div>
+          </div>
         </div>
       )}
     </AnimatePresence>

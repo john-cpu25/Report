@@ -145,6 +145,9 @@ export const isSameUser = (nameA, nameB) => {
  */
 export const canViewAllTeamsDashboard = (user) => {
   if (!user) return false;
+  if (user.isAdmin || user.is_admin || user.role === 'admin' || user.role === 'ADMIN') {
+    return true;
+  }
   const email = (user.email || '').toLowerCase().trim();
   const name = (user.name || user.full_name || '').toLowerCase().trim();
 

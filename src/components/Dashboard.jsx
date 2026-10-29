@@ -19,6 +19,12 @@ import {
   startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval
 } from 'date-fns';
 import { calculateTaskMetrics } from '../utils/performanceEngine';
+import DashboardGauge3D from './3d/widgets/DashboardGauge3D';
+import DashboardDualGauge3D from './3d/widgets/DashboardDualGauge3D';
+import ProjectAndStaffWidget from './Dashboard/ProjectAndStaffWidget';
+import ActivityByTime3DWidget from './Dashboard/ActivityByTime3DWidget';
+import { calculateHologramMetrics } from '../utils/kpiCalculator';
+import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../services/apexTimesheetCache';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend, Filler, PointElement, LineElement, RadialLinearScale);
 
@@ -720,8 +726,11 @@ const Dashboard = () => {
     isDashboardLoading: loading,
     dashboardStats: headerStats,
     adminViewMode,
-    adminActiveTeam
+    adminActiveTeam,
+    theme
   } = useApp();
+
+  const isDark = theme === 'DARK' || theme === 'GALAXY';
 
   const { user, isAdmin, isLeader, userTeam, canViewAllTeams } = useAuth();
 
@@ -752,6 +761,32 @@ const Dashboard = () => {
 
   const [timeRange, setTimeRange] = useState('WEEK'); // DAY, WEEK, MONTH
   const [chartType, setChartType] = useState('LINE'); // LINE, BAR, POLAR
+
+  const [timesheetRecords, setTimesheetRecords] = useState(() => getCachedApexTimesheetData()?.timesheetRecords || []);
+
+  useEffect(() => {
+    fetchApexTimesheetData().then(data => {
+      if (data?.timesheetRecords) setTimesheetRecords(data.timesheetRecords);
+    });
+    return subscribeApexTimesheetData(data => {
+      if (data?.timesheetRecords) setTimesheetRecords(data.timesheetRecords);
+    });
+  }, []);
+
+  const kpiMetrics = useMemo(() => {
+    // Admin uses chartTeam selection ('ALL', 'MODELLING', 'PT&REO', 'ENGINEER', 'ETABS')
+    // Regular team members automatically see their own team's metrics
+    const effectiveTeam = canViewAllTeams ? chartTeam : (userTeamKey !== 'ALL' ? userTeamKey : 'MODELLING');
+    return calculateHologramMetrics({
+      timeRange,
+      selectedTeam: effectiveTeam,
+      users,
+      tasks,
+      projects,
+      leaves,
+      timesheetRecords
+    });
+  }, [timeRange, chartTeam, canViewAllTeams, userTeamKey, users, tasks, projects, leaves, timesheetRecords]);
 
   const [audRate, setAudRate] = useState({ rate: 18461.61, change: '+0.04%', isUp: true, buy: 18277.00, sell: 19052.78, yesterday: 18453.83 });
 
@@ -826,6 +861,7 @@ const Dashboard = () => {
       return {
         id: u.id,
         name: u.name || 'Unknown',
+        image: u.image || null,
         status,
         projectName: activeTask ? (projects.find(p => p.id === activeTask.project_id)?.name || 'Unknown Project') : null,
         taskName: activeTask ? (activeTask.name || activeTask.task_name || 'Active Task') : null,
@@ -868,12 +904,29 @@ const Dashboard = () => {
           }
 
           return (
-            <div key={member.id} className="relative group cursor-pointer shrink-0">
+            <div key={member.id} className="relative group cursor-pointer shrink-0" title={`${member.name} (${member.status})`}>
               <div 
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-black uppercase text-white bg-gradient-to-br from-indigo-500/90 to-purple-600/90 transition-transform duration-300 group-hover:scale-[1.08] ${ringClass}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-black uppercase text-white overflow-hidden transition-transform duration-300 group-hover:scale-[1.08] ${ringClass}`}
                 style={shadowStyle}
               >
-                {initials}
+                {member.image ? (
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500/90 to-purple-600/90 ${
+                    member.image ? 'hidden' : ''
+                  }`}
+                >
+                  {initials}
+                </div>
               </div>
 
               <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-slate-900 ${badgeClass}`}></span>
@@ -1394,23 +1447,21 @@ const Dashboard = () => {
 
 
   return (
-    <div className="tab-dashboard min-h-screen sys-py relative transition-colors duration-300">
+    <div className="tab-dashboard h-full flex flex-col p-2.5 relative transition-colors duration-300 overflow-hidden">
 
       {/* Background Ambience */}
       <div className="ambience-indigo absolute top-0 left-1/4 w-96 h-96 rounded-full blur-[100px] pointer-events-none" />
       <div className="ambience-emerald absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-[100px] pointer-events-none" />
 
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative z-10 flex-1 flex flex-col gap-2 min-h-0">
 
-
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative z-10 flex flex-col sys-gap">
-
-        <div className="grid grid-cols-1 xl:grid-cols-12 sys-gap">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-2 shrink-0">
           {/* LEFT: Teams Section (8/12) */}
-          <div className="xl:col-span-8 flex flex-col sys-gap">
+          <div className="xl:col-span-8 flex flex-col gap-2">
             
             {(!canViewAllTeams || adminViewMode === 'TEAM') ? (
               // FIG 1: TEAM VIEW (Side by side structure, max height 258px)
-              <div className="grid grid-cols-1 md:grid-cols-2 sys-gap flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1">
                 
                 {/* Left Side: Xanh Dương (Card Nhóm) + Khung Cam (Mở Rộng) */}
                 <div className="flex flex-col sys-gap h-full flex-1 min-h-0">
@@ -1511,10 +1562,10 @@ const Dashboard = () => {
               </div>
             ) : (
               // FIG 2: ORIGINAL 2x2 GRID (Default View for Admin/Non-Team users)
-              <div className="grid grid-cols-1 md:grid-cols-2 sys-gap auto-rows-fr flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 auto-rows-fr flex-1">
                 {teamPulse.map((team, i) => (
-                  <div key={i} className="flex flex-col h-[140px] max-h-[140px] min-h-0">
-                    <motion.div variants={itemVariants} className="team-card h-[140px] max-h-[140px] overflow-hidden flex flex-col md:flex-row gap-3 relative flex-1 sys-p">
+                  <div key={i} className="flex flex-col h-[105px] 2xl:h-[130px] max-h-[130px] min-h-0">
+                    <motion.div variants={itemVariants} className="team-card h-[105px] 2xl:h-[130px] max-h-[130px] overflow-hidden flex flex-col md:flex-row gap-2 relative flex-1 p-2">
                       {(!team.hasData && loading) ? (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] z-20 rounded-2xl">
                           <div className="flex flex-col items-center gap-3">
@@ -1585,16 +1636,16 @@ const Dashboard = () => {
           <div className="xl:col-span-4 flex flex-col">
              <motion.div 
                variants={itemVariants} 
-               className="team-card flex-1 flex flex-col gap-3 sys-p"
+               className="team-card flex-1 flex flex-col justify-between p-3 2xl:p-3.5"
              >
                 <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-3">
-                      <div className="market-icon w-10 h-10 rounded-xl flex items-center justify-center">
-                         <span className="font-black text-lg">A$</span>
+                   <div className="flex items-center gap-2.5">
+                      <div className="market-icon w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
+                         <span className="font-black text-base">A$</span>
                       </div>
                       <div>
-                         <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight">AUD / VND</h3>
-                         <p className="market-live text-[12px] font-bold uppercase flex items-center gap-1">
+                         <h3 className="text-xs font-black text-[var(--text-main)] uppercase tracking-tight">AUD / VND</h3>
+                         <p className="market-live text-[10px] font-bold uppercase flex items-center gap-1">
                             <span className="market-live-dot w-1 h-1 rounded-full animate-pulse"></span> Vietcombank Live
                          </p>
                       </div>
@@ -1602,8 +1653,8 @@ const Dashboard = () => {
                     <div className="flex items-center">
                        {/* Yesterday's Price (Blue Box) */}
                        {audRate.yesterday && (
-                          <div className="text-right pr-3 border-r border-[var(--glass-border)] mr-3">
-                             <p className="text-[12px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-0.5">YESTERDAY</p>
+                          <div className="text-right pr-2.5 border-r border-[var(--glass-border)] mr-2.5">
+                             <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-0.5">YESTERDAY</p>
                              <p className="text-xs font-black text-[var(--text-main)]">
                                 {audRate.yesterday.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                              </p>
@@ -1612,11 +1663,11 @@ const Dashboard = () => {
                        
                        {/* Today's Price (Red Box) */}
                        <div className="text-right">
-                          <div className={`flex items-center gap-1.5 font-black text-lg ${audRate.isUp !== false ? 'rate-up' : 'rate-down'}`}>
-                             {audRate.isUp !== false ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                          <div className={`flex items-center gap-1 font-black text-base ${audRate.isUp !== false ? 'rate-up' : 'rate-down'}`}>
+                             {audRate.isUp !== false ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
                              <span>{audRate.rate.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
-                          <p className={`text-[10px] font-bold ${audRate.isUp !== false ? 'rate-change-up' : 'rate-change-down'}`}>
+                          <p className={`text-[9.5px] font-bold ${audRate.isUp !== false ? 'rate-change-up' : 'rate-change-down'}`}>
                              {audRate.change} Yesterday
                           </p>
                        </div>
@@ -1624,42 +1675,42 @@ const Dashboard = () => {
                 </div>
 
                 {/* Main Content Area: Left Stacked Cards, Right Trend Line Chart */}
-                <div className="flex flex-col sm:flex-row gap-3 mt-1 flex-1 h-[186px] min-h-[186px] overflow-hidden">
+                <div className="flex flex-col sm:flex-row gap-2.5 mt-1 flex-1 min-h-0 overflow-hidden">
                    {/* Left Column: Stacked Rate Cards */}
-                   <div className="w-full sm:w-[125px] flex flex-col gap-2 shrink-0 justify-between">
+                   <div className="w-full sm:w-[115px] flex flex-col gap-1 shrink-0 justify-between">
                       <div 
                        className="bg-[var(--bg-surface)]/50 rounded-xl border border-[var(--border)] hover:bg-[var(--bg-surface)] transition-colors group flex flex-col justify-center flex-1"
-                       style={{ padding: '6px 10px' }}
+                       style={{ padding: '4px 8px' }}
                       >
-                         <p className="text-[14px] font-black text-[var(--text-muted)] uppercase mb-0.5 group-hover:text-[var(--text-main)] transition-colors tracking-tighter">Buy Cash</p>
-                         <p className="text-[12px] font-normal text-[var(--text-main)] truncate">{audRate.buy.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                         <p className="text-[12px] font-black text-[var(--text-muted)] uppercase mb-0.5 group-hover:text-[var(--text-main)] transition-colors tracking-tighter">Buy Cash</p>
+                         <p className="text-[11px] font-semibold text-[var(--text-main)] truncate">{audRate.buy.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                       <div 
                         className="rate-card-accent rounded-xl flex flex-col justify-center flex-1"
-                        style={{ padding: '6px 10px' }}
+                        style={{ padding: '4px 8px' }}
                        >
-                         <p className="rate-card-accent__label text-[14px] font-black uppercase mb-0.5 transition-colors tracking-tighter">Buy Transfer</p>
-                         <p className="rate-card-accent__value text-[12px] font-normal truncate">{audRate.rate.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                         <p className="rate-card-accent__label text-[12px] font-black uppercase mb-0.5 transition-colors tracking-tighter">Buy Transfer</p>
+                         <p className="rate-card-accent__value text-[11px] font-semibold truncate">{audRate.rate.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                       <div 
                        className="bg-[var(--bg-surface)]/50 rounded-xl border border-[var(--border)] hover:bg-[var(--bg-surface)] transition-colors group flex flex-col justify-center flex-1"
-                       style={{ padding: '6px 10px' }}
+                       style={{ padding: '4px 8px' }}
                       >
-                         <p className="text-[14px] font-black text-[var(--text-muted)] uppercase mb-0.5 group-hover:text-[var(--text-main)] transition-colors tracking-tighter">Sell Rate</p>
-                         <p className="text-[12px] font-normal text-[var(--text-main)] truncate">{audRate.sell.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                         <p className="text-[12px] font-black text-[var(--text-muted)] uppercase mb-0.5 group-hover:text-[var(--text-main)] transition-colors tracking-tighter">Sell Rate</p>
+                         <p className="text-[11px] font-semibold text-[var(--text-main)] truncate">{audRate.sell.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                    </div>
 
                    {/* Right Column: Trend Line Chart */}
-                   <div className="flex-1 bg-[var(--bg-surface)]/30 rounded-xl border border-[var(--border)] p-2 relative overflow-hidden flex flex-col justify-between">
+                   <div className="flex-1 bg-[var(--bg-surface)]/30 rounded-xl border border-[var(--border)] p-1.5 relative overflow-hidden flex flex-col justify-between min-h-0">
                       {/* Chart Header */}
-                      <div className="flex items-center justify-end mb-1 z-10">
+                      <div className="flex items-center justify-end mb-0.5 z-10">
                          <div className="flex gap-1 bg-[var(--bg-main)]/60 p-0.5 rounded-lg border border-[var(--border)]/50">
                             {['5D', '1M', '1Y', 'ALL'].map(tab => (
                                <button
                                   key={tab}
                                   onClick={() => setMarketTab(tab)}
-                                  className={`text-[12px] font-black px-1.5 py-0.5 rounded-md transition-all ${
+                                  className={`text-[10px] font-black px-1.5 py-0.5 rounded-md transition-all ${
                                      marketTab === tab 
                                         ? 'market-tab-active' 
                                         : 'market-tab-inactive'
@@ -1672,7 +1723,7 @@ const Dashboard = () => {
                       </div>
 
                       {/* Chart Area */}
-                      <div className="flex-1 relative w-full h-[135px] min-h-[135px] mt-0.5">
+                      <div className="flex-1 relative w-full min-h-[75px] mt-0.5">
                          {isMarketLoading && (
                             <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
                                <div className="chart-spinner w-4 h-4 border rounded-full animate-spin"></div>
@@ -1689,60 +1740,122 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Task Trends Section */}
-         <motion.div variants={itemVariants} className="trends-card shadow-sm flex flex-col relative pt-[60px]">
+        {/* 3D Real-time Holographic KPI Gauges */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 shrink-0">
+          <DashboardGauge3D 
+            percentage={kpiMetrics.financial} 
+            label="Financial (%)" 
+            value={`${kpiMetrics.financial.toFixed(1)}%`}
+            tag="FINANCIAL"
+            sublabel="PERFORMANCE EFFICIENCY"
+            gradient={['#4f46e5', '#3b82f6', '#06b6d4']}
+            isDark={isDark}
+          />
+          <DashboardGauge3D 
+            percentage={kpiMetrics.workforceUtil} 
+            label="Workforce Utilization (%)" 
+            value={`${kpiMetrics.workforceUtil.toFixed(1)}%`}
+            tag="WORKFORCE"
+            sublabel="CAPACITY LOAD"
+            gradient={['#4f46e5', '#3b82f6', '#06b6d4']}
+            isDark={isDark}
+          />
+          <DashboardDualGauge3D 
+            timesheetHours={kpiMetrics.timesheetHours}
+            timesheetPercentage={kpiMetrics.timesheetProgress}
+            timesheetLabel="GIỜ TIME SHEET"
+            timesheetSublabel="PERSONAL \ TIME SHEET"
+            timesheetGradient={['#4f46e5', '#3b82f6', '#06b6d4']}
+            listHours={kpiMetrics.listHours}
+            listPercentage={kpiMetrics.listProgress}
+            listLabel="GIỜ TASK LIST"
+            listSublabel="PERSONAL \ LIST"
+            listGradient={['#4f46e5', '#3b82f6', '#06b6d4']}
+            isDark={isDark}
+          />
+        </div>
+
+        {/* Bottom 3-Column Section (Tỷ lệ 1/3 - 1/3 - 1/3) */}
+        {/* Cột 1: Bảng đôi hợp nhất [PROJECT HOURS (1/2) | STAFF PERFORMANCE (1/2)] */}
+        {/* Cột 2: Bảng Workload động [ACTIVITY BY TIME HEATMAP] */}
+        {/* Cột 3: Biểu đồ xu hướng công việc [TASK TRENDS] */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 flex-1 min-h-[160px] overflow-hidden">
+          {/* CỘT 1 (Khung Đỏ - 1/3): Bảng đôi hợp nhất PROJECT HOURS & STAFF PERFORMANCE */}
+          <ProjectAndStaffWidget 
+            projects={kpiMetrics.projectBreakdown || []}
+            totalListHours={kpiMetrics.listHours}
+            totalTimesheetHours={kpiMetrics.timesheetHours}
+            staff={kpiMetrics.staffBreakdown || []}
+            avgFinancial={kpiMetrics.financial}
+            avgWorkforce={kpiMetrics.workforceUtil}
+            timeRange={timeRange}
+            isDark={isDark}
+          />
+
+          {/* CỘT 2 (Khung Xanh Lá - 1/3): Bảng Workload DẠNG ĐỘNG Activity by time */}
+          <ActivityByTime3DWidget 
+            tasks={tasks}
+            timesheetRecords={timesheetRecords}
+            selectedTeam={canViewAllTeams ? chartTeam : (userTeamKey !== 'ALL' ? userTeamKey : 'MODELLING')}
+            timeRange={timeRange}
+            users={users}
+            isDark={isDark}
+          />
+          {/* 3. Task Trends Section (Right 1/3 - Biểu đồ này chỉ còn 1/3) */}
+          {/* Task Trends Section */}
+         <motion.div variants={itemVariants} className="trends-card shadow-sm flex flex-col relative overflow-hidden h-full">
             {/* Top Left Controls */}
-            <div className="absolute top-[10px] left-[10px] z-20 h-12">
-                {/* Team Selector (Neumorphic) */}
-                <div className="relative h-full group" style={{ minWidth: '180px' }}>
-                  <div className="absolute inset-0 bg-[var(--bg-surface)] rounded-2xl shadow-[4px_4px_10px_rgba(0,0,0,0.1),-4px_-4px_10px_rgba(255,255,255,0.8)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.3),-2px_-2px_10px_rgba(255,255,255,0.05)] group-hover:scale-[1.02] transition-transform duration-300"></div>
-                  <select 
-                    value={chartTeam}
-                    onChange={(e) => setChartTeam(e.target.value)}
-                    disabled={!canViewAllTeams}
-                    className="relative w-full h-full bg-transparent text-[var(--text-main)] text-[12px] font-black uppercase tracking-tight rounded-2xl cursor-pointer focus:outline-none z-10 disabled:cursor-default"
-                    style={{
-                      WebkitAppearance: 'none',
-                      MozAppearance: 'none',
-                      appearance: 'none',
-                      textAlign: 'center',
-                      textAlignLast: 'center',
-                      paddingLeft: '32px',
-                      paddingRight: '40px',
-                    }}
-                  >
-                    {canViewAllTeams ? (
-                      <>
-                        <option value="ALL">ALL TEAMS</option>
+            <div className="absolute top-[6px] left-[10px] z-20 h-9">
+                {/* Team Selector / Indicator (Neumorphic) */}
+                <div className="relative h-full group" style={{ minWidth: '150px' }}>
+                  <div className="absolute inset-0 bg-[var(--bg-surface)] rounded-xl shadow-[3px_3px_8px_rgba(0,0,0,0.08),-3px_-3px_8px_rgba(255,255,255,0.7)] dark:shadow-[3px_3px_8px_rgba(0,0,0,0.3),-2px_-2px_8px_rgba(255,255,255,0.05)] group-hover:scale-[1.01] transition-transform duration-300"></div>
+                  
+                  {canViewAllTeams ? (
+                    <div className="relative flex items-center h-full">
+                      <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-indigo-500 z-20">
+                        <Users size={13} />
+                      </div>
+                      <select 
+                        value={chartTeam}
+                        onChange={(e) => setChartTeam(e.target.value)}
+                        className="relative w-full h-full bg-transparent text-[var(--text-main)] text-[11px] font-black uppercase tracking-tight rounded-xl cursor-pointer focus:outline-none z-10 pl-7 pr-7 text-left"
+                        style={{
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none',
+                          appearance: 'none',
+                        }}
+                      >
+                        <option value="ALL" className="bg-[var(--bg-surface)] text-[var(--text-main)]">ALL TEAMS</option>
                         {TEAMS.map(t => (
-                          <option key={t.id} value={t.id}>{t.display}</option>
+                          <option key={t.id} value={t.id} className="bg-[var(--bg-surface)] text-[var(--text-main)]">{t.display}</option>
                         ))}
-                      </>
-                    ) : (
-                      TEAMS.filter(t => t.id === userTeamKey).map(t => (
-                        <option key={t.id} value={t.id}>{t.display}</option>
-                      ))
-                    )}
-                  </select>
-                  {canViewAllTeams && (
-                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)] z-20">
-                      <ChevronDown size={14} />
+                      </select>
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)] z-20">
+                        <ChevronDown size={13} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative w-full h-full flex items-center justify-center gap-1.5 px-3 z-10 select-none">
+                      <TrendingUp size={13} className="text-indigo-500 shrink-0" />
+                      <span className="text-[var(--text-main)] text-[11px] font-black uppercase tracking-tight">
+                        {TEAMS.find(t => t.id === userTeamKey)?.display || (userTeamKey && userTeamKey !== 'ALL' ? userTeamKey : 'TASK TRENDS')}
+                      </span>
                     </div>
                   )}
                 </div>
             </div>
 
             {/* Top Right Controls */}
-            <div className="absolute top-[10px] right-[10px] z-20 h-12 flex items-center gap-4">
+            <div className="absolute top-[6px] right-[10px] z-20 h-9 flex items-center gap-2.5">
                 {/* Time Range Selector (Neumorphic) */}
-                <div className="h-full flex bg-[var(--bg-surface)] rounded-2xl p-1.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2),inset_-1px_-1px_5px_rgba(255,255,255,0.02)] gap-2">
+                <div className="h-full flex bg-[var(--bg-surface)] rounded-xl p-0.5 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-2px_-2px_4px_rgba(255,255,255,0.5)] dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),inset_-1px_-1px_4px_rgba(255,255,255,0.02)] gap-1">
                   {['WEEK', 'MONTH', 'YEAR'].map((r) => (
                     <button
                       key={r}
                       onClick={() => setTimeRange(r)}
-                      className={`h-full w-[80px] flex items-center justify-center text-[12px] font-black uppercase tracking-tight rounded-xl transition-all duration-300 ${
+                      className={`h-full w-[65px] flex items-center justify-center text-[10.5px] font-black uppercase tracking-tight rounded-lg transition-all duration-300 ${
                         timeRange === r 
-                        ? 'time-range-active bg-[var(--bg-surface)] shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,1)] dark:shadow-[2px_2px_5px_rgba(0,0,0,0.3),-1px_-1px_5px_rgba(255,255,255,0.05)] scale-[0.98]' 
+                        ? 'time-range-active bg-[var(--bg-surface)] shadow-[2px_2px_4px_rgba(0,0,0,0.1),-2px_-2px_4px_rgba(255,255,255,1)] dark:shadow-[2px_2px_4px_rgba(0,0,0,0.3),-1px_-1px_4px_rgba(255,255,255,0.05)] scale-[0.98]' 
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                     >
@@ -1752,7 +1865,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Chart Type Selector (Neumorphic) */}
-                <div className="h-full flex bg-[var(--bg-surface)] rounded-2xl p-1.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2),inset_-1px_-1px_5px_rgba(255,255,255,0.02)] gap-2">
+                <div className="h-full flex bg-[var(--bg-surface)] rounded-xl p-0.5 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-2px_-2px_4px_rgba(255,255,255,0.5)] dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),inset_-1px_-1px_4px_rgba(255,255,255,0.02)] gap-1">
                   {[
                     { id: 'LINE', icon: TrendingUp },
                     { id: 'BAR', icon: BarChart3 },
@@ -1761,147 +1874,150 @@ const Dashboard = () => {
                     <button
                       key={t.id}
                       onClick={() => setChartType(t.id)}
-                      className={`h-full aspect-square flex items-center justify-center rounded-xl transition-all duration-300 ${
+                      className={`h-full aspect-square flex items-center justify-center rounded-lg transition-all duration-300 ${
                         chartType === t.id 
-                        ? 'chart-type-active bg-[var(--bg-surface)] shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,1)] dark:shadow-[2px_2px_5px_rgba(0,0,0,0.3),-1px_-1px_5px_rgba(255,255,255,0.05)] scale-[0.98]' 
+                        ? 'chart-type-active bg-[var(--bg-surface)] shadow-[2px_2px_4px_rgba(0,0,0,0.1),-2px_-2px_4px_rgba(255,255,255,1)] dark:shadow-[2px_2px_4px_rgba(0,0,0,0.3),-1px_-1px_4px_rgba(255,255,255,0.05)] scale-[0.98]' 
                         : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                       title={`${t.id} Chart`}
                     >
-                      <t.icon size={16} />
+                      <t.icon size={13} />
                     </button>
                   ))}
                 </div>
             </div>
 
-            <div className="flex-1 min-h-[800px] w-full relative flex items-center justify-center mt-[10px]">
-              {chartType === 'LINE' && (
-                <Line 
-                  data={trendData}
-                  plugins={[dataLabelsPlugin]}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                      padding: { top: 40, bottom: 10 }
-                    },
-                    plugins: {
-                      legend: { display: false },
-                      tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleFont: { family: 'Inter', size: 12, weight: 'bold' },
-                        bodyFont: { family: 'Inter', size: 11 },
-                        padding: 12,
-                        cornerRadius: 8,
-                        displayColors: false
-                      }
-                    },
-                    scales: {
-                      x: {
-                        grid: { display: false },
-                        ticks: {
-                          color: 'rgba(148, 163, 184, 0.8)',
-                          font: { family: 'Inter', size: 10, weight: 'bold' }
-                        }
-                      },
-                      y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(148, 163, 184, 0.08)' },
-                        ticks: {
-                          color: 'rgba(148, 163, 184, 0.8)',
-                          font: { family: 'Inter', size: 10, weight: 'bold' },
-                          stepSize: 5
-                        }
-                      }
-                    }
-                  }}
-                />
-              )}
-
-              {chartType === 'BAR' && (
-                <Bar 
-                  data={trendData}
-                  plugins={[dataLabelsPlugin]}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                      padding: { top: 40, bottom: 10 }
-                    },
-                    plugins: {
-                      legend: { display: false },
-                      tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleFont: { family: 'Inter', size: 12, weight: 'bold' },
-                        bodyFont: { family: 'Inter', size: 11 },
-                        padding: 12,
-                        cornerRadius: 8,
-                        displayColors: false
-                      }
-                    },
-                    scales: {
-                      x: {
-                        grid: { display: false },
-                        ticks: {
-                          color: 'rgba(148, 163, 184, 0.8)',
-                          font: { family: 'Inter', size: 10, weight: 'bold' }
-                        }
-                      },
-                      y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(148, 163, 184, 0.08)' },
-                        ticks: {
-                          color: 'rgba(148, 163, 184, 0.8)',
-                          font: { family: 'Inter', size: 10, weight: 'bold' },
-                          stepSize: 5
-                        }
-                      }
-                    }
-                  }}
-                />
-              )}
-
-              {chartType === 'POLAR' && (
-                <div className="w-full h-full max-h-[500px] flex items-center justify-center p-4">
-                  <PolarArea 
+            <div className="flex-1 min-h-0 w-full relative">
+              <div className="absolute inset-0">
+                {chartType === 'LINE' && (
+                  <Line 
                     data={trendData}
-                    plugins={[dataLabelsPlugin, polar3DPlugin]}
+                    plugins={[dataLabelsPlugin]}
                     options={{
                       responsive: true,
                       maintainAspectRatio: false,
+                      layout: {
+                        padding: { top: 12, bottom: 8, left: 10, right: 10 }
+                      },
                       plugins: {
-                        legend: {
-                          position: 'left',
-                          labels: {
-                            color: 'rgba(148, 163, 184, 0.8)',
-                            font: { family: 'Inter', size: 10, weight: 'bold' },
-                            padding: 20
-                          }
-                        },
+                        legend: { display: false },
                         tooltip: {
                           backgroundColor: 'rgba(15, 23, 42, 0.9)',
                           titleFont: { family: 'Inter', size: 12, weight: 'bold' },
                           bodyFont: { family: 'Inter', size: 11 },
                           padding: 12,
-                          cornerRadius: 8
+                          cornerRadius: 8,
+                          displayColors: false
                         }
                       },
                       scales: {
-                        r: {
-                          grid: { color: 'rgba(148, 163, 184, 0.1)' },
-                          angleLines: { color: 'rgba(148, 163, 184, 0.1)' },
+                        x: {
+                          grid: { display: false },
                           ticks: {
-                            display: false,
-                            backdropColor: 'transparent'
+                            color: 'rgba(148, 163, 184, 0.8)',
+                            font: { family: 'Inter', size: 10, weight: 'bold' }
+                          }
+                        },
+                        y: {
+                          beginAtZero: true,
+                          grid: { color: 'rgba(148, 163, 184, 0.08)' },
+                          ticks: {
+                            color: 'rgba(148, 163, 184, 0.8)',
+                            font: { family: 'Inter', size: 10, weight: 'bold' },
+                            stepSize: 5
                           }
                         }
                       }
                     }}
                   />
-                </div>
-              )}
+                )}
+
+                {chartType === 'BAR' && (
+                  <Bar 
+                    data={trendData}
+                    plugins={[dataLabelsPlugin]}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      layout: {
+                        padding: { top: 12, bottom: 8, left: 10, right: 10 }
+                      },
+                      plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                          titleFont: { family: 'Inter', size: 12, weight: 'bold' },
+                          bodyFont: { family: 'Inter', size: 11 },
+                          padding: 12,
+                          cornerRadius: 8,
+                          displayColors: false
+                        }
+                      },
+                      scales: {
+                        x: {
+                          grid: { display: false },
+                          ticks: {
+                            color: 'rgba(148, 163, 184, 0.8)',
+                            font: { family: 'Inter', size: 10, weight: 'bold' }
+                          }
+                        },
+                        y: {
+                          beginAtZero: true,
+                          grid: { color: 'rgba(148, 163, 184, 0.08)' },
+                          ticks: {
+                            color: 'rgba(148, 163, 184, 0.8)',
+                            font: { family: 'Inter', size: 10, weight: 'bold' },
+                            stepSize: 5
+                          }
+                        }
+                      }
+                    }}
+                  />
+                )}
+
+                {chartType === 'POLAR' && (
+                  <div className="w-full h-full flex items-center justify-center p-2">
+                    <PolarArea 
+                      data={trendData}
+                      plugins={[dataLabelsPlugin, polar3DPlugin]}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'left',
+                            labels: {
+                              color: 'rgba(148, 163, 184, 0.8)',
+                              font: { family: 'Inter', size: 10, weight: 'bold' },
+                              padding: 16
+                            }
+                          },
+                          tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: 'Inter', size: 12, weight: 'bold' },
+                            bodyFont: { family: 'Inter', size: 11 },
+                            padding: 12,
+                            cornerRadius: 8
+                          }
+                        },
+                        scales: {
+                          r: {
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' },
+                            angleLines: { color: 'rgba(148, 163, 184, 0.1)' },
+                            ticks: {
+                              display: false,
+                              backdropColor: 'transparent'
+                            }
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
+        </div>
 
 
       </motion.div>

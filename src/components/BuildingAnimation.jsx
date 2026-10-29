@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import StructuralModel3D from './3d/StructuralModel3D';
 
 const BuildingAnimation = ({ progress: externalProgress }) => {
   const [internalProgress, setInternalProgress] = useState(0);
+  const [viewMode, setViewMode] = useState('3D'); // '3D' BIM Real-Time or '2D' Isometric
 
   // Digital build progress count loop (fallback if externalProgress is not provided)
   useEffect(() => {
@@ -100,12 +102,17 @@ const BuildingAnimation = ({ progress: externalProgress }) => {
       {/* Cyber ambient radial glow */}
       <div className="absolute w-[350px] h-[350px] rounded-full bg-indigo-500/10 blur-[90px] pointer-events-none -translate-y-10 group-hover:bg-cyan-500/15 transition-all duration-1000"></div>
 
-      {/* Main SVG Blueprint Workspace */}
-      <svg 
-        viewBox="0 0 500 500" 
-        className="w-[92%] h-[92%] select-none z-10"
-        xmlns="http://www.w3.org/2000/svg"
-      >
+      {viewMode === '3D' ? (
+        <div className="w-full h-full z-10 p-2">
+          <StructuralModel3D progress={progress} />
+        </div>
+      ) : (
+        /* Main SVG Blueprint Workspace */
+        <svg 
+          viewBox="0 0 500 500" 
+          className="w-[92%] h-[92%] select-none z-10"
+          xmlns="http://www.w3.org/2000/svg"
+        >
         <defs>
           <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
             <feGaussianBlur stdDeviation="3.5" result="blur" />
@@ -430,17 +437,44 @@ const BuildingAnimation = ({ progress: externalProgress }) => {
           <text x="50" y="325">{`[BIM_NODE: ${Math.round(progress)}%]`}</text>
         </g>
       </svg>
+      )}
 
       {/* ================= HIGH-TECH METADATA OVERLAYS (CAD LOOK) ================= */}
       
-      {/* Top Left: BIM Status */}
-      <div className="absolute top-6 left-6 font-mono text-[9px] tracking-widest text-slate-400/80 flex flex-col gap-1 z-20">
+      {/* Top Left: BIM Status & 3D/2D Mode Switch */}
+      <div className="absolute top-6 left-6 font-mono text-[9px] tracking-widest text-slate-400/80 flex flex-col gap-1.5 z-20">
         <div className="flex items-center gap-1.5">
           <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${progress === 100 ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
           <span>{progress === 100 ? 'BIM 3D: AS-BUILT OK' : 'BIM 3D: ASSEMBLY ACTIVE'}</span>
         </div>
         <div className="text-cyan-400 font-bold">MODEL: RINCO_STRUCTURAL_3D</div>
         <div className="text-[8px] text-slate-500">SYS: DIRECT_AUTODESK_COLLABORATION</div>
+
+        {/* View Mode Toggle Button */}
+        <div className="flex items-center gap-1 mt-1 bg-slate-900/90 p-0.5 rounded-lg border border-cyan-500/30 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => setViewMode('3D')}
+            className={`px-2 py-0.5 rounded text-[8px] font-bold transition-all ${
+              viewMode === '3D'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            3D BIM REAL-TIME
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('2D')}
+            className={`px-2 py-0.5 rounded text-[8px] font-bold transition-all ${
+              viewMode === '2D'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            2D ISOMETRIC
+          </button>
+        </div>
       </div>
 
       {/* Top Right: Real-time dynamic build progress */}

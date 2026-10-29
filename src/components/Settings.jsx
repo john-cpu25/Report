@@ -12,7 +12,10 @@ import {
   Heart,
   Sparkles,
   Calendar,
-  Ban
+  Ban,
+  Box,
+  Cpu,
+  Zap
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -21,7 +24,9 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
     seasonalEffect, 
     setSeasonalEffect, 
     seasonalIntensity, 
-    setSeasonalIntensity 
+    setSeasonalIntensity,
+    graphicsMode = 'ULTRA_3D',
+    setGraphicsMode
   } = useApp();
 
   const themes = [
@@ -236,6 +241,64 @@ const Settings = ({ theme, setTheme, background, setBackground }) => {
                 <div className="settings-bg-name">{bg.name}</div>
                 <AnimatePresence>
                   {background === bg.id && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      className="settings-bg-active"
+                    >
+                      Active
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 3D Graphics & Hardware Acceleration Engine */}
+      <div className="settings-section">
+        <p className="settings-section-label">3D Engine & Hiệu Năng Đồ Họa</p>
+        <div className="settings-group">
+          <div className="settings-bg-grid">
+            {[
+              {
+                id: 'ULTRA_3D',
+                name: 'Ultra 3D GPU',
+                desc: 'Đầy đủ hạt 3D, mô hình BIM, hiệu ứng ánh sáng tối đa',
+                icon: Box,
+                color: '#06b6d4'
+              },
+              {
+                id: 'ECO_3D',
+                name: 'Eco 3D (Tiết Kiệm)',
+                desc: 'Giảm số lượng hạt, tối ưu hóa pin cho laptop văn phòng',
+                icon: Zap,
+                color: '#10b981'
+              },
+              {
+                id: 'CLASSIC_2D',
+                name: 'Classic 2D',
+                desc: 'Tắt WebGL, chỉ hiển thị đồ họa 2D phẳng truyền thống',
+                icon: Cpu,
+                color: '#94a3b8'
+              }
+            ].map((mode) => (
+              <div
+                key={mode.id}
+                className="settings-bg-card cursor-pointer"
+                onClick={() => setGraphicsMode && setGraphicsMode(mode.id)}
+              >
+                <div className="settings-bg-icon" style={{ color: mode.color }}>
+                  <mode.icon size={22} />
+                </div>
+                <div className="settings-bg-name font-black">{mode.name}</div>
+                <div className="text-[10px] text-[var(--text-muted)] text-center line-clamp-2 px-1">
+                  {mode.desc}
+                </div>
+                <AnimatePresence>
+                  {graphicsMode === mode.id && (
                     <motion.div
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
