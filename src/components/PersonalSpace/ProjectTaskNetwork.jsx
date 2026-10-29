@@ -32,11 +32,46 @@ const formatPlanDate = (start, end) => {
 };
 
 // ==========================================
+// HELPER: RESOLVE ACCURATE TASK STATUS
+// Dựa trên dữ liệu thực tế (lifecycle timestamps & progress)
+// thay vì chỉ phụ thuộc vào cột status số 0 trong database
+// ==========================================
+const resolveTaskStatus = (task, fallbackStatus) => {
+  const t = (task && typeof task === 'object') ? task : { status: fallbackStatus };
+  const s = Number(t.status);
+
+  // 1. Mã status rõ ràng từ hệ thống (nếu có)
+  if (s >= 4 || t.status === 'Completed' || t.status === 'DONE') return 'Completed';
+  if (s === 3 || t.status === 'Checked') return 'Checked';
+  if (s === 1 || s === 2 || t.status === 'WIP' || t.status === 'In Progress') return 'In Progress';
+
+  const checkedAt = t.checked_at || t.date_checked || t.dateChecked || t._raw?.checked_at;
+  const completedAt = t.completed_at || t.date_complete || t.dateComplete || t._raw?.completed_at;
+  const startedAt = t.started_at || t.date_started || t.dateStarted || t._raw?.started_at;
+  const progress = Number(t.progress ?? t._raw?.progress) || 0;
+  const hoursComplete = Number(t.hours_complete ?? t._raw?.hours_complete) || 0;
+
+  // 2. Suy đoán từ tiến độ & mốc thời gian thực hiện:
+  // Đã kiểm tra xong (có checked_at) -> Checked (Tím)
+  if (checkedAt) return 'Checked';
+
+  // Đã hoàn thành (có completed_at hoặc tiến độ 100%) -> Completed (Xanh lá)
+  if (completedAt || progress >= 100) return 'Completed';
+
+  // Đang làm việc (đã bấm started_at hoặc đã có giờ làm việc phát sinh) -> In Progress (Xanh dương nhạt)
+  if (startedAt || hoursComplete > 0 || progress > 0) return 'In Progress';
+
+  // Mới tạo chưa thực hiện -> New (Xanh dương)
+  return 'New';
+};
+
+// ==========================================
 // HELPER: STATUS PILL BADGE (Chữ không đậm)
 // ==========================================
-const StatusPill = ({ status }) => {
-  const s = Number(status);
-  if (s >= 4) {
+const StatusPill = ({ task, status }) => {
+  const resolved = resolveTaskStatus(task, status);
+
+  if (resolved === 'Completed') {
     return (
       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-normal border border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-600">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -44,7 +79,7 @@ const StatusPill = ({ status }) => {
       </span>
     );
   }
-  if (s === 3) {
+  if (resolved === 'Checked') {
     return (
       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-normal border border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-600">
         <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
@@ -52,7 +87,7 @@ const StatusPill = ({ status }) => {
       </span>
     );
   }
-  if (s === 1 || s === 2) {
+  if (resolved === 'In Progress') {
     return (
       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-normal border border-sky-500 bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-600">
         <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
@@ -125,7 +160,7 @@ const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand, p
       {/* Top Row: Status pill + Project key + OnlyCheck + Expand trigger */}
       <div className="flex items-center justify-between gap-1 h-[20px] shrink-0">
         <div className="flex items-center gap-1.5 flex-wrap overflow-hidden">
-          <StatusPill status={task.status} />
+          <StatusPill task={task} status={task.status} />
           <span className="text-[11px] font-medium uppercase tracking-wider text-slate-700 dark:text-slate-300">
             {task.project || 'APEX'}
           </span>
@@ -571,7 +606,7 @@ export default function ProjectTaskNetwork({
 
                               {/* Status */}
                               <td style={{ padding: '8px 12px' }}>
-                                <StatusPill status={root.status} />
+                                <StatusPill task={root} status={root.status} />
                               </td>
 
                               {/* Assigner -> Assignee */}
@@ -626,7 +661,7 @@ export default function ProjectTaskNetwork({
 
                                   {/* Status */}
                                   <td style={{ padding: '6px 12px' }}>
-                                    <StatusPill status={child.status} />
+                                    <StatusPill task={child} status={child.status} />
                                   </td>
 
                                   {/* Assigner -> Assignee */}
