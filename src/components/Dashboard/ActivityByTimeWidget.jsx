@@ -270,10 +270,10 @@ const ActivityByTimeWidget = ({
       {/* ── Header ── */}
       <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-[var(--glass-border)] shrink-0">
         <div className="flex items-center gap-2">
-          {/* Radar icon pulse */}
-          <div className="relative w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/40 shrink-0">
-            <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping absolute opacity-75"></span>
-            <span className="w-2 h-2 rounded-full bg-purple-400 relative"></span>
+          {/* Radar icon pulse (màu đen) */}
+          <div className="relative w-5 h-5 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center border border-black/20 dark:border-white/20 shrink-0">
+            <span className="w-2 h-2 rounded-full bg-black dark:bg-white animate-ping absolute opacity-75"></span>
+            <span className="w-2 h-2 rounded-full bg-black dark:bg-white relative"></span>
           </div>
 
           <h4 className="text-[14px] 2xl:text-[15px] font-black uppercase tracking-tight text-[var(--text-main)]">
@@ -281,11 +281,11 @@ const ActivityByTimeWidget = ({
           </h4>
         </div>
 
-        {/* Toggle Mode: Hours vs Tasks */}
+        {/* Toggle Mode: Hours vs Tasks (màu đen) */}
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setMetricMode(prev => prev === 'HOURS' ? 'TASKS' : 'HOURS')}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-black uppercase tracking-tight bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] border border-[var(--glass-border)] text-purple-600 dark:text-purple-400 transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-black uppercase tracking-tight bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] border border-[var(--glass-border)] text-black dark:text-white transition-colors"
             title="Nhấn để chuyển đổi hiển thị Giờ hoặc Số Task"
           >
             <span>{metricMode === 'HOURS' ? 'Hours' : 'Tasks'}</span>
@@ -366,7 +366,7 @@ const ActivityByTimeWidget = ({
                 animate={{ opacity: 1, y: 0 }}
                 className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-main)] truncate"
               >
-                <span className="text-purple-600 dark:text-purple-400 font-black">
+                <span className="text-black dark:text-white font-black">
                   {hoveredCell.day} {hoveredCell.slot}:
                 </span>
                 <span className="font-mono">{hoveredCell.hours.toFixed(1)}h</span>
@@ -377,7 +377,7 @@ const ActivityByTimeWidget = ({
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-muted)] truncate">
                 {peakCell && peakCell.hours > 0 ? (
                   <>
-                    <Flame size={12} className="text-purple-500 shrink-0" />
+                    <Flame size={12} className="text-black dark:text-white shrink-0" />
                     <span className="truncate">
                       Peak: <strong className="text-[var(--text-main)]">{peakCell.day} {peakCell.slot}</strong> ({peakCell.hours.toFixed(1)}h)
                     </span>

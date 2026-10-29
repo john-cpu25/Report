@@ -80,10 +80,10 @@ const ProjectAndStaffWidget = ({
                   key={p.id || idx}
                   className="grid grid-cols-12 gap-1 items-center px-2.5 py-1 rounded-md hover:bg-[var(--bg-hover)] transition-colors border border-transparent hover:border-slate-200/60 dark:hover:border-white/10 text-[12px]"
                 >
-                  {/* Chữ project không còn màu nữa, chỉ thể hiện chấm màu ở phía trước */}
-                  <div className="col-span-6 flex items-center min-w-0 pr-1">
+                  {/* Chữ project không còn màu nữa, chấm màu cách chữ đúng 10px */}
+                  <div className="col-span-6 flex items-center min-w-0 pr-1" style={{ gap: '10px' }}>
                     <span 
-                      className="w-2 h-2 rounded-full shrink-0 mr-2"
+                      className="w-2 h-2 rounded-full shrink-0"
                       style={{ backgroundColor: p.color || '#6366f1' }}
                     />
                     <span

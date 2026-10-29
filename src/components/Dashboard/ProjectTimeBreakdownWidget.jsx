@@ -62,10 +62,10 @@ const ProjectTimeBreakdownWidget = ({
               key={p.id || idx}
               className="grid grid-cols-12 gap-1 items-center px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] transition-colors border border-transparent hover:border-[var(--glass-border)] text-[12px]"
             >
-              {/* Chấm màu phía trước + chữ màu theme không màu */}
-              <div className="col-span-6 flex items-center min-w-0 pr-1">
+              {/* Chấm màu phía trước cách chữ đúng 10px */}
+              <div className="col-span-6 flex items-center min-w-0 pr-1" style={{ gap: '10px' }}>
                 <span 
-                  className="w-2 h-2 rounded-full shrink-0 mr-2" 
+                  className="w-2 h-2 rounded-full shrink-0" 
                   style={{ backgroundColor: p.color || '#6366f1' }}
                 />
                 <span

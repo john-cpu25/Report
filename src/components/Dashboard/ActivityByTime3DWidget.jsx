@@ -601,22 +601,22 @@ const ActivityByTime3DWidget = ({
       {/* ── Top Header Bar ── */}
       <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80 dark:border-white/10 shrink-0 z-10 px-1">
         <div className="flex items-center gap-2">
-          {/* Radar Pulse Badge */}
-          <div className="relative w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/40 shrink-0">
-            <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping absolute opacity-75"></span>
-            <span className="w-2 h-2 rounded-full bg-purple-400 relative"></span>
+          {/* Radar Pulse Badge (màu đen) */}
+          <div className="relative w-5 h-5 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center border border-black/20 dark:border-white/20 shrink-0">
+            <span className="w-2 h-2 rounded-full bg-black dark:bg-white animate-ping absolute opacity-75"></span>
+            <span className="w-2 h-2 rounded-full bg-black dark:bg-white relative"></span>
           </div>
 
           <h4 className="text-[13.5px] 2xl:text-[14.5px] font-black uppercase tracking-tight text-[var(--text-main)]">
-            Activity by time <span className="text-[10px] text-purple-500 font-mono font-bold ml-1">3D</span>
+            Activity by time <span className="text-[10px] text-black dark:text-white font-mono font-black ml-1">3D</span>
           </h4>
         </div>
 
-        {/* Toggle Mode Button: Hours vs Tasks */}
+        {/* Toggle Mode Button: Hours vs Tasks (màu đen) */}
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setMetricMode(prev => prev === 'HOURS' ? 'TASKS' : 'HOURS')}
-            className="flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-black uppercase tracking-tight bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] border border-slate-200/60 dark:border-white/10 text-purple-600 dark:text-purple-400 transition-colors cursor-pointer shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-black uppercase tracking-tight bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] border border-slate-200/60 dark:border-white/10 text-black dark:text-white transition-colors cursor-pointer shadow-sm"
             title="Nhấn để đổi cách tính chiều cao cột 3D theo Số Giờ hoặc Số Task"
           >
             <span>{metricMode === 'HOURS' ? 'Hours' : 'Tasks'}</span>
@@ -643,7 +643,7 @@ const ActivityByTime3DWidget = ({
                 top: Math.max(10, mousePos.y - 75)
               }}
             >
-              <div className="flex items-center gap-1.5 text-[11px] font-black text-purple-300 uppercase tracking-wider mb-0.5">
+              <div className="flex items-center gap-1.5 text-[11px] font-black text-slate-200 uppercase tracking-wider mb-0.5">
                 <span>{hoveredData.dayFull}</span>
                 <span className="text-white/40">•</span>
                 <span>{hoveredData.slot}</span>
@@ -676,7 +676,7 @@ const ActivityByTime3DWidget = ({
         <div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-muted)] truncate">
           {peakCell && peakCell.hours > 0 ? (
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-slate-200/60 dark:border-white/10">
-              <Flame size={12} className="text-purple-500 shrink-0" />
+              <Flame size={12} className="text-black dark:text-white shrink-0" />
               <span className="truncate text-[10.5px]">
                 Peak: <strong className="text-[var(--text-main)] font-black">{peakCell.day} {peakCell.slot}</strong> ({peakCell.hours.toFixed(1)}h)
               </span>
