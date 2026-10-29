@@ -81,14 +81,17 @@ const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand })
     <div 
       className="w-[270px] border border-emerald-500 bg-white dark:bg-slate-900 shadow-sm select-none transition-shadow hover:shadow-md flex flex-col justify-between shrink-0"
       style={{ 
-        minHeight: '86px',
+        height: '88px',
+        minHeight: '88px',
+        maxHeight: '88px',
         borderRadius: '10px',
-        padding: '10px'
+        padding: '10px',
+        boxSizing: 'border-box'
       }}
     >
       {/* Top Row: Status pill + Project key + OnlyCheck + Expand trigger */}
-      <div className="flex items-center justify-between gap-1 mb-1.5">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center justify-between gap-1 h-[20px] shrink-0">
+        <div className="flex items-center gap-1.5 flex-wrap overflow-hidden">
           <StatusPill status={task.status} />
           <span className="text-[11px] font-medium uppercase tracking-wider text-slate-700 dark:text-slate-300">
             {task.project || 'APEX'}
@@ -104,7 +107,7 @@ const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand })
         {isParent && (
           <button
             onClick={onToggleExpand}
-            className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 active:scale-95 transition-all cursor-pointer shadow-2xs"
+            className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0"
             title={isExpanded ? 'Thu gọn task con' : 'Mở rộng task con'}
           >
             {isExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
@@ -113,13 +116,16 @@ const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand })
         )}
       </div>
 
-      {/* Middle Row: Task Title (Chữ không đậm) */}
-      <div className="text-[12px] font-medium uppercase text-slate-900 dark:text-white leading-tight line-clamp-2 my-1">
+      {/* Middle Row: Task Title (Chữ không đậm, 1 dòng gọn gàng có title tooltip) */}
+      <div 
+        className="text-[12px] font-medium uppercase text-slate-900 dark:text-white leading-tight truncate my-auto"
+        title={task.taskName || task.name}
+      >
         {task.taskName || task.name}
       </div>
 
       {/* Bottom Row: User Name & Hours */}
-      <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 mt-1 pt-1 border-t border-slate-100 dark:border-slate-800 font-normal">
+      <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 font-normal h-[22px] shrink-0">
         <span className="flex items-center gap-1.5 truncate max-w-[150px]">
           <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
           <span className="truncate">{task.userName || 'Unassigned'}</span>
@@ -653,8 +659,10 @@ export default function ProjectTaskNetwork({
                               ? children.length * cardHeight + (children.length - 1) * childGapY
                               : cardHeight;
 
-                            const parentCenterY = cardHeight / 2;
-                            const childStartY = Math.min(0, (cardHeight - totalChildHeight) / 2);
+                            // Do container dùng items-center:
+                            // Parent card luôn được căn giữa theo chiều dọc của toàn bộ stack con
+                            const startY = totalChildHeight / 2;
+                            const safeMarkerId = `arrowhead-${String(root.id).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 
                             return (
                               <div key={root.id} className="relative flex items-center">
@@ -684,7 +692,7 @@ export default function ProjectTaskNetwork({
                                     >
                                       <defs>
                                         <marker 
-                                          id={`arrowhead-${root.id}`}
+                                          id={safeMarkerId}
                                           markerWidth="8" 
                                           markerHeight="6" 
                                           refX="7" 
@@ -697,11 +705,11 @@ export default function ProjectTaskNetwork({
 
                                       {children.map((child, idx) => {
                                         const startX = 0;
-                                        const startY = parentCenterY;
                                         const targetX = horizontalOffset;
-                                        const targetY = childStartY + idx * (cardHeight + childGapY) + cardHeight / 2;
+                                        // Vị trí tâm Y của thẻ con thứ idx (bắt đầu từ top: 0 của stack con)
+                                        const targetY = idx * (cardHeight + childGapY) + cardHeight / 2;
 
-                                        const controlOffset = horizontalOffset * 0.55;
+                                        const controlOffset = horizontalOffset * 0.5;
                                         const pathData = `M ${startX} ${startY} C ${startX + controlOffset} ${startY}, ${targetX - controlOffset} ${targetY}, ${targetX} ${targetY}`;
 
                                         return (
@@ -712,7 +720,7 @@ export default function ProjectTaskNetwork({
                                             stroke="#16a34a"
                                             strokeWidth="2.2"
                                             strokeLinecap="round"
-                                            markerEnd={`url(#arrowhead-${root.id})`}
+                                            markerEnd={`url(#${safeMarkerId})`}
                                           />
                                         );
                                       })}
@@ -720,7 +728,7 @@ export default function ProjectTaskNetwork({
 
                                     {/* Child Task Cards Stack on Right */}
                                     <div 
-                                      className="flex flex-col z-10"
+                                      className="flex flex-col z-10 shrink-0"
                                       style={{ 
                                         marginLeft: `${horizontalOffset}px`,
                                         gap: `${childGapY}px`
