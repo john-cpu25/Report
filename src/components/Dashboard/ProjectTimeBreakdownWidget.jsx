@@ -1,12 +1,12 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { FolderKanban, Clock, Layers } from 'lucide-react';
+import { Clock } from 'lucide-react';
 
 /**
- * ProjectTimeBreakdownWidget (Khung màu đỏ - 1/3 Dashboard)
- * Hiển thị số giờ làm của từng Project chia làm 2 cột:
- * 1. Giờ lấy từ PERSONAL \ list (APEX_Task)
- * 2. Giờ lấy từ PERSONAL \ time sheet (APEX_TimeSheet)
+ * ProjectTimeBreakdownWidget
+ * - Chấm màu ở phía trước, chữ project không màu (text-[var(--text-main)])
+ * - Tiêu đề cột font-medium (không đậm)
+ * - Riêng Tiêu đề bảng & Total in đậm (phân cấp 2 cấp độ)
  */
 const ProjectTimeBreakdownWidget = ({
   projects = [],
@@ -30,14 +30,14 @@ const ProjectTimeBreakdownWidget = ({
         </h4>
 
         <div className="flex items-center gap-1.5">
-          <span className="text-[12px] font-black px-2.5 py-1 rounded-md bg-[var(--bg-surface)] border border-[var(--glass-border)] text-[var(--text-muted)]">
+          <span className="text-[12px] font-medium px-2.5 py-1 rounded-md bg-[var(--bg-surface)] border border-[var(--glass-border)] text-[var(--text-muted)]">
             {projects.length} PROJECTS
           </span>
         </div>
       </div>
 
-      {/* Table Column Headers */}
-      <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 text-[12px] font-black uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)]/60 rounded-lg shrink-0 border border-[var(--glass-border)] mb-1">
+      {/* Table Column Headers (Cấp 1: Không đậm) */}
+      <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 text-[12px] font-medium uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)]/60 rounded-lg shrink-0 border border-[var(--glass-border)] mb-1">
         <div className="col-span-6 flex items-center gap-1">
           <span>PROJECT KEY</span>
         </div>
@@ -54,7 +54,7 @@ const ProjectTimeBreakdownWidget = ({
         {projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-6 text-center text-[var(--text-muted)] opacity-60">
             <Clock size={20} className="mb-1" />
-            <p className="text-[12px] font-bold uppercase tracking-wider">Không có dữ liệu dự án</p>
+            <p className="text-[12px] font-medium uppercase tracking-wider">Không có dữ liệu dự án</p>
           </div>
         ) : (
           projects.map((p, idx) => (
@@ -62,23 +62,26 @@ const ProjectTimeBreakdownWidget = ({
               key={p.id || idx}
               className="grid grid-cols-12 gap-1 items-center px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] transition-colors border border-transparent hover:border-[var(--glass-border)] text-[12px]"
             >
-              {/* Tên Project Key có màu luôn (bỏ chấm tròn màu) */}
+              {/* Chấm màu phía trước + chữ màu theme không màu */}
               <div className="col-span-6 flex items-center min-w-0 pr-1">
+                <span 
+                  className="w-2 h-2 rounded-full shrink-0 mr-2" 
+                  style={{ backgroundColor: p.color || '#6366f1' }}
+                />
                 <span
-                  className="font-bold truncate text-[12px]"
-                  style={{ color: p.color || '#6366f1' }}
+                  className="font-medium truncate text-[12px] text-[var(--text-main)]"
                   title={p.name && p.name !== p.key ? `${p.key} — ${p.name}` : (p.key || p.name)}
                 >
                   {p.key || p.name}
                 </span>
               </div>
 
-              {/* Cột 1: Giờ từ PERSONAL \ list (màu đen) */}
+              {/* Cột 1: Giờ từ PERSONAL \ list */}
               <div className="col-span-3 text-right font-medium font-mono tabular-nums pr-1 text-[var(--text-main)] text-[12px]">
                 {formatHours(p.listHours)}
               </div>
 
-              {/* Cột 2: Giờ từ PERSONAL \ time sheet (màu đen) */}
+              {/* Cột 2: Giờ từ PERSONAL \ time sheet */}
               <div className="col-span-3 text-right font-medium font-mono tabular-nums pr-1 text-[var(--text-main)] text-[12px]">
                 {formatHours(p.timesheetHours)}
               </div>
@@ -87,7 +90,7 @@ const ProjectTimeBreakdownWidget = ({
         )}
       </div>
 
-      {/* Footer Totals (riêng total màu đậm) */}
+      {/* Footer Totals (Cấp 2: ĐẬM) */}
       <div className="grid grid-cols-12 gap-1 px-2.5 py-2 mt-1 border-t border-[var(--glass-border)] text-[12px] font-black uppercase tracking-wider shrink-0 bg-[var(--bg-surface)]/40 rounded-b-lg">
         <div className="col-span-6 text-[var(--text-main)] font-black flex items-center gap-1">
           <span>TOTAL HOURS</span>
@@ -104,4 +107,3 @@ const ProjectTimeBreakdownWidget = ({
 };
 
 export default React.memo(ProjectTimeBreakdownWidget);
-
