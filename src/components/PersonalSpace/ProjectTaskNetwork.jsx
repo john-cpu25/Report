@@ -291,17 +291,33 @@ export default function ProjectTaskNetwork({
     });
   }, []);
 
-  // Expand All
+  // Expand All (Mở cả nhóm dự án và toàn bộ task con)
   const handleExpandAll = useCallback(() => {
     const allParentIds = new Set(Array.from(childrenMap.keys()));
     setExpandedIds(allParentIds);
     setCollapsedProjects(new Set());
   }, [childrenMap]);
 
-  // Collapse All
-  const handleCollapseAll = useCallback(() => {
+  // Collapse All Tasks (Thu gọn các nhánh task con)
+  const handleCollapseAllTasks = useCallback(() => {
     setExpandedIds(new Set());
   }, []);
+
+  // Check if all project groups are collapsed
+  const isAllProjectsCollapsed = useMemo(() => {
+    if (projectGroups.length === 0) return false;
+    return projectGroups.every(g => collapsedProjects.has(g.key));
+  }, [projectGroups, collapsedProjects]);
+
+  // Toggle Collapse / Expand All Project Groups (Thu gọn / Mở tất cả nhóm Dự án)
+  const handleToggleAllProjects = useCallback(() => {
+    if (isAllProjectsCollapsed) {
+      setCollapsedProjects(new Set());
+    } else {
+      const allKeys = new Set(projectGroups.map(g => g.key));
+      setCollapsedProjects(allKeys);
+    }
+  }, [isAllProjectsCollapsed, projectGroups]);
 
   // Zoom Controls
   const handleZoomIn = () => setZoom(prev => Math.min(1.8, Number((prev + 0.1).toFixed(1))));
@@ -385,19 +401,28 @@ export default function ProjectTaskNetwork({
             </button>
           </div>
 
-          {/* iOS Pill Buttons: + Mở rộng tất cả / - Thu gọn */}
+          {/* iOS Pill Buttons: + Mở tất cả / - Thu gọn task / ▾ Thu gọn nhóm */}
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleExpandAll}
               className="px-3.5 py-1 rounded-full text-[12px] font-medium bg-slate-200/70 dark:bg-slate-800/80 hover:bg-slate-300/80 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-black/5 dark:border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-150 cursor-pointer"
+              title="Mở rộng toàn bộ nhóm dự án và toàn bộ task con"
             >
-              + Mở rộng tất cả
+              + Mở tất cả
             </button>
             <button
-              onClick={handleCollapseAll}
+              onClick={handleCollapseAllTasks}
               className="px-3.5 py-1 rounded-full text-[12px] font-medium bg-slate-200/70 dark:bg-slate-800/80 hover:bg-slate-300/80 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-black/5 dark:border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-150 cursor-pointer"
+              title="Thu gọn toàn bộ task con"
             >
-              - Thu gọn
+              - Thu gọn task
+            </button>
+            <button
+              onClick={handleToggleAllProjects}
+              className="px-3.5 py-1 rounded-full text-[12px] font-medium bg-slate-200/70 dark:bg-slate-800/80 hover:bg-slate-300/80 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-black/5 dark:border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-150 cursor-pointer"
+              title={isAllProjectsCollapsed ? "Mở toàn bộ nhóm dự án" : "Thu gọn toàn bộ nhóm dự án"}
+            >
+              {isAllProjectsCollapsed ? "▸ Mở tất cả nhóm" : "▾ Thu gọn nhóm"}
             </button>
           </div>
 
@@ -464,29 +489,34 @@ export default function ProjectTaskNetwork({
                   return (
                     <React.Fragment key={group.key}>
                       {/* --- GROUP THEO DỰ ÁN: Hàng Tiêu Đề Dự Án Đưa Ra Ngoài (Cách lề 16px) --- */}
-                      <tr className="bg-slate-100/80 dark:bg-slate-900 border-t border-b border-slate-200 dark:border-slate-800">
+                      <tr 
+                        onClick={() => toggleProjectGroup(group.key)}
+                        className="bg-slate-100/90 dark:bg-slate-900 border-t border-b border-slate-200 dark:border-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors select-none"
+                        title={isProjectCollapsed ? `Nhấp để mở nhóm ${group.key}` : `Nhấp để thu gọn nhóm ${group.key}`}
+                      >
                         <td colSpan={6} style={{ padding: '8px 16px' }}>
-                          <button
-                            onClick={() => toggleProjectGroup(group.key)}
-                            className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
-                            style={{ gap: '10px' }}
-                          >
-                            {isProjectCollapsed ? (
-                              <ChevronRight size={13} className="text-slate-500" />
-                            ) : (
-                              <ChevronDown size={13} className="text-slate-600 dark:text-slate-400" />
-                            )}
-                            <span 
-                              className="w-2.5 h-2.5 rounded-full shrink-0" 
-                              style={{ backgroundColor: group.color }} 
-                            />
-                            <span className="text-[12px] font-medium tracking-wide uppercase text-slate-900 dark:text-white">
-                              {group.key}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center" style={{ gap: '10px' }}>
+                              {isProjectCollapsed ? (
+                                <ChevronRight size={13} className="text-slate-500" />
+                              ) : (
+                                <ChevronDown size={13} className="text-slate-600 dark:text-slate-400" />
+                              )}
+                              <span 
+                                className="w-2.5 h-2.5 rounded-full shrink-0" 
+                                style={{ backgroundColor: group.color }} 
+                              />
+                              <span className="text-[12px] font-medium tracking-wide uppercase text-slate-900 dark:text-white">
+                                {group.key}
+                              </span>
+                              <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
+                                ({group.allTasks.length} tasks)
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-normal">
+                              {isProjectCollapsed ? 'Nhấp để mở' : 'Nhấp để thu gọn'}
                             </span>
-                            <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
-                              ({group.allTasks.length} tasks)
-                            </span>
-                          </button>
+                          </div>
                         </td>
                       </tr>
 
@@ -676,13 +706,14 @@ export default function ProjectTaskNetwork({
 
                   return (
                     <div key={group.key} className="flex flex-col gap-4">
-                      {/* Tiêu đề nhóm dự án ngoài Mindmap (Cách lề 16px, chữ ko đậm) */}
-                      <div className="flex items-center gap-2.5 pb-1 border-b border-slate-200 dark:border-slate-800" style={{ paddingLeft: '8px' }}>
-                        <button
-                          onClick={() => toggleProjectGroup(group.key)}
-                          className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
-                          style={{ gap: '10px' }}
-                        >
+                      {/* Tiêu đề nhóm dự án ngoài Mindmap (Cách lề 16px, chữ ko đậm, click thu/mở) */}
+                      <div 
+                        onClick={() => toggleProjectGroup(group.key)}
+                        className="flex items-center justify-between pb-1.5 pt-1 border-b border-slate-200 dark:border-slate-800 hover:bg-slate-100/60 dark:hover:bg-slate-900/60 rounded cursor-pointer transition-colors select-none" 
+                        style={{ paddingLeft: '8px', paddingRight: '12px' }}
+                        title={isProjectCollapsed ? `Nhấp để mở nhóm ${group.key}` : `Nhấp để thu gọn nhóm ${group.key}`}
+                      >
+                        <div className="flex items-center" style={{ gap: '10px' }}>
                           {isProjectCollapsed ? (
                             <ChevronRight size={14} className="text-slate-500" />
                           ) : (
@@ -698,7 +729,10 @@ export default function ProjectTaskNetwork({
                           <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
                             ({group.allTasks.length} tasks)
                           </span>
-                        </button>
+                        </div>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                          {isProjectCollapsed ? 'Nhấp để mở' : 'Nhấp để thu gọn'}
+                        </span>
                       </div>
 
                       {/* Danh sách Task Mindmap của Dự án */}
