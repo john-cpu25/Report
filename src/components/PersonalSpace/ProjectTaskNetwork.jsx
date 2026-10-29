@@ -73,7 +73,7 @@ const StatusPill = ({ status }) => {
 
 // ==========================================
 // HELPER: MINDMAP CARD COMPONENT
-// Bo góc 10px, chữ cách vào 10px (p-[10px], rounded-[10px], chữ ko đậm)
+// Bo góc 10px, chữ cách vào 10px (style={{ padding: '10px', borderRadius: '10px' }})
 // ==========================================
 const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand }) => {
   const planned = Number(task.hours_planned) || 0;
@@ -82,8 +82,12 @@ const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand })
 
   return (
     <div 
-      className="w-[270px] rounded-[10px] p-[10px] border border-emerald-500 bg-white dark:bg-slate-900 shadow-sm select-none transition-shadow hover:shadow-md flex flex-col justify-between shrink-0"
-      style={{ minHeight: '86px' }}
+      className="w-[270px] border border-emerald-500 bg-white dark:bg-slate-900 shadow-sm select-none transition-shadow hover:shadow-md flex flex-col justify-between shrink-0"
+      style={{ 
+        minHeight: '86px',
+        borderRadius: '10px',
+        padding: '10px'
+      }}
     >
       {/* Top Row: Status pill + Project key + OnlyCheck + Expand trigger */}
       <div className="flex items-center justify-between gap-1 mb-1.5">
@@ -290,13 +294,19 @@ export default function ProjectTaskNetwork({
   const handleMouseUp = () => setIsDragging(false);
 
   return (
-    // Bảng không bo góc (rounded-none)
-    <div className="w-full h-full flex flex-col rounded-none border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs select-none">
+    // Bảng không bo góc (borderRadius: 0), có viền rõ ràng
+    <div 
+      className="w-full h-full flex flex-col border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs select-none"
+      style={{ borderRadius: '0px' }}
+    >
       
       {/* ======================================================== */}
-      {/* 1. TOP TOOLBAR & CONTROLS (Chữ không đậm, padding 10px)   */}
+      {/* 1. TOP TOOLBAR & CONTROLS (Chữ cách lề 16px, không đậm)   */}
       {/* ======================================================== */}
-      <div className="p-[10px] border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-[10px]">
+      <div 
+        className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-[10px]"
+        style={{ padding: '10px 16px' }}
+      >
         
         {/* Left Section: Title + Stats */}
         <div className="flex items-center flex-wrap gap-2.5">
@@ -318,7 +328,7 @@ export default function ProjectTaskNetwork({
         <div className="flex items-center flex-wrap gap-2">
           
           {/* View Switcher: Bảng Phân Cấp vs Sơ Đồ Mindmap */}
-          <div className="flex items-center rounded-none p-0.5 bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+          <div className="flex items-center p-0.5 bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700" style={{ borderRadius: '0px' }}>
             <button
               onClick={() => setViewMode('tree')}
               className={`px-2.5 py-1 text-[12px] font-medium flex items-center gap-1.5 transition-all ${
@@ -344,7 +354,7 @@ export default function ProjectTaskNetwork({
           </div>
 
           {/* Project Filter Dropdown */}
-          <div className="flex items-center gap-1 px-[10px] py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+          <div className="flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
             <span className="text-[12px] font-normal text-slate-500 dark:text-slate-400">Dự án:</span>
             <select
               value={selectedProject}
@@ -359,7 +369,7 @@ export default function ProjectTaskNetwork({
           </div>
 
           {/* Search Input */}
-          <div className="flex items-center gap-1.5 px-[10px] py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
             <Search size={12} className="text-slate-400" />
             <input
               type="text"
@@ -379,13 +389,13 @@ export default function ProjectTaskNetwork({
           <div className="flex items-center gap-1">
             <button
               onClick={handleExpandAll}
-              className="px-[10px] py-1 text-[12px] font-normal bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-xs"
+              className="px-2.5 py-1 text-[12px] font-normal bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-xs"
             >
               + Mở rộng tất cả
             </button>
             <button
               onClick={handleCollapseAll}
-              className="px-[10px] py-1 text-[12px] font-normal bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-xs"
+              className="px-2.5 py-1 text-[12px] font-normal bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-xs"
             >
               - Thu gọn
             </button>
@@ -393,7 +403,7 @@ export default function ProjectTaskNetwork({
 
           {/* Zoom Controls (for Mindmap) */}
           {viewMode === 'mindmap' && (
-            <div className="flex items-center gap-1 px-[10px] py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+            <div className="flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
               <span className="text-[12px] text-slate-500 font-normal">Thu phóng:</span>
               <button onClick={handleZoomOut} className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
                 <ZoomOut size={13} />
@@ -411,20 +421,20 @@ export default function ProjectTaskNetwork({
 
       {/* ======================================================== */}
       {/* 2. VIEW 1: BẢNG PHÂN CẤP (TREEVIEW - GROUP THEO DỰ ÁN)   */}
-      {/* Chữ không đậm, Bảng không bo góc, Chữ cách vào 10px      */}
+      {/* Chữ cách lề rõ ràng 16px - 20px, không bị sát mép        */}
       {/* ======================================================== */}
       {viewMode === 'tree' && (
         <div className="flex-1 overflow-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse text-[12px] rounded-none">
-            {/* Table Header (Chữ không đậm, cách lề 10px) */}
+          <table className="w-full text-left border-collapse text-[12px]" style={{ borderRadius: '0px' }}>
+            {/* Table Header (Chữ cách lề 16px, font-medium) */}
             <thead className="sticky top-0 z-10 bg-slate-100/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 text-[11px] font-medium uppercase text-slate-600 dark:text-slate-400">
               <tr>
-                <th className="py-2.5 px-[10px] w-[42%] font-medium">TÊN TASK / PHÂN CẤP (PARENT - CHILD)</th>
-                <th className="py-2.5 px-[10px] w-[14%] font-medium">TRẠNG THÁI</th>
-                <th className="py-2.5 px-[10px] w-[18%] font-medium">NGƯỜI THỰC HIỆN</th>
-                <th className="py-2.5 px-[10px] w-[15%] font-medium">KẾ HOẠCH (START - END)</th>
-                <th className="py-2.5 px-[10px] w-[7%] font-medium">SỐ GIỜ</th>
-                <th className="py-2.5 px-[10px] w-[4%] font-medium">CHECK</th>
+                <th style={{ padding: '10px 12px 10px 16px', width: '42%' }}>TÊN TASK / PHÂN CẤP (PARENT - CHILD)</th>
+                <th style={{ padding: '10px 12px', width: '14%' }}>TRẠNG THÁI</th>
+                <th style={{ padding: '10px 12px', width: '18%' }}>NGƯỜI THỰC HIỆN</th>
+                <th style={{ padding: '10px 12px', width: '15%' }}>KẾ HOẠCH (START - END)</th>
+                <th style={{ padding: '10px 12px', width: '7%' }}>SỐ GIỜ</th>
+                <th style={{ padding: '10px 12px', width: '4%' }}>CHECK</th>
               </tr>
             </thead>
 
@@ -432,7 +442,7 @@ export default function ProjectTaskNetwork({
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-normal text-slate-700 dark:text-slate-300">
               {projectGroups.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-400 font-normal px-[10px]">
+                  <td colSpan={6} className="text-center py-12 text-slate-400 font-normal" style={{ padding: '24px 16px' }}>
                     Không tìm thấy task nào phù hợp bộ lọc.
                   </td>
                 </tr>
@@ -442,9 +452,9 @@ export default function ProjectTaskNetwork({
 
                   return (
                     <React.Fragment key={group.key}>
-                      {/* --- GROUP THEO DỰ ÁN: Hàng Tiêu Đề Dự Án Đưa Ra Ngoài --- */}
+                      {/* --- GROUP THEO DỰ ÁN: Hàng Tiêu Đề Dự Án Đưa Ra Ngoài (Cách lề 16px) --- */}
                       <tr className="bg-slate-100/80 dark:bg-slate-900 border-t border-b border-slate-200 dark:border-slate-800">
-                        <td colSpan={6} className="py-2 px-[10px]">
+                        <td colSpan={6} style={{ padding: '8px 16px' }}>
                           <button
                             onClick={() => toggleProjectGroup(group.key)}
                             className="flex items-center hover:opacity-80 transition-opacity"
@@ -480,15 +490,15 @@ export default function ProjectTaskNetwork({
 
                         return (
                           <React.Fragment key={root.id}>
-                            {/* Root Task Row (Chữ không đậm, padding 10px) */}
+                            {/* Root Task Row (Cách lề vào 16px, không bị dính mép) */}
                             <tr 
                               className={`hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors ${
                                 isExpanded ? 'bg-slate-50/50 dark:bg-slate-900/20' : ''
                               }`}
                             >
-                              {/* Task Name & Chevron (Cách lề vào 10px) */}
-                              <td className="py-2 px-[10px]">
-                                <div className="flex items-center" style={{ gap: '10px' }}>
+                              {/* Task Name & Chevron (Cách lề 16px nếu có con, 38px nếu standalone) */}
+                              <td style={{ padding: '8px 12px 8px 16px' }}>
+                                <div className="flex items-center" style={{ gap: '8px' }}>
                                   {hasChildren ? (
                                     <button
                                       onClick={() => toggleExpand(root.id)}
@@ -507,7 +517,11 @@ export default function ProjectTaskNetwork({
                                       </span>
                                     </button>
                                   ) : (
-                                    <span className="font-normal text-slate-900 dark:text-slate-100 uppercase pl-[23px]">
+                                    // Task gốc đứng một mình: thụt lề 22px để thẳng hàng với text của task cha
+                                    <span 
+                                      className="font-normal text-slate-900 dark:text-slate-100 uppercase"
+                                      style={{ paddingLeft: '22px' }}
+                                    >
                                       {root.taskName || root.name}
                                     </span>
                                   )}
@@ -515,12 +529,12 @@ export default function ProjectTaskNetwork({
                               </td>
 
                               {/* Status */}
-                              <td className="py-2 px-[10px]">
+                              <td style={{ padding: '8px 12px' }}>
                                 <StatusPill status={root.status} />
                               </td>
 
                               {/* User */}
-                              <td className="py-2 px-[10px]">
+                              <td style={{ padding: '8px 12px' }}>
                                 <span className="inline-flex items-center gap-1.5 font-normal">
                                   <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
                                   <span>{root.userName || 'Unassigned'}</span>
@@ -528,17 +542,17 @@ export default function ProjectTaskNetwork({
                               </td>
 
                               {/* Plan Dates */}
-                              <td className="py-2 px-[10px] text-slate-500 dark:text-slate-400 font-mono text-[11px] font-normal">
+                              <td style={{ padding: '8px 12px' }} className="text-slate-500 dark:text-slate-400 font-mono text-[11px] font-normal">
                                 {formatPlanDate(root.planned_start || root.date_start, root.planned_end || root.date_end)}
                               </td>
 
                               {/* Hours */}
-                              <td className="py-2 px-[10px] font-mono text-[11px] font-normal">
+                              <td style={{ padding: '8px 12px' }} className="font-mono text-[11px] font-normal">
                                 {completeH > 0 || plannedH > 0 ? `${completeH.toFixed(1)}h / ${plannedH.toFixed(1)}h` : '-'}
                               </td>
 
                               {/* Check */}
-                              <td className="py-2 px-[10px]">
+                              <td style={{ padding: '8px 12px' }}>
                                 {isOnlyCheckRoot && (
                                   <span className="px-1.5 py-0.2 rounded text-[10px] font-normal bg-rose-100 text-rose-600 border border-rose-300 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800">
                                     OnlyCheck
@@ -547,7 +561,7 @@ export default function ProjectTaskNetwork({
                               </td>
                             </tr>
 
-                            {/* Child Tasks Sub-rows (Thụt vào rõ ràng, Chữ không đậm) */}
+                            {/* Child Tasks Sub-rows (Thụt lề vào 46px rõ ràng) */}
                             {hasChildren && isExpanded && children.map(child => {
                               const childPlannedH = Number(child.hours_planned) || 0;
                               const childCompleteH = Number(child.hours_complete) || 0;
@@ -558,8 +572,8 @@ export default function ProjectTaskNetwork({
                                   key={child.id}
                                   className="bg-slate-50/40 dark:bg-slate-900/20 hover:bg-slate-100/60 dark:hover:bg-slate-900/50 transition-colors"
                                 >
-                                  {/* Child Task Name (Thụt lề vào 34px, Chữ không đậm) */}
-                                  <td className="py-1.5 px-[10px] pl-[34px]">
+                                  {/* Child Task Name (Thụt lề vào 46px) */}
+                                  <td style={{ padding: '6px 12px 6px 46px' }}>
                                     <div className="flex items-center gap-2">
                                       <span className="text-slate-400 dark:text-slate-600 font-mono text-[11px]">└─</span>
                                       <span className="font-normal text-slate-800 dark:text-slate-200">
@@ -569,12 +583,12 @@ export default function ProjectTaskNetwork({
                                   </td>
 
                                   {/* Status */}
-                                  <td className="py-1.5 px-[10px]">
+                                  <td style={{ padding: '6px 12px' }}>
                                     <StatusPill status={child.status} />
                                   </td>
 
                                   {/* User */}
-                                  <td className="py-1.5 px-[10px]">
+                                  <td style={{ padding: '6px 12px' }}>
                                     <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-normal">
                                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
                                       <span>{child.userName || 'Unassigned'}</span>
@@ -582,17 +596,17 @@ export default function ProjectTaskNetwork({
                                   </td>
 
                                   {/* Plan Dates */}
-                                  <td className="py-1.5 px-[10px] text-slate-500 dark:text-slate-400 font-mono text-[11px] font-normal">
+                                  <td style={{ padding: '6px 12px' }} className="text-slate-500 dark:text-slate-400 font-mono text-[11px] font-normal">
                                     {formatPlanDate(child.planned_start || child.date_start, child.planned_end || child.date_end)}
                                   </td>
 
                                   {/* Hours */}
-                                  <td className="py-1.5 px-[10px] font-mono text-[11px] font-normal">
+                                  <td style={{ padding: '6px 12px' }} className="font-mono text-[11px] font-normal">
                                     {childCompleteH > 0 || childPlannedH > 0 ? `${childCompleteH.toFixed(1)}h / ${childPlannedH.toFixed(1)}h` : '-'}
                                   </td>
 
                                   {/* Check */}
-                                  <td className="py-1.5 px-[10px]">
+                                  <td style={{ padding: '6px 12px' }}>
                                     {isOnlyCheckChild && (
                                       <span className="px-1.5 py-0.2 rounded text-[10px] font-normal bg-rose-100 text-rose-600 border border-rose-300 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800">
                                         OnlyCheck
@@ -616,7 +630,7 @@ export default function ProjectTaskNetwork({
 
       {/* ======================================================== */}
       {/* 3. VIEW 2: SƠ ĐỒ MINDMAP (ARROW NODES - GROUP DỰ ÁN)      */}
-      {/* Thẻ card bo góc 10px, chữ cách vào 10px, chữ không đậm    */}
+      {/* Thẻ card bo góc 10px, padding 10px, chữ không đậm         */}
       {/* ======================================================== */}
       {viewMode === 'mindmap' && (
         <div 
@@ -638,7 +652,7 @@ export default function ProjectTaskNetwork({
               transformOrigin: '0 0'
             }}
           >
-            <div className="flex flex-col gap-10 p-6">
+            <div className="flex flex-col gap-10" style={{ padding: '24px 30px' }}>
               {projectGroups.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 font-normal">
                   Không có dữ liệu task phù hợp với dự án đã chọn.
@@ -649,8 +663,8 @@ export default function ProjectTaskNetwork({
 
                   return (
                     <div key={group.key} className="flex flex-col gap-4">
-                      {/* Tiêu đề nhóm dự án ngoài Mindmap (Chữ cách 10px, chữ ko đậm) */}
-                      <div className="flex items-center gap-2.5 pb-1 border-b border-slate-200 dark:border-slate-800">
+                      {/* Tiêu đề nhóm dự án ngoài Mindmap (Cách lề 16px, chữ ko đậm) */}
+                      <div className="flex items-center gap-2.5 pb-1 border-b border-slate-200 dark:border-slate-800" style={{ paddingLeft: '8px' }}>
                         <button
                           onClick={() => toggleProjectGroup(group.key)}
                           className="flex items-center hover:opacity-80 transition-opacity"
@@ -676,7 +690,7 @@ export default function ProjectTaskNetwork({
 
                       {/* Danh sách Task Mindmap của Dự án */}
                       {!isProjectCollapsed && (
-                        <div className="flex flex-col gap-8 pl-4">
+                        <div className="flex flex-col gap-8" style={{ paddingLeft: '16px' }}>
                           {group.roots.map(root => {
                             const children = childrenMap.get(root.id) || [];
                             const hasChildren = children.length > 0;

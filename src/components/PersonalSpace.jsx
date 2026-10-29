@@ -1170,7 +1170,7 @@ const PersonalSpace = () => {
       )}
 
       {viewMode === 'network' && (
-        <div className="flex-1 min-h-0 h-[calc(100vh-250px)] overflow-hidden">
+        <div className="flex-1 min-h-0 h-[calc(100vh-250px)] overflow-hidden" style={{ padding: '10px' }}>
           <ProjectTaskNetwork
             tasks={analystTasks || []}
             filteredData={filteredData}
