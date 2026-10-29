@@ -14,7 +14,7 @@ export default defineConfig({
     alias: {
       '@ui': path.resolve(__dirname, './src/UI'),
     },
-    dedupe: ['react', 'react-dom'],
+    dedupe: ['react', 'react-dom', 'three'],
   },
   server: {
     fs: {
