@@ -113,7 +113,13 @@ export const processTaskData = (tasksData, userMap = {}, teamMap = {}) => {
         dateCheckedStr: formatDateTime(dateChecked),
         team: finalTeam,
         color: metrics.isOnlyChecked ? '#EAB308' : (row.color === '#EAB308' ? '#0080FF' : row.color),
-        is_onlychecked: false
+        is_onlychecked: false,
+        status: row.status !== undefined ? row.status : null,
+        project_id: row.project_id || null,
+        assigned_by_id: row.assigned_by_id || null,
+        assigned_to_id: row.assigned_to_id || null,
+        detail: row.detail || '',
+        _raw: row
       };
     } catch (err) {
       console.error('Error processing row:', row, err);

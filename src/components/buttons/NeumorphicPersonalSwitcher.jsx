@@ -1,4 +1,4 @@
-import { ListIcon, GanttIcon, DailyIcon, ProjectIcon, PerformanceIcon, TimesheetIcon, TimesheetPlusIcon, TotalTimesheetIcon, PerformanceTimesheetIcon } from './CustomIcons';
+import { ListIcon, NetworkIcon, GanttIcon, DailyIcon, ProjectIcon, PerformanceIcon, TimesheetIcon, TimesheetPlusIcon, TotalTimesheetIcon, PerformanceTimesheetIcon } from './CustomIcons';
 import PillSwitcher from './PillSwitcher';
 
 const NeumorphicPersonalSwitcher = ({ viewMode, setViewMode }) => {
@@ -6,6 +6,7 @@ const NeumorphicPersonalSwitcher = ({ viewMode, setViewMode }) => {
     { id: 'list', label: 'LIST', icon: <ListIcon />, color: 'text-orange-500' },
     { id: 'daily', label: 'DAILY', icon: <DailyIcon />, color: 'text-orange-500' },
     { id: 'project', label: 'PROJECT', icon: <ProjectIcon />, color: 'text-emerald-500' },
+    { id: 'network', label: 'TASK NETWORK', icon: <NetworkIcon />, color: 'text-purple-500' },
     { id: 'performance', label: 'PERFORMANCE', icon: <PerformanceIcon />, color: 'text-indigo-500' },
     { id: 'timesheet', label: 'TIME SHEET', icon: <TimesheetIcon />, color: 'text-cyan-500' },
     { id: 'timesheet_plus', label: 'TIME SHEET(+)', icon: <TimesheetPlusIcon />, color: 'text-blue-500' },

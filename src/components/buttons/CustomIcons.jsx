@@ -151,5 +151,22 @@ export const TimesheetPlusIcon = ({ size = 26 }) => (
   </svg>
 );
 
-
+export const NetworkIcon = ({ size = 26 }) => (
+  <svg viewBox="0 0 100 100" className="shrink-0" style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px` }} fill="none">
+    <rect width="100" height="100" rx="15" fill="currentColor" fillOpacity="0.05" />
+    {/* Network connecting lines */}
+    <line x1="50" y1="50" x2="26" y2="32" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+    <line x1="50" y1="50" x2="76" y2="28" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+    <line x1="50" y1="50" x2="28" y2="72" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+    <line x1="50" y1="50" x2="74" y2="70" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+    {/* Central Node (Task hub) */}
+    <circle cx="50" cy="50" r="11" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="5" />
+    <circle cx="50" cy="50" r="4" fill="currentColor" />
+    {/* Outer Nodes (Assigners / Assignees) */}
+    <circle cx="26" cy="32" r="8" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="4" />
+    <circle cx="76" cy="28" r="9" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="4" />
+    <circle cx="28" cy="72" r="8" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="4" />
+    <circle cx="74" cy="70" r="8" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="4" />
+  </svg>
+);
 

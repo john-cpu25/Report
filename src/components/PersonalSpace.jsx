@@ -16,6 +16,7 @@ import TotalTimesheetView from './PersonalSpace/TotalTimesheetView';
 import PerformanceTimesheetView from './PersonalSpace/PerformanceTimesheetView';
 import TimesheetPlusView from './PersonalSpace/TimesheetPlusView';
 import ProjectView from './PersonalSpace/ProjectView';
+import ProjectTaskNetwork from './PersonalSpace/ProjectTaskNetwork';
 import GanttView from './PersonalSpace/GanttView';
 import PerformanceView from './PersonalSpace/PerformanceView';
 import NeumorphicPersonalSwitcher from './buttons/NeumorphicPersonalSwitcher';
@@ -1166,6 +1167,21 @@ const PersonalSpace = () => {
           currentDate={currentDate}
           searchQuery={localFilters.search || ''}
         />
+      )}
+
+      {viewMode === 'network' && (
+        <div className="flex-1 min-h-0 h-[calc(100vh-250px)] overflow-hidden">
+          <ProjectTaskNetwork
+            tasks={analystTasks || []}
+            filteredData={filteredData}
+            dashboardProjects={dashboardProjects}
+            dashboardUsers={dashboardUsers}
+            getProjectColor={getProjectColor}
+            theme={theme}
+            initialProject={localFilters.project}
+            initialUser={localFilters.user}
+          />
+        </div>
       )}
 
       {viewMode === 'gantt' && (
