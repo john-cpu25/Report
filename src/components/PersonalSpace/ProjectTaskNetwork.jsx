@@ -1,14 +1,11 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { 
-  FolderGit2, 
-  Search, 
   ChevronRight, 
   ChevronDown, 
   ZoomIn, 
   ZoomOut, 
   Network, 
-  ListTree, 
-  X
+  ListTree
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -103,14 +100,14 @@ const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand })
           )}
         </div>
 
-        {/* Expand / Collapse badge on Parent Card */}
+        {/* Expand / Collapse badge on Parent Card (iOS Pill Style) */}
         {isParent && (
           <button
             onClick={onToggleExpand}
-            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+            className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 active:scale-95 transition-all cursor-pointer shadow-2xs"
             title={isExpanded ? 'Thu gọn task con' : 'Mở rộng task con'}
           >
-            {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+            {isExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
             <span>{childCount}</span>
           </button>
         )}
@@ -139,19 +136,15 @@ const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand })
 // MAIN COMPONENT: ProjectTaskNetwork
 // ==========================================
 export default function ProjectTaskNetwork({
-  tasks = [],
+  tasks = [], // Filtered directly by the Personal Space Filter Bar (Team, Projects, Members, Date, Search)
+  allTasks = [],
   dashboardProjects = [],
   dashboardUsers = [],
   getProjectColor,
-  theme,
-  initialProject = ''
+  theme
 }) {
-  // Mode: 'tree' (Bảng Phân Cấp) | 'mindmap' (Sơ Đồ Mindmap)
+  // Mode: 'tree' (TREEVIEW) | 'mindmap' (MINDMAP)
   const [viewMode, setViewMode] = useState('mindmap');
-
-  // Filters State
-  const [selectedProject, setSelectedProject] = useState(initialProject || 'ALL');
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Expand / Collapse State for Parent Nodes (Set of Parent Task IDs)
   const [expandedIds, setExpandedIds] = useState(new Set());
@@ -165,36 +158,14 @@ export default function ProjectTaskNetwork({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
 
-  // Project List for Dropdown
-  const projectOptions = useMemo(() => {
-    const set = new Set();
-    tasks.forEach(t => {
-      const p = (t.project || t.projectKey || '').trim().toUpperCase();
-      if (p && p !== 'UNASSIGNED') set.add(p);
-    });
-    return Array.from(set).sort();
-  }, [tasks]);
-
-  // Build Project Groups & Task Hierarchy
+  // Build Project Groups & Task Hierarchy from the Filtered Tasks (tasks)
   const { projectGroups, totalTasksCount, rootsCount, childrenMap } = useMemo(() => {
     const tasksById = new Map();
     const childrenByParent = new Map();
 
-    // 1. Filter tasks
-    const filtered = tasks.filter(t => {
-      if (!t) return false;
-      const pKey = (t.project || '').trim().toUpperCase();
-      if (selectedProject !== 'ALL' && pKey !== selectedProject) return false;
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchTitle = (t.name || t.taskName || '').toLowerCase().includes(q);
-        const matchUser = (t.userName || '').toLowerCase().includes(q);
-        if (!matchTitle && !matchUser) return false;
-      }
-      return true;
-    });
-
-    filtered.forEach(t => {
+    const taskList = tasks || [];
+    taskList.forEach(t => {
+      if (!t) return;
       tasksById.set(t.id, t);
       if (t.parent_id) {
         if (!childrenByParent.has(t.parent_id)) childrenByParent.set(t.parent_id, []);
@@ -202,9 +173,10 @@ export default function ProjectTaskNetwork({
       }
     });
 
-    // 2. Group by Project
+    // Group by Project
     const pMap = new Map();
-    filtered.forEach(t => {
+    taskList.forEach(t => {
+      if (!t) return;
       const pKey = (t.project || t.projectKey || 'UNASSIGNED').trim().toUpperCase();
       if (!pMap.has(pKey)) {
         const color = (getProjectColor ? getProjectColor(pKey) : null) || '#6366f1';
@@ -218,7 +190,7 @@ export default function ProjectTaskNetwork({
       pMap.get(pKey).allTasks.push(t);
     });
 
-    // 3. Populate roots per project
+    // Populate roots for each project
     let totalRoots = 0;
     pMap.forEach(group => {
       const groupTasksById = new Map(group.allTasks.map(t => [t.id, t]));
@@ -230,11 +202,11 @@ export default function ProjectTaskNetwork({
 
     return {
       projectGroups: sortedGroups,
-      totalTasksCount: filtered.length,
+      totalTasksCount: taskList.length,
       rootsCount: totalRoots,
       childrenMap: childrenByParent
     };
-  }, [tasks, selectedProject, searchQuery, getProjectColor]);
+  }, [tasks, getProjectColor]);
 
   // Toggle Single Parent Task Expansion
   const toggleExpand = useCallback((id) => {
@@ -301,117 +273,93 @@ export default function ProjectTaskNetwork({
     >
       
       {/* ======================================================== */}
-      {/* 1. TOP TOOLBAR & CONTROLS (Chữ cách lề 16px, không đậm)   */}
+      {/* 1. TOP TOOLBAR: CÁC NÚT CHỨC NĂNG PHONG CÁCH IPHONE (iOS) */}
       {/* ======================================================== */}
       <div 
-        className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-[10px]"
+        className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/80 backdrop-blur-md flex flex-wrap items-center justify-between gap-[10px]"
         style={{ padding: '10px 16px' }}
       >
         
-        {/* Left Section: Title + Stats */}
+        {/* Left Section: Title + Stats Badges (iOS Style) */}
         <div className="flex items-center flex-wrap gap-2.5">
           <span className="text-[13px] font-medium uppercase tracking-wide text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             SƠ ĐỒ QUAN HỆ TASK & MINDMAP
           </span>
-          <span className="px-2 py-0.5 rounded text-[11px] font-normal bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700/50 uppercase">
-            DEBUG MODE (SUPABASE ALL TASKS)
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-normal bg-slate-200/70 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-black/5 dark:border-white/10 shadow-2xs">
+            Tổng cộng: <span className="font-mono font-medium text-slate-900 dark:text-white">{totalTasksCount}</span> tasks
           </span>
-          <span className="text-[12px] text-slate-600 dark:text-slate-400 font-normal">
-            Tổng cộng: <span className="text-slate-900 dark:text-white font-mono">{totalTasksCount}</span> tasks
-          </span>
-          <span className="text-[12px] text-slate-600 dark:text-slate-400 font-normal">
-            Nhánh gốc: <span className="text-slate-900 dark:text-white font-mono">{rootsCount}</span> roots
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-normal bg-slate-200/70 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-black/5 dark:border-white/10 shadow-2xs">
+            Nhánh gốc: <span className="font-mono font-medium text-slate-900 dark:text-white">{rootsCount}</span> roots
           </span>
         </div>
 
-        {/* Right Section: View Switcher + Filters + Expand/Collapse + Zoom */}
-        <div className="flex items-center flex-wrap gap-2">
+        {/* Right Section: CÁC NÚT CHỨC NĂNG GIỐNG IPHONE */}
+        <div className="flex items-center flex-wrap gap-2.5">
           
-          {/* View Switcher: Bảng Phân Cấp vs Sơ Đồ Mindmap */}
-          <div className="flex items-center p-0.5 bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700" style={{ borderRadius: '0px' }}>
+          {/* iOS Segmented Control: TREEVIEW / MINDMAP */}
+          <div className="inline-flex items-center p-[3px] rounded-full bg-slate-200/80 dark:bg-slate-800/90 border border-black/5 dark:border-white/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]">
             <button
               onClick={() => setViewMode('tree')}
-              className={`px-2.5 py-1 text-[12px] font-medium flex items-center gap-1.5 transition-all ${
+              className={`px-3.5 py-1 rounded-full text-[12px] font-medium flex items-center gap-1.5 transition-all duration-200 active:scale-95 cursor-pointer ${
                 viewMode === 'tree'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-[0_2px_6px_rgba(0,0,0,0.12)]'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <ListTree size={13} />
-              <span>Bảng Phân Cấp (TreeView)</span>
+              <span>TREEVIEW</span>
             </button>
             <button
               onClick={() => setViewMode('mindmap')}
-              className={`px-2.5 py-1 text-[12px] font-medium flex items-center gap-1.5 transition-all ${
+              className={`px-3.5 py-1 rounded-full text-[12px] font-medium flex items-center gap-1.5 transition-all duration-200 active:scale-95 cursor-pointer ${
                 viewMode === 'mindmap'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-[0_2px_6px_rgba(0,0,0,0.12)]'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <Network size={13} />
-              <span>Sơ Đồ Mindmap (Arrow Nodes)</span>
+              <span>MINDMAP</span>
             </button>
           </div>
 
-          {/* Project Filter Dropdown */}
-          <div className="flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
-            <span className="text-[12px] font-normal text-slate-500 dark:text-slate-400">Dự án:</span>
-            <select
-              value={selectedProject}
-              onChange={e => setSelectedProject(e.target.value)}
-              className="bg-transparent text-[12px] font-normal text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer pr-1"
-            >
-              <option value="ALL">Tất cả dự án</option>
-              {projectOptions.map(p => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Search Input */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
-            <Search size={12} className="text-slate-400" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm task..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="bg-transparent text-[12px] font-normal text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none w-28"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
-                <X size={12} />
-              </button>
-            )}
-          </div>
-
-          {/* Expand / Collapse All */}
-          <div className="flex items-center gap-1">
+          {/* iOS Pill Buttons: + Mở rộng tất cả / - Thu gọn */}
+          <div className="flex items-center gap-1.5">
             <button
               onClick={handleExpandAll}
-              className="px-2.5 py-1 text-[12px] font-normal bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-xs"
+              className="px-3.5 py-1 rounded-full text-[12px] font-medium bg-slate-200/70 dark:bg-slate-800/80 hover:bg-slate-300/80 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-black/5 dark:border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-150 cursor-pointer"
             >
               + Mở rộng tất cả
             </button>
             <button
               onClick={handleCollapseAll}
-              className="px-2.5 py-1 text-[12px] font-normal bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-xs"
+              className="px-3.5 py-1 rounded-full text-[12px] font-medium bg-slate-200/70 dark:bg-slate-800/80 hover:bg-slate-300/80 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-black/5 dark:border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-150 cursor-pointer"
             >
               - Thu gọn
             </button>
           </div>
 
-          {/* Zoom Controls (for Mindmap) */}
+          {/* iOS Zoom Segmented Control (chỉ hiện khi xem Mindmap) */}
           {viewMode === 'mindmap' && (
-            <div className="flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
-              <span className="text-[12px] text-slate-500 font-normal">Thu phóng:</span>
-              <button onClick={handleZoomOut} className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
+            <div className="inline-flex items-center p-[3px] rounded-full bg-slate-200/80 dark:bg-slate-800/90 border border-black/5 dark:border-white/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]">
+              <button 
+                onClick={handleZoomOut} 
+                title="Thu nhỏ"
+                className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 active:scale-90 transition-all cursor-pointer shadow-2xs"
+              >
                 <ZoomOut size={13} />
               </button>
-              <button onClick={handleZoomReset} className="text-[11px] font-mono font-normal px-1 text-slate-700 dark:text-slate-200">
+              <button 
+                onClick={handleZoomReset} 
+                title="Đặt lại 100%"
+                className="px-2 text-[11px] font-mono font-medium text-slate-800 dark:text-slate-200 cursor-pointer hover:underline"
+              >
                 {Math.round(zoom * 100)}%
               </button>
-              <button onClick={handleZoomIn} className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
+              <button 
+                onClick={handleZoomIn} 
+                title="Phóng to"
+                className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 active:scale-90 transition-all cursor-pointer shadow-2xs"
+              >
                 <ZoomIn size={13} />
               </button>
             </div>
@@ -421,7 +369,7 @@ export default function ProjectTaskNetwork({
 
       {/* ======================================================== */}
       {/* 2. VIEW 1: BẢNG PHÂN CẤP (TREEVIEW - GROUP THEO DỰ ÁN)   */}
-      {/* Chữ cách lề rõ ràng 16px - 20px, không bị sát mép        */}
+      {/* Bảng không bo góc, chữ cách lề 16px, không bị dính mép  */}
       {/* ======================================================== */}
       {viewMode === 'tree' && (
         <div className="flex-1 overflow-auto custom-scrollbar">
@@ -443,7 +391,7 @@ export default function ProjectTaskNetwork({
               {projectGroups.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-12 text-slate-400 font-normal" style={{ padding: '24px 16px' }}>
-                    Không tìm thấy task nào phù hợp bộ lọc.
+                    Không tìm thấy task nào phù hợp bộ lọc đang chọn trên thanh điều khiển.
                   </td>
                 </tr>
               ) : (
@@ -457,7 +405,7 @@ export default function ProjectTaskNetwork({
                         <td colSpan={6} style={{ padding: '8px 16px' }}>
                           <button
                             onClick={() => toggleProjectGroup(group.key)}
-                            className="flex items-center hover:opacity-80 transition-opacity"
+                            className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
                             style={{ gap: '10px' }}
                           >
                             {isProjectCollapsed ? (
@@ -502,7 +450,7 @@ export default function ProjectTaskNetwork({
                                   {hasChildren ? (
                                     <button
                                       onClick={() => toggleExpand(root.id)}
-                                      className="flex items-center gap-1.5 hover:text-emerald-600 transition-colors"
+                                      className="flex items-center gap-1.5 hover:text-emerald-600 transition-colors cursor-pointer"
                                     >
                                       {isExpanded ? (
                                         <ChevronDown size={13} className="text-slate-600 dark:text-slate-400" />
@@ -512,7 +460,7 @@ export default function ProjectTaskNetwork({
                                       <span className="font-normal text-slate-900 dark:text-slate-100 uppercase">
                                         {root.taskName || root.name}
                                       </span>
-                                      <span className="text-[10px] font-normal px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 ml-1">
+                                      <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 ml-1">
                                         {children.length} con
                                       </span>
                                     </button>
@@ -554,7 +502,7 @@ export default function ProjectTaskNetwork({
                               {/* Check */}
                               <td style={{ padding: '8px 12px' }}>
                                 {isOnlyCheckRoot && (
-                                  <span className="px-1.5 py-0.2 rounded text-[10px] font-normal bg-rose-100 text-rose-600 border border-rose-300 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-normal bg-rose-100 text-rose-600 border border-rose-300 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800">
                                     OnlyCheck
                                   </span>
                                 )}
@@ -608,7 +556,7 @@ export default function ProjectTaskNetwork({
                                   {/* Check */}
                                   <td style={{ padding: '6px 12px' }}>
                                     {isOnlyCheckChild && (
-                                      <span className="px-1.5 py-0.2 rounded text-[10px] font-normal bg-rose-100 text-rose-600 border border-rose-300 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800">
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-normal bg-rose-100 text-rose-600 border border-rose-300 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800">
                                         OnlyCheck
                                       </span>
                                     )}
@@ -655,7 +603,7 @@ export default function ProjectTaskNetwork({
             <div className="flex flex-col gap-10" style={{ padding: '24px 30px' }}>
               {projectGroups.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 font-normal">
-                  Không có dữ liệu task phù hợp với dự án đã chọn.
+                  Không có dữ liệu task phù hợp với bộ lọc đang chọn trên thanh điều khiển.
                 </div>
               ) : (
                 projectGroups.map(group => {
@@ -667,7 +615,7 @@ export default function ProjectTaskNetwork({
                       <div className="flex items-center gap-2.5 pb-1 border-b border-slate-200 dark:border-slate-800" style={{ paddingLeft: '8px' }}>
                         <button
                           onClick={() => toggleProjectGroup(group.key)}
-                          className="flex items-center hover:opacity-80 transition-opacity"
+                          className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
                           style={{ gap: '10px' }}
                         >
                           {isProjectCollapsed ? (

@@ -866,7 +866,7 @@ const PersonalSpace = () => {
           )}
 
             {/* Time Segmented Control (New Design) */}
-            {['list', 'daily', 'project', 'timesheet', 'timesheet_plus', 'total_timesheet', 'performance_timesheet', 'gantt', 'performance'].includes(viewMode) && (
+            {['list', 'daily', 'project', 'timesheet', 'timesheet_plus', 'total_timesheet', 'performance_timesheet', 'gantt', 'performance', 'network'].includes(viewMode) && (
               <div className={`flex items-center gap-1 p-[3px] backdrop-blur-md rounded-xl shadow-inner relative shrink-0 ${
                 isDark 
                   ? 'bg-slate-950/80 border border-slate-800' 
@@ -1172,14 +1172,12 @@ const PersonalSpace = () => {
       {viewMode === 'network' && (
         <div className="flex-1 min-h-0 h-[calc(100vh-250px)] overflow-hidden" style={{ padding: '10px' }}>
           <ProjectTaskNetwork
-            tasks={analystTasks || []}
-            filteredData={filteredData}
+            tasks={filteredData || []}
+            allTasks={analystTasks || []}
             dashboardProjects={dashboardProjects}
             dashboardUsers={dashboardUsers}
             getProjectColor={getProjectColor}
             theme={theme}
-            initialProject={localFilters.project}
-            initialUser={localFilters.user}
           />
         </div>
       )}
