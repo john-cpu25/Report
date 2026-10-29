@@ -69,17 +69,50 @@ const StatusPill = ({ status }) => {
 };
 
 // ==========================================
+// HELPER: AVATAR INITIALS & ASSIGNMENT RESOLVERS
+// ==========================================
+const getInitials = (name) => {
+  if (!name || typeof name !== 'string') return '?';
+  const clean = name.trim();
+  if (!clean || clean.toUpperCase() === 'UNKNOWN' || clean.toUpperCase() === 'UNASSIGNED') return '?';
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+const getAssignerName = (task, parentTask) => {
+  if (task.createdBy && task.createdBy !== 'UNKNOWN') return task.createdBy;
+  if (task.create_by && task.create_by !== 'UNKNOWN') return task.create_by;
+  if (task._creatorName && task._creatorName !== 'UNKNOWN') return task._creatorName;
+  if (parentTask && (parentTask.userName || parentTask.createdBy)) {
+    return parentTask.userName || parentTask.createdBy;
+  }
+  return 'Manager';
+};
+
+const getAssigneeName = (task) => {
+  return task.userName || task._userName || task.assigned_to || 'Unassigned';
+};
+
+// ==========================================
 // HELPER: MINDMAP CARD COMPONENT
 // Bo góc 10px, chữ cách vào 10px (style={{ padding: '10px', borderRadius: '10px' }})
+// Xuất hiện Người Giao và Người Nhận ở dòng dưới cùng
 // ==========================================
-const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand }) => {
+const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand, parentTask = null }) => {
   const planned = Number(task.hours_planned) || 0;
   const complete = Number(task.hours_complete) || 0;
   const isOnlyCheck = task.check_only || task.is_onlychecked || (task.name && String(task.name).trim().endsWith('_'));
 
+  const assigner = getAssignerName(task, parentTask);
+  const assignee = getAssigneeName(task);
+  const assignerInitials = getInitials(assigner);
+  const assigneeInitials = getInitials(assignee);
+
   return (
     <div 
-      className="w-[270px] border border-emerald-500 bg-white dark:bg-slate-900 shadow-sm select-none transition-shadow hover:shadow-md flex flex-col justify-between shrink-0"
+      className="w-[285px] border border-emerald-500 bg-white dark:bg-slate-900 shadow-sm select-none transition-shadow hover:shadow-md flex flex-col justify-between shrink-0"
       style={{ 
         height: '88px',
         minHeight: '88px',
@@ -124,13 +157,37 @@ const MindmapCard = ({ task, isParent, childCount, isExpanded, onToggleExpand })
         {task.taskName || task.name}
       </div>
 
-      {/* Bottom Row: User Name & Hours */}
+      {/* Bottom Row: Người Giao -> Người Nhận & Hours */}
       <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 font-normal h-[22px] shrink-0">
-        <span className="flex items-center gap-1.5 truncate max-w-[150px]">
-          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
-          <span className="truncate">{task.userName || 'Unassigned'}</span>
-        </span>
-        <span className="font-mono text-slate-700 dark:text-slate-300 shrink-0">
+        {/* Left: [NN] Nhan Ngu... → [KN] Khanh Ngu... */}
+        <div className="flex items-center gap-1 min-w-0 max-w-[195px]">
+          {/* Assigner (Người giao) */}
+          <div className="flex items-center gap-1 min-w-0" title={`Người giao: ${assigner}`}>
+            <span className="w-[17px] h-[17px] rounded-full bg-blue-600 text-white text-[9px] font-semibold flex items-center justify-center shrink-0 leading-none shadow-2xs">
+              {assignerInitials}
+            </span>
+            <span className="truncate max-w-[68px] text-slate-700 dark:text-slate-300 font-normal">
+              {assigner}
+            </span>
+          </div>
+
+          <span className="text-slate-400 dark:text-slate-500 text-[10px] shrink-0 font-normal select-none">
+            →
+          </span>
+
+          {/* Assignee (Người nhận) */}
+          <div className="flex items-center gap-1 min-w-0" title={`Người nhận: ${assignee}`}>
+            <span className="w-[17px] h-[17px] rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-black/5 dark:border-white/10 text-[9px] font-semibold flex items-center justify-center shrink-0 leading-none shadow-2xs">
+              {assigneeInitials}
+            </span>
+            <span className="truncate max-w-[68px] text-slate-700 dark:text-slate-300 font-normal">
+              {assignee}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Hours */}
+        <span className="font-mono text-slate-700 dark:text-slate-300 shrink-0 text-[11px] font-normal">
           <span>{complete.toFixed(1)}h</span> / {planned.toFixed(1)}h
         </span>
       </div>
@@ -383,9 +440,9 @@ export default function ProjectTaskNetwork({
             {/* Table Header (Chữ cách lề 16px, font-medium) */}
             <thead className="sticky top-0 z-10 bg-slate-100/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 text-[11px] font-medium uppercase text-slate-600 dark:text-slate-400">
               <tr>
-                <th style={{ padding: '10px 12px 10px 16px', width: '42%' }}>TÊN TASK / PHÂN CẤP (PARENT - CHILD)</th>
-                <th style={{ padding: '10px 12px', width: '14%' }}>TRẠNG THÁI</th>
-                <th style={{ padding: '10px 12px', width: '18%' }}>NGƯỜI THỰC HIỆN</th>
+                <th style={{ padding: '10px 12px 10px 16px', width: '40%' }}>TÊN TASK / PHÂN CẤP (PARENT - CHILD)</th>
+                <th style={{ padding: '10px 12px', width: '13%' }}>TRẠNG THÁI</th>
+                <th style={{ padding: '10px 12px', width: '21%' }}>NGƯỜI GIAO → NHẬN</th>
                 <th style={{ padding: '10px 12px', width: '15%' }}>KẾ HOẠCH (START - END)</th>
                 <th style={{ padding: '10px 12px', width: '7%' }}>SỐ GIỜ</th>
                 <th style={{ padding: '10px 12px', width: '4%' }}>CHECK</th>
@@ -487,12 +544,13 @@ export default function ProjectTaskNetwork({
                                 <StatusPill status={root.status} />
                               </td>
 
-                              {/* User */}
+                              {/* Assigner -> Assignee */}
                               <td style={{ padding: '8px 12px' }}>
-                                <span className="inline-flex items-center gap-1.5 font-normal">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
-                                  <span>{root.userName || 'Unassigned'}</span>
-                                </span>
+                                <div className="inline-flex items-center gap-1.5 font-normal text-[12px]">
+                                  <span className="text-slate-500 dark:text-slate-400">{getAssignerName(root, null)}</span>
+                                  <span className="text-slate-400 dark:text-slate-500 text-[10px]">→</span>
+                                  <span className="text-slate-900 dark:text-slate-100 font-medium">{getAssigneeName(root)}</span>
+                                </div>
                               </td>
 
                               {/* Plan Dates */}
@@ -541,12 +599,13 @@ export default function ProjectTaskNetwork({
                                     <StatusPill status={child.status} />
                                   </td>
 
-                                  {/* User */}
+                                  {/* Assigner -> Assignee */}
                                   <td style={{ padding: '6px 12px' }}>
-                                    <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-normal">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
-                                      <span>{child.userName || 'Unassigned'}</span>
-                                    </span>
+                                    <div className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-normal text-[12px]">
+                                      <span className="text-slate-500 dark:text-slate-400">{getAssignerName(child, root)}</span>
+                                      <span className="text-slate-400 dark:text-slate-500 text-[10px]">→</span>
+                                      <span className="text-slate-900 dark:text-slate-100 font-medium">{getAssigneeName(child)}</span>
+                                    </div>
                                   </td>
 
                                   {/* Plan Dates */}
@@ -650,7 +709,7 @@ export default function ProjectTaskNetwork({
                             const hasChildren = children.length > 0;
                             const isExpanded = expandedIds.has(root.id);
 
-                            const cardWidth = 270;
+                            const cardWidth = 285;
                             const cardHeight = 88;
                             const childGapY = 16;
                             const horizontalOffset = 100;
@@ -667,7 +726,7 @@ export default function ProjectTaskNetwork({
                             return (
                               <div key={root.id} className="relative flex items-center">
                                 
-                                {/* Parent Task Card (Bo góc 10px, padding 10px) */}
+                                {/* Parent Task Card (Bo góc 10px, padding 10px, hiện Người Giao -> Người Nhận) */}
                                 <div className="shrink-0 z-10">
                                   <MindmapCard 
                                     task={root} 
@@ -675,6 +734,7 @@ export default function ProjectTaskNetwork({
                                     childCount={children.length}
                                     isExpanded={isExpanded}
                                     onToggleExpand={() => toggleExpand(root.id)}
+                                    parentTask={null}
                                   />
                                 </div>
 
@@ -726,7 +786,7 @@ export default function ProjectTaskNetwork({
                                       })}
                                     </svg>
 
-                                    {/* Child Task Cards Stack on Right */}
+                                    {/* Child Task Cards Stack on Right (Hiện Người Giao -> Người Nhận) */}
                                     <div 
                                       className="flex flex-col z-10 shrink-0"
                                       style={{ 
@@ -742,6 +802,7 @@ export default function ProjectTaskNetwork({
                                           childCount={0}
                                           isExpanded={false}
                                           onToggleExpand={() => {}}
+                                          parentTask={root}
                                         />
                                       ))}
                                     </div>
