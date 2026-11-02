@@ -546,19 +546,24 @@ const PerformanceTimesheetView = forwardRef(({
 
     if (weekRecords.length > 0) {
       weekRecords.forEach(record => {
+        let activeRecord = record;
         let rowHours = 0;
+        let sat = Number(record.sat) || 0;
+        let sun = Number(record.sun) || 0;
+
         if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
           const { clipped, totalHours, hasOverlap } = filterRecordByDateRange(record, customDateRange.startDate, customDateRange.endDate);
           if (!hasOverlap && totalHours <= 0) return;
+          activeRecord = clipped;
           rowHours = totalHours;
+          sat = Number(clipped?.sat) || 0;
+          sun = Number(clipped?.sun) || 0;
         } else {
           const mon = Number(record.mon) || 0;
           const tue = Number(record.tue) || 0;
           const wed = Number(record.wed) || 0;
           const thu = Number(record.thu) || 0;
           const fri = Number(record.fri) || 0;
-          const sat = Number(record.sat) || 0;
-          const sun = Number(record.sun) || 0;
           rowHours = mon + tue + wed + thu + fri + sat + sun;
         }
         if (rowHours <= 0) return;
