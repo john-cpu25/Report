@@ -5,7 +5,7 @@ import { supabase } from '../../supabaseClient';
 import { Edit2, Check, RotateCcw, Download } from 'lucide-react';
 import { calculateDailyWorkingMinutes } from '../../utils/performanceEngine';
 import { getCachedApexTimesheetData, subscribeApexTimesheetData, fetchApexTimesheetData } from '../../services/apexTimesheetCache';
-import { getWeeksForMonth, isRecordInTimeRange } from '../../utils/timeUtils';
+import { getWeeksForMonth, isRecordInTimeRange, filterRecordByDateRange } from '../../utils/timeUtils';
 import { getCanonicalName } from '../../utils/userUtils';
 
 const getCanonicalStaffName = (rawName) => {
@@ -211,6 +211,7 @@ const PerformanceTimesheetView = forwardRef(({
   currentDate = new Date(),
   timeRange = 'week',
   selectedWeeks = [],
+  customDateRange = null,
   selectedTeam = '',
   selectedProject = '',
   selectedUser = '',
@@ -538,21 +539,28 @@ const PerformanceTimesheetView = forwardRef(({
     const projectHoursMap = {};
 
     const weekRecords = timesheetRecords.filter(r => 
-      isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks)
+      isRecordInTimeRange(r.week, r.year, today, timeRange, monthWeeks, selectedWeeks, customDateRange)
     );
 
     const weekEndTime = addDays(weekEnd, 1);
 
     if (weekRecords.length > 0) {
       weekRecords.forEach(record => {
-        const mon = Number(record.mon) || 0;
-        const tue = Number(record.tue) || 0;
-        const wed = Number(record.wed) || 0;
-        const thu = Number(record.thu) || 0;
-        const fri = Number(record.fri) || 0;
-        const sat = Number(record.sat) || 0;
-        const sun = Number(record.sun) || 0;
-        const rowHours = mon + tue + wed + thu + fri + sat + sun;
+        let rowHours = 0;
+        if (timeRange === 'date_range' && customDateRange?.startDate && customDateRange?.endDate) {
+          const { clipped, totalHours, hasOverlap } = filterRecordByDateRange(record, customDateRange.startDate, customDateRange.endDate);
+          if (!hasOverlap && totalHours <= 0) return;
+          rowHours = totalHours;
+        } else {
+          const mon = Number(record.mon) || 0;
+          const tue = Number(record.tue) || 0;
+          const wed = Number(record.wed) || 0;
+          const thu = Number(record.thu) || 0;
+          const fri = Number(record.fri) || 0;
+          const sat = Number(record.sat) || 0;
+          const sun = Number(record.sun) || 0;
+          rowHours = mon + tue + wed + thu + fri + sat + sun;
+        }
         if (rowHours <= 0) return;
 
         const userObj = userMap[record.user_id];
@@ -747,7 +755,7 @@ const PerformanceTimesheetView = forwardRef(({
     }
 
     return { staffHoursMap, staffProjectMap, staffApexMap, staffLearningMap, staffApexTimeMap, staffLeaveTimesheetMap, staffOtMap, staffWeekendMap, projectHoursMap };
-  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, apexTasks, userMap, projectMap, currentWeek, currentYear, weekStart, weekEnd, today, timeRange, monthWeeks, selectedWeeks, selectedTimeMetric, selectedTeam, selectedProject, selectedUser, searchQuery, allUsersList, userTeamByName]);
+  }, [timesheetRecords, timesheetTypes, timeSheetTypeMap, apexTasks, userMap, projectMap, currentWeek, currentYear, weekStart, weekEnd, today, timeRange, monthWeeks, selectedWeeks, customDateRange, selectedTimeMetric, selectedTeam, selectedProject, selectedUser, searchQuery, allUsersList, userTeamByName]);
 
   // 3. PROJECT TIME TABLE DATA
   const projectTimeData = useMemo(() => {
@@ -810,64 +818,18 @@ const PerformanceTimesheetView = forwardRef(({
       }
     };
 
+    // CHỈ hiển thị những nhân sự ĐÃ CHẤM TIMESHEET trong kỳ (staffHoursMap > 0), không hiện người chưa chấm
     if (selTeamNorm) {
-      // 1. Registered known apex users belonging to this team
-      KNOWN_APEX_USERS.forEach(u => {
-        if (checkStaffInTeam(u.name, selTeamNorm, allUsersList, userTeamByName)) {
-          addStaff(getCanonicalStaffName(u.name));
-        }
-      });
-
-      // 2. Active database users belonging to this team
-      allUsersList.forEach(u => {
-        if (u.name && checkStaffInTeam(u.name, selTeamNorm, allUsersList, userTeamByName)) {
-          addStaff(getCanonicalStaffName(u.name));
-        }
-      });
-
-      // 3. User team mapping table
-      Object.keys(userTeamByName || {}).forEach(uName => {
-        if (checkStaffInTeam(uName, selTeamNorm, allUsersList, userTeamByName)) {
-          addStaff(getCanonicalStaffName(uName));
-        }
-      });
-
-      // 4. Default admin/managers if filtering by manager
-      DEFAULT_ADMINS.forEach(adm => {
-        const cName = getCanonicalStaffName(adm);
-        if (checkStaffInTeam(cName, selTeamNorm, allUsersList, userTeamByName)) {
-          addStaff(cName);
-        }
-      });
-
-      // 5. Staff with logged hours ONLY if they belong to this filtered team
       Object.keys(staffHoursMap).forEach(dName => {
-        if (staffHoursMap[dName] > 0 && checkStaffInTeam(dName, selTeamNorm, allUsersList, userTeamByName)) {
-          addStaff(getCanonicalStaffName(dName));
-        }
-      });
-
-      // 6. Staff with plan time ONLY if they belong to this filtered team
-      Object.keys(apexTaskStats.leaderPlanMap || {}).forEach(dName => {
-        if (apexTaskStats.leaderPlanMap[dName] > 0 && checkStaffInTeam(dName, selTeamNorm, allUsersList, userTeamByName)) {
+        if ((staffHoursMap[dName] || 0) > 0 && checkStaffInTeam(dName, selTeamNorm, allUsersList, userTeamByName)) {
           addStaff(getCanonicalStaffName(dName));
         }
       });
     } else {
-      KNOWN_APEX_USERS.forEach(u => {
-        addStaff(getCanonicalStaffName(u.name));
-      });
-      allUsersList.forEach(u => {
-        const uTeam = (u.team || '').trim();
-        if (u.name && uTeam && uTeam.toUpperCase() !== 'MANAGER') {
-          addStaff(getCanonicalStaffName(u.name));
-        }
-      });
       Object.keys(staffHoursMap).forEach(dName => {
-        if (staffHoursMap[dName] > 0) addStaff(getCanonicalStaffName(dName));
-      });
-      Object.keys(apexTaskStats.leaderPlanMap || {}).forEach(dName => {
-        if (apexTaskStats.leaderPlanMap[dName] > 0) addStaff(getCanonicalStaffName(dName));
+        if ((staffHoursMap[dName] || 0) > 0) {
+          addStaff(getCanonicalStaffName(dName));
+        }
       });
     }
 
@@ -979,10 +941,12 @@ const PerformanceTimesheetView = forwardRef(({
       return a.staff.localeCompare(b.staff);
     });
 
-    // Filter rows based on selectedTeam, selectedUser, searchQuery, and selectedProject (never show admin, jason le)
+    // Filter rows: CHỈ giữ lại nhân sự ĐÃ CHẤM TIMESHEET trong kỳ (staffHoursMap > 0)
     let filteredRows = rows.filter(r => {
       const u = r.staff.trim().toUpperCase();
+      const hasTimesheet = (staffHoursMap[r.staff] || 0) > 0 || (r.workTime + r.apexTime + r.freeTime + (staffLeaveTimesheetMap[r.staff] || 0)) > 0;
       return (
+        hasTimesheet &&
         u !== 'ADMIN' &&
         !u.includes('ADMIN') &&
         u !== 'UNKNOWN' &&
@@ -1042,7 +1006,7 @@ const PerformanceTimesheetView = forwardRef(({
       : 0;
 
     return { rows: filteredRows, totals, totalUtilizationRate, totalEfficiency };
-  }, [timesheetAggregated, apexTaskStats, customTargets, customRates, customPlanTimes, weeklyLeaveMap, selectedTeam, selectedProject, selectedUser, searchQuery, allUsersList, userTeamByName]);
+  }, [timesheetAggregated, apexTaskStats, customTargets, customRates, customPlanTimes, weeklyLeaveMap, selectedTeam, selectedProject, selectedUser, searchQuery, allUsersList, userTeamByName, customDateRange]);
 
   // 5. LEAVE BREAKDOWN TABLE (Staff with leave > 0)
   const leaveTableData = useMemo(() => {
@@ -1499,7 +1463,14 @@ const PerformanceTimesheetView = forwardRef(({
                 </thead>
 
                 <tbody className="divide-y divide-[var(--border)]">
-                  {teamPerformanceData.rows.map((row, idx) => {
+                  {teamPerformanceData.rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={13} className="sys-py text-center text-sm text-[var(--text-muted)] font-medium border-b border-[var(--border)] py-12">
+                        Chưa có nhân sự nào chấm time sheet trong khoảng thời gian này
+                      </td>
+                    </tr>
+                  ) : (
+                    teamPerformanceData.rows.map((row, idx) => {
                     const isManager = row.role === 'MANAGER';
                     const isAdmin = row.role === 'ADMIN';
                     const isLeader = row.role === 'LEADER';
@@ -1832,7 +1803,8 @@ const PerformanceTimesheetView = forwardRef(({
                       </td>
                     </tr>
                     );
-                  })}
+                  })
+                )}
                 </tbody>
 
                 {/* Table Footer: GRAND TOTAL ROW */}

@@ -395,45 +395,6 @@ const TimesheetPlusView = forwardRef(({
       projectCodesSet.add('APEX FREE');
     }
 
-    // Also include all active users in rawUsers / dashboardUsers / apexUsers if no records yet, so the matrix is comprehensive
-    const candidateUsers = [];
-    const seenStaffIds = new Set();
-    [...(rawUsers || []), ...(dashboardUsers || []), ...(apexUsers || [])].forEach(u => {
-      if (!u) return;
-      const key = (u.id || u.name || '').toString().toLowerCase();
-      if (key && !seenStaffIds.has(key)) {
-        seenStaffIds.add(key);
-        candidateUsers.push(u);
-      }
-    });
-
-    if (candidateUsers.length > 0 && !selectedUser && !searchQuery) {
-      candidateUsers.forEach(u => {
-        const userLoc = (u?.location || '').toString().toLowerCase();
-        if (userLoc.includes('aus') || userLoc.includes('australia')) return;
-        const userName = getCanonicalName(u.name || u.full_name || '');
-        if (!userName || userName === 'Unknown') return;
-        const teamName = (u?.team || userTeamByName[userName] || 'APEX').toString().trim().toUpperCase();
-
-        // Không hiển thị Team MANAGER / MANAGEMENT
-        if (teamName.includes('MANAGER') || teamName.includes('MANAGEMENT')) return;
-
-        if (selectedTeam && teamName.toLowerCase() !== selectedTeam.trim().toLowerCase()) return;
-
-        if (!usersMap[userName]) {
-          usersMap[userName] = {
-            name: userName,
-            rawName: u.name,
-            team: teamName,
-            projectHours: {},
-            weeklyHours: {}
-          };
-          if (!teamsMap[teamName]) teamsMap[teamName] = new Set();
-          teamsMap[teamName].add(userName);
-        }
-      });
-    }
-
     // Default sample project codes if empty (e.g. FGWB, MEL03, CW2, CW3 from user's screenshot)
     if (projectCodesSet.size === 0) {
       ['FGWB', 'MEL03', 'CW2', 'CW3'].forEach(c => projectCodesSet.add(c));
@@ -442,6 +403,7 @@ const TimesheetPlusView = forwardRef(({
     const projectColumns = Array.from(projectCodesSet).sort((a, b) => a.localeCompare(b));
 
     // Calculate final numbers directly from APEX_TimeSheet
+    // CHỈ hiển thị những nhân sự ĐÃ CHẤM TIMESHEET trong kỳ (wnoh > 0), không hiện người chưa chấm
     const rows = Object.values(usersMap).map(user => {
       // 1. Projects row values (lấy trực tiếp từ timesheet, không chỉnh sửa)
       const projectVals = {};
@@ -508,37 +470,38 @@ const TimesheetPlusView = forwardRef(({
         workforceUtil,
         wuz: financial // backward compat
       };
-    });
+    }).filter(r => r.wnoh > 0);
 
-    // Group by TEAM (loại bỏ team MANAGER / MANAGEMENT)
+    // Group by TEAM (loại bỏ team MANAGER / MANAGEMENT và team không có nhân sự chấm timesheet)
     const teamsList = Object.keys(teamsMap)
       .filter(t => !t.includes('MANAGER') && !t.includes('MANAGEMENT'))
       .sort()
       .map(teamName => {
-      const teamUsers = rows.filter(r => r.team === teamName);
-      teamUsers.sort((a, b) => a.name.localeCompare(b.name));
+        const teamUsers = rows.filter(r => r.team === teamName);
+        teamUsers.sort((a, b) => a.name.localeCompare(b.name));
 
-      const teamTotalHours = teamUsers.reduce((acc, u) => acc + u.wnoh, 0);
+        const teamTotalHours = teamUsers.reduce((acc, u) => acc + u.wnoh, 0);
 
-      // Cột Team Utilization tách làm 2 cột:
-      // + Team Financial : Lấy trung bình của cột Financial
-      // + Team Workforce Utilization : Lấy trung bình của cột Workforce Utilization
-      const teamFinancial = teamUsers.length > 0
-        ? teamUsers.reduce((sum, u) => sum + u.financial, 0) / teamUsers.length
-        : 0;
-      const teamWorkforce = teamUsers.length > 0
-        ? teamUsers.reduce((sum, u) => sum + u.workforceUtil, 0) / teamUsers.length
-        : 0;
+        // Cột Team Utilization tách làm 2 cột:
+        // + Team Financial : Lấy trung bình của cột Financial
+        // + Team Workforce Utilization : Lấy trung bình của cột Workforce Utilization
+        const teamFinancial = teamUsers.length > 0
+          ? teamUsers.reduce((sum, u) => sum + u.financial, 0) / teamUsers.length
+          : 0;
+        const teamWorkforce = teamUsers.length > 0
+          ? teamUsers.reduce((sum, u) => sum + u.workforceUtil, 0) / teamUsers.length
+          : 0;
 
-      return {
-        name: teamName,
-        users: teamUsers,
-        totalHours: teamTotalHours,
-        teamFinancial,
-        teamWorkforce,
-        teamWuz: teamFinancial // backward compat
-      };
-    });
+        return {
+          name: teamName,
+          users: teamUsers,
+          totalHours: teamTotalHours,
+          teamFinancial,
+          teamWorkforce,
+          teamWuz: teamFinancial // backward compat
+        };
+      })
+      .filter(t => t.users.length > 0);
 
     // Grand Totals
     const grandTotalHours = rows.reduce((acc, r) => acc + r.wnoh, 0);
