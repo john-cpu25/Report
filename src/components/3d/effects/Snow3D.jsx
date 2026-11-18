@@ -179,8 +179,8 @@ const Snow3D = ({ intensity = 'MEDIUM', className = '', onFallback2D }) => {
   return (
     <canvas
       ref={canvasRef}
-      className={`fixed inset-0 pointer-events-none z-0 w-full h-full ${className}`}
-      style={{ display: 'block', backgroundColor: 'transparent' }}
+      className={`fixed inset-0 pointer-events-none z-[105] w-full h-full ${className}`}
+      style={{ display: 'block', backgroundColor: 'transparent', pointerEvents: 'none' }}
     />
   );
 };

@@ -43,15 +43,15 @@ const Blossom3D = ({ intensity = 'MEDIUM', className = '', onFallback2D }) => {
       bevelThickness: 0.01
     };
     const petalGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    petalGeometry.scale(0.35, 0.35, 0.35);
+    petalGeometry.scale(0.28, 0.28, 0.28);
 
-    // 2. Material with smooth 2-sided rendering and subtle translucent glow
+    // 2. Material with smooth 2-sided rendering and translucent glow (readable text underneath)
     const petalMaterial = new THREE.MeshStandardMaterial({
       roughness: 0.4,
       metalness: 0.1,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.92
+      opacity: 0.72
     });
 
     const instancedMesh = new THREE.InstancedMesh(petalGeometry, petalMaterial, count);
@@ -164,8 +164,8 @@ const Blossom3D = ({ intensity = 'MEDIUM', className = '', onFallback2D }) => {
   return (
     <canvas
       ref={canvasRef}
-      className={`fixed inset-0 pointer-events-none z-0 w-full h-full ${className}`}
-      style={{ display: 'block', backgroundColor: 'transparent' }}
+      className={`fixed inset-0 pointer-events-none z-[105] w-full h-full ${className}`}
+      style={{ display: 'block', backgroundColor: 'transparent', pointerEvents: 'none' }}
     />
   );
 };

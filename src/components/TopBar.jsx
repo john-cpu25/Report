@@ -7,23 +7,16 @@ import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import AvatarWithFrame from './AvatarWithFrame'
 import NeumorphicSearch from './buttons/NeumorphicSearch';
-import NeumorphicWeeklySwitcher from './buttons/NeumorphicWeeklySwitcher';
 
 const TopBar = () => {
   const { user, isAdmin, canViewAllTeams } = useAuth();
   const {
     sidebarCollapsed, setSidebarCollapsed,
     mobileSidebarOpen, setMobileSidebarOpen,
-    isSidebarOpen, setIsSidebarOpen,
-    showProjectGroups, setShowProjectGroups,
-    activeTab, setActiveTab, dashboardStats, dashboardProjects, dashboardTasks, dashboardUsers,
+    activeTab, setActiveTab, dashboardStats, dashboardProjects, dashboardTasks,
     setShowProfileModal,
     adminViewMode, setAdminViewMode,
-    adminActiveTeam, setAdminActiveTeam,
-    reportData,
-    weeklyViewMode, setWeeklyViewMode,
-    triggerWeeklyExpand, setTriggerWeeklyExpand,
-    triggerWeeklyCollapse, setTriggerWeeklyCollapse
+    adminActiveTeam, setAdminActiveTeam
   } = useApp();
 
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
@@ -74,7 +67,7 @@ const TopBar = () => {
     if (notif.link) {
       const params = new URLSearchParams(notif.link);
       const tab = params.get('tab');
-      if (tab) {
+      if (tab && tab !== 'report' && tab !== 'organization') {
         setActiveTab(tab);
       }
     }
@@ -101,7 +94,7 @@ const TopBar = () => {
           <div className="flex items-center gap-6">
              {activeTab !== 'dashboard' && (
                <h1 className="nav-topbar-title">
-                 {activeTab === 'projects' ? 'PROJECT' : activeTab === 'report' ? 'PLANNER' : activeTab === 'workflows' ? 'LIBRARY' : activeTab.replace('-', ' ').toUpperCase()}
+                 {activeTab === 'projects' ? 'PROJECT' : activeTab === 'workflows' ? 'LIBRARY' : activeTab.replace('-', ' ').toUpperCase()}
                </h1>
              )}
 
@@ -188,36 +181,6 @@ const TopBar = () => {
         </div>
 
         <div className="flex items-center sys-gap">
-          {activeTab === 'report' && (
-            <div className="flex items-center gap-[10px]">
-              {/* EX and CO Buttons */}
-              {showProjectGroups && weeklyViewMode === 'list' && (
-                <div className="neu-inset rounded-[12px] p-1 flex gap-1">
-                  <button onClick={() => setTriggerWeeklyExpand(prev => prev + 1)} className="neu-button px-4 py-1 text-[11px] font-black uppercase rounded-[8px]">EX</button>
-                  <button onClick={() => setTriggerWeeklyCollapse(prev => prev + 1)} className="neu-button px-4 py-1 text-[11px] font-black uppercase rounded-[8px]">CO</button>
-                </div>
-              )}
-              
-              {/* View Switcher (List/Gantt) */}
-              <NeumorphicWeeklySwitcher viewMode={weeklyViewMode} setViewMode={setWeeklyViewMode} />
-
-              {/* Project Group Toggle */}
-              {weeklyViewMode === 'list' && (
-                <button
-                  onClick={() => setShowProjectGroups(!showProjectGroups)}
-                  className={`neumorphic-switcher-btn ${showProjectGroups ? 'active text-emerald-500' : ''}`}
-                  title="Toggle Project Group"
-                >
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 12l10 5 10-5" />
-                    <path d="M2 17l10 5 10-5" />
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          )}
-
           <div className="flex items-center sys-gap">
 
             {activeTab === 'dashboard' && canViewAllTeams && (

@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { format } from 'date-fns'
-import { Layout } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import * as XLSX from 'xlsx'
 
 // Context
 import { useApp } from './context/AppContext'
 import { useAuth } from './context/AuthContext'
 
 // Components
-import WeeklyReport from './WeeklyReport'
 import CelestialBackground from './CelestialBackground'
 import Preloader from './Preloader'
 import Login from './components/Login'
@@ -20,11 +16,11 @@ import Projects from './components/Projects'
 import Dashboard from './components/Dashboard'
 import Settings from './components/Settings'
 import BambooBackground from './components/BambooBackground'
-import OrgChart from './components/OrgChart'
 import Workflows from './components/Workflows'
 import AdminPanel from './components/AdminPanel'
 import PersonalSpace from './components/PersonalSpace'
 import DrawingsManager from './components/DrawingsManager'
+import DrawingTracker from './components/DrawingTracker'
 import ProfileModal from './components/ProfileModal'
 import SeasonalEffects from './components/SeasonalEffects'
 
@@ -58,36 +54,28 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'report' || activeTab === 'organization') {
+      setActiveTab('dashboard');
+    }
+  }, [activeTab, setActiveTab]);
+
   if (authLoading || !user) {
     return <Login />;
-  }
-
-  const exportExcel = async () => {
-    if (reportData.length === 0) return
-    const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-    const headers = ['PROJECT', 'TASK DETAILS', 'STATUS', ...DAYS_OF_WEEK.map((d, i) => `${d.toUpperCase()} (${weekDates[i]})`)]
-    const rows = reportData.map(r => [r.project, r.task, r.status, r.days.Monday || '-', r.days.Tuesday || '-', r.days.Wednesday || '-', r.days.Thursday || '-', r.days.Friday || '-'])
-    const wb = XLSX.utils.book_new()
-    const titleRow = [['APEX SOUTHERN CROSS ENGINEERING WEEKLY REPORT - ' + weekDates[0] + ' to ' + weekDates[4]]]
-    const ws = XLSX.utils.aoa_to_sheet([...titleRow, [], headers, ...rows])
-    ws['!cols'] = [{ wch: 20 }, { wch: 50 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }]
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }]
-    XLSX.utils.book_append_sheet(wb, ws, 'Weekly Report')
-    const fileName = `Apex_Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
-    XLSX.writeFile(wb, fileName)
   }
 
   // Route Guard Logic
   const canAccessAdmin = isAdmin;
 
+  const isFullViewportTab = ['personal', 'leave', 'dashboard', 'drawing-tracker'].includes(activeTab);
+
   const renderContent = () => {
     switch (activeTab) {
-      case 'report': return <WeeklyReport exportExcel={exportExcel} />;
       case 'personal': return <PersonalSpace />;
       case 'leave': return <AnnualLeave />;
       case 'projects': return <Projects />;
       case 'dashboard': return <Dashboard />;
-      case 'organization': return <OrgChart />;
+      case 'drawing-tracker': return <DrawingTracker />;
       case 'workflows': return <Workflows />;
       case 'issues': return <DrawingsManager />;
       case 'admin': return canAccessAdmin ? <AdminPanel /> : <PersonalSpace />;
@@ -101,7 +89,7 @@ function App() {
       {isLoading ? (
         <Preloader key="preloader" onLoadingComplete={() => setIsLoading(false)} />
       ) : (
-        <div className={`flex ${['personal', 'leave', 'dashboard'].includes(activeTab) ? 'h-screen overflow-hidden' : 'min-h-screen'} relative`}>
+        <div className={`flex ${isFullViewportTab ? 'h-screen overflow-hidden' : 'min-h-screen'} relative`}>
           {background === 'GALAXY' && <CelestialBackground />}
           {background === 'BAMBOO' && <BambooBackground />}
           {background === 'MINIMAL' && (
@@ -115,7 +103,7 @@ function App() {
           <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
 
           <div
-            className={`flex-1 ${['personal', 'leave', 'dashboard'].includes(activeTab) ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col transition-all duration-300 min-w-0 relative z-[1]`}
+            className={`flex-1 ${isFullViewportTab ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col transition-all duration-300 min-w-0 relative z-[1]`}
             style={{ 
               paddingLeft: windowWidth >= 1024 
                 ? (sidebarCollapsed ? '100px' : '260px') 
@@ -124,8 +112,8 @@ function App() {
           >
             <TopBar />
 
-            <main className={`flex-1 min-h-0 w-full flex flex-col ${['personal', 'leave', 'dashboard'].includes(activeTab) ? 'overflow-hidden p-0' : 'p-[10px]'}`}>
-              <div className={`w-full ${['personal', 'leave', 'dashboard'].includes(activeTab) ? 'h-full flex-1 flex flex-col min-h-0 overflow-hidden' : ''}`}>
+            <main className={`flex-1 min-h-0 w-full flex flex-col ${isFullViewportTab ? 'overflow-hidden p-0' : 'p-[10px]'}`}>
+              <div className={`w-full ${isFullViewportTab ? 'h-full flex-1 flex flex-col min-h-0 overflow-hidden' : ''}`}>
                 <AnimatePresence mode="popLayout">
                   <motion.div
                     key={activeTab}
@@ -134,7 +122,7 @@ function App() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15, ease: 'easeOut' }}
                     style={{ transform: 'none', transformOrigin: 'unset' }}
-                    className={['personal', 'leave', 'dashboard'].includes(activeTab) ? 'h-full flex-1 flex flex-col min-h-0 overflow-hidden' : ''}
+                    className={isFullViewportTab ? 'h-full flex-1 flex flex-col min-h-0 overflow-hidden' : ''}
                   >
                     {renderContent()}
                   </motion.div>
@@ -142,7 +130,7 @@ function App() {
               </div>
             </main>
 
-            {!['personal', 'leave', 'dashboard'].includes(activeTab) && (
+            {!isFullViewportTab && (
               <footer className="px-8 py-6 border-t border-white/5 text-center text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em]">
                 &copy; 2026 APEX Southern Cross Engineering - Weekly Report Intelligence - Vietnam
               </footer>

@@ -33,6 +33,7 @@
 @import "./UI/PartUi/Pages/profile.css";
 @import "./UI/PartUi/Pages/11_settings.css";
 @import "./UI/PartUi/Pages/12_admin.css";
+@import "./UI/PartUi/Pages/13_drawingtracker.css";
 
 :root {
   --primary: #4F46E5;

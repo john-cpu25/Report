@@ -1,0 +1,430 @@
+/* ============================================================================
+   13_drawingtracker.css — APEX Drawing Tracker (Dual-Theme: News & Galaxy)
+   ============================================================================ */
+
+.dt-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 10px;
+  gap: 10px;
+  overflow: hidden;
+  color: var(--text-main);
+}
+
+.dt-toolbar-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.dt-pill-tabs {
+  display: inline-flex;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 3px;
+  border-radius: 10px;
+  gap: 3px;
+}
+
+.dt-pill-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dt-pill-btn:hover {
+  color: var(--text-main);
+}
+
+.dt-pill-btn.active {
+  background: var(--bg-card);
+  color: var(--text-main);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.dt-input,
+.dt-select {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-size: 12.5px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.dt-input:focus,
+.dt-select:focus {
+  border-color: #6366f1;
+}
+
+.dt-action-btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.dt-action-btn:hover {
+  background: var(--bg-hover);
+}
+
+.dt-action-btn.primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #ffffff;
+}
+
+.dt-action-btn.primary:hover {
+  filter: brightness(1.06);
+}
+
+.dt-action-btn.indigo {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #ffffff;
+}
+
+.dt-action-btn.danger {
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.08);
+}
+
+/* KPI Strip */
+.dt-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dt-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dt-stat-val {
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--text-main);
+}
+
+.dt-stat-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Matrix Table */
+.dt-matrix-wrap {
+  flex: 1;
+  min-height: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: auto;
+  position: relative;
+}
+
+.dt-matrix-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  font-size: 12.5px;
+}
+
+.dt-matrix-table th,
+.dt-matrix-table td {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  height: 34px;
+  padding: 0 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.dt-matrix-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  height: 40px;
+}
+
+.dt-fix {
+  position: sticky;
+  background: var(--bg-card);
+  z-index: 15;
+}
+
+.dt-matrix-table thead th.dt-fix {
+  z-index: 30;
+  background: var(--bg-card);
+}
+
+.dt-col-proj { left: 0; width: 140px; min-width: 140px; max-width: 140px; text-align: left !important; padding-left: 16px !important; font-weight: 800; }
+.dt-col-lvl  { left: 140px; width: 82px; min-width: 82px; max-width: 82px; font-weight: 700; }
+.dt-col-zone { left: 222px; width: 108px; min-width: 108px; max-width: 108px; }
+.dt-col-cur  { left: 330px; width: 92px; min-width: 92px; max-width: 92px; font-weight: 700; }
+.dt-col-plan { left: 422px; width: 98px; min-width: 98px; max-width: 98px; font-weight: 700; border-right: 2px solid var(--border) !important; }
+
+/* Day Cells */
+.dt-day-cell {
+  width: 48px;
+  min-width: 48px;
+  padding: 0 !important;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.12s ease;
+  user-select: none;
+}
+
+.dt-day-cell:hover {
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.dt-day-wk {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.dt-day-today {
+  background: rgba(234, 179, 8, 0.18) !important;
+}
+
+.dt-th-today {
+  background: rgba(234, 179, 8, 0.25) !important;
+  color: #d97706 !important;
+}
+
+body.theme-galaxy .dt-th-today {
+  color: #fde047 !important;
+}
+
+.dt-day-issued {
+  background: #22c55e !important;
+  color: #052e16 !important;
+  font-weight: 900;
+}
+
+.dt-day-issued:hover {
+  background: #16a34a !important;
+}
+
+.dt-day-plan {
+  background: #fb923c !important;
+  color: #431407 !important;
+  font-weight: 800;
+}
+
+.dt-day-plan:hover {
+  background: #f97316 !important;
+}
+
+.dt-day-late {
+  background: #f43f5e !important;
+  color: #ffffff !important;
+  font-weight: 900;
+}
+
+.dt-day-late:hover {
+  background: #e11d48 !important;
+}
+
+.dt-day-cnt {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 9px;
+  font-weight: 900;
+  opacity: 0.85;
+}
+
+.dt-zone-del {
+  opacity: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  transition: all 0.15s ease;
+}
+
+tr:hover .dt-zone-del,
+.dt-zone-del.confirm {
+  opacity: 1;
+}
+
+.dt-zone-del.confirm {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.12);
+}
+
+/* Summary & Gantt */
+.dt-summary-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 2px;
+}
+
+.dt-panel-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.dt-gantt-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  max-height: 440px;
+  background: var(--bg-surface);
+}
+
+.dt-g-row {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  min-height: 32px;
+  background: var(--bg-card);
+}
+
+.dt-g-row.head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-surface);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.dt-g-row.grp {
+  background: var(--bg-surface);
+  font-weight: 800;
+}
+
+.dt-g-lbl {
+  width: 210px;
+  flex-shrink: 0;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: inherit;
+  border-right: 1px solid var(--border);
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dt-g-track {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.dt-g-dot {
+  position: absolute;
+  top: 8px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+  transform: translateX(-50%);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  z-index: 3;
+}
+
+.dt-g-dot:hover {
+  transform: translateX(-50%) scale(1.3);
+}
+
+.dt-g-dot.plan {
+  background: var(--bg-card) !important;
+  border: 2px solid #fb923c;
+}
+
+.dt-g-dot.late {
+  background: #fecdd3 !important;
+  border: 2px solid #f43f5e;
+}
+
+/* Modal */
+.dt-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 13, 22, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.dt-modal-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 480px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px 22px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  color: var(--text-main);
+}
