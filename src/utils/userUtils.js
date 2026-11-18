@@ -151,6 +151,16 @@ export const canViewAllTeamsDashboard = (user) => {
   const email = (user.email || '').toLowerCase().trim();
   const name = (user.name || user.full_name || '').toLowerCase().trim();
 
+  // 0. Dedicated Admin
+  if (
+    email === 'admin@apexscengineering.com' ||
+    email.startsWith('admin@') ||
+    name === 'admin' ||
+    name === 'system administrator'
+  ) {
+    return true;
+  }
+
   // 1. Nhân Nguyễn (Johnny)
   if (
     email === 'johnny.nguyen@apexscengineering.com' ||

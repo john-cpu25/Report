@@ -49,14 +49,14 @@ Tài liệu chi tiết về toàn bộ danh sách tài khoản nhân sự, phân
 ## 3. DANH SÁCH TÀI KHOẢN NHÂN SỰ APEX
 
 ### 👑 Nhóm Quản Trị Hệ Thống (Admins)
-| Họ và Tên (Supabase) | Email | Team | Văn phòng | Quyền |
-| :--- | :--- | :--- | :--- | :--- |
-| **Nhan Nguyen (Johnny)** | `johnny.nguyen@apexscengineering.com` | MODELLING | VietNam | **Admin** |
-| **Vu Do** | `vu@apexscengineering.com` | MANAGER | VietNam | **Admin** |
-| **Vu Do Nguyen** | `vu.donguyen@apexscengineering.com` | MANAGER | VietNam | **Admin** |
-| **Jason Le** | `jason@apexscengineering.com` | MANAGER | VietNam | **Admin** |
-| **Kamala Tran** | `kamala.tran@apexscengineering.com` | MANAGER | VietNam | **Admin** |
-| **System Admin** | `96FCEF00-994D-4BA9-ADAE-EA948702F606@admin.com.au` | MODELLING | VietNam | **AdminApp** |
+| Họ và Tên (Supabase) | Email | Team | Văn phòng | Quyền | Mật khẩu mặc định |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **System Admin** | `admin@apexscengineering.com` | MANAGER | VietNam | **Admin** (Xem toàn bộ data web) | `Admin@2026` |
+| **Nhan Nguyen (Johnny)** | `johnny.nguyen@apexscengineering.com` | MODELLING | VietNam | **Admin** | Đã cấu hình |
+| **Vu Do** | `vu@apexscengineering.com` | MANAGER | VietNam | **Admin** | Đã cấu hình |
+| **Vu Do Nguyen** | `vu.donguyen@apexscengineering.com` | MANAGER | VietNam | **Admin** | Đã cấu hình |
+| **Jason Le** | `jason@apexscengineering.com` | MANAGER | VietNam | **Admin** | First login |
+| **Kamala Tran** | `kamala.tran@apexscengineering.com` | MANAGER | VietNam | **Admin** | Đã cấu hình |
 
 ---
 
