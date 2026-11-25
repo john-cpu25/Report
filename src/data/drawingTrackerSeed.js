@@ -17,7 +17,7 @@ export const LEGACY_PROJECT_ID_TO_APEX_UUID = {
   p11: '65799e7b-60a6-4e26-8b8b-9c65450a659f'  // MEL03
 };
 
-export const TRACKER_SEED = {
+export const TRACKER_SEED_MODELLING = {
   projects: [
     { id: 'e9132fa4-a399-4f7a-9bb8-a23018516c39', name: 'AVENUE', full_name: '31 The Avenue, Coburg', apex_project_id: 'e9132fa4-a399-4f7a-9bb8-a23018516c39', color: '#3730A3' },
     { id: 'e742d27c-aa9c-43d4-8181-d85e61a5a4df', name: 'CW3', full_name: 'Collins Wharf 3', apex_project_id: 'e742d27c-aa9c-43d4-8181-d85e61a5a4df', color: '#164E63' },
@@ -186,7 +186,35 @@ export const TRACKER_SEED = {
   ]
 };
 
-export const getFreshTrackerSeed = () => JSON.parse(JSON.stringify(TRACKER_SEED));
+export const TRACKER_SEED_PTREO = {
+  projects: [],
+  zones: [],
+  issues: [],
+  plans: []
+};
+
+// Aliases & Seed selectors
+export const TRACKER_SEED = TRACKER_SEED_MODELLING;
+
+export const normalizeTeamId = (team) => {
+  if (!team) return 'MODELLING';
+  const upper = String(team).trim().toUpperCase();
+  if (upper.includes('MODEL')) return 'MODELLING';
+  if (upper.includes('PT') || upper.includes('REO')) return 'PT&REO';
+  if (upper.includes('SLAB') || upper.includes('ENGINEER')) return 'ENGINEER';
+  if (upper.includes('ETABS') || upper.includes('LATERAL')) return 'ETABS';
+  if (upper.includes('MANAGE')) return 'MANAGER';
+  return upper;
+};
+
+export const getSeedForTeam = (team = 'MODELLING') => {
+  const norm = normalizeTeamId(team);
+  if (norm === 'MODELLING') return TRACKER_SEED_MODELLING;
+  return TRACKER_SEED_PTREO;
+};
+
+export const getFreshTrackerSeed = (team = 'MODELLING') =>
+  JSON.parse(JSON.stringify(getSeedForTeam(team)));
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 

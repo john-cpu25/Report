@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Copy, ExternalLink, RotateCcw, Upload, Check, Plus, Trash2 } from 'lucide-react';
 import {
   TRACKER_SEED,
+  getSeedForTeam,
   fmtLong,
   daysAgo,
   isPlanLate,
@@ -351,14 +352,16 @@ export const AddRowOrProjectModal = ({
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[11.5px] font-bold text-[var(--text-muted)]">Level</label>
+            <label className="text-[11.5px] font-bold text-[var(--text-muted)]">
+              Level (nhập 1 hoặc nhiều level cách nhau bởi dấu phẩy)
+            </label>
             <input
               type="text"
               required
               autoFocus
               value={level}
               onChange={(e) => setLevel(e.target.value)}
-              placeholder="VD: L3, B1, GF, RF..."
+              placeholder="VD: L3 hoặc hàng loạt: GF, L1, L2, L3, ROOF..."
               className="dt-input w-full"
             />
           </div>
@@ -371,7 +374,7 @@ export const AddRowOrProjectModal = ({
               type="text"
               value={zonesInput}
               onChange={(e) => setZonesInput(e.target.value)}
-              placeholder="Để trống nếu không chia zone. VD: ZONE A, ZONE B, POUR 1"
+              placeholder="Để trống nếu không chia zone. VD: POUR 1, POUR 2 hoặc ZONE A, ZONE B"
               className="dt-input w-full"
             />
           </div>
@@ -393,6 +396,7 @@ export const AddRowOrProjectModal = ({
 export const DataManagementModal = ({
   isOpen,
   data,
+  selectedTeam = 'MODELLING',
   canAdminReset,
   onClose,
   onImportJson,
@@ -410,7 +414,8 @@ export const DataManagementModal = ({
     setConfirmReset(false);
   }, [data, isOpen]);
 
-  const deletedSeedZones = TRACKER_SEED.zones.filter(
+  const activeSeed = getSeedForTeam(selectedTeam);
+  const deletedSeedZones = (activeSeed.zones || []).filter(
     (sz) =>
       !data.zones.some(
         (z) => z.project_id === sz.project_id && z.level === sz.level && z.zone === sz.zone
@@ -433,22 +438,27 @@ export const DataManagementModal = ({
   return (
     <div className="dt-modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="dt-modal-box !w-[580px]">
-        <h2 className="text-[16px] font-black">Quản Lý Dữ Liệu & Khôi Phục (JSON)</h2>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <h2 className="text-[16px] font-black">Quản Lý Dữ Liệu Tracker (JSON)</h2>
+          <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold uppercase bg-indigo-500/15 text-indigo-400 border border-indigo-500/20">
+            Team: {selectedTeam}
+          </span>
+        </div>
         <p className="text-[12px] text-[var(--text-muted)] mb-3">
-          Cấu trúc 4 bảng đồng bộ trực tiếp với Supabase: <b>APEX_Tracker_Project</b>, <b>Zone</b>, <b>Issue</b>, <b>Plan</b>.
+          Dữ liệu lưu trữ độc lập theo Team trên Supabase: <b>dt_zones_{selectedTeam}</b>, <b>dt_issues_{selectedTeam}</b>, <b>dt_plans_{selectedTeam}</b>.
         </p>
 
         {/* Deleted Seed Rows */}
         <div className="mb-3">
           <div className="text-[11px] font-extrabold uppercase text-[var(--text-muted)] mb-1">
-            Dòng đã xóa so với file Excel gốc ({deletedSeedZones.length})
+            Dòng đã xóa so với mẫu gốc Team {selectedTeam} ({deletedSeedZones.length})
           </div>
           <div className="max-h-[120px] overflow-y-auto rounded-lg border border-[var(--border)] divide-y divide-[var(--border)] text-[12px]">
             {deletedSeedZones.length === 0 ? (
-              <div className="px-3 py-2 text-[var(--text-dim)]">Không có dòng gốc nào bị xóa</div>
+              <div className="px-3 py-2 text-[var(--text-dim)]">Không có dòng mẫu nào bị xóa</div>
             ) : (
               deletedSeedZones.map((sz) => {
-                const sp = TRACKER_SEED.projects.find((p) => p.id === sz.project_id);
+                const sp = activeSeed.projects.find((p) => p.id === sz.project_id);
                 return (
                   <div key={sz.id} className="flex items-center justify-between px-3 py-1.5">
                     <span className="font-semibold">
@@ -488,7 +498,7 @@ export const DataManagementModal = ({
               className="dt-action-btn danger mr-auto"
             >
               <RotateCcw size={13} />
-              {confirmReset ? 'Xác nhận ghi đè gốc?' : 'Reset về Excel gốc'}
+              {confirmReset ? `Xác nhận ghi đè gốc Team ${selectedTeam}?` : `Reset về gốc Team ${selectedTeam}`}
             </button>
           )}
           <button

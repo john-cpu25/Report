@@ -11,10 +11,12 @@ import {
   Download,
   RefreshCw,
   Cloud,
-  HardDrive
+  HardDrive,
+  Filter
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import NeumorphicDropdown from './buttons/NeumorphicDropdown';
 import BoardView from './DrawingTracker/BoardView';
 import SummaryView from './DrawingTracker/SummaryView';
 import {
@@ -26,6 +28,8 @@ import {
   TRACKER_SEED,
   LEGACY_PROJECT_ID_TO_APEX_UUID,
   getFreshTrackerSeed,
+  normalizeTeamId,
+  getSeedForTeam,
   uid,
   ymd,
   fmtShort,
@@ -41,11 +45,24 @@ import {
 } from '../services/drawingTrackerService';
 
 const DrawingTracker = () => {
-  const { theme, dashboardProjects } = useApp();
-  const { isAdmin, isLeader } = useAuth();
+  const { theme, dashboardProjects, adminActiveTeam, setAdminActiveTeam } = useApp();
+  const { user, isAdmin, isLeader, userTeam } = useAuth();
   const isDark = theme === 'GALAXY' || theme === 'DARK';
 
-  const [data, setData] = useState(() => getFreshTrackerSeed());
+  const [selectedTeam, setSelectedTeam] = useState(() => {
+    const saved = localStorage.getItem('apex-drawing-tracker-team');
+    if (saved) return normalizeTeamId(saved);
+    const ut = (userTeam || user?.team || '').toUpperCase();
+    if (ut.includes('PT') || ut.includes('REO')) return 'PT&REO';
+    if (adminActiveTeam && adminActiveTeam !== 'ALL') return normalizeTeamId(adminActiveTeam);
+    return 'MODELLING';
+  });
+  const teamRef = useRef(selectedTeam);
+  useEffect(() => {
+    teamRef.current = selectedTeam;
+  }, [selectedTeam]);
+
+  const [data, setData] = useState(() => getFreshTrackerSeed(selectedTeam));
   const [syncStatus, setSyncStatus] = useState('loading'); // 'loading' | 'saving' | 'synced' | 'local' | 'error'
   const [subTab, setSubTab] = useState('board'); // 'board' | 'summary'
   const [filterProject, setFilterProject] = useState('all');
@@ -89,9 +106,9 @@ const DrawingTracker = () => {
     );
   }, []);
 
-  const performLoad = useCallback(async (silent = false) => {
+  const performLoad = useCallback(async (silent = false, teamToLoad = teamRef.current) => {
     if (!silent) setSyncStatus('loading');
-    const res = await loadTrackerData();
+    const res = await loadTrackerData(teamToLoad);
     setData(res.data);
     dataRef.current = res.data;
     snapRef.current = takeSnapshot(res.data);
@@ -99,10 +116,12 @@ const DrawingTracker = () => {
   }, []);
 
   useEffect(() => {
-    performLoad(false);
-    const unsubscribe = subscribeTrackerRealtime(() => {
+    performLoad(false, selectedTeam);
+    const unsubscribe = subscribeTrackerRealtime((payload) => {
       if (!busyRef.current && !dirtyRef.current) {
-        performLoad(true);
+        if (!payload?.team || normalizeTeamId(payload.team) === normalizeTeamId(teamRef.current)) {
+          performLoad(true, teamRef.current);
+        }
       }
     });
     return () => {
@@ -110,7 +129,7 @@ const DrawingTracker = () => {
       clearTimeout(toastTimerRef.current);
       unsubscribe();
     };
-  }, [performLoad]);
+  }, [performLoad, selectedTeam]);
 
   const scheduleSync = useCallback(
     (nextData) => {
@@ -128,7 +147,7 @@ const DrawingTracker = () => {
         busyRef.current = true;
         dirtyRef.current = false;
         try {
-          const newSnap = await syncTrackerChanges(snapRef.current, dataRef.current);
+          const newSnap = await syncTrackerChanges(snapRef.current, dataRef.current, teamRef.current);
           snapRef.current = newSnap;
           setSyncStatus('synced');
         } catch (err) {
@@ -143,6 +162,21 @@ const DrawingTracker = () => {
     },
     []
   );
+
+  const handleTeamChange = (newTeam) => {
+    const norm = normalizeTeamId(newTeam);
+    if (!norm || norm === selectedTeam) return;
+    setSelectedTeam(norm);
+    teamRef.current = norm;
+    localStorage.setItem('apex-drawing-tracker-team', norm);
+    if (setAdminActiveTeam) {
+      setAdminActiveTeam(norm);
+    }
+    setFilterProject('all');
+    setSearchQuery('');
+    performLoad(false, norm);
+    showToast(`Đã chuyển sang bảng theo dõi của Team: ${norm}`);
+  };
 
   // Project color lookup linked with APEX_Project
   const apexColorMap = useMemo(() => {
@@ -318,7 +352,55 @@ const DrawingTracker = () => {
     });
   };
 
+  const handleUpdateZone = (zoneId, updates) => {
+    const nextZones = data.zones.map((z) => {
+      if (z.id !== zoneId) return z;
+      return {
+        ...z,
+        ...updates,
+        ...(updates.level ? { level: updates.level.trim().toUpperCase() } : {}),
+        ...(updates.zone !== undefined ? { zone: updates.zone.trim() } : {})
+      };
+    });
+    scheduleSync({ ...data, zones: nextZones });
+  };
+
+  const handleQuickAddZone = (projectId, level = 'GF', zoneName = '') => {
+    const pZones = data.zones.filter((z) => z.project_id === projectId);
+    const maxSort = pZones.length ? Math.max(...pZones.map((z) => Number(z.sort) || 0)) : 0;
+    const cleanLevel = (level || 'GF').trim().toUpperCase();
+    const cleanZone = (zoneName || '').trim();
+
+    const exists = pZones.some(
+      (z) =>
+        z.level.toUpperCase() === cleanLevel &&
+        (z.zone || '').toUpperCase() === cleanZone.toUpperCase()
+    );
+    if (exists) {
+      showToast(`Dòng ${cleanLevel} ${cleanZone ? '(' + cleanZone + ')' : ''} đã có trong dự án!`);
+      return null;
+    }
+
+    const newZone = {
+      id: `z_${uid()}`,
+      project_id: projectId,
+      level: cleanLevel,
+      zone: cleanZone,
+      sort: maxSort + 1
+    };
+
+    scheduleSync({ ...data, zones: [...data.zones, newZone] });
+    showToast(`Đã thêm ${cleanLevel} ${cleanZone ? '· ' + cleanZone : ''}`);
+    return newZone;
+  };
+
   const handleAddZones = ({ projectId, level, zonesStr }) => {
+    const levelList = (level || 'GF')
+      .split(',')
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean);
+    if (levelList.length === 0) levelList.push('GF');
+
     let zoneNames = zonesStr
       .split(',')
       .map((s) => s.trim())
@@ -328,25 +410,25 @@ const DrawingTracker = () => {
     const nextZones = [...data.zones];
     let added = 0;
 
-    zoneNames.forEach((zName) => {
-      const exists = nextZones.some(
-        (r) =>
-          r.project_id === projectId &&
-          r.level.toUpperCase() === level.toUpperCase() &&
-          r.zone.toUpperCase() === zName.toUpperCase()
-      );
-      if (exists) return;
-      const sortOrder = nextZones.filter(
-        (r) => r.project_id === projectId && r.level.toUpperCase() === level.toUpperCase()
-      ).length;
-      nextZones.push({
-        id: uid(),
-        project_id: projectId,
-        level,
-        zone: zName,
-        sort: sortOrder
+    levelList.forEach((lvl) => {
+      zoneNames.forEach((zName) => {
+        const exists = nextZones.some(
+          (r) =>
+            r.project_id === projectId &&
+            r.level.toUpperCase() === lvl &&
+            r.zone.toUpperCase() === zName.toUpperCase()
+        );
+        if (exists) return;
+        const sortOrder = nextZones.filter((r) => r.project_id === projectId).length;
+        nextZones.push({
+          id: `z_${uid()}`,
+          project_id: projectId,
+          level: lvl,
+          zone: zName,
+          sort: sortOrder + 1
+        });
+        added++;
       });
-      added++;
     });
 
     scheduleSync({ ...data, zones: nextZones });
@@ -388,14 +470,15 @@ const DrawingTracker = () => {
   };
 
   const handleRestoreSeedZone = (seedZone) => {
+    const activeSeed = getSeedForTeam(selectedTeam);
     const nextProjects = [...data.projects];
     if (!nextProjects.some((p) => p.id === seedZone.project_id)) {
-      const sp = TRACKER_SEED.projects.find((p) => p.id === seedZone.project_id);
+      const sp = activeSeed.projects.find((p) => p.id === seedZone.project_id);
       if (sp) nextProjects.push({ ...sp });
     }
     const newZoneId = data.zones.some((z) => z.id === seedZone.id) ? uid() : seedZone.id;
     const nextZones = [...data.zones, { ...seedZone, id: newZoneId }];
-    const restoredIssues = TRACKER_SEED.issues
+    const restoredIssues = activeSeed.issues
       .filter((i) => i.zone_id === seedZone.id)
       .map((i) => ({ ...i, id: uid(), zone_id: newZoneId }));
 
@@ -474,6 +557,30 @@ const DrawingTracker = () => {
             >
               <PieChart size={14} /> Tổng Hợp & Gantt
             </button>
+          </div>
+
+          {/* TEAM FILTER DROPDOWN & SWITCHER */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div
+              className="flex items-center justify-center shrink-0 w-[36px] h-[36px] rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[#4f46e5]"
+              title="Lọc bảng theo Team"
+            >
+              <Filter size={18} className="fill-[#4f46e5]/30 text-[#4f46e5] drop-shadow-[0_0_6px_rgba(79,70,229,0.3)]" />
+            </div>
+
+            <NeumorphicDropdown
+              value={selectedTeam}
+              onChange={(e) => handleTeamChange(e.target.value)}
+              options={[
+                { value: 'MODELLING', label: 'MODELLING' },
+                { value: 'PT&REO', label: 'PT&REO' },
+                { value: 'ENGINEER', label: 'ENGINEER' },
+                { value: 'ETABS', label: 'ETABS' },
+                { value: 'MANAGER', label: 'MANAGER' }
+              ]}
+              defaultLabel="TEAMS"
+              className="min-w-[135px] shrink-0"
+            />
           </div>
 
           {/* Project Filter (Direct PROJECT CODE from APEX_Project) */}
@@ -638,6 +745,9 @@ const DrawingTracker = () => {
             setCellModal({ zoneId, initialDate, forceType })
           }
           onDeleteZone={handleDeleteZone}
+          onUpdateZone={handleUpdateZone}
+          onQuickAddZone={handleQuickAddZone}
+          onOpenAddModal={() => setShowAddModal(true)}
           scrollToTodayTrigger={scrollToTodayTrigger}
         />
       ) : (
@@ -685,6 +795,7 @@ const DrawingTracker = () => {
         <DataManagementModal
           isOpen={showDataModal}
           data={data}
+          selectedTeam={selectedTeam}
           canAdminReset={Boolean(isAdmin || isLeader)}
           onClose={() => setShowDataModal(false)}
           onImportJson={(imported) => {
@@ -714,11 +825,11 @@ const DrawingTracker = () => {
               plans: imported.plans || []
             });
             setShowDataModal(false);
-            showToast('Đã nạp dữ liệu JSON thành công & ánh xạ vào APEX_Project');
+            showToast(`Đã nạp dữ liệu JSON thành công cho Team ${selectedTeam}!`);
           }}
           onRestoreSeedZone={handleRestoreSeedZone}
           onResetToExcelSeed={() => {
-            const fresh = getFreshTrackerSeed();
+            const fresh = getFreshTrackerSeed(selectedTeam);
             scheduleSync({
               projects: data.projects,
               zones: fresh.zones,
@@ -727,7 +838,7 @@ const DrawingTracker = () => {
             });
             setFilterProject('all');
             setShowDataModal(false);
-            showToast('Đã reset về dữ liệu chuẩn');
+            showToast(`Đã reset về dữ liệu chuẩn của Team ${selectedTeam}`);
           }}
           onToast={showToast}
         />

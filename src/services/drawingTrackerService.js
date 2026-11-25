@@ -1,15 +1,24 @@
 import { supabase } from '../supabaseClient.js';
 import {
   getFreshTrackerSeed,
+  normalizeTeamId,
+  getSeedForTeam,
   LEGACY_PROJECT_ID_TO_APEX_UUID
 } from '../data/drawingTrackerSeed.js';
 
-const LOCAL_STORAGE_KEY = 'apex-drawing-tracker-v2';
+const LOCAL_STORAGE_KEY_PREFIX = 'apex-drawing-tracker-v2';
 const KV_TABLE = 'APEX_App_Setting';
-const KV_KEYS = {
-  zones: 'dt_zones',
-  issues: 'dt_issues',
-  plans: 'dt_plans'
+
+export const getTeamKVKeys = (team = 'MODELLING') => {
+  const norm = normalizeTeamId(team);
+  const safe = norm.replace(/[^a-zA-Z0-9_]/g, '_');
+  return {
+    team: norm,
+    safeTeam: safe,
+    zones: `dt_zones_${safe}`,
+    issues: `dt_issues_${safe}`,
+    plans: `dt_plans_${safe}`
+  };
 };
 
 export const TRACKER_TABLES = {
@@ -28,6 +37,11 @@ let activeChannel = null;
 let storageBackend = 'kv'; // 'relational' | 'kv'
 
 const remapProjectId = (pid) => LEGACY_PROJECT_ID_TO_APEX_UUID[pid] || pid;
+
+const getLocalStorageKey = (team = 'MODELLING') => {
+  const norm = normalizeTeamId(team);
+  return `${LOCAL_STORAGE_KEY_PREFIX}_${norm.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+};
 
 export const normalizeRecord = (key, row) => {
   const cols = COLS[key];
@@ -58,21 +72,31 @@ export const takeSnapshot = (data) => {
   return snap;
 };
 
-export const saveLocalBackup = (data) => {
+export const saveLocalBackup = (data, team = 'MODELLING') => {
+  const norm = normalizeTeamId(team);
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+    const key = getLocalStorageKey(norm);
+    localStorage.setItem(key, JSON.stringify(data));
+    if (norm === 'MODELLING') {
+      localStorage.setItem('apex-drawing-tracker-v2', JSON.stringify(data));
+    }
   } catch (err) {
     console.warn('[DrawingTracker] LocalStorage backup skipped:', err);
   }
 };
 
-export const loadLocalBackup = () => {
+export const loadLocalBackup = (team = 'MODELLING') => {
+  const norm = normalizeTeamId(team);
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const key = getLocalStorageKey(norm);
+    let raw = localStorage.getItem(key);
+    if (!raw && norm === 'MODELLING') {
+      raw = localStorage.getItem('apex-drawing-tracker-v2');
+    }
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.zones) && Array.isArray(parsed.issues)) {
-        parsed.projects = Array.isArray(parsed.projects) ? parsed.projects : getFreshTrackerSeed().projects;
+      if (parsed && Array.isArray(parsed.zones) && parsed.zones.length > 0 && Array.isArray(parsed.issues)) {
+        parsed.projects = Array.isArray(parsed.projects) ? parsed.projects : getFreshTrackerSeed(norm).projects;
         parsed.zones = parsed.zones.map((z) => ({ ...z, project_id: remapProjectId(z.project_id) }));
         parsed.plans = Array.isArray(parsed.plans) ? parsed.plans : [];
         return parsed;
@@ -81,8 +105,8 @@ export const loadLocalBackup = () => {
   } catch (err) {
     console.warn('[DrawingTracker] Invalid LocalStorage backup, using seed:', err);
   }
-  const fresh = getFreshTrackerSeed();
-  saveLocalBackup(fresh);
+  const fresh = getFreshTrackerSeed(norm);
+  saveLocalBackup(fresh, norm);
   return fresh;
 };
 
@@ -155,11 +179,22 @@ async function pushToRelational(projects, dataset) {
   }
 }
 
-async function loadFromSupabaseKV() {
+async function loadFromSupabaseKV(team = 'MODELLING') {
+  const norm = normalizeTeamId(team);
+  const kvKeys = getTeamKVKeys(norm);
+
+  const queryKeys = [
+    kvKeys.zones, kvKeys.issues, kvKeys.plans,
+    `dt_zones_${norm}`, `dt_issues_${norm}`, `dt_plans_${norm}`
+  ];
+  if (norm === 'MODELLING') {
+    queryKeys.push('dt_zones', 'dt_issues', 'dt_plans');
+  }
+
   const { data, error } = await supabase
     .from(KV_TABLE)
     .select('key, value')
-    .in('key', Object.values(KV_KEYS));
+    .in('key', queryKeys);
 
   if (error) throw error;
 
@@ -172,12 +207,22 @@ async function loadFromSupabaseKV() {
     }
   });
 
-  const hasCloudZones =
-    Array.isArray(byKey[KV_KEYS.zones]) && byKey[KV_KEYS.zones].length > 0;
+  let rawZones = byKey[kvKeys.zones] || byKey[`dt_zones_${norm}`];
+  let rawIssues = byKey[kvKeys.issues] || byKey[`dt_issues_${norm}`];
+  let rawPlans = byKey[kvKeys.plans] || byKey[`dt_plans_${norm}`];
+
+  // For MODELLING: fallback to legacy keys if team keys don't exist yet
+  if (norm === 'MODELLING' && (!Array.isArray(rawZones) || rawZones.length === 0)) {
+    rawZones = byKey['dt_zones'];
+    rawIssues = byKey['dt_issues'];
+    rawPlans = byKey['dt_plans'];
+  }
+
+  const hasCloudZones = Array.isArray(rawZones) && rawZones.length > 0;
 
   if (!hasCloudZones) {
-    const initial = loadLocalBackup();
-    await saveToSupabaseKV(initial);
+    const initial = getFreshTrackerSeed(norm);
+    await saveToSupabaseKV(initial, norm);
     return {
       zones: initial.zones,
       issues: initial.issues,
@@ -187,8 +232,7 @@ async function loadFromSupabaseKV() {
 
   // Tự động nâng cấp các project_id cũ ('p1'..'p11') sang UUID chuẩn của APEX_Project
   let needsRemapSave = false;
-  const rawZones = byKey[KV_KEYS.zones] || [];
-  const zones = rawZones.map((z) => {
+  const zones = (rawZones || []).map((z) => {
     const mapped = remapProjectId(z.project_id);
     if (mapped !== z.project_id) needsRemapSave = true;
     return { ...z, project_id: mapped };
@@ -196,18 +240,21 @@ async function loadFromSupabaseKV() {
 
   const result = {
     zones,
-    issues: byKey[KV_KEYS.issues] || [],
-    plans: byKey[KV_KEYS.plans] || []
+    issues: rawIssues || [],
+    plans: rawPlans || []
   };
 
   if (needsRemapSave) {
-    await saveToSupabaseKV(result);
+    await saveToSupabaseKV(result, norm);
   }
 
   return result;
 }
 
-async function saveToSupabaseKV(dataset) {
+async function saveToSupabaseKV(dataset, team = 'MODELLING') {
+  const norm = normalizeTeamId(team);
+  const kvKeys = getTeamKVKeys(norm);
+
   const normalized = {
     zones: (dataset.zones || []).map((r) => normalizeRecord('zones', r)),
     issues: (dataset.issues || []).map((r) => normalizeRecord('issues', r)),
@@ -215,10 +262,27 @@ async function saveToSupabaseKV(dataset) {
   };
 
   const rows = [
-    { key: KV_KEYS.zones, value: JSON.stringify(normalized.zones) },
-    { key: KV_KEYS.issues, value: JSON.stringify(normalized.issues) },
-    { key: KV_KEYS.plans, value: JSON.stringify(normalized.plans) }
+    { key: kvKeys.zones, value: JSON.stringify(normalized.zones) },
+    { key: kvKeys.issues, value: JSON.stringify(normalized.issues) },
+    { key: kvKeys.plans, value: JSON.stringify(normalized.plans) }
   ];
+
+  if (norm !== kvKeys.safeTeam) {
+    rows.push(
+      { key: `dt_zones_${norm}`, value: JSON.stringify(normalized.zones) },
+      { key: `dt_issues_${norm}`, value: JSON.stringify(normalized.issues) },
+      { key: `dt_plans_${norm}`, value: JSON.stringify(normalized.plans) }
+    );
+  }
+
+  // Nếu là team MODELLING thì đồng bộ cả key legacy dt_zones, dt_issues, dt_plans để tương thích
+  if (norm === 'MODELLING') {
+    rows.push(
+      { key: 'dt_zones', value: JSON.stringify(normalized.zones) },
+      { key: 'dt_issues', value: JSON.stringify(normalized.issues) },
+      { key: 'dt_plans', value: JSON.stringify(normalized.plans) }
+    );
+  }
 
   const { error } = await supabase.from(KV_TABLE).upsert(rows, { onConflict: 'key' });
   if (error) throw error;
@@ -227,60 +291,41 @@ async function saveToSupabaseKV(dataset) {
     activeChannel.send({
       type: 'broadcast',
       event: 'tracker-updated',
-      payload: { ts: Date.now() }
+      payload: { team: norm, ts: Date.now() }
     });
   }
 }
 
-export async function loadTrackerData() {
+export async function loadTrackerData(team = 'MODELLING') {
+  const norm = normalizeTeamId(team);
   try {
     // 1. Luôn lấy danh sách PROJECT CODE chuẩn từ bảng APEX_Project trên Supabase
     const projects = await fetchApexProjectsList();
 
-    // 2. Thử đọc từ các bảng quan hệ APEX_Tracker_* (nếu có), ngược lại đọc từ kho KV trên Supabase
+    // 2. Đọc từ kho KV trên Supabase theo team
     try {
-      const keys = Object.keys(TRACKER_TABLES);
-      const results = await Promise.all(keys.map((k) => fetchAllRelationalRows(k)));
-      const rel = {};
-      keys.forEach((k, idx) => {
-        rel[k] = results[idx];
-      });
-      storageBackend = 'relational';
-
-      if (rel.zones.length === 0 && rel.issues.length === 0) {
-        const kvFallback = await loadFromSupabaseKV();
-        await pushToRelational(projects, kvFallback);
-        const full = { projects, ...kvFallback };
-        saveLocalBackup(full);
-        return { data: full, mode: 'supabase', error: null };
-      }
-
-      const full = {
-        projects,
-        zones: rel.zones.map((z) => ({ ...z, project_id: remapProjectId(z.project_id) })),
-        issues: rel.issues,
-        plans: rel.plans
-      };
-      saveLocalBackup(full);
-      return { data: full, mode: 'supabase', error: null };
-    } catch {
       storageBackend = 'kv';
-      const kvData = await loadFromSupabaseKV();
+      const kvData = await loadFromSupabaseKV(norm);
       const full = { projects, ...kvData };
-      saveLocalBackup(full);
-      return { data: full, mode: 'supabase', error: null };
+      saveLocalBackup(full, norm);
+      return { data: full, mode: 'supabase', team: norm, error: null };
+    } catch (kvErr) {
+      console.warn(`[DrawingTracker] Supabase KV read error for team ${norm}:`, kvErr);
+      const fallback = loadLocalBackup(norm);
+      return { data: fallback, mode: 'local', team: norm, error: kvErr };
     }
   } catch (err) {
-    const fallback = loadLocalBackup();
-    return { data: fallback, mode: 'local', error: err };
+    const fallback = loadLocalBackup(norm);
+    return { data: fallback, mode: 'local', team: norm, error: err };
   }
 }
 
-export async function syncTrackerChanges(prevSnap, currentData) {
-  saveLocalBackup(currentData);
+export async function syncTrackerChanges(prevSnap, currentData, team = 'MODELLING') {
+  const norm = normalizeTeamId(team);
+  saveLocalBackup(currentData, norm);
 
   if (storageBackend === 'kv') {
-    await saveToSupabaseKV(currentData);
+    await saveToSupabaseKV(currentData, norm);
     return takeSnapshot(currentData);
   }
 
@@ -349,7 +394,7 @@ export async function syncTrackerChanges(prevSnap, currentData) {
     activeChannel.send({
       type: 'broadcast',
       event: 'tracker-updated',
-      payload: { ts: Date.now() }
+      payload: { team: norm, ts: Date.now() }
     });
   }
 
@@ -358,10 +403,10 @@ export async function syncTrackerChanges(prevSnap, currentData) {
 
 export function subscribeTrackerRealtime(onRemoteChange) {
   let debounceTimer = null;
-  const trigger = () => {
+  const trigger = (payload) => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      onRemoteChange?.();
+      onRemoteChange?.(payload);
     }, 600);
   };
 
@@ -369,26 +414,26 @@ export function subscribeTrackerRealtime(onRemoteChange) {
     config: { broadcast: { self: false } }
   });
 
-  channel.on('broadcast', { event: 'tracker-updated' }, trigger);
+  channel.on('broadcast', { event: 'tracker-updated' }, (msg) => trigger(msg?.payload));
 
   // Lắng nghe cả APEX_Project (khi thêm/đổi PROJECT CODE) và kho lưu trữ Tracker
   channel.on(
     'postgres_changes',
     { event: '*', schema: 'public', table: 'APEX_Project' },
-    trigger
+    () => trigger()
   );
 
   channel.on(
     'postgres_changes',
     { event: '*', schema: 'public', table: KV_TABLE },
-    trigger
+    () => trigger()
   );
 
   Object.values(TRACKER_TABLES).forEach((table) => {
     channel.on(
       'postgres_changes',
       { event: '*', schema: 'public', table },
-      trigger
+      () => trigger()
     );
   });
 

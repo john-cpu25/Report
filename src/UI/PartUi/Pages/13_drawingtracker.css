@@ -428,3 +428,49 @@ tr:hover .dt-zone-del,
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
   color: var(--text-main);
 }
+
+/* Inline Editable Cells & Quick Add */
+.dt-cell-input {
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 11.5px;
+  color: var(--text-main);
+  text-align: center;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.dt-cell-input:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.dt-cell-input:focus,
+.dt-cell-input.dt-cell-editing {
+  border-color: #6366f1 !important;
+  background: var(--bg-card) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
+}
+
+.dt-level-input {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.dt-zone-input {
+  font-weight: 600;
+}
+
+.dt-quick-add-tr {
+  border-top: 1px dashed rgba(99, 102, 241, 0.25) !important;
+  border-bottom: 2px solid var(--border) !important;
+}
+
+.dt-quick-add-tr td {
+  height: 34px !important;
+}
+

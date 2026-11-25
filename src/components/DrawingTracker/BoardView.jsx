@@ -9,6 +9,182 @@ import {
   lvlSort
 } from '../../data/drawingTrackerSeed';
 
+/**
+ * Editable cell for Level (e.g. GF, L1, L2, B1, ROOF)
+ * Preserves local state so typing is immediate and never loses focus.
+ */
+const EditableLevelCell = ({ zone, onUpdate }) => {
+  const [val, setVal] = useState(zone.level || '');
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    setVal(zone.level || '');
+  }, [zone.level]);
+
+  const handleCommit = () => {
+    setIsEditing(false);
+    const trimmed = (val || '').trim().toUpperCase();
+    if (!trimmed) {
+      setVal(zone.level || '');
+      return;
+    }
+    if (trimmed !== (zone.level || '').toUpperCase()) {
+      onUpdate?.(zone.id, { level: trimmed });
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.target.blur();
+    } else if (e.key === 'Escape') {
+      setVal(zone.level || '');
+      setIsEditing(false);
+      e.target.blur();
+    }
+  };
+
+  return (
+    <td className="dt-fix dt-col-lvl align-middle p-0">
+      <input
+        type="text"
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onFocus={() => setIsEditing(true)}
+        onBlur={handleCommit}
+        onKeyDown={handleKeyDown}
+        title="Nhấp để sửa Level (Enter để lưu)"
+        className={`dt-cell-input dt-level-input text-center font-extrabold uppercase ${
+          isEditing ? 'dt-cell-editing' : ''
+        }`}
+      />
+    </td>
+  );
+};
+
+/**
+ * Editable cell for Zone / Pour (e.g. Pour 1, Pour 2, Zone A, or empty)
+ * Has a subtle hover delete button so user can delete the row.
+ */
+const EditableZoneCell = ({ zone, onUpdate, confirmDelId, onConfirmDelete }) => {
+  const [val, setVal] = useState(zone.zone || '');
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    setVal(zone.zone || '');
+  }, [zone.zone]);
+
+  const handleCommit = () => {
+    setIsEditing(false);
+    const trimmed = (val || '').trim();
+    if (trimmed !== (zone.zone || '').trim()) {
+      onUpdate?.(zone.id, { zone: trimmed });
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.target.blur();
+    } else if (e.key === 'Escape') {
+      setVal(zone.zone || '');
+      setIsEditing(false);
+      e.target.blur();
+    }
+  };
+
+  return (
+    <td className="dt-fix dt-col-zone align-middle p-0">
+      <div className="flex items-center justify-between gap-1 px-1 h-full w-full group/zone">
+        <input
+          type="text"
+          value={val}
+          placeholder={isEditing ? 'Pour / Zone...' : '—'}
+          onChange={(e) => setVal(e.target.value)}
+          onFocus={() => setIsEditing(true)}
+          onBlur={handleCommit}
+          onKeyDown={handleKeyDown}
+          title="Nhấp để nhập / sửa Zone hoặc Pour (Enter để lưu)"
+          className={`dt-cell-input dt-zone-input text-center font-semibold flex-1 ${
+            !val && !isEditing ? 'text-[var(--text-dim)]' : 'text-[var(--text-main)]'
+          } ${isEditing ? 'dt-cell-editing' : ''}`}
+        />
+        <button
+          type="button"
+          onClick={(e) => onConfirmDelete(e, zone)}
+          className={`dt-zone-del ${confirmDelId === zone.id ? '!opacity-100 confirm' : ''}`}
+          title="Xóa dòng Zone này"
+        >
+          {confirmDelId === zone.id ? 'Xóa?' : '✕'}
+        </button>
+      </div>
+    </td>
+  );
+};
+
+/**
+ * Quick Add row at the bottom of each project to add Level / Pour instantly
+ */
+const QuickAddProjectRow = ({ project, cols, monthMode, onQuickAdd }) => {
+  const [level, setLevel] = useState('');
+  const [zone, setZone] = useState('');
+
+  const handleAdd = () => {
+    if (!level.trim() && !zone.trim()) return;
+    const added = onQuickAdd?.(project.id, level || 'GF', zone);
+    if (added) {
+      setZone('');
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleAdd();
+    }
+  };
+
+  return (
+    <tr className="dt-quick-add-tr group/add bg-indigo-500/[0.02] hover:bg-indigo-500/[0.05] transition-colors">
+      <td className="dt-fix dt-col-lvl p-0 align-middle">
+        <input
+          type="text"
+          placeholder="+ Level"
+          value={level}
+          onChange={(e) => setLevel(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="dt-cell-input text-center uppercase text-indigo-500 placeholder:text-indigo-400/50 font-bold"
+          title="Gõ Level (VD: L1, GF, B1) rồi nhấn Enter để thêm dòng"
+        />
+      </td>
+      <td className="dt-fix dt-col-zone p-0 align-middle">
+        <div className="flex items-center gap-1 px-1 h-full">
+          <input
+            type="text"
+            placeholder="+ Pour / Zone"
+            value={zone}
+            onChange={(e) => setZone(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="dt-cell-input text-center text-indigo-500 placeholder:text-indigo-400/50 font-semibold flex-1"
+            title="Gõ Pour / Zone (VD: Pour 1, Zone A) rồi nhấn Enter để thêm dòng"
+          />
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="p-1 rounded bg-indigo-500/15 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all text-xs shrink-0"
+            title="Thêm dòng mới cho dự án này"
+          >
+            <Plus size={12} />
+          </button>
+        </div>
+      </td>
+      <td className="dt-fix dt-col-cur text-center text-[var(--text-dim)] text-xs">—</td>
+      <td className="dt-fix dt-col-plan text-center text-[var(--text-dim)] text-xs">—</td>
+      {cols.map((c) => (
+        <td key={c.ds} className="dt-day-cell bg-transparent pointer-events-none" />
+      ))}
+      {!monthMode && <td className="dt-day-cell bg-transparent pointer-events-none" />}
+    </tr>
+  );
+};
+
 const BoardView = ({
   scopedData,
   boardMode,
@@ -18,6 +194,9 @@ const BoardView = ({
   getProjectColor,
   onOpenCell,
   onDeleteZone,
+  onUpdateZone,
+  onQuickAddZone,
+  onOpenAddModal,
   scrollToTodayTrigger
 }) => {
   const { projs, zones, issues, plans } = scopedData;
@@ -53,7 +232,7 @@ const BoardView = ({
     return [...dateSet].sort().map((ds) => ({ ds, label: fmtShort(ds), wk: false }));
   }, [monthMode, viewYear, viewMonth, zones, issues, plans]);
 
-  const { rowsData, stats } = useMemo(() => {
+  const { projectGroups, stats } = useMemo(() => {
     const issuesByZone = new Map();
     issues.forEach((iss) => {
       if (!issuesByZone.has(iss.zone_id)) issuesByZone.set(iss.zone_id, []);
@@ -74,21 +253,28 @@ const BoardView = ({
     let totalPlans = 0;
     let latePlans = 0;
 
-    const structuredRows = [];
+    const groups = [];
 
     projs.forEach((p) => {
       const pZones = zones.filter((z) => z.project_id === p.id);
-      if (!pZones.length) return;
+
+      // If this is a single filtered project with no zones, still show it with QuickAdd
+      if (!pZones.length) {
+        if (projs.length === 1) {
+          groups.push({ project: p, rows: [] });
+        }
+        return;
+      }
 
       const levels = [...new Set(pZones.map((z) => z.level))].sort(lvlSort);
-      let isFirstInProj = true;
+      const pRows = [];
 
       levels.forEach((lv) => {
         const lZones = pZones
           .filter((z) => z.level === lv)
           .sort((a, b) => a.sort - b.sort || String(a.zone).localeCompare(String(b.zone)));
 
-        lZones.forEach((z, idxInLevel) => {
+        lZones.forEach((z) => {
           totalZones++;
           const zIssues = issuesByZone.get(z.id) || [];
           const latestIssue = zIssues[0] || null;
@@ -113,25 +299,23 @@ const BoardView = ({
             if (byDateIssues[c.ds]) visibleIssuedCells++;
           });
 
-          structuredRows.push({
+          pRows.push({
             project: p,
-            projRowSpan: isFirstInProj ? pZones.length : 0,
             level: lv,
-            lvlRowSpan: idxInLevel === 0 ? lZones.length : 0,
             zone: z,
             latestIssue,
             nextPlan,
             byDateIssues,
             byDatePlans
           });
-
-          isFirstInProj = false;
         });
       });
+
+      groups.push({ project: p, rows: pRows });
     });
 
     return {
-      rowsData: structuredRows,
+      projectGroups: groups,
       stats: {
         projCount: projs.length,
         totalZones,
@@ -217,165 +401,204 @@ const BoardView = ({
             </tr>
           </thead>
           <tbody>
-            {rowsData.length === 0 ? (
+            {projectGroups.length === 0 ? (
               <tr>
                 <td colSpan={cols.length + 6} className="py-12 text-center text-[var(--text-muted)] font-bold">
-                  Không có dữ liệu phù hợp. Bấm “+ Thêm Level/Zone” để khởi tạo dòng mới.
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <p className="text-[14px]">Chưa có dữ liệu Level / Zone nào trong phạm vi lọc.</p>
+                    <button
+                      type="button"
+                      onClick={onOpenAddModal}
+                      className="dt-action-btn primary !px-4 !py-2 text-[13px] flex items-center gap-2"
+                    >
+                      <Plus size={16} /> Thêm Dự Án / Level / Zone Ngay
+                    </button>
+                  </div>
                 </td>
               </tr>
             ) : (
-              rowsData.map((row) => {
-                const {
-                  project,
-                  projRowSpan,
-                  level,
-                  lvlRowSpan,
-                  zone,
-                  latestIssue,
-                  nextPlan,
-                  byDateIssues,
-                  byDatePlans
-                } = row;
-                const nextLate = isPlanLate(nextPlan, todayStr);
+              projectGroups.map(({ project, rows }) => {
                 const projColor = getProjectColor(project);
+                const projRowSpan = rows.length + 1; // Existing rows + 1 quick add row
 
                 return (
-                  <tr key={zone.id} className="hover:bg-[var(--bg-hover)] transition-colors">
-                    {projRowSpan > 0 && (
-                      <td
-                        rowSpan={projRowSpan}
-                        className="dt-fix dt-col-proj align-middle"
-                        style={{ color: projColor }}
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <span
-                            className="w-2 h-2 rounded-full shrink-0"
-                            style={{ backgroundColor: projColor }}
-                          />
-                          <span className="truncate">{project.name}</span>
-                        </div>
-                      </td>
-                    )}
-
-                    {lvlRowSpan > 0 && (
-                      <td rowSpan={lvlRowSpan} className="dt-fix dt-col-lvl align-middle">
-                        {level}
-                      </td>
-                    )}
-
-                    <td className="dt-fix dt-col-zone">
-                      <div className="flex items-center justify-between gap-1 px-1">
-                        <span className={`truncate ${zone.zone ? 'font-semibold' : 'text-[var(--text-dim)]'}`}>
-                          {zone.zone || '—'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => handleConfirmDelete(e, zone)}
-                          className={`dt-zone-del ${confirmDelId === zone.id ? 'confirm' : ''}`}
-                          title="Xóa dòng Zone này"
-                        >
-                          {confirmDelId === zone.id ? 'Xóa?' : '✕'}
-                        </button>
-                      </div>
-                    </td>
-
-                    <td className="dt-fix dt-col-cur">
-                      {latestIssue ? (
-                        isUrl(latestIssue.link) ? (
-                          <a
-                            href={latestIssue.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-emerald-500 hover:underline font-extrabold"
-                            title={`${latestIssue.note ? latestIssue.note + ' · ' : ''}${fmtLong(latestIssue.date)}`}
-                          >
-                            <span>{fmtShort(latestIssue.date)}</span>
-                            <ExternalLink size={11} />
-                          </a>
-                        ) : (
-                          <span
-                            className="text-emerald-500 font-extrabold"
-                            title={`${latestIssue.note ? latestIssue.note + ' · ' : ''}${fmtLong(latestIssue.date)}`}
-                          >
-                            {fmtShort(latestIssue.date)}
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-[var(--text-dim)]">—</span>
-                      )}
-                    </td>
-
-                    <td
-                      className={`dt-fix dt-col-plan ${
-                        nextPlan ? (nextLate ? 'text-rose-500' : 'text-amber-500') : 'text-[var(--text-dim)]'
-                      }`}
-                      title={
-                        nextPlan
-                          ? `${nextLate ? 'TRỄ – ' : ''}Kế hoạch ${fmtLong(nextPlan.date)}${
-                              nextPlan.note ? ' · ' + nextPlan.note : ''
-                            }`
-                          : ''
-                      }
-                    >
-                      {nextPlan ? `${fmtShort(nextPlan.date)}${nextLate ? ' !' : ''}` : '—'}
-                    </td>
-
-                    {cols.map((c) => {
-                      const hitList = byDateIssues[c.ds];
-                      const planHit = !hitList ? byDatePlans[c.ds] : null;
-                      const late = isPlanLate(planHit, todayStr);
-                      const isToday = c.ds === todayStr;
-
-                      const cellClasses = [
-                        'dt-day-cell',
-                        hitList ? 'dt-day-issued' : '',
-                        planHit && !late ? 'dt-day-plan' : '',
-                        planHit && late ? 'dt-day-late' : '',
-                        !hitList && !planHit && isToday ? 'dt-day-today' : '',
-                        !hitList && !planHit && c.wk ? 'dt-day-wk' : ''
-                      ]
-                        .filter(Boolean)
-                        .join(' ');
-
-                      const tip = planHit
-                        ? `${late ? 'TRỄ – ' : ''}Kế hoạch phát hành ${fmtLong(c.ds)}${
-                            planHit.note ? ' · ' + planHit.note : ''
-                          }`
-                        : hitList
-                        ? `Đã phát hành ${fmtLong(c.ds)}${hitList
-                            .map((x) => `${x.note ? ' · ' + x.note : ''}${x.link ? '\n' + x.link : ''}`)
-                            .join('')}`
-                        : `Click để đánh dấu phát hành / kế hoạch ngày ${fmtLong(c.ds)}`;
+                  <React.Fragment key={project.id}>
+                    {rows.map((row, rowIdx) => {
+                      const {
+                        zone,
+                        latestIssue,
+                        nextPlan,
+                        byDateIssues,
+                        byDatePlans
+                      } = row;
+                      const nextLate = isPlanLate(nextPlan, todayStr);
 
                       return (
-                        <td
-                          key={c.ds}
-                          className={cellClasses}
-                          title={tip}
-                          onClick={() => onOpenCell(zone.id, c.ds)}
-                        >
-                          {hitList ? '✓' : planHit && late ? '!' : ''}
-                          {hitList && hitList.length > 1 && (
-                            <span className="dt-day-cnt">{hitList.length}</span>
+                        <tr key={zone.id} className="hover:bg-[var(--bg-hover)] transition-colors">
+                          {rowIdx === 0 && (
+                            <td
+                              rowSpan={projRowSpan}
+                              className="dt-fix dt-col-proj align-middle"
+                              style={{ color: projColor }}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <span
+                                  className="w-2 h-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: projColor }}
+                                />
+                                <span className="truncate">{project.name}</span>
+                              </div>
+                            </td>
                           )}
-                        </td>
+
+                          {/* LEVEL Cell - Editable directly on every row */}
+                          <EditableLevelCell zone={zone} onUpdate={onUpdateZone} />
+
+                          {/* ZONE / POUR Cell - Editable directly on every row */}
+                          <EditableZoneCell
+                            zone={zone}
+                            onUpdate={onUpdateZone}
+                            confirmDelId={confirmDelId}
+                            onConfirmDelete={handleConfirmDelete}
+                          />
+
+                          {/* CURRENT Cell - Clickable to open Issue modal & input/edit issue date */}
+                          <td
+                            className="dt-fix dt-col-cur cursor-pointer hover:bg-emerald-500/15 transition-colors group/cur"
+                            onClick={() => onOpenCell(zone.id, latestIssue?.date || todayStr, 'issue')}
+                            title={
+                              latestIssue
+                                ? `Đã phát hành ${fmtLong(latestIssue.date)}${
+                                    latestIssue.note ? ' · ' + latestIssue.note : ''
+                                  }\n(Nhấp để chỉnh sửa / cập nhật ngày phát hành)`
+                                : 'Nhấp để nhập ngày phát hành hiện tại'
+                            }
+                          >
+                            <div className="flex items-center justify-center gap-1">
+                              {latestIssue ? (
+                                <>
+                                  <span className="text-emerald-500 font-extrabold">
+                                    {fmtShort(latestIssue.date)}
+                                  </span>
+                                  {isUrl(latestIssue.link) && (
+                                    <a
+                                      href={latestIssue.link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-emerald-500 hover:text-emerald-400"
+                                      title="Mở link bản vẽ"
+                                    >
+                                      <ExternalLink size={10} />
+                                    </a>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-[var(--text-dim)] group-hover/cur:text-emerald-500 group-hover/cur:font-bold text-xs">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* KẾ HOẠCH Cell - Clickable to open Plan modal & input/edit plan date */}
+                          <td
+                            className={`dt-fix dt-col-plan cursor-pointer hover:bg-amber-500/15 transition-colors group/plan ${
+                              nextPlan
+                                ? nextLate
+                                  ? 'text-rose-500'
+                                  : 'text-amber-500'
+                                : 'text-[var(--text-dim)]'
+                            }`}
+                            onClick={() => onOpenCell(zone.id, nextPlan?.date || todayStr, 'plan')}
+                            title={
+                              nextPlan
+                                ? `${nextLate ? 'TRỄ – ' : ''}Kế hoạch ${fmtLong(nextPlan.date)}${
+                                    nextPlan.note ? ' · ' + nextPlan.note : ''
+                                  }\n(Nhấp để chỉnh sửa kế hoạch)`
+                                : 'Nhấp để đặt ngày kế hoạch'
+                            }
+                          >
+                            <div className="flex items-center justify-center gap-1 font-bold">
+                              {nextPlan ? (
+                                <span>
+                                  {fmtShort(nextPlan.date)}
+                                  {nextLate ? ' !' : ''}
+                                </span>
+                              ) : (
+                                <span className="text-[var(--text-dim)] group-hover/plan:text-amber-500 text-xs">—</span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Matrix Day Cells */}
+                          {cols.map((c) => {
+                            const hitList = byDateIssues[c.ds];
+                            const planHit = !hitList ? byDatePlans[c.ds] : null;
+                            const late = isPlanLate(planHit, todayStr);
+                            const isToday = c.ds === todayStr;
+
+                            const cellClasses = [
+                              'dt-day-cell',
+                              hitList ? 'dt-day-issued' : '',
+                              planHit && !late ? 'dt-day-plan' : '',
+                              planHit && late ? 'dt-day-late' : '',
+                              !hitList && !planHit && isToday ? 'dt-day-today' : '',
+                              !hitList && !planHit && c.wk ? 'dt-day-wk' : ''
+                            ]
+                              .filter(Boolean)
+                              .join(' ');
+
+                            const tip = planHit
+                              ? `${late ? 'TRỄ – ' : ''}Kế hoạch phát hành ${fmtLong(c.ds)}${
+                                  planHit.note ? ' · ' + planHit.note : ''
+                                }`
+                              : hitList
+                              ? `Đã phát hành ${fmtLong(c.ds)}${hitList
+                                  .map((x) => `${x.note ? ' · ' + x.note : ''}${x.link ? '\n' + x.link : ''}`)
+                                  .join('')}`
+                              : `Click để đánh dấu phát hành / kế hoạch ngày ${fmtLong(c.ds)}`;
+
+                            return (
+                              <td
+                                key={c.ds}
+                                className={cellClasses}
+                                title={tip}
+                                onClick={() => onOpenCell(zone.id, c.ds)}
+                              >
+                                {hitList ? '✓' : planHit && late ? '!' : ''}
+                                {hitList && hitList.length > 1 && (
+                                  <span className="dt-day-cnt">{hitList.length}</span>
+                                )}
+                              </td>
+                            );
+                          })}
+
+                          {!monthMode && (
+                            <td
+                              className="dt-day-cell w-[60px] min-w-[60px] text-[var(--text-muted)] hover:text-emerald-500"
+                              title="Thêm kế hoạch / ngày phát hành mới (+7 ngày)"
+                              onClick={() => {
+                                const d = new Date();
+                                d.setDate(d.getDate() + 7);
+                                onOpenCell(zone.id, ymd(d), 'plan');
+                              }}
+                            >
+                              <Plus size={14} className="inline" />
+                            </td>
+                          )}
+                        </tr>
                       );
                     })}
 
-                    {!monthMode && (
-                      <td
-                        className="dt-day-cell w-[60px] min-w-[60px] text-[var(--text-muted)] hover:text-emerald-500"
-                        title="Thêm kế hoạch / ngày phát hành mới (+7 ngày)"
-                        onClick={() => {
-                          const d = new Date();
-                          d.setDate(d.getDate() + 7);
-                          onOpenCell(zone.id, ymd(d), 'plan');
-                        }}
-                      >
-                        <Plus size={14} className="inline" />
-                      </td>
-                    )}
-                  </tr>
+                    {/* Quick Add row for this Project */}
+                    <QuickAddProjectRow
+                      project={project}
+                      cols={cols}
+                      monthMode={monthMode}
+                      onQuickAdd={onQuickAddZone}
+                    />
+                  </React.Fragment>
                 );
               })
             )}
@@ -398,7 +621,7 @@ const BoardView = ({
           <i className="w-3.5 h-3.5 rounded bg-yellow-400/40 border border-yellow-500/40 inline-block" /> Hôm nay
         </span>
         <span className="ml-auto opacity-80">
-          Click vào bất kỳ ô ngày nào để cập nhật Phát hành, Link bản vẽ hoặc Kế hoạch
+          💡 Nhấp trực tiếp vào <b>Level</b> hoặc <b>Zone/Pour</b> để chỉnh sửa · Nhấp vào <b>CURRENT</b> hoặc <b>KẾ HOẠCH</b> để nhập/sửa ngày
         </span>
       </div>
     </div>
