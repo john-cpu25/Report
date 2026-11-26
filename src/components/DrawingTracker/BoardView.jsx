@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ExternalLink, Plus } from 'lucide-react';
+import { ExternalLink, Plus, Check, Calendar, Link2, X } from 'lucide-react';
 import {
   ymd,
   fmtShort,
@@ -11,9 +11,9 @@ import {
 
 /**
  * Editable cell for Level (e.g. GF, L1, L2, B1, ROOF)
- * Preserves local state so typing is immediate and never loses focus.
+ * Includes multi-select checkbox (supports Shift+Click range selection).
  */
-const EditableLevelCell = ({ zone, onUpdate }) => {
+const EditableLevelCell = ({ zone, onUpdate, isSelected, onToggleSelect }) => {
   const [val, setVal] = useState(zone.level || '');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -45,18 +45,31 @@ const EditableLevelCell = ({ zone, onUpdate }) => {
 
   return (
     <td className="dt-fix dt-col-lvl align-middle p-0">
-      <input
-        type="text"
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        onFocus={() => setIsEditing(true)}
-        onBlur={handleCommit}
-        onKeyDown={handleKeyDown}
-        title="Nhấp để sửa Level (Enter để lưu)"
-        className={`dt-cell-input dt-level-input text-center font-extrabold uppercase ${
-          isEditing ? 'dt-cell-editing' : ''
-        }`}
-      />
+      <div className="flex items-center gap-0.5 pl-1.5 pr-1 h-full w-full">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect?.(zone.id, e);
+          }}
+          onChange={() => {}}
+          title="Chọn tầng này (Giữ Shift + Click để chọn nhanh nhiều tầng liên tiếp)"
+          className="dt-row-chk shrink-0"
+        />
+        <input
+          type="text"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          onFocus={() => setIsEditing(true)}
+          onBlur={handleCommit}
+          onKeyDown={handleKeyDown}
+          title="Nhấp để sửa Level (Enter để lưu)"
+          className={`dt-cell-input dt-level-input text-center font-extrabold uppercase flex-1 min-w-0 ${
+            isEditing ? 'dt-cell-editing' : ''
+          }`}
+        />
+      </div>
     </td>
   );
 };
@@ -197,11 +210,17 @@ const BoardView = ({
   onUpdateZone,
   onQuickAddZone,
   onOpenAddModal,
+  onBatchApply,
+  onOpenBatchModal,
   scrollToTodayTrigger
 }) => {
   const { projs, zones, issues, plans } = scopedData;
   const [confirmDelId, setConfirmDelId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [lastClickedId, setLastClickedId] = useState(null);
+  const [batchDate, setBatchDate] = useState(todayStr);
   const todayThRef = useRef(null);
+  const selectAllRef = useRef(null);
 
   useEffect(() => {
     if (scrollToTodayTrigger > 0 && todayThRef.current) {
@@ -327,6 +346,87 @@ const BoardView = ({
     };
   }, [projs, zones, issues, plans, cols, todayStr]);
 
+  const flatVisibleIds = useMemo(
+    () => projectGroups.flatMap((g) => g.rows.map((r) => r.zone.id)),
+    [projectGroups]
+  );
+
+  useEffect(() => {
+    const validSet = new Set(flatVisibleIds);
+    setSelectedIds((prev) => {
+      let changed = false;
+      const next = new Set();
+      prev.forEach((id) => {
+        if (validSet.has(id)) next.add(id);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [flatVisibleIds]);
+
+  const allSelected = flatVisibleIds.length > 0 && selectedIds.size === flatVisibleIds.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < flatVisibleIds.length;
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
+
+  const handleToggleSelect = (zoneId, e) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (e?.shiftKey && lastClickedId && flatVisibleIds.includes(lastClickedId)) {
+        const startIdx = flatVisibleIds.indexOf(lastClickedId);
+        const endIdx = flatVisibleIds.indexOf(zoneId);
+        if (startIdx !== -1 && endIdx !== -1) {
+          const [from, to] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+          for (let i = from; i <= to; i++) {
+            next.add(flatVisibleIds[i]);
+          }
+          return next;
+        }
+      }
+      if (next.has(zoneId)) next.delete(zoneId);
+      else next.add(zoneId);
+      return next;
+    });
+    setLastClickedId(zoneId);
+  };
+
+  const handleToggleAllVisible = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(flatVisibleIds));
+    }
+  };
+
+  const handleToggleProjectRows = (projRows) => {
+    const ids = projRows.map((r) => r.zone.id);
+    if (!ids.length) return;
+    const allInProjSelected = ids.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allInProjSelected) {
+        ids.forEach((id) => next.delete(id));
+      } else {
+        ids.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const handleBatchQuickApply = (type) => {
+    if (!selectedIds.size || !batchDate) return;
+    onBatchApply?.({
+      zoneIds: Array.from(selectedIds),
+      type,
+      date: batchDate
+    });
+    setSelectedIds(new Set());
+  };
+
   const handleConfirmDelete = (e, zoneObj) => {
     e.stopPropagation();
     if (confirmDelId !== zoneObj.id) {
@@ -374,13 +474,89 @@ const BoardView = ({
         </div>
       </div>
 
+      {/* Batch Action Bar when rows are selected */}
+      {selectedIds.size > 0 && (
+        <div className="dt-batch-bar">
+          <span className="px-2.5 py-1 rounded-lg bg-indigo-500 text-white text-[12px] font-extrabold">
+            Đã chọn {selectedIds.size} dòng
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11.5px] font-bold text-[var(--text-muted)]">Chọn ngày:</span>
+            <input
+              type="date"
+              value={batchDate}
+              onChange={(e) => setBatchDate(e.target.value)}
+              className="dt-input !py-1 !px-2 text-[12px] font-bold"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleBatchQuickApply('issue')}
+            className="dt-action-btn primary !py-1.5 !px-3 text-[12px]"
+            title="Đánh dấu Đã phát hành (Issue) cho tất cả dòng đã chọn"
+          >
+            <Check size={13} /> Phát hành ({selectedIds.size})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleBatchQuickApply('plan')}
+            className="dt-action-btn amber !py-1.5 !px-3 text-[12px]"
+            title="Đặt Kế hoạch (Plan) cho tất cả dòng đã chọn"
+          >
+            <Calendar size={13} /> Kế hoạch ({selectedIds.size})
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              onOpenBatchModal?.({
+                zoneIds: Array.from(selectedIds),
+                initialDate: batchDate,
+                defaultType: 'issue'
+              })
+            }
+            className="dt-action-btn !py-1.5 !px-2.5 text-[12px]"
+            title="Mở bảng nhập thêm Link bản vẽ & Ghi chú chung"
+          >
+            <Link2 size={13} /> + Link / Ghi chú
+          </button>
+
+          <span className="text-[11px] text-[var(--text-muted)] hidden xl:inline ml-1">
+            Mẹo: Giữ <b>Shift</b> + click để chọn nhanh từ tầng đầu đến tầng cuối
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="dt-action-btn !py-1.5 !px-2.5 text-[12px] ml-auto"
+          >
+            <X size={13} /> Bỏ chọn
+          </button>
+        </div>
+      )}
+
       {/* Matrix Grid */}
       <div className="dt-matrix-wrap custom-scrollbar">
         <table className="dt-matrix-table">
           <thead>
             <tr>
               <th className="dt-fix dt-col-proj">PROJECT</th>
-              <th className="dt-fix dt-col-lvl">LEVEL</th>
+              <th className="dt-fix dt-col-lvl">
+                <div className="flex items-center justify-center gap-1.5">
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={handleToggleAllVisible}
+                    title="Chọn / Bỏ chọn tất cả dòng đang hiển thị"
+                    className="dt-row-chk"
+                  />
+                  <span>LEVEL</span>
+                </div>
+              </th>
               <th className="dt-fix dt-col-zone">ZONE / POUR</th>
               <th className="dt-fix dt-col-cur">CURRENT</th>
               <th className="dt-fix dt-col-plan">KẾ HOẠCH</th>
@@ -420,6 +596,8 @@ const BoardView = ({
               projectGroups.map(({ project, rows }) => {
                 const projColor = getProjectColor(project);
                 const projRowSpan = rows.length + 1; // Existing rows + 1 quick add row
+                const projAllSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.zone.id));
+                const projSomeSelected = rows.some((r) => selectedIds.has(r.zone.id));
 
                 return (
                   <React.Fragment key={project.id}>
@@ -432,16 +610,31 @@ const BoardView = ({
                         byDatePlans
                       } = row;
                       const nextLate = isPlanLate(nextPlan, todayStr);
+                      const isRowSelected = selectedIds.has(zone.id);
 
                       return (
-                        <tr key={zone.id} className="hover:bg-[var(--bg-hover)] transition-colors">
+                        <tr
+                          key={zone.id}
+                          className={`hover:bg-[var(--bg-hover)] transition-colors ${
+                            isRowSelected ? 'dt-row-selected' : ''
+                          }`}
+                        >
                           {rowIdx === 0 && (
                             <td
                               rowSpan={projRowSpan}
-                              className="dt-fix dt-col-proj align-middle"
+                              className="dt-fix dt-col-proj align-middle group/proj"
                               style={{ color: projColor }}
                             >
-                              <div className="flex items-center gap-2 truncate">
+                              <div className="flex items-center gap-1.5 truncate">
+                                <input
+                                  type="checkbox"
+                                  checked={projAllSelected}
+                                  onChange={() => handleToggleProjectRows(rows)}
+                                  title={`Chọn / Bỏ chọn tất cả tầng của ${project.name}`}
+                                  className={`dt-row-chk shrink-0 transition-opacity ${
+                                    projSomeSelected ? 'opacity-100' : 'opacity-0 group-hover/proj:opacity-100'
+                                  }`}
+                                />
                                 <span
                                   className="w-2 h-2 rounded-full shrink-0"
                                   style={{ backgroundColor: projColor }}
@@ -451,8 +644,13 @@ const BoardView = ({
                             </td>
                           )}
 
-                          {/* LEVEL Cell - Editable directly on every row */}
-                          <EditableLevelCell zone={zone} onUpdate={onUpdateZone} />
+                          {/* LEVEL Cell - Editable directly on every row + multi-select checkbox */}
+                          <EditableLevelCell
+                            zone={zone}
+                            onUpdate={onUpdateZone}
+                            isSelected={isRowSelected}
+                            onToggleSelect={handleToggleSelect}
+                          />
 
                           {/* ZONE / POUR Cell - Editable directly on every row */}
                           <EditableZoneCell

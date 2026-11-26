@@ -21,6 +21,7 @@ import BoardView from './DrawingTracker/BoardView';
 import SummaryView from './DrawingTracker/SummaryView';
 import {
   IssuePlanModal,
+  BatchIssuePlanModal,
   AddRowOrProjectModal,
   DataManagementModal
 } from './DrawingTracker/TrackerModals';
@@ -77,6 +78,7 @@ const DrawingTracker = () => {
 
   // Modals & Toast
   const [cellModal, setCellModal] = useState(null); // { zoneId, initialDate, forceType }
+  const [batchModal, setBatchModal] = useState(null); // { zoneIds, initialDate, defaultType }
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
   const [toastInfo, setToastInfo] = useState(null); // { message, actionLabel, onAction }
@@ -308,6 +310,79 @@ const DrawingTracker = () => {
 
     scheduleSync(next);
     setCellModal(null);
+  };
+
+  const handleBatchSaveRecords = ({ zoneIds, type, date, link = '', note = '' }) => {
+    if (!zoneIds?.length || !date) return;
+    const next = {
+      projects: [...data.projects],
+      zones: [...data.zones],
+      issues: [...data.issues],
+      plans: [...data.plans]
+    };
+
+    const idSet = new Set(zoneIds);
+    let applied = 0;
+
+    if (type === 'issue') {
+      // Remove any plans on the target date for selected zones
+      next.plans = next.plans.filter((p) => !(idSet.has(p.zone_id) && p.date === date));
+
+      zoneIds.forEach((zoneId) => {
+        const clash = next.issues.find((i) => i.zone_id === zoneId && i.date === date);
+        if (clash) {
+          next.issues = next.issues.map((i) =>
+            i.id === clash.id
+              ? { ...i, link: link || i.link, note: note || i.note }
+              : i
+          );
+        } else {
+          next.issues.push({
+            id: uid(),
+            zone_id: zoneId,
+            date,
+            link,
+            note,
+            created_at: Date.now()
+          });
+        }
+        applied++;
+      });
+      showToast(`Đã gán phát hành ngày ${fmtShort(date)} cho ${applied} dòng`);
+    } else {
+      let skippedIssued = 0;
+      zoneIds.forEach((zoneId) => {
+        if (next.issues.some((i) => i.zone_id === zoneId && i.date === date)) {
+          skippedIssued++;
+          return;
+        }
+        const clash = next.plans.find((p) => p.zone_id === zoneId && p.date === date);
+        if (clash) {
+          if (note) {
+            next.plans = next.plans.map((p) =>
+              p.id === clash.id ? { ...p, note } : p
+            );
+          }
+        } else {
+          next.plans.push({
+            id: uid(),
+            zone_id: zoneId,
+            date,
+            note,
+            created_at: Date.now()
+          });
+        }
+        applied++;
+      });
+      showToast(
+        skippedIssued > 0
+          ? `Đã lập kế hoạch ngày ${fmtShort(date)} cho ${applied} dòng (${skippedIssued} dòng đã phát hành)`
+          : `Đã lập kế hoạch ngày ${fmtShort(date)} cho ${applied} dòng`
+      );
+    }
+
+    scheduleSync(next);
+    setBatchModal(null);
   };
 
   const handleDeleteRecord = ({ existingIssue, existingPlan }) => {
@@ -748,6 +823,8 @@ const DrawingTracker = () => {
           onUpdateZone={handleUpdateZone}
           onQuickAddZone={handleQuickAddZone}
           onOpenAddModal={() => setShowAddModal(true)}
+          onBatchApply={handleBatchSaveRecords}
+          onOpenBatchModal={(payload) => setBatchModal(payload)}
           scrollToTodayTrigger={scrollToTodayTrigger}
         />
       ) : (
@@ -775,6 +852,17 @@ const DrawingTracker = () => {
           onClose={() => setCellModal(null)}
           onSave={handleSaveCell}
           onDeleteRecord={handleDeleteRecord}
+          onToast={showToast}
+        />
+      )}
+
+      {batchModal && (
+        <BatchIssuePlanModal
+          modalState={batchModal}
+          projects={data.projects}
+          zones={data.zones}
+          onClose={() => setBatchModal(null)}
+          onBatchSave={handleBatchSaveRecords}
           onToast={showToast}
         />
       )}

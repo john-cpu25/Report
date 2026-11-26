@@ -206,11 +206,11 @@
   background: var(--bg-card);
 }
 
-.dt-col-proj { left: 0; width: 140px; min-width: 140px; max-width: 140px; text-align: left !important; padding-left: 16px !important; font-weight: 800; }
-.dt-col-lvl  { left: 140px; width: 82px; min-width: 82px; max-width: 82px; font-weight: 700; }
-.dt-col-zone { left: 222px; width: 108px; min-width: 108px; max-width: 108px; }
-.dt-col-cur  { left: 330px; width: 92px; min-width: 92px; max-width: 92px; font-weight: 700; }
-.dt-col-plan { left: 422px; width: 98px; min-width: 98px; max-width: 98px; font-weight: 700; border-right: 2px solid var(--border) !important; }
+.dt-col-proj { left: 0; width: 140px; min-width: 140px; max-width: 140px; text-align: left !important; padding-left: 14px !important; font-weight: 800; }
+.dt-col-lvl  { left: 140px; width: 98px; min-width: 98px; max-width: 98px; font-weight: 700; }
+.dt-col-zone { left: 238px; width: 108px; min-width: 108px; max-width: 108px; }
+.dt-col-cur  { left: 346px; width: 92px; min-width: 92px; max-width: 92px; font-weight: 700; }
+.dt-col-plan { left: 438px; width: 98px; min-width: 98px; max-width: 98px; font-weight: 700; border-right: 2px solid var(--border) !important; }
 
 /* Day Cells */
 .dt-day-cell {
@@ -473,4 +473,34 @@ tr:hover .dt-zone-del,
 .dt-quick-add-tr td {
   height: 34px !important;
 }
+
+/* Multi-select Checkbox & Batch Action Bar */
+.dt-row-chk {
+  width: 14px;
+  height: 14px;
+  accent-color: #6366f1;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.dt-row-selected td {
+  background: rgba(99, 102, 241, 0.08) !important;
+}
+
+.dt-row-selected td.dt-fix {
+  background: color-mix(in srgb, var(--bg-card) 88%, #6366f1 12%) !important;
+}
+
+.dt-batch-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-card) 90%, #6366f1 10%);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.14);
+}
+
 

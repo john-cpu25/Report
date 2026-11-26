@@ -522,3 +522,171 @@ export const DataManagementModal = ({
     </div>
   );
 };
+
+export const BatchIssuePlanModal = ({
+  modalState,
+  projects,
+  zones,
+  onClose,
+  onBatchSave,
+  onToast
+}) => {
+  if (!modalState || !modalState.zoneIds?.length) return null;
+
+  const { zoneIds, initialDate, defaultType = 'issue' } = modalState;
+  const [type, setType] = useState(defaultType);
+  const [date, setDate] = useState(initialDate || ymd());
+  const [link, setLink] = useState('');
+  const [note, setNote] = useState('');
+
+  useEffect(() => {
+    setType(defaultType);
+    setDate(initialDate || ymd());
+    setLink('');
+    setNote('');
+  }, [zoneIds, initialDate, defaultType]);
+
+  const selectedZones = zones.filter((z) => zoneIds.includes(z.id));
+  const projMap = new Map(projects.map((p) => [p.id, p]));
+  const isIssueMode = type === 'issue';
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!date) {
+      onToast?.('Vui lòng chọn ngày!');
+      return;
+    }
+    onBatchSave({
+      zoneIds,
+      type,
+      date,
+      link: isIssueMode ? link.trim() : '',
+      note: note.trim()
+    });
+  };
+
+  return (
+    <div className="dt-modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="dt-modal-box !w-[520px]">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div>
+            <h2 className="text-[16px] font-black">
+              {isIssueMode ? 'Phát hành hàng loạt' : 'Lập kế hoạch hàng loạt'} ({selectedZones.length} dòng)
+            </h2>
+            <p className="text-[12px] text-[var(--text-muted)] font-semibold mt-0.5">
+              Áp dụng cùng một ngày cho tất cả tầng / zone đã chọn
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[var(--text-muted)] hover:text-[var(--text-main)] text-lg px-2"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Selected Zones Preview */}
+        <div className="mb-3 max-h-[100px] overflow-y-auto custom-scrollbar flex flex-wrap gap-1.5 p-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)]">
+          {selectedZones.map((z) => {
+            const p = projMap.get(z.project_id);
+            return (
+              <span
+                key={z.id}
+                className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+              >
+                {p?.name ? `${p.name} · ` : ''}
+                {formatZoneLabel(z)}
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Type Switch */}
+        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] mb-3">
+          <button
+            type="button"
+            onClick={() => setType('issue')}
+            className={`py-2 px-3 rounded-lg text-[12px] font-bold transition-all ${
+              isIssueMode
+                ? 'bg-emerald-500 text-white shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+            }`}
+          >
+            ✓ Đã phát hành (Issue)
+          </button>
+          <button
+            type="button"
+            onClick={() => setType('plan')}
+            className={`py-2 px-3 rounded-lg text-[12px] font-bold transition-all ${
+              !isIssueMode
+                ? 'bg-amber-500 text-white shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+            }`}
+          >
+            📅 Kế hoạch (Plan)
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[11.5px] font-bold text-[var(--text-muted)]">
+              {isIssueMode ? 'Ngày phát hành áp dụng chung' : 'Ngày kế hoạch áp dụng chung'}
+            </label>
+            <input
+              type="date"
+              required
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="dt-input w-full"
+            />
+          </div>
+
+          {isIssueMode && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[11.5px] font-bold text-[var(--text-muted)]">
+                Link thư mục / bản vẽ chung (tùy chọn)
+              </label>
+              <input
+                type="url"
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                placeholder="https://drive.google.com/... hoặc link BIM360"
+                className="dt-input w-full"
+              />
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[11.5px] font-bold text-[var(--text-muted)]">
+              Ghi chú chung (tùy chọn)
+            </label>
+            <textarea
+              rows={2}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={
+                isIssueMode
+                  ? 'VD: Phát hành IFC L3-RF, Rev 0...'
+                  : 'VD: Dự kiến gửi khách hàng...'
+              }
+              className="dt-input w-full resize-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 mt-1 pt-2 border-t border-[var(--border)]">
+            <button type="button" onClick={onClose} className="dt-action-btn">
+              Hủy
+            </button>
+            <button
+              type="submit"
+              className={`dt-action-btn ${isIssueMode ? 'primary' : 'amber'}`}
+            >
+              <Check size={14} /> Áp dụng cho {selectedZones.length} dòng
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
